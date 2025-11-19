@@ -1,0 +1,224 @@
+// ============================================
+// Prisma Schema - Sistem CPL
+// ============================================
+// Database: MySQL
+// ORM: Prisma
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  lastLogin     DateTime? @map("last_login")
+  isActive      Boolean   @default(true) @map("is_active")
+  emailVerified Boolean   @default(false) @map("email_verified")
+
+  // Relations
+  role       UserRole?
+  profile    Profile?
+  sessions   Session[]
+  auditLogs  AuditLog[]
+  cplCreated Cpl[]      @relation("CplCreatedBy")
+  mkCreated  MataKuliah[] @relation("MataKuliahCreatedBy")
+  nilaiCreated NilaiCpl[] @relation("NilaiCreatedBy")
+
+  @@index([email])
+  @@index([isActive])
+  @@map("users")
+}
+
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  userId    String   @unique @map("user_id")
+  role      Role     @default(mahasiswa)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([role])
+  @@index([userId])
+  @@map("user_roles")
+}
+
+model Profile {
+  id            String   @id @default(uuid())
+  userId        String   @unique @map("user_id")
+  namaLengkap   String?  @map("nama_lengkap")
+  nim           String?  @unique
+  nip           String?  @unique
+  programStudi  String?  @map("program_studi")
+  semester      Int?
+  tahunMasuk    Int?     @map("tahun_masuk")
+  alamat        String?  @db.Text
+  noTelepon     String?  @map("no_telepon")
+  fotoProfile   String?  @map("foto_profile")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nilaiCpl  NilaiCpl[] @relation("MahasiswaNilai")
+
+  @@index([nim])
+  @@index([nip])
+  @@index([programStudi])
+  @@index([semester])
+  @@map("profiles")
+}
+
+model Cpl {
+  id         String   @id @default(uuid())
+  kodeCpl    String   @unique @map("kode_cpl")
+  deskripsi  String   @db.Text
+  kategori   String?
+  bobot      Decimal  @default(1.00) @db.Decimal(3, 2)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdBy  String?  @map("created_by")
+
+  // Relations
+  creator        User?            @relation("CplCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  mataKuliah     CplMataKuliah[]
+  nilaiCpl       NilaiCpl[]
+
+  @@index([kodeCpl])
+  @@index([kategori])
+  @@index([isActive])
+  @@map("cpl")
+}
+
+model MataKuliah {
+  id         String   @id @default(uuid())
+  kodeMk     String   @unique @map("kode_mk")
+  namaMk     String   @map("nama_mk")
+  sks        Int
+  semester   Int
+  deskripsi  String?  @db.Text
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdBy  String?  @map("created_by")
+
+  // Relations
+  creator    User?            @relation("MataKuliahCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  cpl        CplMataKuliah[]
+  nilaiCpl   NilaiCpl[]
+
+  @@index([kodeMk])
+  @@index([semester])
+  @@index([isActive])
+  @@map("mata_kuliah")
+}
+
+model CplMataKuliah {
+  id              String   @id @default(uuid())
+  cplId           String   @map("cpl_id")
+  mataKuliahId    String   @map("mata_kuliah_id")
+  bobotKontribusi Decimal  @default(1.00) @map("bobot_kontribusi") @db.Decimal(3, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  cpl         Cpl         @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  mataKuliah  MataKuliah  @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+
+  @@unique([cplId, mataKuliahId])
+  @@index([cplId])
+  @@index([mataKuliahId])
+  @@map("cpl_mata_kuliah")
+}
+
+model NilaiCpl {
+  id            String   @id @default(uuid())
+  mahasiswaId   String   @map("mahasiswa_id")
+  cplId         String   @map("cpl_id")
+  mataKuliahId  String   @map("mata_kuliah_id")
+  nilai         Decimal  @db.Decimal(5, 2)
+  semester      Int
+  tahunAjaran   String   @map("tahun_ajaran")
+  catatan       String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdBy     String?  @map("created_by")
+
+  // Relations
+  mahasiswa   Profile     @relation("MahasiswaNilai", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
+  cpl         Cpl         @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  mataKuliah  MataKuliah  @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  creator     User?       @relation("NilaiCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@index([mahasiswaId])
+  @@index([cplId])
+  @@index([mataKuliahId])
+  @@index([semester])
+  @@index([tahunAjaran])
+  @@map("nilai_cpl")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @db.Text @map("user_agent")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  userId     String?  @map("user_id")
+  action     String
+  tableName  String   @map("table_name")
+  recordId   String?  @map("record_id")
+  oldData    Json?    @map("old_data")
+  newData    Json?    @map("new_data")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @db.Text @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([tableName])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Role {
+  admin
+  dosen
+  mahasiswa
+}
