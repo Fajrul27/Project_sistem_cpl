@@ -52,28 +52,18 @@ const CPLMappingPage = () => {
   const [filterSemester, setFilterSemester] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // Atur metadata halaman
+  // Atur metadata halaman (hanya title & description, tanpa tombol di navbar)
   useEffect(() => {
     if (setMeta) {
       setMeta({
         title: 'Mapping CPL - Mata Kuliah',
         description: 'Kelola pemetaan CPL ke Mata Kuliah',
-        actions: (
-          <Button
-            variant="outline"
-            onClick={() => setDialogOpen(true)}
-            disabled={!canEdit}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Tambah Mapping
-          </Button>
-        )
       });
 
       // Reset saat komponen di-unmount
       return () => setMeta({});
     }
-  }, [canEdit, setMeta]);
+  }, [setMeta]);
 
   useEffect(() => {
     fetchData();
@@ -377,17 +367,25 @@ const CPLMappingPage = () => {
 
       {/* Tabel mapping */}
       <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Daftar Mapping CPL - Mata Kuliah</CardTitle>
-              <CardDescription>
-                Daftar pemetaan CPL ke Mata Kuliah yang tersedia
-              </CardDescription>
-            </div>
-            <div className="mb-4">
-              {renderSemesterFilter()}
-            </div>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-base md:text-lg">Daftar Mapping CPL - Mata Kuliah</CardTitle>
+            <CardDescription className="text-xs md:text-sm text-muted-foreground">
+              Daftar pemetaan CPL ke Mata Kuliah yang tersedia
+            </CardDescription>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            {renderSemesterFilter()}
+            {canEdit && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDialogOpen(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Tambah Mapping
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>

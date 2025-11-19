@@ -191,92 +191,97 @@ const MataKuliahPage = () => {
     <DashboardPage
       title="Data Mata Kuliah"
       description="Kelola mata kuliah program studi"
-      actions={
-        canEdit ? (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => { resetForm(); setDialogOpen(true); }}>
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah Mata Kuliah
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingMK ? "Edit Mata Kuliah" : "Tambah Mata Kuliah Baru"}</DialogTitle>
-                <DialogDescription>
-                  Isi form untuk {editingMK ? "mengupdate" : "menambahkan"} data mata kuliah
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="kodeMk">Kode MK</Label>
-                  <Input
-                    id="kodeMk"
-                    placeholder="Contoh: IF-101"
-                    value={formData.kodeMk}
-                    onChange={(e) => setFormData({ ...formData, kodeMk: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="namaMk">Nama Mata Kuliah</Label>
-                  <Input
-                    id="namaMk"
-                    placeholder="Nama mata kuliah"
-                    value={formData.namaMk}
-                    onChange={(e) => setFormData({ ...formData, namaMk: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sks">SKS</Label>
-                    <Input
-                      id="sks"
-                      type="number"
-                      min="1"
-                      max="6"
-                      value={formData.sks}
-                      onChange={(e) => setFormData({ ...formData, sks: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="semester">Semester</Label>
-                    <Input
-                      id="semester"
-                      type="number"
-                      min="1"
-                      max="8"
-                      value={formData.semester}
-                      onChange={(e) => setFormData({ ...formData, semester: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button type="submit" className="flex-1" disabled={submitting}>
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {editingMK ? "Memperbarui..." : "Menyimpan..."}
-                      </>
-                    ) : editingMK ? "Update" : "Simpan"}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    Batal
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        ) : null
-      }
     >
       <Card>
-        <CardHeader>
-          <CardTitle>Daftar Mata Kuliah</CardTitle>
-          <CardDescription>Total: {mkList.length} mata kuliah</CardDescription>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-base md:text-lg">Daftar Mata Kuliah</CardTitle>
+            <CardDescription className="text-xs md:text-sm text-muted-foreground">
+              Total: {mkList.length} mata kuliah
+            </CardDescription>
+          </div>
+          {canEdit && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  size="sm"
+                  onClick={() => { resetForm(); setDialogOpen(true); }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tambah Mata Kuliah
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingMK ? "Edit Mata Kuliah" : "Tambah Mata Kuliah Baru"}</DialogTitle>
+                  <DialogDescription>
+                    Isi form untuk {editingMK ? "mengupdate" : "menambahkan"} data mata kuliah
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="kodeMk">Kode MK</Label>
+                    <Input
+                      id="kodeMk"
+                      placeholder="Contoh: IF-101"
+                      value={formData.kodeMk}
+                      onChange={(e) => setFormData({ ...formData, kodeMk: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="namaMk">Nama Mata Kuliah</Label>
+                    <Input
+                      id="namaMk"
+                      placeholder="Nama mata kuliah"
+                      value={formData.namaMk}
+                      onChange={(e) => setFormData({ ...formData, namaMk: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="sks">SKS</Label>
+                      <Input
+                        id="sks"
+                        type="number"
+                        min="1"
+                        max="6"
+                        value={formData.sks}
+                        onChange={(e) => setFormData({ ...formData, sks: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="semester">Semester</Label>
+                      <Input
+                        id="semester"
+                        type="number"
+                        min="1"
+                        max="8"
+                        value={formData.semester}
+                        onChange={(e) => setFormData({ ...formData, semester: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit" className="flex-1" disabled={submitting}>
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {editingMK ? "Memperbarui..." : "Menyimpan..."}
+                        </>
+                      ) : editingMK ? "Update" : "Simpan"}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                      Batal
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </CardHeader>
         <CardContent>
           <Table>

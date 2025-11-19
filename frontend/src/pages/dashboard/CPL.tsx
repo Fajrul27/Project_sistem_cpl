@@ -219,93 +219,98 @@ const CPLPage = () => {
     <DashboardPage
       title="Data CPL"
       description="Kelola Capaian Pembelajaran Lulusan"
-      actions={
-        canEdit ? (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => { resetForm(); setDialogOpen(true); }}>
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah CPL
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingCPL ? "Edit CPL" : "Tambah CPL Baru"}</DialogTitle>
-                <DialogDescription>
-                  Isi form untuk {editingCPL ? "mengupdate" : "menambahkan"} data CPL
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="kodeCpl">Kode CPL</Label>
-                  <Input
-                    id="kodeCpl"
-                    placeholder="Contoh: CPL-01"
-                    value={formData.kodeCpl}
-                    onChange={(e) => setFormData({ ...formData, kodeCpl: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="deskripsi">Deskripsi</Label>
-                  <Input
-                    id="deskripsi"
-                    placeholder="Deskripsi CPL"
-                    value={formData.deskripsi}
-                    onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="kategori">Kategori</Label>
-                  <Input
-                    id="kategori"
-                    placeholder="Contoh: Sikap, Pengetahuan, Keterampilan"
-                    value={formData.kategori}
-                    onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bobot">Bobot</Label>
-                  <Input
-                    id="bobot"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    placeholder="1.0"
-                    value={formData.bobot}
-                    onChange={(e) => setFormData({ ...formData, bobot: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    type="submit" 
-                    className="flex-1"
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {editingCPL ? "Memperbarui..." : "Menyimpan..."}
-                      </>
-                    ) : editingCPL ? "Update" : "Simpan"}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    Batal
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        ) : null
-      }
     >
       <Card>
-        <CardHeader>
-          <CardTitle>Daftar CPL</CardTitle>
-          <CardDescription>Total: {cplList.length} CPL</CardDescription>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-base md:text-lg">Daftar CPL</CardTitle>
+            <CardDescription className="text-xs md:text-sm text-muted-foreground">
+              Total: {cplList.length} CPL
+            </CardDescription>
+          </div>
+          {canEdit && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  size="sm"
+                  onClick={() => { resetForm(); setDialogOpen(true); }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tambah CPL
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{editingCPL ? "Edit CPL" : "Tambah CPL Baru"}</DialogTitle>
+                  <DialogDescription>
+                    Isi form untuk {editingCPL ? "mengupdate" : "menambahkan"} data CPL
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="kodeCpl">Kode CPL</Label>
+                    <Input
+                      id="kodeCpl"
+                      placeholder="Contoh: CPL-01"
+                      value={formData.kodeCpl}
+                      onChange={(e) => setFormData({ ...formData, kodeCpl: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="deskripsi">Deskripsi</Label>
+                    <Input
+                      id="deskripsi"
+                      placeholder="Deskripsi CPL"
+                      value={formData.deskripsi}
+                      onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="kategori">Kategori</Label>
+                    <Input
+                      id="kategori"
+                      placeholder="Contoh: Sikap, Pengetahuan, Keterampilan"
+                      value={formData.kategori}
+                      onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bobot">Bobot</Label>
+                    <Input
+                      id="bobot"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      placeholder="1.0"
+                      value={formData.bobot}
+                      onChange={(e) => setFormData({ ...formData, bobot: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      type="submit" 
+                      className="flex-1"
+                      disabled={submitting}
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {editingCPL ? "Memperbarui..." : "Menyimpan..."}
+                        </>
+                      ) : editingCPL ? "Update" : "Simpan"}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                      Batal
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </CardHeader>
         <CardContent>
           <Table>
