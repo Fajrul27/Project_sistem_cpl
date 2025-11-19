@@ -7,7 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Eye, Loader2 } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Plus, Edit, Trash2, Eye, Loader2, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/DashboardLayout";
@@ -48,6 +50,9 @@ const CPLPage = () => {
     kategori: "",
     bobot: "1.0",
   });
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [kategoriFilter, setKategoriFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchCPL();
@@ -204,6 +209,25 @@ const CPLPage = () => {
 
   const canEdit = role === "admin" || role === "dosen";
 
+  const kategoriOptions = Array.from(
+    new Set(cplList.map((cpl) => cpl.kategori).filter((k) => k && k.trim() !== ""))
+  );
+
+  const filteredCPLs = cplList.filter((cpl) => {
+    const q = searchTerm.toLowerCase();
+    const matchSearch =
+      cpl.kodeCpl.toLowerCase().includes(q) ||
+      cpl.deskripsi.toLowerCase().includes(q) ||
+      (cpl.kategori || "").toLowerCase().includes(q);
+
+    const matchKategori =
+      kategoriFilter === "all" || cpl.kategori === kategoriFilter;
+
+    return matchSearch && matchKategori;
+  });
+
+  const hasActiveFilter = kategoriFilter !== "all";
+
   if (loading) {
     return (
       <DashboardPage title="Data CPL">
@@ -220,150 +244,214 @@ const CPLPage = () => {
       title="Data CPL"
       description="Kelola Capaian Pembelajaran Lulusan"
     >
-      <Card>
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-base md:text-lg">Daftar CPL</CardTitle>
-            <CardDescription className="text-xs md:text-sm text-muted-foreground">
-              Total: {cplList.length} CPL
-            </CardDescription>
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Cari kode, deskripsi, atau kategori CPL..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
           </div>
-          {canEdit && (
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  size="sm"
-                  onClick={() => { resetForm(); setDialogOpen(true); }}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={hasActiveFilter ? "default" : "outline"}
+                size="sm"
+                className="gap-2"
+                disabled={kategoriOptions.length === 0}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span className="hidden sm:inline">Filter</span>
+                <span className="sm:hidden">Filter</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64 space-y-4">
+              <div className="space-y-1">
+                <Label className="text-xs font-medium">Kategori</Label>
+                <Select
+                  value={kategoriFilter}
+                  onValueChange={(value) => setKategoriFilter(value)}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Tambah CPL
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue placeholder="Semua kategori" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua kategori</SelectItem>
+                    {kategoriOptions.map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {k}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-between pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setKategoriFilter("all")}
+                  disabled={!hasActiveFilter}
+                >
+                  Reset
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{editingCPL ? "Edit CPL" : "Tambah CPL Baru"}</DialogTitle>
-                  <DialogDescription>
-                    Isi form untuk {editingCPL ? "mengupdate" : "menambahkan"} data CPL
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="kodeCpl">Kode CPL</Label>
-                    <Input
-                      id="kodeCpl"
-                      placeholder="Contoh: CPL-01"
-                      value={formData.kodeCpl}
-                      onChange={(e) => setFormData({ ...formData, kodeCpl: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="deskripsi">Deskripsi</Label>
-                    <Input
-                      id="deskripsi"
-                      placeholder="Deskripsi CPL"
-                      value={formData.deskripsi}
-                      onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="kategori">Kategori</Label>
-                    <Input
-                      id="kategori"
-                      placeholder="Contoh: Sikap, Pengetahuan, Keterampilan"
-                      value={formData.kategori}
-                      onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bobot">Bobot</Label>
-                    <Input
-                      id="bobot"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      placeholder="1.0"
-                      value={formData.bobot}
-                      onChange={(e) => setFormData({ ...formData, bobot: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      type="submit" 
-                      className="flex-1"
-                      disabled={submitting}
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {editingCPL ? "Memperbarui..." : "Menyimpan..."}
-                        </>
-                      ) : editingCPL ? "Update" : "Simpan"}
-                    </Button>
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                      Batal
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          )}
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Kode CPL</TableHead>
-                <TableHead>Deskripsi</TableHead>
-                <TableHead>Kategori</TableHead>
-                <TableHead>Bobot</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {cplList.map((cpl) => (
-                <TableRow key={cpl.id}>
-                  <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
-                  <TableCell>{cpl.deskripsi}</TableCell>
-                  <TableCell>{cpl.kategori}</TableCell>
-                  <TableCell>{cpl.bobot}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      {canEdit && (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => handleEdit(cpl)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive" 
-                            onClick={(e) => handleDeleteClick(cpl.id, e)}
-                            disabled={deletingId === cpl.id}
-                          >
-                            {deletingId === cpl.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </>
-                      )}
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button variant="outline" onClick={fetchCPL}>
+            Muat Ulang
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-base md:text-lg">Daftar CPL</CardTitle>
+              <CardDescription className="text-xs md:text-sm text-muted-foreground">
+                Menampilkan <span className="font-medium">{filteredCPLs.length}</span> dari {" "}
+                <span className="font-medium">{cplList.length}</span> CPL
+              </CardDescription>
+            </div>
+            {canEdit && (
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    onClick={() => { resetForm(); setDialogOpen(true); }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Tambah CPL
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingCPL ? "Edit CPL" : "Tambah CPL Baru"}</DialogTitle>
+                    <DialogDescription>
+                      Isi form untuk {editingCPL ? "mengupdate" : "menambahkan"} data CPL
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="kodeCpl">Kode CPL</Label>
+                      <Input
+                        id="kodeCpl"
+                        placeholder="Contoh: CPL-01"
+                        value={formData.kodeCpl}
+                        onChange={(e) => setFormData({ ...formData, kodeCpl: e.target.value })}
+                        required
+                      />
                     </div>
-                  </TableCell>
+                    <div className="space-y-2">
+                      <Label htmlFor="deskripsi">Deskripsi</Label>
+                      <Input
+                        id="deskripsi"
+                        placeholder="Deskripsi CPL"
+                        value={formData.deskripsi}
+                        onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="kategori">Kategori</Label>
+                      <Input
+                        id="kategori"
+                        placeholder="Contoh: Sikap, Pengetahuan, Keterampilan"
+                        value={formData.kategori}
+                        onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bobot">Bobot</Label>
+                      <Input
+                        id="bobot"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        placeholder="1.0"
+                        value={formData.bobot}
+                        onChange={(e) => setFormData({ ...formData, bobot: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        type="submit" 
+                        className="flex-1"
+                        disabled={submitting}
+                      >
+                        {submitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {editingCPL ? "Memperbarui..." : "Menyimpan..."}
+                          </>
+                        ) : editingCPL ? "Update" : "Simpan"}
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                        Batal
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Kode CPL</TableHead>
+                  <TableHead>Deskripsi</TableHead>
+                  <TableHead>Kategori</TableHead>
+                  <TableHead>Bobot</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {filteredCPLs.map((cpl) => (
+                  <TableRow key={cpl.id}>
+                    <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
+                    <TableCell>{cpl.deskripsi}</TableCell>
+                    <TableCell>{cpl.kategori}</TableCell>
+                    <TableCell>{cpl.bobot}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="ghost" onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {canEdit && (
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => handleEdit(cpl)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive" 
+                              onClick={(e) => handleDeleteClick(cpl.id, e)}
+                              disabled={deletingId === cpl.id}
+                            >
+                              {deletingId === cpl.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </DashboardPage>
   );
-};
+}
 
 export default CPLPage;

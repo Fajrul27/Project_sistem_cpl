@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Save, Plus, Trash2, Filter, Loader2 } from "lucide-react";
+import { Save, Plus, Trash2, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDashboardLayoutContext } from "@/components/DashboardLayout";
@@ -51,6 +51,7 @@ const CPLMappingPage = () => {
   const [bobot, setBobot] = useState<{ [key: string]: number }>({});
   const [filterSemester, setFilterSemester] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Atur metadata halaman (hanya title & description, tanpa tombol di navbar)
   useEffect(() => {
@@ -246,7 +247,7 @@ const CPLMappingPage = () => {
       <select
         value={filterSemester || ''}
         onChange={(e) => setFilterSemester(e.target.value ? parseInt(e.target.value) : null)}
-        className="px-2 py-1 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+        className="h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
       >
         <option value="">Semua Semester</option>
         {semesters.map(sem => (
@@ -258,9 +259,17 @@ const CPLMappingPage = () => {
     );
   };
 
-  const filteredMK = filterSemester !== null
-    ? mkList.filter((mk) => mk.semester === filterSemester)
-    : mkList;
+  const filteredMK = mkList.filter((mk) => {
+    const matchSemester =
+      filterSemester !== null ? mk.semester === filterSemester : true;
+
+    const q = searchTerm.toLowerCase();
+    const matchSearch =
+      mk.kodeMk.toLowerCase().includes(q) ||
+      mk.namaMk.toLowerCase().includes(q);
+
+    return matchSemester && matchSearch;
+  });
 
   if (loading) {
     return (
@@ -365,6 +374,24 @@ const CPLMappingPage = () => {
         </DialogContent>
       </Dialog>
 
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Cari kode atau nama mata kuliah..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {renderSemesterFilter()}
+          <Button variant="outline" onClick={fetchData}>
+            Muat Ulang
+          </Button>
+        </div>
+      </div>
+
       {/* Tabel mapping */}
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -375,11 +402,10 @@ const CPLMappingPage = () => {
             </CardDescription>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-            {renderSemesterFilter()}
             {canEdit && (
               <Button
                 size="sm"
-                variant="outline"
+                variant="default"
                 onClick={() => setDialogOpen(true)}
               >
                 <Plus className="mr-2 h-4 w-4" />

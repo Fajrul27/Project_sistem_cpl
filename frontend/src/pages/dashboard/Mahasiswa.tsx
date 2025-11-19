@@ -7,8 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Search, Eye, TrendingUp } from "lucide-react";
+import { Search, Eye, TrendingUp, SlidersHorizontal } from "lucide-react";
 import { DashboardPage } from "@/components/DashboardLayout";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
@@ -31,6 +34,8 @@ const MahasiswaPage = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [semesterFilter, setSemesterFilter] = useState<string>("all");
+  const [prodiFilter, setProdiFilter] = useState<string>("all");
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
   const [studentProgress, setStudentProgress] = useState<StudentProgress | null>(null);
   const [progressLoading, setProgressLoading] = useState(false);
@@ -133,12 +138,32 @@ const MahasiswaPage = () => {
     await fetchStudentProgress(student.id);
   };
 
-  const filteredProfiles = profiles.filter(
-    (profile) =>
-      profile.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      profile.nim?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      profile.prodi?.toLowerCase().includes(searchTerm.toLowerCase())
+  const semesterOptions = Array.from(
+    new Set(profiles.map((p) => p.semester).filter((s) => s !== null && s !== undefined))
+  ).sort((a, b) => Number(a) - Number(b));
+
+  const prodiOptions = Array.from(
+    new Set(profiles.map((p) => p.prodi).filter((p): p is string => !!p && p.trim() !== ""))
   );
+
+  const filteredProfiles = profiles.filter((profile) => {
+    const q = searchTerm.toLowerCase();
+    const matchSearch =
+      profile.full_name.toLowerCase().includes(q) ||
+      (profile.nim || "").toLowerCase().includes(q) ||
+      (profile.prodi || "").toLowerCase().includes(q);
+
+    const matchSemester =
+      semesterFilter === "all" ||
+      (profile.semester !== null && profile.semester !== undefined && String(profile.semester) === semesterFilter);
+
+    const matchProdi =
+      prodiFilter === "all" || profile.prodi === prodiFilter;
+
+    return matchSearch && matchSemester && matchProdi;
+  });
+
+  const hasActiveFilter = semesterFilter !== "all" || prodiFilter !== "all";
 
   if (loading) {
     return (
@@ -156,7 +181,7 @@ const MahasiswaPage = () => {
       description="Daftar mahasiswa terdaftar dengan progress CPL"
     >
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -166,6 +191,78 @@ const MahasiswaPage = () => {
               className="pl-9"
             />
           </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={hasActiveFilter ? "default" : "outline"}
+                size="sm"
+                className="gap-2"
+                disabled={semesterOptions.length === 0 && prodiOptions.length === 0}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span className="hidden sm:inline">Filter</span>
+                <span className="sm:hidden">Filter</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 space-y-4">
+              <div className="space-y-1">
+                <Label className="text-xs font-medium">Semester</Label>
+                <Select
+                  value={semesterFilter}
+                  onValueChange={(value) => setSemesterFilter(value)}
+                >
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue placeholder="Semua semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua semester</SelectItem>
+                    {semesterOptions.map((s) => (
+                      <SelectItem key={String(s)} value={String(s)}>
+                        Semester {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium">Program Studi</Label>
+                <Select
+                  value={prodiFilter}
+                  onValueChange={(value) => setProdiFilter(value)}
+                  disabled={prodiOptions.length === 0}
+                >
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue placeholder="Semua prodi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua prodi</SelectItem>
+                    {prodiOptions.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-between pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSemesterFilter("all");
+                    setProdiFilter("all");
+                  }}
+                  disabled={!hasActiveFilter}
+                >
+                  Reset
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button variant="outline" onClick={fetchProfiles}>
+            Muat Ulang
+          </Button>
         </div>
 
         <Card>
