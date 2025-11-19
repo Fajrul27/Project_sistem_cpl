@@ -1,0 +1,49 @@
+# Node modules
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Cache
+.cache/
+.vite/
+.next/cache/
+coverage/
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+.idea/
+.qodo
+
+# Local backups
+*.bak
+*.tmp
+
+# Lock files (optional, jika sering konflik)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+

@@ -62,10 +62,10 @@ const Auth = () => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      toast.success("✅ Login berhasil!");
+      toast.success("Login berhasil!");
       navigate("/dashboard");
     } catch (error: any) {
-      toast.error("❌ " + error.message);
+      toast.error(error.message);
       console.error('Login error:', error);
     } finally {
       setLoading(false);
