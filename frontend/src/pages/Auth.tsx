@@ -105,12 +105,12 @@ const Auth = () => {
         throw new Error(message);
       }
 
-      toast.success("✅ Akun berhasil dibuat! Silakan login.");
+      toast.success("Akun berhasil dibuat! Silakan login.");
       setEmail("");
       setPassword("");
       setFullName("");
     } catch (error: any) {
-      toast.error("❌ " + error.message);
+      toast.error(+error.message);
       console.error('Signup error:', error);
     } finally {
       setLoading(false);
