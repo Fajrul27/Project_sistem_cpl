@@ -207,6 +207,14 @@ const CPLPage = () => {
     setDeleteDialogOpen(true);
   };
 
+  const handleDeskripsiChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData({ ...formData, deskripsi: e.target.value });
+    
+    // Auto-expand textarea
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+  };
+
   const canEdit = role === "admin" || role === "dosen";
 
   const kategoriOptions = Array.from(
@@ -346,12 +354,14 @@ const CPLPage = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="deskripsi">Deskripsi</Label>
-                      <Input
+                      <textarea
                         id="deskripsi"
                         placeholder="Deskripsi CPL"
                         value={formData.deskripsi}
-                        onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                        onChange={handleDeskripsiChange}
                         required
+                        className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none transition-all duration-200"
+                        rows={3}
                       />
                     </div>
                     <div className="space-y-2">
@@ -418,20 +428,32 @@ const CPLPage = () => {
                     <TableCell>{cpl.kategori}</TableCell>
                     <TableCell>{cpl.bobot}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="ghost" onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}>
+                      <div className="flex justify-end gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}
+                          title="Lihat detail"
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                         {canEdit && (
                           <>
-                            <Button size="sm" variant="outline" onClick={() => handleEdit(cpl)}>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleEdit(cpl)}
+                              title="Edit CPL"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button 
                               size="sm" 
-                              variant="destructive" 
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
                               onClick={(e) => handleDeleteClick(cpl.id, e)}
                               disabled={deletingId === cpl.id}
+                              title="Hapus CPL"
                             >
                               {deletingId === cpl.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />

@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Save, Plus, Trash2, Loader2, Search } from "lucide-react";
+import { Save, Plus, Trash2, Loader2, Search, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDashboardLayoutContext } from "@/components/DashboardLayout";
@@ -425,48 +425,51 @@ const CPLMappingPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableCell>Mata Kuliah</TableCell>
-                  <TableCell>CPL</TableCell>
-                  <TableCell>Bobot</TableCell>
-                  {canEdit && <TableCell>Aksi</TableCell>}
+                  <TableHead>Mata Kuliah</TableHead>
+                  <TableHead>CPL</TableHead>
+                  <TableHead>Bobot</TableHead>
+                  {canEdit && <TableHead className="text-right w-28">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredMK.map((mk) => (
-                  <TableRow key={mk.id}>
-                    <TableCell>
+                  <TableRow key={mk.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">
                       {mk.kodeMk} - {mk.namaMk} (Sem {mk.semester})
                     </TableCell>
                     <TableCell>
-                      {mappings
-                        .filter(m => m.mataKuliahId === mk.id)
-                        .map(m => {
-                          const cpl = cplList.find(c => c.id === m.cplId);
-                          return cpl ? (
-                            <div key={m.cplId} className="mb-1">
-                              {cpl.kodeCpl}
-                            </div>
-                          ) : null;
-                        })}
+                      <div className="space-y-1">
+                        {mappings
+                          .filter(m => m.mataKuliahId === mk.id)
+                          .map(m => {
+                            const cpl = cplList.find(c => c.id === m.cplId);
+                            return cpl ? (
+                              <div key={m.cplId} className="text-sm">
+                                {cpl.kodeCpl}
+                              </div>
+                            ) : null;
+                          })}
+                      </div>
                     </TableCell>
                     <TableCell>
-                      {mappings
-                        .filter(m => m.mataKuliahId === mk.id)
-                        .map(m => (
-                          <div key={m.cplId} className="mb-1">
-                            {Number(m.bobotKontribusi ?? 0).toFixed(2)}
-                          </div>
-                        ))}
+                      <div className="space-y-1">
+                        {mappings
+                          .filter(m => m.mataKuliahId === mk.id)
+                          .map(m => (
+                            <div key={m.cplId} className="text-sm">
+                              {Number(m.bobotKontribusi ?? 0).toFixed(2)}
+                            </div>
+                          ))}
+                      </div>
                     </TableCell>
                     {canEdit && (
-                      <TableCell>
-                        <div className="flex gap-2">
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => {
                               setSelectedMK(mk.id);
-                              // Set selected CPLs and their weights
                               const mkMappings = mappings.filter(m => m.mataKuliahId === mk.id);
                               const newSelectedCPLs = new Set(mkMappings.map(m => m.cplId));
                               const newBobot = mkMappings.reduce((acc: {[key: string]: number}, curr) => ({
@@ -478,16 +481,23 @@ const CPLMappingPage = () => {
                               setBobot(newBobot);
                               setDialogOpen(true);
                             }}
+                            title="Edit mapping"
                           >
-                            Edit
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button
-                            variant="destructive"
+                            variant="ghost"
                             size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={() => handleDeleteMKMappings(mk.id)}
                             disabled={isDeleting}
+                            title="Hapus mapping"
                           >
-                            Hapus
+                            {isDeleting ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                       </TableCell>
