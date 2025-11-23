@@ -1,0 +1,320 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "sonner";
+import { Loader2, Save, FileText, AlertCircle } from "lucide-react";
+import { DashboardPage } from "@/components/DashboardLayout";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+interface Student {
+    id: string;
+    email: string;
+    profile?: {
+        namaLengkap: string;
+        nim: string;
+    };
+}
+
+interface TeknikPenilaian {
+    id: string;
+    namaTeknik: string;
+    bobotPersentase: number;
+}
+
+interface CPMK {
+    id: string;
+    kodeCpmk: string;
+    teknikPenilaian: TeknikPenilaian[];
+}
+
+interface MataKuliah {
+    id: string;
+    kodeMk: string;
+    namaMk: string;
+    semester: number;
+}
+
+const InputNilaiTeknikPage = () => {
+    const [mkList, setMkList] = useState<MataKuliah[]>([]);
+    const [students, setStudents] = useState<Student[]>([]);
+    const [cpmkList, setCpmkList] = useState<CPMK[]>([]);
+
+    const [selectedMK, setSelectedMK] = useState<string>("");
+    const [semester, setSemester] = useState<string>("1");
+    const [tahunAjaran, setTahunAjaran] = useState<string>(
+        `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`
+    );
+
+    const [grades, setGrades] = useState<Record<string, number>>({}); // key: studentId_teknikId
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        fetchInitialData();
+    }, []);
+
+    useEffect(() => {
+        if (selectedMK) {
+            fetchMKData(selectedMK);
+        }
+    }, [selectedMK]);
+
+    const fetchInitialData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const [mkRes, studentRes] = await Promise.all([
+                fetch(`${API_URL}/mata-kuliah`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`${API_URL}/users?role=mahasiswa`, { headers: { 'Authorization': `Bearer ${token}` } })
+            ]);
+
+            const mkData = await mkRes.json();
+            const studentData = await studentRes.json();
+
+            setMkList(mkData.data || []);
+            setStudents(studentData.data || []);
+        } catch (error) {
+            console.error('Error fetching initial data:', error);
+            toast.error('Gagal memuat data awal');
+        }
+    };
+
+    const fetchMKData = async (mkId: string) => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+
+            // Fetch CPMK & Teknik Penilaian
+            const cpmkRes = await fetch(`${API_URL}/cpmk/mata-kuliah/${mkId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const cpmkData = await cpmkRes.json();
+            setCpmkList(cpmkData.data || []);
+
+            // Fetch existing grades (optional, for now just blank or we could implement fetch)
+            // For V1 let's assume blank or we can fetch if needed. 
+            // Ideally we should fetch existing grades to populate the inputs.
+            // Let's try to fetch existing grades for this MK/Sem/TA
+            // But we don't have a bulk fetch endpoint for that yet easily accessible without looping.
+            // We'll skip pre-filling for this iteration or add it later if requested.
+
+        } catch (error) {
+            console.error('Error fetching MK data:', error);
+            toast.error('Gagal memuat data mata kuliah');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGradeChange = (studentId: string, teknikId: string, value: string) => {
+        const numValue = parseFloat(value);
+        if (value === '') {
+            const newGrades = { ...grades };
+            delete newGrades[`${studentId}_${teknikId}`];
+            setGrades(newGrades);
+            return;
+        }
+
+        if (isNaN(numValue) || numValue < 0 || numValue > 100) return;
+
+        setGrades(prev => ({
+            ...prev,
+            [`${studentId}_${teknikId}`]: numValue
+        }));
+    };
+
+    const handleSave = async () => {
+        if (!selectedMK) return;
+        setSaving(true);
+
+        try {
+            const token = localStorage.getItem('token');
+
+            // Convert grades state to array for batch API
+            const entries = Object.entries(grades).map(([key, value]) => {
+                const [mahasiswaId, teknikPenilaianId] = key.split('_');
+                return {
+                    mahasiswaId,
+                    teknikPenilaianId,
+                    mataKuliahId: selectedMK,
+                    nilai: value,
+                    semester: parseInt(semester),
+                    tahunAjaran
+                };
+            });
+
+            if (entries.length === 0) {
+                toast.warning("Belum ada nilai yang diinput");
+                setSaving(false);
+                return;
+            }
+
+            const response = await fetch(`${API_URL}/nilai-teknik/batch`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ entries })
+            });
+
+            if (!response.ok) throw new Error('Gagal menyimpan nilai');
+
+            const result = await response.json();
+            toast.success(`Berhasil menyimpan ${result.data.length} nilai`);
+
+        } catch (error) {
+            console.error('Error saving grades:', error);
+            toast.error('Gagal menyimpan nilai');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <DashboardPage title="Input Nilai Teknik Penilaian" description="Input nilai berdasarkan teknik penilaian (Tugas, Kuis, dll)">
+            <div className="space-y-6">
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Filter Data</CardTitle>
+                        <CardDescription>Pilih Mata Kuliah dan Periode Akademik</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <Label>Mata Kuliah</Label>
+                            <Select value={selectedMK} onValueChange={setSelectedMK}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih Mata Kuliah" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {mkList.map(mk => (
+                                        <SelectItem key={mk.id} value={mk.id}>{mk.kodeMk} - {mk.namaMk}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Semester</Label>
+                            <Select value={semester} onValueChange={setSemester}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                                        <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Tahun Ajaran</Label>
+                            <Input
+                                value={tahunAjaran}
+                                onChange={e => setTahunAjaran(e.target.value)}
+                                placeholder="2024/2025"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {selectedMK && (
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Form Input Nilai</CardTitle>
+                                <CardDescription>Masukkan nilai untuk setiap mahasiswa per teknik penilaian</CardDescription>
+                            </div>
+                            <Button onClick={handleSave} disabled={saving}>
+                                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                Simpan Nilai
+                            </Button>
+                        </CardHeader>
+                        <CardContent className="overflow-x-auto">
+                            {loading ? (
+                                <div className="flex justify-center py-8">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                </div>
+                            ) : cpmkList.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    Belum ada CPMK atau Teknik Penilaian untuk mata kuliah ini.
+                                </div>
+                            ) : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead rowSpan={2} className="w-[200px]">Mahasiswa</TableHead>
+                                            {cpmkList.map(cpmk => (
+                                                <TableHead
+                                                    key={cpmk.id}
+                                                    colSpan={cpmk.teknikPenilaian.length}
+                                                    className="text-center border-l border-r bg-muted/50"
+                                                >
+                                                    {cpmk.kodeCpmk}
+                                                </TableHead>
+                                            ))}
+                                        </TableRow>
+                                        <TableRow>
+                                            {cpmkList.map(cpmk =>
+                                                cpmk.teknikPenilaian.length > 0 ? (
+                                                    cpmk.teknikPenilaian.map(teknik => (
+                                                        <TableHead key={teknik.id} className="text-center min-w-[100px] border-l border-r text-xs">
+                                                            {teknik.namaTeknik} <br />
+                                                            <span className="text-muted-foreground">({teknik.bobotPersentase}%)</span>
+                                                        </TableHead>
+                                                    ))
+                                                ) : (
+                                                    <TableHead key={`empty-${cpmk.id}`} className="text-center text-xs italic text-muted-foreground">
+                                                        No Teknik
+                                                    </TableHead>
+                                                )
+                                            )}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {students.map(student => (
+                                            <TableRow key={student.id}>
+                                                <TableCell className="font-medium">
+                                                    <div className="text-sm">{student.profile?.namaLengkap || student.email}</div>
+                                                    <div className="text-xs text-muted-foreground">{student.profile?.nim}</div>
+                                                </TableCell>
+                                                {cpmkList.map(cpmk =>
+                                                    cpmk.teknikPenilaian.length > 0 ? (
+                                                        cpmk.teknikPenilaian.map(teknik => (
+                                                            <TableCell key={`${student.id}-${teknik.id}`} className="border-l border-r p-2">
+                                                                <Input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max="100"
+                                                                    className="h-8 text-center"
+                                                                    placeholder="0"
+                                                                    value={grades[`${student.id}_${teknik.id}`] ?? ""}
+                                                                    onChange={e => handleGradeChange(student.id, teknik.id, e.target.value)}
+                                                                />
+                                                            </TableCell>
+                                                        ))
+                                                    ) : (
+                                                        <TableCell key={`empty-cell-${cpmk.id}`} className="bg-muted/20" />
+                                                    )
+                                                )}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+        </DashboardPage>
+    );
+};
+
+export default InputNilaiTeknikPage;
