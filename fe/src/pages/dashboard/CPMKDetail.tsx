@@ -462,20 +462,22 @@ const CPMKDetailPage = () => {
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="bobotMapping">Bobot Persentase (%)</Label>
+                                            <Label htmlFor="bobotMapping">Kontribusi CPMK ini ke CPL (%)</Label>
                                             <Input
                                                 id="bobotMapping"
                                                 type="number"
                                                 step="0.01"
                                                 min="0"
                                                 max="100"
-                                                placeholder="0-100"
+                                                placeholder="Contoh: 25"
                                                 value={mappingForm.bobotPersentase}
                                                 onChange={(e) => setMappingForm({ ...mappingForm, bobotPersentase: e.target.value })}
                                                 required
                                             />
                                             <p className="text-xs text-muted-foreground">
-                                                Bobot saat ini: {totalBobotMapping.toFixed(2)}%
+                                                Seberapa besar peran CPMK ini dalam membentuk nilai CPL yang dipilih?
+                                                <br />
+                                                Total kontribusi dari semua CPMK untuk CPL ini akan dinormalisasi.
                                             </p>
                                         </div>
                                         <div className="flex gap-2">
@@ -494,12 +496,12 @@ const CPMKDetailPage = () => {
                     </CardHeader>
                     <CardContent>
                         {totalBobotMapping !== 100 && totalBobotMapping > 0 && (
-                            <Alert variant="destructive" className="mb-4">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertTitle>Perhatian!</AlertTitle>
-                                <AlertDescription>
-                                    Total bobot mapping {totalBobotMapping < 100 ? "kurang dari" : "melebihi"} 100%.
-                                    Total bobot harus tepat 100%.
+                            <Alert className="mb-4 bg-blue-50 border-blue-200">
+                                <AlertCircle className="h-4 w-4 text-blue-600" />
+                                <AlertTitle className="text-blue-800">Informasi Normalisasi</AlertTitle>
+                                <AlertDescription className="text-blue-700">
+                                    Total bobot saat ini {totalBobotMapping.toFixed(2)}%.
+                                    Sistem akan otomatis menormalisasi bobot ini ke skala 100% saat perhitungan nilai.
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -631,12 +633,12 @@ const CPMKDetailPage = () => {
                     </CardHeader>
                     <CardContent>
                         {totalBobotTeknik !== 100 && totalBobotTeknik > 0 && (
-                            <Alert variant="destructive" className="mb-4">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertTitle>Perhatian!</AlertTitle>
-                                <AlertDescription>
-                                    Total bobot teknik penilaian {totalBobotTeknik < 100 ? "kurang dari" : "melebihi"} 100%.
-                                    Total bobot harus tepat 100%.
+                            <Alert className="mb-4 bg-blue-50 border-blue-200">
+                                <AlertCircle className="h-4 w-4 text-blue-600" />
+                                <AlertTitle className="text-blue-800">Informasi Normalisasi</AlertTitle>
+                                <AlertDescription className="text-blue-700">
+                                    Total bobot saat ini {totalBobotTeknik.toFixed(2)}%.
+                                    Sistem akan otomatis menormalisasi bobot ini ke skala 100% saat perhitungan nilai.
                                 </AlertDescription>
                             </Alert>
                         )}

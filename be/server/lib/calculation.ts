@@ -50,8 +50,14 @@ export async function calculateNilaiCpmk(
             return;
         }
 
-        // Calculate weighted average: Σ(nilai × bobot) / 100
-        const totalWeighted = validNilai.reduce((sum, n) => sum + (n.nilai * n.bobot / 100), 0);
+        // Calculate Total Bobot for normalization
+        const totalBobot = validNilai.reduce((sum, n) => sum + n.bobot, 0);
+
+        // Calculate weighted average: Σ(nilai × bobot) / Σ(bobot)
+        // If totalBobot is 0, avoid division by zero
+        const totalWeighted = totalBobot > 0
+            ? validNilai.reduce((sum, n) => sum + (n.nilai * n.bobot), 0) / totalBobot
+            : 0;
 
         // Upsert NilaiCpmk
         await prisma.nilaiCpmk.upsert({
@@ -130,8 +136,14 @@ export async function calculateNilaiCplFromCpmk(
 
         // Calculate and upsert nilai CPL for each CPL
         for (const [cplId, nilaiArray] of cplNilaiMap.entries()) {
-            // Calculate: Σ(nilai CPMK × bobot mapping) / 100
-            const totalWeighted = nilaiArray.reduce((sum, n) => sum + (n.nilai * n.bobot / 100), 0);
+            // Calculate Total Bobot for normalization
+            const totalBobot = nilaiArray.reduce((sum, n) => sum + n.bobot, 0);
+
+            // Calculate Weighted Average: Σ(nilai CPMK × bobot) / Σ(bobot)
+            // If totalBobot is 0, avoid division by zero
+            const totalWeighted = totalBobot > 0
+                ? nilaiArray.reduce((sum, n) => sum + (n.nilai * n.bobot), 0) / totalBobot
+                : 0;
 
             await prisma.nilaiCpl.upsert({
                 where: {

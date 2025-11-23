@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Loader2, Save, FileText, AlertCircle } from "lucide-react";
+import { Loader2, Save, FileText, AlertCircle, Upload } from "lucide-react";
 import { DashboardPage } from "@/components/DashboardLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -63,7 +63,7 @@ const InputNilaiTeknikPage = () => {
         if (selectedMK) {
             fetchMKData(selectedMK);
         }
-    }, [selectedMK]);
+    }, [selectedMK, semester, tahunAjaran]);
 
     const fetchInitialData = async () => {
         try {
@@ -96,12 +96,21 @@ const InputNilaiTeknikPage = () => {
             const cpmkData = await cpmkRes.json();
             setCpmkList(cpmkData.data || []);
 
-            // Fetch existing grades (optional, for now just blank or we could implement fetch)
-            // For V1 let's assume blank or we can fetch if needed. 
-            // Ideally we should fetch existing grades to populate the inputs.
-            // Let's try to fetch existing grades for this MK/Sem/TA
-            // But we don't have a bulk fetch endpoint for that yet easily accessible without looping.
-            // We'll skip pre-filling for this iteration or add it later if requested.
+            // Fetch existing grades
+            const gradesRes = await fetch(`${API_URL}/nilai-teknik/mata-kuliah/${mkId}?semester=${semester}&tahunAjaran=${tahunAjaran}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (gradesRes.ok) {
+                const gradesData = await gradesRes.json();
+                const existingGrades: Record<string, number> = {};
+
+                gradesData.data.forEach((g: any) => {
+                    existingGrades[`${g.mahasiswaId}_${g.teknikPenilaianId}`] = g.nilai;
+                });
+
+                setGrades(existingGrades);
+            }
 
         } catch (error) {
             console.error('Error fetching MK data:', error);
@@ -176,6 +185,74 @@ const InputNilaiTeknikPage = () => {
         }
     };
 
+    const handleDownloadTemplate = async () => {
+        if (!selectedMK) return;
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/nilai-teknik/template/${selectedMK}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error('Gagal download template');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Template_Nilai_MK.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Download template error:', error);
+            toast.error('Gagal download template');
+        }
+    };
+
+    const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0 || !selectedMK) return;
+
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('mataKuliahId', selectedMK);
+        formData.append('semester', semester);
+        formData.append('tahunAjaran', tahunAjaran);
+
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/nilai-teknik/import`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) throw new Error(result.error || 'Gagal import file');
+
+            toast.success(result.message);
+            if (result.errors) {
+                result.errors.forEach((err: string) => toast.error(err));
+            }
+
+            // Refresh data
+            await fetchMKData(selectedMK);
+
+        } catch (error) {
+            console.error('Import error:', error);
+            toast.error(error instanceof Error ? error.message : 'Gagal import file');
+        } finally {
+            setLoading(false);
+            // Reset file input
+            e.target.value = '';
+        }
+    };
+
+
+
     return (
         <DashboardPage title="Input Nilai Teknik Penilaian" description="Input nilai berdasarkan teknik penilaian (Tugas, Kuis, dll)">
             <div className="space-y-6">
@@ -232,10 +309,29 @@ const InputNilaiTeknikPage = () => {
                                 <CardTitle>Form Input Nilai</CardTitle>
                                 <CardDescription>Masukkan nilai untuk setiap mahasiswa per teknik penilaian</CardDescription>
                             </div>
-                            <Button onClick={handleSave} disabled={saving}>
-                                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Simpan Nilai
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={handleDownloadTemplate} disabled={loading || !selectedMK}>
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    Download Template
+                                </Button>
+                                <div className="relative">
+                                    <input
+                                        type="file"
+                                        accept=".xlsx, .xls"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                        onChange={handleImportExcel}
+                                        disabled={loading || !selectedMK}
+                                    />
+                                    <Button variant="outline" disabled={loading || !selectedMK}>
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        Import Excel
+                                    </Button>
+                                </div>
+                                <Button onClick={handleSave} disabled={saving}>
+                                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    Simpan Nilai
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent className="overflow-x-auto">
                             {loading ? (
