@@ -442,14 +442,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Team
 
-- **Developer**: Fajrul27
+- **Developer**: Fajrul27 & nrmaanrfnd7
 - **Project**: PKL Akademik 2025
 
 ## 📞 Support
 
 Jika ada pertanyaan atau masalah:
 - Create an issue
-- Email: [your-email]
+- Email: ahmadfajrululum927@gmail.com
 
 ## 🙏 Acknowledgments
 
