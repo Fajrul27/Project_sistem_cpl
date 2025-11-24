@@ -1,6 +1,7 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/api-client";
+import { supabase, fetchMahasiswaList } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, BookOpen, Users, BarChart3, LogOut, TrendingUp, Settings, User as UserIcon, ChevronDown, TrendingDown, Award } from "lucide-react";
@@ -90,12 +91,13 @@ const Dashboard = () => {
       }
 
       // Fetch student stats
-      const { data: studentData, error: studentError } = await (supabase
-        .from("profiles")
-        .select("*") as any);
-      if (!studentError && studentData) {
-        const filteredStudents = studentData.filter((student: any) => student.nim !== null && student.nim !== undefined);
-        setStudentStats({ total: filteredStudents.length });
+      try {
+        const studentData = await fetchMahasiswaList();
+        if (studentData && studentData.data) {
+          setStudentStats({ total: studentData.data.length });
+        }
+      } catch (error) {
+        console.error("Error fetching student stats:", error);
       }
 
       // Fetch CPL achievement data for charts
@@ -145,7 +147,7 @@ const Dashboard = () => {
 
         const trendData = Object.values(semesterAvg)
           .map((item: any) => ({
-            semester: `Sem ${item.semester}`,
+            semester: `Sem ${item.semester} `,
             nilai: parseFloat((item.total / item.count).toFixed(2)),
           }))
           .sort((a: any, b: any) => a.semester.localeCompare(b.semester));
@@ -234,7 +236,7 @@ const Dashboard = () => {
     },
     {
       title: "Rata-rata CPL",
-      value: cplStats.avgScore > 0 ? `${cplStats.avgScore}%` : "N/A",
+      value: cplStats.avgScore > 0 ? `${cplStats.avgScore}% ` : "N/A",
       description: "Pencapaian keseluruhan",
       icon: BarChart3,
       gradient: "bg-gradient-secondary",
@@ -246,7 +248,7 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-in fade-in duration-700">
         {stats.map((stat, index) => (
           <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-            <div className={`h-2 ${stat.gradient}`} />
+            <div className={`h - 2 ${stat.gradient} `} />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 group">
               <CardTitle className="text-sm font-medium group-hover:text-primary transition-colors">
                 {stat.title}
@@ -338,13 +340,13 @@ const Dashboard = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percentage }) => `${name}: ${percentage}%`}
+                    label={({ name, percentage }) => `${name}: ${percentage}% `}
                     outerRadius={80}
                     fill="hsl(var(--primary))"
                     dataKey="value"
                   >
                     {distributionData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'][index]} />
+                      <Cell key={`cell - ${index} `} fill={['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'][index]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value) => `${value} nilai`} />
