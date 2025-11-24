@@ -52,7 +52,7 @@ const Dashboard = () => {
       return;
     }
     setUser(session.user);
-    
+
     // Fetch user profile from backend
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -63,7 +63,7 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
-    
+
     setLoading(false);
   };
 
@@ -73,6 +73,14 @@ const Dashboard = () => {
       const { data: cplData, error: cplError } = await (supabase.from("cpl").select("*") as any);
       if (!cplError && cplData) {
         setCplStats({ total: cplData.length, avgScore: 0 });
+      }
+
+      // Create CPL Map for lookup
+      const cplMap = new Map();
+      if (cplData) {
+        cplData.forEach((cpl: any) => {
+          cplMap.set(cpl.id, cpl);
+        });
       }
 
       // Fetch Mata Kuliah stats
@@ -91,19 +99,20 @@ const Dashboard = () => {
       }
 
       // Fetch CPL achievement data for charts
+      // Note: Our custom API client doesn't support joins like supabase-js
+      // So we fetch raw data and map it manually
       const { data: nilaiData, error: nilaiError } = await (supabase
         .from("nilai_cpl")
-        .select(`
-          nilai,
-          semester,
-          cpl:cpl_id (kode_cpl, deskripsi)
-        `) as any);
+        .select("*") as any);
 
       if (!nilaiError && nilaiData) {
         // Process data for bar chart (average per CPL)
         const cplAverage: any = {};
         nilaiData.forEach((item: any) => {
-          const kode = item.cpl?.kode_cpl || "Unknown";
+          // Map cplId to CPL data using the map we created
+          const cpl = cplMap.get(item.cplId || item.cpl_id);
+          const kode = cpl?.kodeCpl || cpl?.kode_cpl || "Unknown";
+
           if (!cplAverage[kode]) {
             cplAverage[kode] = { total: 0, count: 0, kode };
           }
@@ -256,134 +265,134 @@ const Dashboard = () => {
         ))}
       </div>
 
-        <div className="grid gap-4 md:grid-cols-2 animate-in fade-in duration-1000">
-          <Card>
-            <CardHeader>
-              <CardTitle>Rata-rata Nilai per CPL</CardTitle>
-              <CardDescription>Pencapaian rata-rata setiap CPL</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="name" className="text-xs" />
-                    <YAxis domain={[0, 100]} className="text-xs" />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="nilai" fill="hsl(var(--primary))" name="Rata-rata Nilai" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                  <p className="text-muted-foreground">Belum ada data nilai</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      <div className="grid gap-4 md:grid-cols-2 animate-in fade-in duration-1000">
+        <Card>
+          <CardHeader>
+            <CardTitle>Rata-rata Nilai per CPL</CardTitle>
+            <CardDescription>Pencapaian rata-rata setiap CPL</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" className="text-xs" />
+                  <YAxis domain={[0, 100]} className="text-xs" />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="nilai" fill="hsl(var(--primary))" name="Rata-rata Nilai" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
+                <p className="text-muted-foreground">Belum ada data nilai</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-          <Card className="hover:shadow-lg transition-shadow duration-300">
-            <CardHeader>
-              <CardTitle>Tren Semester</CardTitle>
-              <CardDescription>Perkembangan nilai rata-rata</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {trendData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={trendData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="semester" className="text-xs" />
-                    <YAxis domain={[0, 100]} className="text-xs" />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="nilai" 
-                      stroke="hsl(var(--primary))" 
-                      strokeWidth={2}
-                      name="Rata-rata Nilai"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                  <p className="text-muted-foreground">Belum ada data tren</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader>
+            <CardTitle>Tren Semester</CardTitle>
+            <CardDescription>Perkembangan nilai rata-rata</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {trendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="semester" className="text-xs" />
+                  <YAxis domain={[0, 100]} className="text-xs" />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="nilai"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    name="Rata-rata Nilai"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
+                <p className="text-muted-foreground">Belum ada data tren</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-        <div className="grid gap-4 md:grid-cols-2 animate-in fade-in duration-1000">
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribusi Nilai</CardTitle>
-              <CardDescription>Sebaran kategori pencapaian</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {distributionData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={distributionData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percentage }) => `${name}: ${percentage}%`}
-                      outerRadius={80}
-                      fill="hsl(var(--primary))"
-                      dataKey="value"
-                    >
-                      {distributionData.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'][index]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `${value} nilai`} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                  <p className="text-muted-foreground">Belum ada data distribusi</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      <div className="grid gap-4 md:grid-cols-2 animate-in fade-in duration-1000">
+        <Card>
+          <CardHeader>
+            <CardTitle>Distribusi Nilai</CardTitle>
+            <CardDescription>Sebaran kategori pencapaian</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {distributionData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={distributionData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percentage }) => `${name}: ${percentage}%`}
+                    outerRadius={80}
+                    fill="hsl(var(--primary))"
+                    dataKey="value"
+                  >
+                    {distributionData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'][index]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `${value} nilai`} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
+                <p className="text-muted-foreground">Belum ada data distribusi</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Top 5 CPL Terbaik</CardTitle>
-              <CardDescription>Pencapaian teratas</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {performanceData.length > 0 ? (
-                <div className="space-y-4">
-                  {performanceData.map((item: any, index: number) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-sm font-bold text-primary">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">{item.status}</p>
-                        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Top 5 CPL Terbaik</CardTitle>
+            <CardDescription>Pencapaian teratas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {performanceData.length > 0 ? (
+              <div className="space-y-4">
+                {performanceData.map((item: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-sm font-bold text-primary">
+                        {index + 1}
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-lg text-primary">{item.nilai}</p>
-                        <p className="text-xs text-muted-foreground">nilai</p>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{item.status}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                  <p className="text-muted-foreground">Belum ada data performa</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    <div className="text-right">
+                      <p className="font-bold text-lg text-primary">{item.nilai}</p>
+                      <p className="text-xs text-muted-foreground">nilai</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
+                <p className="text-muted-foreground">Belum ada data performa</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+    </div>
   );
 };
 
