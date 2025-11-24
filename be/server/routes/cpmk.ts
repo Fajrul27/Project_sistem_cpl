@@ -209,6 +209,25 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, re
             return res.status(404).json({ error: 'CPMK tidak ditemukan' });
         }
 
+        // [NEW VALIDATION] Check if CPMK is being used (has student grades)
+        if (existing.statusValidasi === 'active') {
+            // Check if there are any grades for this CPMK's techniques
+            const existingGrades = await prisma.nilaiTeknikPenilaian.count({
+                where: {
+                    teknikPenilaian: {
+                        cpmkId: id
+                    }
+                }
+            });
+
+            if (existingGrades > 0) {
+                return res.status(403).json({
+                    error: 'CPMK tidak dapat diedit karena sudah digunakan untuk penilaian',
+                    detail: `Terdapat ${existingGrades} nilai mahasiswa yang terkait dengan CPMK ini`
+                });
+            }
+        }
+
         const cpmk = await prisma.cpmk.update({
             where: { id },
             data: {
@@ -245,6 +264,22 @@ router.delete('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req,
 
         if (!existing) {
             return res.status(404).json({ error: 'CPMK tidak ditemukan' });
+        }
+
+        // [NEW VALIDATION] Check if CPMK is being used (has student grades)
+        const existingGrades = await prisma.nilaiTeknikPenilaian.count({
+            where: {
+                teknikPenilaian: {
+                    cpmkId: id
+                }
+            }
+        });
+
+        if (existingGrades > 0) {
+            return res.status(403).json({
+                error: 'CPMK tidak dapat dihapus karena sudah digunakan untuk penilaian',
+                detail: `Terdapat ${existingGrades} nilai mahasiswa yang terkait dengan CPMK ini`
+            });
         }
 
         await prisma.cpmk.update({

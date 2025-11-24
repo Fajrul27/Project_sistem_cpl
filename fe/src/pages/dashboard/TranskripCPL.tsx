@@ -20,12 +20,10 @@ interface TranskripItem {
     nilaiAkhir: number;
     status: 'tercapai' | 'belum_tercapai';
     mahasiswa: {
-        profile: {
-            namaLengkap: string;
-            nim: string;
-            programStudi: string;
-            semester: number;
-        };
+        namaLengkap: string;
+        nim: string;
+        programStudi: string;
+        semester: number;
     };
     cpl: {
         kodeCpl: string;
@@ -54,7 +52,7 @@ interface Mahasiswa {
 }
 
 const TranskripCPLPage = () => {
-    const { role, userId } = useUserRole();
+    const { role, userId, loading: roleLoading } = useUserRole();
     const isMahasiswa = role === "mahasiswa";
 
     const [transkripList, setTranskripList] = useState<TranskripItem[]>([]);
@@ -62,6 +60,14 @@ const TranskripCPLPage = () => {
     const [selectedMahasiswa, setSelectedMahasiswa] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
+    const [settings, setSettings] = useState({
+        univName: "UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI CILACAP",
+        univAddress: "Jl. Kemerdekaan Barat No.17 Kesugihan Kidul, Kec. Kesugihan, Kabupaten Cilacap, Jawa Tengah 53274",
+        univContact: "Website : www.unugha.ac.id / e-Mail : kita@unugha.ac.id / Telepon : 0282 695415",
+        kaprodiName: "( ........................................................ )",
+        kaprodiNip: "",
+        logoUrl: "/logo.png"
+    });
 
     // Update selectedMahasiswa when userId is available for mahasiswa
     useEffect(() => {
@@ -71,10 +77,13 @@ const TranskripCPLPage = () => {
     }, [isMahasiswa, userId]);
 
     useEffect(() => {
+        if (roleLoading) return;
+
         if (!isMahasiswa) {
             fetchMahasiswaOptions();
         }
-    }, [isMahasiswa]);
+        fetchSettings();
+    }, [isMahasiswa, roleLoading]);
 
     useEffect(() => {
         if (selectedMahasiswa) {
@@ -83,6 +92,23 @@ const TranskripCPLPage = () => {
             setLoading(false);
         }
     }, [selectedMahasiswa]);
+
+    const fetchSettings = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/settings`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const result = await response.json();
+                if (result.data && Object.keys(result.data).length > 0) {
+                    setSettings(prev => ({ ...prev, ...result.data }));
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching settings:", error);
+        }
+    };
 
     const fetchMahasiswaOptions = async () => {
         try {
@@ -131,7 +157,7 @@ const TranskripCPLPage = () => {
     const selectedStudent = mahasiswaList.find(m => m.id === selectedMahasiswa) ||
         (transkripList[0]?.mahasiswa ? {
             id: selectedMahasiswa,
-            profile: transkripList[0].mahasiswa.profile
+            profile: transkripList[0].mahasiswa
         } : null);
 
     const avgScore = transkripList.length > 0
@@ -140,7 +166,7 @@ const TranskripCPLPage = () => {
 
     const completedCPL = transkripList.filter(item => item.status === 'tercapai').length;
 
-    const exportToPDF = () => {
+    const exportToPDF = async () => {
         if (!selectedStudent || transkripList.length === 0) {
             toast.error("Tidak ada data untuk diexport");
             return;
@@ -151,91 +177,187 @@ const TranskripCPLPage = () => {
         try {
             const doc = new jsPDF();
 
-            // Header
+            // Function to load image
+            const loadImage = (url: string): Promise<string> => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous";
+                    img.src = url;
+                    img.onload = () => {
+                        const canvas = document.createElement("canvas");
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext("2d");
+                        if (ctx) {
+                            ctx.drawImage(img, 0, 0);
+                            resolve(canvas.toDataURL("image/png"));
+                        } else {
+                            reject(new Error("Canvas context is null"));
+                        }
+                    };
+                    img.onerror = (err) => reject(err);
+                });
+            };
+
+            // Try loading logo from settings or fallback
+            let logoData = '';
+            try {
+                logoData = await loadImage(settings.logoUrl || '/logo.png');
+            } catch (err) {
+                console.warn("Failed to load logo, trying fallback...", err);
+                try {
+                    logoData = await loadImage("https://lp3.unugha.ac.id/wp-content/uploads/2021/11/cropped-cropped-unugha-Transparan-glow2.png");
+                } catch (err2) {
+                    console.error("Failed to load logo for PDF:", err2);
+                }
+            }
+
+            // Layout Constants
+            const MARGIN_LEFT = 20;
+            const HEADER_CENTER_X = 105; // Center of A4 (210mm / 2)
+            const COL_1_LABEL_X = 20;
+            const COL_1_SEP_X = 55;
+            const COL_1_VAL_X = 58;
+            const COL_2_LABEL_X = 120;
+            const COL_2_SEP_X = 155;
+            const COL_2_VAL_X = 158;
+
+            if (logoData) {
+                doc.addImage(logoData, 'PNG', MARGIN_LEFT, 10, 25, 25);
+            }
+
+            // Header Text
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI', 105, 15, { align: 'center' });
-            doc.text('CILACAP', 105, 22, { align: 'center' });
+            doc.text(settings.univName, HEADER_CENTER_X, 18, { align: 'center' });
 
-            doc.setFontSize(12);
-            doc.text('TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN', 105, 32, { align: 'center' });
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+
+            // Split address if too long
+            const addressLines = doc.splitTextToSize(settings.univAddress, 150);
+            doc.text(addressLines, HEADER_CENTER_X, 24, { align: 'center' });
+
+            doc.text(settings.univContact, HEADER_CENTER_X, 29 + (addressLines.length - 1) * 4, { align: 'center' });
 
             // Line separator
+            const lineY = 35 + (addressLines.length - 1) * 4;
             doc.setDrawColor(0);
+            doc.setLineWidth(1);
+            doc.line(10, lineY, 200, lineY);
             doc.setLineWidth(0.5);
-            doc.line(20, 38, 190, 38);
+            doc.line(10, lineY + 2, 200, lineY + 2);
+
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN', HEADER_CENTER_X, lineY + 13, { align: 'center' });
 
             // Student Info
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
-            const startY = 48;
-            doc.text(`NIM`, 20, startY);
-            doc.text(`: ${selectedStudent.profile.nim}`, 55, startY);
-            doc.text(`Nama`, 20, startY + 6);
-            doc.text(`: ${selectedStudent.profile.namaLengkap}`, 55, startY + 6);
-            doc.text(`Program Studi`, 20, startY + 12);
-            doc.text(`: ${selectedStudent.profile.programStudi}`, 55, startY + 12);
-            doc.text(`Semester`, 20, startY + 18);
-            doc.text(`: ${selectedStudent.profile.semester}`, 55, startY + 18);
+            const startY = lineY + 25;
+
+            // Left Column
+            doc.text(`Program Studi`, COL_1_LABEL_X, startY);
+            doc.text(`:`, COL_1_SEP_X, startY);
+            doc.text(`${selectedStudent.profile?.programStudi?.toUpperCase() || '-'}`, COL_1_VAL_X, startY);
+
+            doc.text(`NIM`, COL_1_LABEL_X, startY + 6);
+            doc.text(`:`, COL_1_SEP_X, startY + 6);
+            doc.text(`${selectedStudent.profile?.nim || '-'}`, COL_1_VAL_X, startY + 6);
+
+            // Right Column
+            doc.text(`Jenjang Pendidikan`, COL_2_LABEL_X, startY);
+            doc.text(`:`, COL_2_SEP_X, startY);
+            doc.text(`SARJANA`, COL_2_VAL_X, startY);
+
+            doc.text(`Nama`, COL_2_LABEL_X, startY + 6);
+            doc.text(`:`, COL_2_SEP_X, startY + 6);
+            doc.text(`${selectedStudent.profile?.namaLengkap?.toUpperCase() || '-'}`, COL_2_VAL_X, startY + 6);
+
+            doc.text(`Semester`, COL_2_LABEL_X, startY + 12);
+            doc.text(`:`, COL_2_SEP_X, startY + 12);
+            doc.text(`${selectedStudent.profile?.semester || '-'}`, COL_2_VAL_X, startY + 12);
 
             // CPL Table
-            const tableStartY = startY + 28;
+            const tableStartY = startY + 20;
             autoTable(doc, {
                 startY: tableStartY,
-                head: [['Kode CPL', 'Deskripsi', 'Mata Kuliah', 'Nilai', 'Status']],
-                body: transkripList.map(item => [
+                head: [['NO', 'KODE', 'CAPAIAN PEMBELAJARAN / MATA KULIAH', 'NILAI', 'STATUS']],
+                body: transkripList.map((item, index) => [
+                    index + 1,
                     item.cpl.kodeCpl,
-                    item.cpl.deskripsi.substring(0, 40) + (item.cpl.deskripsi.length > 40 ? '...' : ''),
-                    item.mataKuliahList && item.mataKuliahList.length > 0
-                        ? item.mataKuliahList.map((mk: any) => mk.kodeMk).join(', ')
-                        : (item.mataKuliah?.kodeMk || '-'),
+                    `${item.cpl.deskripsi}\nMK: ${item.mataKuliahList && item.mataKuliahList.length > 0
+                        ? item.mataKuliahList.map((mk: any) => mk.namaMk).join(', ')
+                        : (item.mataKuliah?.namaMk || '-')}`,
                     item.nilaiAkhir.toFixed(2),
-                    item.status === 'tercapai' ? '✓' : '✗'
+                    item.status === 'tercapai' ? 'Tercapai' : 'Belum'
                 ]),
-                theme: 'striped',
-                headStyles: {
-                    fillColor: [30, 58, 138], // Navy blue
-                    textColor: [255, 255, 255],
-                    fontStyle: 'bold',
-                    fontSize: 9
+                theme: 'plain',
+                styles: {
+                    lineColor: [0, 0, 0],
+                    lineWidth: 0.1,
+                    fontSize: 9,
+                    textColor: [0, 0, 0],
+                    valign: 'top'
                 },
-                bodyStyles: {
-                    fontSize: 8
+                headStyles: {
+                    fillColor: [240, 240, 240], // Light gray like print view
+                    textColor: [0, 0, 0],
+                    fontStyle: 'bold',
+                    halign: 'center',
+                    lineWidth: 0.1,
+                    lineColor: [0, 0, 0]
                 },
                 columnStyles: {
-                    0: { cellWidth: 25 },
-                    1: { cellWidth: 60 },
-                    2: { cellWidth: 45 },
-                    3: { cellWidth: 20, halign: 'right' },
-                    4: { cellWidth: 20, halign: 'center' }
+                    0: { cellWidth: 10, halign: 'center' },
+                    1: { cellWidth: 20, halign: 'center' },
+                    2: { cellWidth: 'auto' },
+                    3: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
+                    4: { cellWidth: 25, halign: 'center' }
+                },
+                didParseCell: function (data) {
+                    // Add borders to every cell
+                    data.cell.styles.lineWidth = 0.1;
+                    data.cell.styles.lineColor = [0, 0, 0];
                 }
             });
 
             // Summary
             const finalY = (doc as any).lastAutoTable.finalY + 10;
+
+            // Draw box for summary
+            doc.setDrawColor(0);
+            doc.setLineWidth(0.1);
+            doc.rect(20, finalY - 5, 80, 20);
+
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text(`Rata-rata Nilai: ${avgScore.toFixed(2)}`, 20, finalY);
-            doc.text(`CPL Tercapai: ${completedCPL}/${transkripList.length}`, 20, finalY + 6);
+            doc.text(`Rata-rata Nilai : ${avgScore.toFixed(2)}`, 25, finalY);
+            doc.text(`Total CPL Tercapai : ${completedCPL} dari ${transkripList.length}`, 25, finalY + 8);
 
             // Footer
             const pageHeight = doc.internal.pageSize.height;
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'italic');
-            doc.text(`Dicetak: ${new Date().toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            })}`, 20, pageHeight - 20);
 
             // Signature section
             doc.setFont('helvetica', 'normal');
-            doc.text('Cilacap, ________________', 130, pageHeight - 40);
-            doc.text('Ketua Program Studi,', 130, pageHeight - 34);
-            doc.text('_______________________', 130, pageHeight - 10);
+            doc.setFontSize(10);
+            doc.text(`Cilacap, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 130, pageHeight - 50);
+            doc.text('Ketua Program Studi,', 130, pageHeight - 44);
+
+            // Signature Name
+            const signatureName = settings.kaprodiName || "( ........................................................ )";
+            doc.text(signatureName, 130, pageHeight - 20);
+            doc.setFont('helvetica', 'bold');
+            doc.setLineWidth(0.5);
+
+            // NIP if exists
+            if (settings.kaprodiNip) {
+                doc.text(`NIP. ${settings.kaprodiNip}`, 130, pageHeight - 15);
+            }
 
             // Save
-            doc.save(`Transkrip-CPL-${selectedStudent.profile.nim}-${selectedStudent.profile.namaLengkap}.pdf`);
+            doc.save(`Transkrip-CPL-${selectedStudent.profile?.nim || 'unknown'}-${selectedStudent.profile?.namaLengkap || 'unknown'}.pdf`);
             toast.success("PDF berhasil diunduh");
         } catch (error) {
             console.error("Error exporting PDF:", error);
@@ -264,7 +386,7 @@ const TranskripCPLPage = () => {
             title="Transkrip CPL"
             description="Transkrip Capaian Pembelajaran Lulusan"
         >
-            <div className="space-y-6">
+            <div className="space-y-6 print:hidden">
                 {/* Mahasiswa Selector (for non-mahasiswa) */}
                 {!isMahasiswa && (
                     <Card>
@@ -327,7 +449,7 @@ const TranskripCPLPage = () => {
                                 <div>
                                     <CardTitle>Transkrip CPL</CardTitle>
                                     <CardDescription>
-                                        {selectedStudent.profile.nim} - {selectedStudent.profile.namaLengkap}
+                                        {selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}
                                     </CardDescription>
                                 </div>
                                 <div className="flex gap-2">
@@ -435,8 +557,146 @@ const TranskripCPLPage = () => {
                     </Card>
                 )}
             </div>
+
+            {/* Print View (Hidden by default, visible on print) */}
+            {selectedStudent && (
+                <div className="hidden print:block fixed inset-0 z-[9999] bg-white p-8 overflow-visible text-black">
+                    <style>{`
+                        @media print {
+                            @page {
+                                size: auto;
+                                margin: 0mm;
+                            }
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                                color: black !important;
+                            }
+                            * {
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                                color: black !important;
+                            }
+                        }
+                    `}</style>
+                    <div className="max-w-[210mm] mx-auto pt-8">
+                        {/* Header with Logo */}
+                        <div className="flex items-center justify-center gap-4 mb-2 border-b-4 border-double border-black pb-4">
+                            <img
+                                src={settings.logoUrl || "/logo.png"}
+                                alt="Logo UNUGHA"
+                                className="w-24 h-auto"
+                                onError={(e) => {
+                                    // Fallback to external URL if local fails
+                                    const target = e.target as HTMLImageElement;
+                                    if (target.src.includes('logo.png')) {
+                                        target.src = "https://lp3.unugha.ac.id/wp-content/uploads/2021/11/cropped-cropped-unugha-Transparan-glow2.png";
+                                    }
+                                }}
+                            />
+                            <div className="text-center flex-1">
+                                <h1 className="text-xl font-bold uppercase tracking-wide text-black">{settings.univName}</h1>
+                                <p className="text-sm text-black whitespace-pre-wrap">{settings.univAddress}</p>
+                                <p className="text-sm text-black">{settings.univContact}</p>
+                            </div>
+                        </div>
+
+                        <div className="text-center mb-8">
+                            <h2 className="text-lg font-bold uppercase border-b-2 border-black inline-block px-4 pb-1 text-black">TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN</h2>
+                        </div>
+
+                        {/* Student Info */}
+                        <div className="mb-6 text-sm grid grid-cols-2 gap-x-12">
+                            <div className="space-y-1">
+                                <div className="flex">
+                                    <div className="w-[35mm] text-black">Program Studi</div>
+                                    <div className="w-[4mm] text-black">:</div>
+                                    <div className="flex-1 font-medium uppercase text-black">{selectedStudent.profile?.programStudi}</div>
+                                </div>
+                                <div className="flex">
+                                    <div className="w-[35mm] text-black">NIM</div>
+                                    <div className="w-[4mm] text-black">:</div>
+                                    <div className="flex-1 font-medium text-black">{selectedStudent.profile?.nim}</div>
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex">
+                                    <div className="w-[35mm] text-black">Jenjang Pendidikan</div>
+                                    <div className="w-[4mm] text-black">:</div>
+                                    <div className="flex-1 font-medium text-black">SARJANA</div>
+                                </div>
+                                <div className="flex">
+                                    <div className="w-[35mm] text-black">Nama</div>
+                                    <div className="w-[4mm] text-black">:</div>
+                                    <div className="flex-1 font-medium uppercase text-black">{selectedStudent.profile?.namaLengkap}</div>
+                                </div>
+                                <div className="flex">
+                                    <div className="w-[35mm] text-black">Semester</div>
+                                    <div className="w-[4mm] text-black">:</div>
+                                    <div className="flex-1 font-medium text-black">{selectedStudent.profile?.semester}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Table */}
+                        <table className="w-full border-collapse border border-black text-sm mb-6">
+                            <thead>
+                                <tr className="bg-gray-100 print:bg-gray-100">
+                                    <th className="border border-black p-2 text-center w-12 text-black">NO</th>
+                                    <th className="border border-black p-2 text-center w-24 text-black">KODE</th>
+                                    <th className="border border-black p-2 text-left text-black">CAPAIAN PEMBELAJARAN / MATA KULIAH</th>
+                                    <th className="border border-black p-2 text-center w-16 text-black">NILAI</th>
+                                    <th className="border border-black p-2 text-center w-24 text-black">STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {transkripList.map((item, index) => (
+                                    <tr key={index}>
+                                        <td className="border border-black p-2 text-center align-top text-black">{index + 1}</td>
+                                        <td className="border border-black p-2 text-center align-top text-black">{item.cpl.kodeCpl}</td>
+                                        <td className="border border-black p-2 align-top text-black">
+                                            <div className="font-bold mb-1">{item.cpl.deskripsi}</div>
+                                            <div className="text-xs text-gray-600 pl-4 print:text-black">
+                                                MK: {item.mataKuliahList && item.mataKuliahList.length > 0
+                                                    ? item.mataKuliahList.map(mk => mk.namaMk).join(', ')
+                                                    : (item.mataKuliah?.namaMk || '-')}
+                                            </div>
+                                        </td>
+                                        <td className="border border-black p-2 text-center align-top font-bold text-black">{item.nilaiAkhir.toFixed(2)}</td>
+                                        <td className="border border-black p-2 text-center align-top text-black">
+                                            {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        {/* Summary */}
+                        <div className="mb-8 text-sm border border-black p-4 inline-block">
+                            <p className="font-bold text-black">Rata-rata Nilai : {avgScore.toFixed(2)}</p>
+                            <p className="font-bold text-black">Total CPL Tercapai : {completedCPL} dari {transkripList.length}</p>
+                        </div>
+
+                        {/* Footer & Signature */}
+                        <div className="flex justify-end mt-12 text-sm">
+                            <div className="text-center w-64">
+                                <p className="mb-1 text-black">Cilacap, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                <p className="font-bold mb-20 text-black">Ketua Program Studi,</p>
+                                <p className="border-b border-black inline-block min-w-[200px] font-bold uppercase text-black">
+                                    {settings.kaprodiName || "( ........................................................ )"}
+                                </p>
+                                {settings.kaprodiNip && (
+                                    <p className="mt-1 text-black">NIP. {settings.kaprodiNip}</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardPage>
     );
 };
-
 export default TranskripCPLPage;
+

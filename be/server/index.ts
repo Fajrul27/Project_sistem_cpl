@@ -45,6 +45,7 @@ import cpmkRoutes from './routes/cpmk.js';
 import cpmkMappingRoutes from './routes/cpmk-mapping.js';
 import teknikPenilaianRoutes from './routes/teknik-penilaian.js';
 import nilaiTeknikRoutes from './routes/nilai-teknik.js';
+import settingsRoutes from './routes/settings.js';
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -60,6 +61,7 @@ app.use('/api/cpmk', cpmkRoutes);
 app.use('/api/cpmk-mapping', cpmkMappingRoutes);
 app.use('/api/teknik-penilaian', teknikPenilaianRoutes);
 app.use('/api/nilai-teknik', nilaiTeknikRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

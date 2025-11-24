@@ -349,3 +349,13 @@ enum Role {
   mahasiswa
   kaprodi
 }
+
+model Settings {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?  @db.Text
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}

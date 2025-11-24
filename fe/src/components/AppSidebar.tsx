@@ -29,7 +29,7 @@ const MENU_ITEMS: MenuItem[] = [
   { title: "Mata Kuliah", url: "/dashboard/mata-kuliah", icon: BookOpen, roles: ["admin", "kaprodi"] },
   { title: "CPMK", url: "/dashboard/cpmk", icon: ClipboardList, roles: ["admin", "dosen", "kaprodi"] },
   { title: "Mapping CPL", url: "/dashboard/cpl-mapping", icon: Link2, roles: ["admin", "kaprodi"] },
-  { title: "Validasi CPMK", url: "/dashboard/validasi-cpmk", icon: ClipboardList, roles: ["admin", "kaprodi"] },
+  { title: "Validasi CPMK", url: "/dashboard/validasi-cpmk", icon: ClipboardList, roles: ["admin", "kaprodi", "dosen"] },
   { title: "Mahasiswa", url: "/dashboard/mahasiswa", icon: Users, roles: ["admin", "dosen", "kaprodi"] },
   { title: "Transkrip CPL", url: "/dashboard/transkrip-cpl", icon: FileText, roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
   { title: "Pengguna", url: "/dashboard/users", icon: Users, roles: ["admin"] },

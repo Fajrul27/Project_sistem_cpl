@@ -65,7 +65,7 @@ const App = () => (
             <Route
               path="validasi-cpmk"
               element={
-                <RequireRole roles={["admin", "kaprodi"]}>
+                <RequireRole roles={["admin", "kaprodi", "dosen"]}>
                   <ValidasiCPMKPage />
                 </RequireRole>
               }
@@ -118,9 +118,17 @@ const App = () => (
                 </RequireRole>
               }
             />
+
             <Route path="transkrip-cpl" element={<TranskripCPLPage />} />
             <Route path="analisis" element={<AnalisisiPage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route
+              path="settings"
+              element={
+                <RequireRole roles={["admin", "kaprodi"]}>
+                  <SettingsPage />
+                </RequireRole>
+              }
+            />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="test-navbar" element={<TestNavbar />} />
           </Route>

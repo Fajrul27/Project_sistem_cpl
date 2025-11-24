@@ -111,7 +111,7 @@ router.post('/login', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
+      {
         userId: user.id,
         email: user.email,
         role: user.role?.role || 'mahasiswa'
@@ -120,7 +120,12 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    // Create session
+    // Delete any existing sessions for this user to avoid duplicate token errors
+    await prisma.session.deleteMany({
+      where: { userId: user.id }
+    });
+
+    // Create new session
     await prisma.session.create({
       data: {
         userId: user.id,
@@ -190,7 +195,7 @@ router.get('/me', authMiddleware, async (req, res) => {
 router.post('/logout', authMiddleware, async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    
+
     if (token) {
       // Delete session
       await prisma.session.deleteMany({

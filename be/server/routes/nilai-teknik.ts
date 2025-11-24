@@ -224,6 +224,33 @@ router.post('/batch', authMiddleware, requireRole('admin', 'dosen'), async (req,
                     continue;
                 }
 
+                // [NEW VALIDATION] Check CPMK status before allowing input
+                const teknikPenilaian = await prisma.teknikPenilaian.findUnique({
+                    where: { id: teknikPenilaianId },
+                    include: {
+                        cpmk: {
+                            select: {
+                                statusValidasi: true,
+                                kodeCpmk: true
+                            }
+                        }
+                    }
+                });
+
+                if (!teknikPenilaian) {
+                    errors.push({ entry, error: 'Teknik penilaian tidak ditemukan' });
+                    continue;
+                }
+
+                // Only allow grading if CPMK is validated or active
+                if (teknikPenilaian.cpmk.statusValidasi === 'draft') {
+                    errors.push({
+                        entry,
+                        error: `CPMK ${teknikPenilaian.cpmk.kodeCpmk} masih dalam status DRAFT. Minta Kaprodi untuk memvalidasi terlebih dahulu.`
+                    });
+                    continue;
+                }
+
                 // Upsert
                 const nilaiTeknik = await prisma.nilaiTeknikPenilaian.upsert({
                     where: {

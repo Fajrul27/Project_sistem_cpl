@@ -172,14 +172,38 @@ const InputNilaiTeknikPage = () => {
                 body: JSON.stringify({ entries })
             });
 
-            if (!response.ok) throw new Error('Gagal menyimpan nilai');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Gagal menyimpan nilai');
+            }
 
             const result = await response.json();
-            toast.success(`Berhasil menyimpan ${result.data.length} nilai`);
+
+            // Check if there are any errors in the batch response
+            if (result.errors && result.errors.length > 0) {
+                console.error('Batch errors:', result.errors);
+
+                // Show detailed error messages
+                const errorMessages = result.errors.map((err: any) => err.error).join('\n');
+                toast.error(`${result.data?.length || 0} nilai berhasil disimpan, ${result.errors.length} gagal`, {
+                    description: errorMessages.substring(0, 200) + (errorMessages.length > 200 ? '...' : ''),
+                    duration: 8000
+                });
+
+                // If ALL entries failed (0 saved), show more prominent error
+                if (!result.data || result.data.length === 0) {
+                    toast.error('Semua nilai gagal disimpan!', {
+                        description: 'Periksa apakah CPMK sudah divalidasi oleh Kaprodi',
+                        duration: 10000
+                    });
+                }
+            } else {
+                toast.success(`Berhasil menyimpan ${result.data?.length || 0} nilai`);
+            }
 
         } catch (error) {
             console.error('Error saving grades:', error);
-            toast.error('Gagal menyimpan nilai');
+            toast.error(error instanceof Error ? error.message : 'Gagal menyimpan nilai');
         } finally {
             setSaving(false);
         }

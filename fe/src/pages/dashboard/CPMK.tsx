@@ -127,7 +127,10 @@ const CPMKPage = () => {
                     })
                 });
 
-                if (!response.ok) throw new Error('Gagal update CPMK');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || errorData.detail || 'Gagal update CPMK');
+                }
                 toast.success("CPMK berhasil diupdate");
             } else {
                 const response = await fetch(`${API_URL}/cpmk`, {
@@ -376,7 +379,7 @@ const CPMKPage = () => {
                                     filteredCpmk.map((cpmk) => (
                                         <TableRow key={cpmk.id}>
                                             <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
-                                            <TableCell className="max-w-xs truncate">
+                                            <TableCell>
                                                 {cpmk.deskripsi || "-"}
                                             </TableCell>
                                             <TableCell>
