@@ -5,17 +5,32 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { canAccessMataKuliah, canAccessCpmk, getAccessibleMataKuliahIds } from '../lib/access-control.js';
 
 const router = Router();
 
 // Get all CPMK (with optional mata kuliah filter)
 router.get('/', authMiddleware, async (req, res) => {
     try {
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
         const { mataKuliahId } = req.query;
 
         const where: any = { isActive: true };
+
         if (mataKuliahId) {
+            // Check access to specific MK
+            const hasAccess = await canAccessMataKuliah(userId, userRole, mataKuliahId as string);
+            if (!hasAccess) {
+                return res.status(403).json({ error: 'Anda tidak memiliki akses ke mata kuliah ini' });
+            }
             where.mataKuliahId = mataKuliahId as string;
+        } else {
+            // Filter list by accessible MKs
+            const accessibleMkIds = await getAccessibleMataKuliahIds(userId, userRole);
+            if (userRole !== 'admin') {
+                where.mataKuliahId = { in: accessibleMkIds };
+            }
         }
 
         const cpmk = await prisma.cpmk.findMany({
@@ -55,7 +70,14 @@ router.get('/', authMiddleware, async (req, res) => {
 // Get CPMK by Mata Kuliah ID
 router.get('/mata-kuliah/:mkId', authMiddleware, async (req, res) => {
     try {
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
         const { mkId } = req.params;
+
+        const hasAccess = await canAccessMataKuliah(userId, userRole, mkId);
+        if (!hasAccess) {
+            return res.status(403).json({ error: 'Anda tidak memiliki akses ke mata kuliah ini' });
+        }
 
         const cpmk = await prisma.cpmk.findMany({
             where: {
@@ -96,7 +118,14 @@ router.get('/mata-kuliah/:mkId', authMiddleware, async (req, res) => {
 // Get CPMK by ID (with full details)
 router.get('/:id', authMiddleware, async (req, res) => {
     try {
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
         const { id } = req.params;
+
+        const hasAccess = await canAccessCpmk(userId, userRole, id);
+        if (!hasAccess) {
+            return res.status(403).json({ error: 'Anda tidak memiliki akses ke CPMK ini' });
+        }
 
         const cpmk = await prisma.cpmk.findUnique({
             where: { id },
@@ -150,9 +179,10 @@ router.get('/:id', authMiddleware, async (req, res) => {
 });
 
 // Create CPMK
-router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
+router.post('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async (req, res) => {
     try {
         const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
         const { kodeCpmk, deskripsi, mataKuliahId } = req.body;
 
         // Validate required fields
@@ -160,13 +190,10 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res)
             return res.status(400).json({ error: 'Kode CPMK dan Mata Kuliah harus diisi' });
         }
 
-        // Check if mata kuliah exists
-        const mataKuliah = await prisma.mataKuliah.findUnique({
-            where: { id: mataKuliahId }
-        });
-
-        if (!mataKuliah) {
-            return res.status(404).json({ error: 'Mata Kuliah tidak ditemukan' });
+        // Check access to mata kuliah
+        const hasAccess = await canAccessMataKuliah(userId, userRole, mataKuliahId);
+        if (!hasAccess) {
+            return res.status(403).json({ error: 'Anda tidak memiliki akses untuk menambahkan CPMK ke mata kuliah ini' });
         }
 
         const cpmk = await prisma.cpmk.create({
@@ -195,10 +222,18 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res)
 });
 
 // Update CPMK
-router.put('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
+router.put('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async (req, res) => {
     try {
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
         const { id } = req.params;
         const { kodeCpmk, deskripsi } = req.body;
+
+        // Check access
+        const hasAccess = await canAccessCpmk(userId, userRole, id);
+        if (!hasAccess) {
+            return res.status(403).json({ error: 'Anda tidak memiliki akses untuk mengedit CPMK ini' });
+        }
 
         // Check if CPMK exists
         const existing = await prisma.cpmk.findUnique({
@@ -211,7 +246,6 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, re
 
         // [NEW VALIDATION] Check if CPMK is being used (has student grades)
         if (existing.statusValidasi === 'active') {
-            // Check if there are any grades for this CPMK's techniques
             const existingGrades = await prisma.nilaiTeknikPenilaian.count({
                 where: {
                     teknikPenilaian: {
@@ -253,9 +287,17 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, re
 });
 
 // Delete CPMK (soft delete)
-router.delete('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
+router.delete('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async (req, res) => {
     try {
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
         const { id } = req.params;
+
+        // Check access
+        const hasAccess = await canAccessCpmk(userId, userRole, id);
+        if (!hasAccess) {
+            return res.status(403).json({ error: 'Anda tidak memiliki akses untuk menghapus CPMK ini' });
+        }
 
         // Check if CPMK exists
         const existing = await prisma.cpmk.findUnique({

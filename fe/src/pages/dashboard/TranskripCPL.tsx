@@ -60,6 +60,7 @@ const TranskripCPLPage = () => {
     const [selectedMahasiswa, setSelectedMahasiswa] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
+    const [kaprodiData, setKaprodiData] = useState<any>(null);
     const [settings, setSettings] = useState({
         univName: "UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI CILACAP",
         univAddress: "Jl. Kemerdekaan Barat No.17 Kesugihan Kidul, Kec. Kesugihan, Kabupaten Cilacap, Jawa Tengah 53274",
@@ -110,6 +111,22 @@ const TranskripCPLPage = () => {
         }
     };
 
+    const fetchKaprodiData = async (programStudi: string) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/kaprodi-data/${programStudi}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                setKaprodiData(result.data);
+            }
+        } catch (error) {
+            console.error("Error fetching kaprodi data:", error);
+        }
+    };
+
     const fetchMahasiswaOptions = async () => {
         try {
             const response = await fetchMahasiswaList();
@@ -145,6 +162,11 @@ const TranskripCPLPage = () => {
 
             const result = await response.json();
             setTranskripList(result.data || []);
+
+            // Fetch kaprodi data based on student's program studi
+            if (result.data && result.data.length > 0 && result.data[0].mahasiswa?.programStudi) {
+                fetchKaprodiData(result.data[0].mahasiswa.programStudi);
+            }
         } catch (error) {
             console.error("Error fetching transkrip:", error);
             toast.error("Gagal memuat transkrip CPL");
@@ -345,15 +367,28 @@ const TranskripCPLPage = () => {
             doc.text(`Cilacap, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 130, pageHeight - 50);
             doc.text('Ketua Program Studi,', 130, pageHeight - 44);
 
-            // Signature Name
-            const signatureName = settings.kaprodiName || "( ........................................................ )";
-            doc.text(signatureName, 130, pageHeight - 20);
+            // Signature Name from Kaprodi Data
             doc.setFont('helvetica', 'bold');
-            doc.setLineWidth(0.5);
+            if (kaprodiData && kaprodiData.namaKaprodi) {
+                const kaprodiName = kaprodiData.namaKaprodi.toUpperCase();
+                const kaprodiNameLines = doc.splitTextToSize(kaprodiName, 60);
+                doc.text(kaprodiNameLines, 130, pageHeight - 20);
 
-            // NIP if exists
-            if (settings.kaprodiNip) {
-                doc.text(`NIP. ${settings.kaprodiNip}`, 130, pageHeight - 15);
+                // NIDN
+                if (kaprodiData.nidnKaprodi) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(`NIDN. ${kaprodiData.nidnKaprodi}`, 130, pageHeight - 15);
+                }
+            } else {
+                // Fallback to settings
+                const kaprodiNameFallback = settings.kaprodiName || "( ........................................................ )";
+                const kaprodiNameLines = doc.splitTextToSize(kaprodiNameFallback, 60);
+                doc.text(kaprodiNameLines, 130, pageHeight - 20);
+
+                if (settings.kaprodiNip) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(`NIP. ${settings.kaprodiNip}`, 130, pageHeight - 15);
+                }
             }
 
             // Save
@@ -684,11 +719,24 @@ const TranskripCPLPage = () => {
                             <div className="text-center w-64">
                                 <p className="mb-1 text-black">Cilacap, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                                 <p className="font-bold mb-20 text-black">Ketua Program Studi,</p>
-                                <p className="border-b border-black inline-block min-w-[200px] font-bold uppercase text-black">
-                                    {settings.kaprodiName || "( ........................................................ )"}
-                                </p>
-                                {settings.kaprodiNip && (
-                                    <p className="mt-1 text-black">NIP. {settings.kaprodiNip}</p>
+                                {kaprodiData && kaprodiData.namaKaprodi ? (
+                                    <>
+                                        <p className="border-b border-black inline-block min-w-[200px] font-bold uppercase text-black">
+                                            {kaprodiData.namaKaprodi}
+                                        </p>
+                                        {kaprodiData.nidnKaprodi && (
+                                            <p className="mt-1 text-black">NIDN. {kaprodiData.nidnKaprodi}</p>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="border-b border-black inline-block min-w-[200px] font-bold uppercase text-black">
+                                            {settings.kaprodiName || "( ........................................................ )"}
+                                        </p>
+                                        {settings.kaprodiNip && (
+                                            <p className="mt-1 text-black">NIP. {settings.kaprodiNip}</p>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>

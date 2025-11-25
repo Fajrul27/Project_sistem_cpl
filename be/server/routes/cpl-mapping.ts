@@ -8,6 +8,15 @@ import { authMiddleware, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
+// Helper function to calculate total bobot kontribusi per MK
+async function getTotalBobotKontribusiMK(mataKuliahId: string): Promise<number> {
+  const result = await prisma.cplMataKuliah.aggregate({
+    where: { mataKuliahId },
+    _sum: { bobotKontribusi: true }
+  });
+  return Number(result._sum.bobotKontribusi || 0);
+}
+
 // Get all mappings
 router.get('/', authMiddleware, async (req, res) => {
   try {
@@ -39,7 +48,16 @@ router.get('/mata-kuliah/:mkId', authMiddleware, async (req, res) => {
       }
     });
 
-    res.json({ data: mappings });
+    const totalBobot = await getTotalBobotKontribusiMK(mkId);
+
+    res.json({
+      data: mappings,
+      meta: {
+        totalBobotKontribusi: Number(totalBobot.toFixed(2)),
+        isValid: Math.abs(totalBobot - 1.0) < 0.01,
+        expectedTotal: 1.0
+      }
+    });
   } catch (error) {
     console.error('Get mappings by MK error:', error);
     res.status(500).json({ error: 'Gagal mengambil data mapping' });
@@ -72,6 +90,18 @@ router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, re
       }
     });
 
+    // STRICT: Check total after creation
+    const newTotal = await getTotalBobotKontribusiMK(mataKuliahId);
+    if (Math.abs(newTotal - 1.0) > 0.01) {
+      // Rollback if total is invalid
+      await prisma.cplMataKuliah.delete({ where: { id: mapping.id } });
+      return res.status(400).json({
+        error: 'Total bobot kontribusi harus = 100%',
+        currentTotal: Number((newTotal * 100).toFixed(2)),
+        message: `Total akan menjadi ${(newTotal * 100).toFixed(2)}%. Silakan sesuaikan bobot.`
+      });
+    }
+
     res.status(201).json({ data: mapping, message: 'Mapping berhasil dibuat' });
   } catch (error) {
     console.error('Create mapping error:', error);
@@ -85,6 +115,9 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (req, 
     const { id } = req.params;
     const { bobotKontribusi } = req.body;
 
+    const existing = await prisma.cplMataKuliah.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: 'Mapping tidak ditemukan' });
+
     const mapping = await prisma.cplMataKuliah.update({
       where: { id },
       data: {
@@ -95,6 +128,21 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (req, 
         mataKuliah: true
       }
     });
+
+    // STRICT: Check total after update
+    const newTotal = await getTotalBobotKontribusiMK(existing.mataKuliahId);
+    if (Math.abs(newTotal - 1.0) > 0.01) {
+      // Rollback if total is invalid
+      await prisma.cplMataKuliah.update({
+        where: { id },
+        data: { bobotKontribusi: existing.bobotKontribusi }
+      });
+      return res.status(400).json({
+        error: 'Total bobot kontribusi harus = 100%',
+        currentTotal: Number((newTotal * 100).toFixed(2)),
+        message: `Total akan menjadi ${(newTotal * 100).toFixed(2)}%. Silakan sesuaikan bobot.`
+      });
+    }
 
     res.json({ data: mapping, message: 'Mapping berhasil diupdate' });
   } catch (error) {
@@ -110,6 +158,29 @@ router.post('/batch', authMiddleware, requireRole('admin', 'kaprodi'), async (re
 
     if (!Array.isArray(mappingData)) {
       return res.status(400).json({ error: 'mappings harus berupa array' });
+    }
+
+    // Group by mataKuliahId to validate each
+    const groupedByMK = mappingData.reduce((acc: any, m: any) => {
+      if (!acc[m.mataKuliahId]) acc[m.mataKuliahId] = [];
+      acc[m.mataKuliahId].push(m);
+      return acc;
+    }, {});
+
+    // Validate each mata kuliah's total = 100%
+    for (const [mkId, mappings] of Object.entries(groupedByMK)) {
+      const total = (mappings as any[]).reduce((sum, m) =>
+        sum + (parseFloat(m.bobotKontribusi) || 1.0), 0
+      );
+
+      if (Math.abs(total - 1.0) > 0.01) {
+        return res.status(400).json({
+          error: 'Total bobot kontribusi harus = 100%',
+          mataKuliahId: mkId,
+          currentTotal: Number((total * 100).toFixed(2)),
+          message: `Mata kuliah ini memiliki total ${(total * 100).toFixed(2)}%. Silakan sesuaikan bobot.`
+        });
+      }
     }
 
     const created = await prisma.cplMataKuliah.createMany({

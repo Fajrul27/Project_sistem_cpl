@@ -20,6 +20,8 @@ import CPMKPage from "./pages/dashboard/CPMK";
 import CPMKDetailPage from "./pages/dashboard/CPMKDetail";
 import ValidasiCPMKPage from "./pages/dashboard/ValidasiCPMK";
 import TranskripCPLPage from "./pages/dashboard/TranskripCPL";
+import KaprodiDataSettings from "./pages/dashboard/KaprodiDataSettings";
+import DosenPengampuPage from "./pages/dashboard/DosenPengampu";
 import TestNavbar from "./pages/TestNavbar";
 import NotFound from "./pages/NotFound";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -79,6 +81,14 @@ const App = () => (
               }
             />
             <Route
+              path="dosen-pengampu"
+              element={
+                <RequireRole roles={["admin"]}>
+                  <DosenPengampuPage />
+                </RequireRole>
+              }
+            />
+            <Route
               path="mahasiswa"
               element={
                 <RequireRole roles={["admin", "dosen", "kaprodi"]}>
@@ -126,6 +136,14 @@ const App = () => (
               element={
                 <RequireRole roles={["admin", "kaprodi"]}>
                   <SettingsPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="kaprodi-data"
+              element={
+                <RequireRole roles={["admin"]}>
+                  <KaprodiDataSettings />
                 </RequireRole>
               }
             />

@@ -117,7 +117,7 @@ const CPLMappingPage = () => {
       setBobot(newBobot);
     } else {
       newSelectedCPLs.add(cplId);
-      // Set nilai default bobot 1.0 saat CPL dipilih
+      // Set nilai default bobot 100% (disimpan sebagai 1.0)
       setBobot(prev => ({
         ...prev,
         [cplId]: prev[cplId] || 1.0
@@ -127,7 +127,7 @@ const CPLMappingPage = () => {
   };
 
   const handleBobotChange = (cplId: string, value: string) => {
-    // Bobot sebagai desimal langsung (contoh: 1.0, 1.5, 2.0)
+    // Bobot input sebagai persentase (0-100), disimpan sebagai desimal (0.0-1.0)
     if (value === '') {
       setBobot(prev => ({
         ...prev,
@@ -139,16 +139,16 @@ const CPLMappingPage = () => {
     // Validasi input hanya angka dan titik desimal
     if (!/^\d*\.?\d*$/.test(value)) return;
 
-    const numValue = parseFloat(value);
-    // Bobot reasonable range: 0.0 - 3.0
-    if (isNaN(numValue) || numValue < 0 || numValue > 3.0) return;
+    const percentValue = parseFloat(value);
+    // Bobot range: 0-100%
+    if (isNaN(percentValue) || percentValue < 0 || percentValue > 100) return;
 
-    // Batasi maksimal 2 angka di belakang koma
-    const formattedValue = parseFloat(numValue.toFixed(2));
+    // Konversi ke desimal (0.0-1.0) untuk disimpan
+    const decimalValue = percentValue / 100;
 
     setBobot(prev => ({
       ...prev,
-      [cplId]: formattedValue
+      [cplId]: parseFloat(decimalValue.toFixed(4))
     }));
   };
 
@@ -187,20 +187,15 @@ const CPLMappingPage = () => {
         return;
       }
 
-      // INFO: Tidak perlu validasi total 100% untuk CPL-Mata Kuliah mapping
-      // Berbeda dengan CPMK-CPL mapping yang harus 100%
+      // Validasi total bobot kontribusi harus = 100% (Opsi 2)
       const totalBobot = newMappings.reduce((sum, item) => sum + Number(item.bobotKontribusi), 0);
-
-      // Hanya warning jika total bobot sangat besar (kemungkinan error input)
-      if (totalBobot > 10) {
-        const confirmProceed = confirm(
-          `Total bobot kontribusi adalah ${totalBobot.toFixed(2)}. ` +
-          `Ini terlihat cukup besar. Apakah Anda yakin?`
+      if (Math.abs(totalBobot - 1.0) > 0.01) {
+        toast.error(
+          `Total bobot kontribusi harus = 100%. ` +
+          `Saat ini: ${(totalBobot * 100).toFixed(2)}%`
         );
-        if (!confirmProceed) {
-          setSubmitting(false);
-          return;
-        }
+        setSubmitting(false);
+        return;
       }
 
       // Create batch mappings
@@ -345,21 +340,78 @@ const CPLMappingPage = () => {
                         <input
                           type="number"
                           min="0"
-                          max="3"
-                          step="0.1"
-                          placeholder="1.0"
+                          max="100"
+                          step="1"
+                          placeholder="100"
                           className="w-20 p-1 text-sm border rounded bg-background text-foreground"
-                          value={selectedCPLs.has(cpl.id) ? bobot[cpl.id] ?? 1.0 : ""}
+                          value={selectedCPLs.has(cpl.id) ? Math.round((bobot[cpl.id] ?? 1.0) * 100) : ""}
                           onChange={(e) => handleBobotChange(cpl.id, e.target.value)}
                           disabled={!selectedCPLs.has(cpl.id)}
                         />
-                        <span className="text-xs text-muted-foreground">(0.0-3.0)</span>
+                        <span className="text-xs text-muted-foreground">%</span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* Visual Progress Bar */}
+            {selectedMK && Array.from(selectedCPLs).length > 0 && (() => {
+              const total = Array.from(selectedCPLs).reduce((sum, cplId) =>
+                sum + (bobot[cplId] || 1.0), 0
+              );
+              const percentage = total * 100;
+              const isValid = Math.abs(total - 1.0) < 0.01;
+
+              return (
+                <div className="space-y-2 pt-4 pb-2 border-t">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="font-medium">Total Bobot Kontribusi</span>
+                    <span className={`font-bold ${isValid ? 'text-green-600' : percentage > 100 ? 'text-red-600' : 'text-orange-600'
+                      }`}>
+                      {percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="relative w-full h-8 bg-gray-200 rounded-lg overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-300 flex items-center justify-center text-white text-sm font-medium ${isValid
+                        ? 'bg-green-500'
+                        : percentage > 100
+                          ? 'bg-red-500'
+                          : 'bg-orange-500'
+                        }`}
+                      style={{ width: `${Math.min(percentage, 100)}%` }}
+                    >
+                      {percentage > 10 && `${percentage.toFixed(1)}%`}
+                    </div>
+                    {percentage > 100 && (
+                      <div className="absolute inset-0 flex items-center justify-center text-xs text-red-700 font-semibold">
+                        Melebihi 100%!
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    {isValid ? (
+                      <span className="text-green-600 flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Total sudah sesuai (100%)
+                      </span>
+                    ) : percentage < 100 ? (
+                      <span className="text-orange-600">
+                        Masih kurang {(100 - percentage).toFixed(1)}%
+                      </span>
+                    ) : (
+                      <span className="text-red-600">
+                        Kelebihan {(percentage - 100).toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button
@@ -471,7 +523,7 @@ const CPLMappingPage = () => {
                         .filter(m => m.mataKuliahId === mk.id)
                         .map(m => (
                           <div key={m.cplId} className="mb-1">
-                            {Number(m.bobotKontribusi ?? 1.0).toFixed(2)}
+                            {(Number(m.bobotKontribusi ?? 1.0) * 100).toFixed(1)}%
                           </div>
                         ))}
                     </TableCell>

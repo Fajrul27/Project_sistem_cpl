@@ -238,7 +238,22 @@ const UsersPage = () => {
             fakultasName = fLabel || null;
             prodiName = pLabel || null;
           } else {
+            // Try to infer faculty from prodi name
             prodiName = fullProgram;
+
+            // Search in FAKULTAS_OPTIONS
+            for (const fak of FAKULTAS_OPTIONS) {
+              const foundProdi = fak.prodi.find(p =>
+                p.label.toLowerCase() === fullProgram.toLowerCase() ||
+                p.value.toLowerCase() === fullProgram.toLowerCase()
+              );
+
+              if (foundProdi) {
+                fakultasName = fak.label;
+                prodiName = foundProdi.label; // Normalize to label
+                break;
+              }
+            }
           }
         }
 
