@@ -183,7 +183,7 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async
     try {
         const userId = (req as any).userId;
         const userRole = (req as any).userRole;
-        const { kodeCpmk, deskripsi, mataKuliahId } = req.body;
+        const { kodeCpmk, deskripsi, mataKuliahId, levelTaksonomi } = req.body;
 
         // Validate required fields
         if (!kodeCpmk || !mataKuliahId) {
@@ -200,6 +200,7 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async
             data: {
                 kodeCpmk: kodeCpmk.trim(),
                 deskripsi: deskripsi?.trim() || null,
+                levelTaksonomi: levelTaksonomi?.trim() || null,
                 mataKuliahId,
                 createdBy: userId
             },
@@ -227,7 +228,7 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), asy
         const userId = (req as any).userId;
         const userRole = (req as any).userRole;
         const { id } = req.params;
-        const { kodeCpmk, deskripsi } = req.body;
+        const { kodeCpmk, deskripsi, levelTaksonomi } = req.body;
 
         // Check access
         const hasAccess = await canAccessCpmk(userId, userRole, id);
@@ -266,7 +267,8 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), asy
             where: { id },
             data: {
                 kodeCpmk: kodeCpmk?.trim() || existing.kodeCpmk,
-                deskripsi: deskripsi?.trim() || existing.deskripsi
+                deskripsi: deskripsi?.trim() || existing.deskripsi,
+                levelTaksonomi: levelTaksonomi?.trim() || existing.levelTaksonomi
             },
             include: {
                 mataKuliah: {

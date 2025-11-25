@@ -21,6 +21,7 @@ interface Cpmk {
     id: string;
     kodeCpmk: string;
     deskripsi: string | null;
+    levelTaksonomi: string | null;
     mataKuliah: {
         kodeMk: string;
         namaMk: string;
@@ -408,6 +409,7 @@ const CPMKDetailPage = () => {
                     </CardHeader>
                     <CardContent className="space-y-2">
                         <div><span className="font-medium">Kode:</span> {cpmk.kodeCpmk}</div>
+                        <div><span className="font-medium">Level Taksonomi:</span> {cpmk.levelTaksonomi || "-"}</div>
                         <div><span className="font-medium">Deskripsi:</span> {cpmk.deskripsi || "-"}</div>
                         <div><span className="font-medium">Mata Kuliah:</span> {cpmk.mataKuliah.kodeMk} - {cpmk.mataKuliah.namaMk}</div>
                     </CardContent>

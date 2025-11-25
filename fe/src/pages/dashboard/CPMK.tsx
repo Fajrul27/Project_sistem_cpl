@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Plus, Edit, Trash2, Loader2, Search, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -26,6 +26,7 @@ interface Cpmk {
     id: string;
     kodeCpmk: string;
     deskripsi: string | null;
+    levelTaksonomi: string | null;
     mataKuliahId: string;
     mataKuliah: MataKuliah;
     cplMappings: any[];
@@ -45,6 +46,7 @@ const CPMKPage = () => {
     const [formData, setFormData] = useState({
         kodeCpmk: "",
         deskripsi: "",
+        levelTaksonomi: "",
         mataKuliahId: "",
     });
 
@@ -124,6 +126,7 @@ const CPMKPage = () => {
                     body: JSON.stringify({
                         kodeCpmk: formData.kodeCpmk.trim(),
                         deskripsi: formData.deskripsi.trim() || null,
+                        levelTaksonomi: formData.levelTaksonomi || null,
                     })
                 });
 
@@ -142,6 +145,7 @@ const CPMKPage = () => {
                     body: JSON.stringify({
                         kodeCpmk: formData.kodeCpmk.trim(),
                         deskripsi: formData.deskripsi.trim() || null,
+                        levelTaksonomi: formData.levelTaksonomi || null,
                         mataKuliahId: formData.mataKuliahId,
                     })
                 });
@@ -170,6 +174,7 @@ const CPMKPage = () => {
         setFormData({
             kodeCpmk: cpmk.kodeCpmk,
             deskripsi: cpmk.deskripsi || "",
+            levelTaksonomi: cpmk.levelTaksonomi || "",
             mataKuliahId: cpmk.mataKuliahId,
         });
         setDialogOpen(true);
@@ -206,6 +211,7 @@ const CPMKPage = () => {
         setFormData({
             kodeCpmk: "",
             deskripsi: "",
+            levelTaksonomi: "",
             mataKuliahId: "",
         });
         setEditingCpmk(null);
@@ -301,13 +307,51 @@ const CPMKPage = () => {
                                     <form onSubmit={handleSubmit} className="space-y-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="kodeCpmk">Kode CPMK</Label>
-                                            <Input
-                                                id="kodeCpmk"
-                                                placeholder="Contoh: CPMK 1, CPMK 2"
-                                                value={formData.kodeCpmk}
-                                                onChange={(e) => setFormData({ ...formData, kodeCpmk: e.target.value })}
-                                                required
-                                            />
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    id="kodeCpmk"
+                                                    placeholder="Contoh: CPMK 1"
+                                                    value={formData.kodeCpmk}
+                                                    onChange={(e) => setFormData({ ...formData, kodeCpmk: e.target.value })}
+                                                    required
+                                                    className="flex-1"
+                                                />
+                                                <Select
+                                                    value={formData.levelTaksonomi || undefined}
+                                                    onValueChange={(value) => setFormData({ ...formData, levelTaksonomi: value })}
+                                                >
+                                                    <SelectTrigger className="w-[180px]">
+                                                        <SelectValue placeholder="Level Taksonomi" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectGroup>
+                                                            <SelectLabel>Kognitif</SelectLabel>
+                                                            <SelectItem value="C1">C1 - Mengingat</SelectItem>
+                                                            <SelectItem value="C2">C2 - Memahami</SelectItem>
+                                                            <SelectItem value="C3">C3 - Menerapkan</SelectItem>
+                                                            <SelectItem value="C4">C4 - Menganalisis</SelectItem>
+                                                            <SelectItem value="C5">C5 - Mengevaluasi</SelectItem>
+                                                            <SelectItem value="C6">C6 - Mencipta</SelectItem>
+                                                        </SelectGroup>
+                                                        <SelectGroup>
+                                                            <SelectLabel>Afektif</SelectLabel>
+                                                            <SelectItem value="A1">A1 - Menerima</SelectItem>
+                                                            <SelectItem value="A2">A2 - Merespon</SelectItem>
+                                                            <SelectItem value="A3">A3 - Menghargai</SelectItem>
+                                                            <SelectItem value="A4">A4 - Mengorganisasi</SelectItem>
+                                                            <SelectItem value="A5">A5 - Karakterisasi</SelectItem>
+                                                        </SelectGroup>
+                                                        <SelectGroup>
+                                                            <SelectLabel>Psikomotor</SelectLabel>
+                                                            <SelectItem value="P1">P1 - Meniru</SelectItem>
+                                                            <SelectItem value="P2">P2 - Manipulasi</SelectItem>
+                                                            <SelectItem value="P3">P3 - Presisi</SelectItem>
+                                                            <SelectItem value="P4">P4 - Artikulasi</SelectItem>
+                                                            <SelectItem value="P5">P5 - Naturalisasi</SelectItem>
+                                                        </SelectGroup>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="mataKuliah">Mata Kuliah</Label>
@@ -361,6 +405,7 @@ const CPMKPage = () => {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Kode CPMK</TableHead>
+                                    <TableHead>Level</TableHead>
                                     <TableHead>Deskripsi</TableHead>
                                     <TableHead>Mata Kuliah</TableHead>
                                     <TableHead className="text-center">Mapping CPL</TableHead>
@@ -379,6 +424,13 @@ const CPMKPage = () => {
                                     filteredCpmk.map((cpmk) => (
                                         <TableRow key={cpmk.id}>
                                             <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
+                                            <TableCell>
+                                                {cpmk.levelTaksonomi ? (
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-purple-100 text-purple-700 text-xs font-medium">
+                                                        {cpmk.levelTaksonomi}
+                                                    </span>
+                                                ) : "-"}
+                                            </TableCell>
                                             <TableCell>
                                                 {cpmk.deskripsi || "-"}
                                             </TableCell>

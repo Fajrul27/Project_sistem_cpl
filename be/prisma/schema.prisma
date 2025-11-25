@@ -165,6 +165,7 @@ model Cpmk {
   id              String    @id @default(uuid())
   kodeCpmk        String    @map("kode_cpmk")
   deskripsi       String?   @db.Text
+  levelTaksonomi  String?   @map("level_taksonomi") // e.g., C1, C2, P1, A1
   mataKuliahId    String    @map("mata_kuliah_id")
   statusValidasi  String    @default("draft") @map("status_validasi") // draft, validated, active
   validatedAt     DateTime? @map("validated_at")

@@ -15,6 +15,7 @@ interface CPMK {
     id: string;
     kodeCpmk: string;
     deskripsi: string | null;
+    levelTaksonomi: string | null;
     statusValidasi: 'draft' | 'validated' | 'active';
     validatedAt: string | null;
     createdAt: string;
@@ -151,6 +152,7 @@ const ValidasiCPMKPage = () => {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Kode CPMK</TableHead>
+                                    <TableHead>Level</TableHead>
                                     <TableHead>Deskripsi</TableHead>
                                     <TableHead>Mata Kuliah</TableHead>
                                     <TableHead>Pembuat</TableHead>
@@ -162,6 +164,13 @@ const ValidasiCPMKPage = () => {
                                 {filteredCPMK.map((cpmk) => (
                                     <TableRow key={cpmk.id}>
                                         <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
+                                        <TableCell>
+                                            {cpmk.levelTaksonomi ? (
+                                                <Badge variant="secondary" className="text-xs">
+                                                    {cpmk.levelTaksonomi}
+                                                </Badge>
+                                            ) : "-"}
+                                        </TableCell>
                                         <TableCell className="max-w-md truncate">
                                             {cpmk.deskripsi || '-'}
                                         </TableCell>
