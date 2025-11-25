@@ -21,6 +21,12 @@ interface MataKuliah {
   sks: number;
   semester: number;
   createdBy: string;
+  prodiId?: string;
+  kurikulumId?: string;
+  jenisMkId?: string;
+  prodi?: { id: string; nama: string };
+  kurikulum?: { id: string; nama: string };
+  jenisMk?: { id: string; nama: string };
 }
 
 const MataKuliahPage = () => {
@@ -36,20 +42,51 @@ const MataKuliahPage = () => {
     namaMk: "",
     sks: "3",
     semester: "1",
+    prodiId: "",
+    kurikulumId: "",
+    jenisMkId: ""
   });
+
+  const [prodiList, setProdiList] = useState<any[]>([]);
+  const [kurikulumList, setKurikulumList] = useState<any[]>([]);
+  const [jenisMkList, setJenisMkList] = useState<any[]>([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [semesterFilter, setSemesterFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchMataKuliah();
+    fetchMasterData();
   }, []);
+
+  const fetchMasterData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const [prodiRes, kurikulumRes, jenisMkRes] = await Promise.all([
+        fetch(`${API_URL}/prodi`, { headers }),
+        fetch(`${API_URL}/kurikulum`, { headers }),
+        fetch(`${API_URL}/jenis-mata-kuliah`, { headers })
+      ]);
+
+      const prodiData = await prodiRes.json();
+      const kurikulumData = await kurikulumRes.json();
+      const jenisMkData = await jenisMkRes.json();
+
+      if (prodiData.data) setProdiList(prodiData.data);
+      if (kurikulumData.data) setKurikulumList(kurikulumData.data);
+      if (jenisMkData.data) setJenisMkList(jenisMkData.data);
+    } catch (error) {
+      console.error("Error fetching master data:", error);
+    }
+  };
 
   const fetchMataKuliah = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${API_URL}/mata-kuliah`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -74,7 +111,7 @@ const MataKuliahPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.kodeMk || !formData.namaMk) {
       toast.error("Kode MK dan Nama MK harus diisi");
       return;
@@ -84,7 +121,7 @@ const MataKuliahPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      
+
       if (editingMK) {
         const response = await fetch(`${API_URL}/mata-kuliah/${editingMK.id}`, {
           method: 'PUT',
@@ -97,6 +134,9 @@ const MataKuliahPage = () => {
             namaMk: formData.namaMk.trim(),
             sks: parseInt(formData.sks),
             semester: parseInt(formData.semester),
+            prodiId: formData.prodiId || null,
+            kurikulumId: formData.kurikulumId || null,
+            jenisMkId: formData.jenisMkId || null,
           })
         });
 
@@ -114,6 +154,9 @@ const MataKuliahPage = () => {
             namaMk: formData.namaMk.trim(),
             sks: parseInt(formData.sks),
             semester: parseInt(formData.semester),
+            prodiId: formData.prodiId || null,
+            kurikulumId: formData.kurikulumId || null,
+            jenisMkId: formData.jenisMkId || null,
           })
         });
 
@@ -127,7 +170,7 @@ const MataKuliahPage = () => {
     } catch (error) {
       console.error('Error saving mata kuliah:', error);
       toast.error(
-        error instanceof Error 
+        error instanceof Error
           ? `Gagal menyimpan: ${error.message}`
           : 'Terjadi kesalahan saat menyimpan data'
       );
@@ -143,6 +186,9 @@ const MataKuliahPage = () => {
       namaMk: mk.namaMk,
       sks: mk.sks.toString(),
       semester: mk.semester.toString(),
+      prodiId: mk.prodiId || "",
+      kurikulumId: mk.kurikulumId || "",
+      jenisMkId: mk.jenisMkId || ""
     });
     setDialogOpen(true);
   };
@@ -152,7 +198,7 @@ const MataKuliahPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${API_URL}/mata-kuliah/${id}`, {
         method: 'DELETE',
         headers: {
@@ -161,7 +207,7 @@ const MataKuliahPage = () => {
       });
 
       if (!response.ok) throw new Error('Gagal hapus mata kuliah');
-      
+
       toast.success("Mata kuliah berhasil dihapus");
       await fetchMataKuliah();
     } catch (error) {
@@ -176,6 +222,9 @@ const MataKuliahPage = () => {
       namaMk: "",
       sks: "3",
       semester: "1",
+      prodiId: "",
+      kurikulumId: "",
+      jenisMkId: ""
     });
     setEditingMK(null);
   };
@@ -326,6 +375,59 @@ const MataKuliahPage = () => {
                         required
                       />
                     </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="prodi">Program Studi</Label>
+                      <Select
+                        value={formData.prodiId}
+                        onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih Program Studi" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {prodiList.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="kurikulum">Kurikulum</Label>
+                        <Select
+                          value={formData.kurikulumId}
+                          onValueChange={(val) => setFormData({ ...formData, kurikulumId: val })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih Kurikulum" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {kurikulumList.map((k) => (
+                              <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="jenisMk">Jenis MK</Label>
+                        <Select
+                          value={formData.jenisMkId}
+                          onValueChange={(val) => setFormData({ ...formData, jenisMkId: val })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih Jenis MK" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {jenisMkList.map((j) => (
+                              <SelectItem key={j.id} value={j.id}>{j.nama}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="sks">SKS</Label>

@@ -51,6 +51,22 @@ interface Mahasiswa {
     };
 }
 
+interface KaprodiData {
+    namaKaprodi: string;
+    nidnKaprodi: string;
+}
+
+interface User {
+    id: string;
+    profile?: {
+        namaLengkap: string;
+        nim: string;
+        prodi?: { nama: string };
+        programStudi?: string;
+        semester: number;
+    };
+}
+
 const TranskripCPLPage = () => {
     const { role, userId, loading: roleLoading } = useUserRole();
     const isMahasiswa = role === "mahasiswa";
@@ -60,7 +76,7 @@ const TranskripCPLPage = () => {
     const [selectedMahasiswa, setSelectedMahasiswa] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
-    const [kaprodiData, setKaprodiData] = useState<any>(null);
+    const [kaprodiData, setKaprodiData] = useState<KaprodiData | null>(null);
     const [settings, setSettings] = useState({
         univName: "UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI CILACAP",
         univAddress: "Jl. Kemerdekaan Barat No.17 Kesugihan Kidul, Kec. Kesugihan, Kabupaten Cilacap, Jawa Tengah 53274",
@@ -132,13 +148,13 @@ const TranskripCPLPage = () => {
             const response = await fetchMahasiswaList();
             const users = response?.data || [];
             const mapped: Mahasiswa[] = users
-                .filter((u: any) => u.profile && u.profile.nim)
-                .map((u: any) => ({
+                .filter((u: User) => u.profile && u.profile.nim)
+                .map((u: User) => ({
                     id: u.id,
                     profile: {
                         namaLengkap: u.profile.namaLengkap,
                         nim: u.profile.nim,
-                        programStudi: u.profile.programStudi,
+                        programStudi: u.profile.prodi?.nama || u.profile.programStudi,
                         semester: u.profile.semester
                     }
                 }));
@@ -310,7 +326,7 @@ const TranskripCPLPage = () => {
                     index + 1,
                     item.cpl.kodeCpl,
                     `${item.cpl.deskripsi}\nMK: ${item.mataKuliahList && item.mataKuliahList.length > 0
-                        ? item.mataKuliahList.map((mk: any) => mk.namaMk).join(', ')
+                        ? item.mataKuliahList.map((mk) => mk.namaMk).join(', ')
                         : (item.mataKuliah?.namaMk || '-')}`,
                     item.nilaiAkhir.toFixed(2),
                     item.status === 'tercapai' ? 'Tercapai' : 'Belum'
@@ -547,7 +563,7 @@ const TranskripCPLPage = () => {
                                                                 item.mataKuliahList[0].namaMk
                                                             ) : (
                                                                 <div className="flex flex-col gap-1">
-                                                                    {item.mataKuliahList.slice(0, 2).map((mk: any, idx: number) => (
+                                                                    {item.mataKuliahList.slice(0, 2).map((mk, idx: number) => (
                                                                         <div key={idx} className="text-xs">
                                                                             {mk.kodeMk} - {mk.namaMk}
                                                                         </div>

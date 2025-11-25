@@ -22,6 +22,10 @@ build/
 .next/
 out/
 
+# Compiled TypeScript files
+be/server/**/*.js
+be/prisma/**/*.js
+
 # Cache
 .cache/
 .vite/

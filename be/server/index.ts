@@ -48,6 +48,13 @@ import nilaiTeknikRoutes from './routes/nilai-teknik.js';
 import settingsRoutes from './routes/settings.js';
 import mataKuliahPengampuRoutes from './routes/mata-kuliah-pengampu.js';
 import kaprodiDataRoutes from './routes/kaprodi-data.js';
+import fakultasRoutes from './routes/fakultas.js';
+import prodiRoutes from './routes/prodi.js';
+import kurikulumRoutes from './routes/kurikulum.js';
+import jenisMataKuliahRoutes from './routes/jenis-mata-kuliah.js';
+import kategoriCplRoutes from './routes/kategori-cpl.js';
+import levelTaksonomiRoutes from './routes/level-taksonomi.js';
+import teknikPenilaianRefRoutes from './routes/teknik-penilaian-ref.js';
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -66,6 +73,13 @@ app.use('/api/nilai-teknik', nilaiTeknikRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/mata-kuliah-pengampu', mataKuliahPengampuRoutes);
 app.use('/api/kaprodi-data', kaprodiDataRoutes);
+app.use('/api/fakultas', fakultasRoutes);
+app.use('/api/prodi', prodiRoutes);
+app.use('/api/kurikulum', kurikulumRoutes);
+app.use('/api/jenis-mata-kuliah', jenisMataKuliahRoutes);
+app.use('/api/kategori-cpl', kategoriCplRoutes);
+app.use('/api/level-taksonomi', levelTaksonomiRoutes);
+app.use('/api/teknik-penilaian-ref', teknikPenilaianRefRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

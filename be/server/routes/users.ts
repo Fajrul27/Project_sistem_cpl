@@ -27,7 +27,9 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
       where,
       include: {
         role: true,
-        profile: true
+        profile: {
+          include: { prodi: true }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });

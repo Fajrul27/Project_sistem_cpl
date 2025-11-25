@@ -13,8 +13,14 @@ router.get('/:programStudi', authMiddleware, async (req, res) => {
     try {
         const { programStudi } = req.params;
 
-        const kaprodiData = await prisma.kaprodiData.findUnique({
-            where: { programStudi: programStudi.toUpperCase() }
+        const kaprodiData = await prisma.kaprodiData.findFirst({
+            where: {
+                OR: [
+                    { programStudi: programStudi.toUpperCase() },
+                    { prodi: { nama: programStudi } }
+                ]
+            },
+            include: { prodi: true }
         });
 
         if (!kaprodiData) {
@@ -38,7 +44,8 @@ router.get('/:programStudi', authMiddleware, async (req, res) => {
 router.get('/', authMiddleware, requireRole('admin'), async (req, res) => {
     try {
         const kaprodiData = await prisma.kaprodiData.findMany({
-            orderBy: { programStudi: 'asc' }
+            orderBy: { programStudi: 'asc' },
+            include: { prodi: true }
         });
 
         res.json({ data: kaprodiData });
@@ -51,18 +58,26 @@ router.get('/', authMiddleware, requireRole('admin'), async (req, res) => {
 // Create or update kaprodi data (Admin only)
 router.post('/', authMiddleware, requireRole('admin'), async (req, res) => {
     try {
-        const { programStudi, namaKaprodi, nidnKaprodi } = req.body;
+        const { programStudi, namaKaprodi, nidnKaprodi, prodiId } = req.body;
+
+        let targetProdiId = prodiId;
+        if (!targetProdiId && programStudi) {
+            const prodi = await prisma.prodi.findFirst({ where: { nama: programStudi } });
+            targetProdiId = prodi?.id;
+        }
 
         const kaprodiData = await prisma.kaprodiData.upsert({
             where: { programStudi: programStudi.toUpperCase() },
             create: {
                 programStudi: programStudi.toUpperCase(),
+                prodiId: targetProdiId,
                 namaKaprodi,
                 nidnKaprodi
             },
             update: {
                 namaKaprodi,
-                nidnKaprodi
+                nidnKaprodi,
+                prodiId: targetProdiId
             }
         });
 

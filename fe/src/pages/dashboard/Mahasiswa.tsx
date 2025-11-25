@@ -27,7 +27,24 @@ interface StudentProgress {
   avgScore: number;
   totalCPL: number;
   completedCPL: number;
-  cplDetails: { kode: string; nilai: number }[];
+  cplDetails: { kode: string; nilai: number; status?: string }[];
+}
+
+interface User {
+  id: string;
+  profile?: {
+    nim: string | null;
+    namaLengkap: string | null;
+    prodi?: { nama: string };
+    programStudi?: string;
+    semester: number | null;
+  };
+}
+
+interface TranskripItem {
+  cpl?: { kodeCpl: string };
+  nilaiAkhir: string;
+  status?: string;
 }
 
 const MahasiswaPage = () => {
@@ -52,12 +69,12 @@ const MahasiswaPage = () => {
       const users = response?.data || [];
 
       const mappedProfiles: Profile[] = users
-        .filter((user: any) => user.profile && user.profile.nim)
-        .map((user: any) => ({
+        .filter((user: User) => user.profile && user.profile.nim)
+        .map((user: User) => ({
           id: user.id, // Use User ID, not Profile ID
           full_name: user.profile.namaLengkap || "",
           nim: user.profile.nim,
-          prodi: user.profile.programStudi,
+          prodi: user.profile.prodi?.nama || user.profile.programStudi,
           semester: user.profile.semester,
         }));
 
@@ -98,15 +115,15 @@ const MahasiswaPage = () => {
 
       if (transkripList.length > 0) {
         // Map to cplDetails
-        const cplDetails = transkripList.map((item: any) => ({
+        const cplDetails = transkripList.map((item: TranskripItem) => ({
           kode: item.cpl?.kodeCpl || "Unknown",
           nilai: parseFloat(item.nilaiAkhir) || 0,
           status: item.status || 'belum_tercapai'
         }));
 
         const avgScore =
-          cplDetails.reduce((sum: number, item: any) => sum + item.nilai, 0) / cplDetails.length;
-        const completedCPL = cplDetails.filter((item: any) => item.status === 'tercapai').length;
+          cplDetails.reduce((sum: number, item: { nilai: number }) => sum + item.nilai, 0) / cplDetails.length;
+        const completedCPL = cplDetails.filter((item: { status?: string }) => item.status === 'tercapai').length;
 
         setStudentProgress({
           avgScore: parseFloat(avgScore.toFixed(2)),

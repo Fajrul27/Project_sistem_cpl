@@ -1,0 +1,29 @@
+{
+  "profiles": [
+    {
+      "programStudi": "Fakultas Keagamaan Islam (FKI) - Komunikasi dan Penyiaran Islam (KPI)"
+    },
+    {
+      "programStudi": "Fakultas Keguruan dan Ilmu Pendidikan (FKIP) - Pendidikan Guru SD (PGSD)"
+    },
+    {
+      "programStudi": "Fakultas Matematika dan Komputer (FMIKOM) - Informatika"
+    },
+    {
+      "programStudi": "Fakultas Teknologi Industri (FTI) - Teknik Kimia"
+    },
+    {
+      "programStudi": "Teknik Informatika"
+    }
+  ],
+  "kaprodi": [
+    {
+      "id": "3fc997aa-f77a-4f3f-a42d-03cd6fbbf4f8",
+      "programStudi": "TEKNIK INFORMATIKA",
+      "namaKaprodi": "Safiq Rosad, S.T., M. Kom ",
+      "nidnKaprodi": "NIDN. 0609018101",
+      "createdAt": "2025-11-25T01:16:37.257Z",
+      "updatedAt": "2025-11-25T01:16:37.257Z"
+    }
+  ]
+}

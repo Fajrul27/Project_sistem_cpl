@@ -14,8 +14,16 @@ router.get('/', authMiddleware, async (req, res) => {
     const userId = (req as any).userId;
     const userRole = (req as any).userRole;
 
-    // If mahasiswa, only show their own nilai
-    const where = userRole === 'mahasiswa' ? { mahasiswaId: userId } : {};
+    const { cplId } = req.query;
+
+    // Build where clause
+    const where: any = {};
+    if (userRole === 'mahasiswa') {
+      where.mahasiswaId = userId;
+    }
+    if (cplId) {
+      where.cplId = cplId as string;
+    }
 
     const nilaiCpl = await prisma.nilaiCpl.findMany({
       where,

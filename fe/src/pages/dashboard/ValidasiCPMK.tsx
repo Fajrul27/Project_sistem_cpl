@@ -16,6 +16,10 @@ interface CPMK {
     kodeCpmk: string;
     deskripsi: string | null;
     levelTaksonomi: string | null;
+    levelTaksonomiRef?: {
+        kode: string;
+        deskripsi: string;
+    };
     statusValidasi: 'draft' | 'validated' | 'active';
     validatedAt: string | null;
     createdAt: string;
@@ -56,7 +60,7 @@ const ValidasiCPMKPage = () => {
 
             const data = await response.json();
             setCpmkList(Array.isArray(data.data) ? data.data : []);
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error fetching CPMK:", error);
             toast.error("Gagal memuat data CPMK");
         } finally {
@@ -82,9 +86,10 @@ const ValidasiCPMKPage = () => {
 
             toast.success(`Status berhasil diubah menjadi ${newStatus}`);
             await fetchCPMK();
-        } catch (error: any) {
+            await fetchCPMK();
+        } catch (error) {
             console.error('Error updating validation:', error);
-            toast.error(error.message || 'Gagal mengubah status validasi');
+            toast.error(error instanceof Error ? error.message : 'Gagal mengubah status validasi');
         } finally {
             setUpdating(null);
         }
@@ -165,7 +170,11 @@ const ValidasiCPMKPage = () => {
                                     <TableRow key={cpmk.id}>
                                         <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
                                         <TableCell>
-                                            {cpmk.levelTaksonomi ? (
+                                            {cpmk.levelTaksonomiRef ? (
+                                                <Badge variant="secondary" className="text-xs">
+                                                    {cpmk.levelTaksonomiRef.kode}
+                                                </Badge>
+                                            ) : cpmk.levelTaksonomi ? (
                                                 <Badge variant="secondary" className="text-xs">
                                                     {cpmk.levelTaksonomi}
                                                 </Badge>

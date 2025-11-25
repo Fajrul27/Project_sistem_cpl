@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/api-client";
 
-export type UserRole = "admin" | "dosen" | "mahasiswa" | "kaprodi" | null;
+export type UserRole = "admin" | "dosen" | "mahasiswa" | "kaprodi" | "dekan" | null;
 
 export function useUserRole() {
   const [role, setRole] = useState<UserRole>(null);
