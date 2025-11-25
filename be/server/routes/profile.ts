@@ -21,7 +21,9 @@ router.put('/:id', authMiddleware, async (req, res) => {
       semester,
       tahunMasuk,
       alamat,
-      noTelepon
+      noTelepon,
+      prodiId,
+      fakultasId
     } = req.body;
 
     // Check if profile belongs to current user or user is admin
@@ -50,7 +52,9 @@ router.put('/:id', authMiddleware, async (req, res) => {
         semester: semester ? parseInt(semester) : null,
         tahunMasuk: tahunMasuk ? parseInt(tahunMasuk) : null,
         alamat: alamat || null,
-        noTelepon: noTelepon || null
+        noTelepon: noTelepon || null,
+        prodiId: prodiId || null,
+        fakultasId: fakultasId || null
       }
     });
 

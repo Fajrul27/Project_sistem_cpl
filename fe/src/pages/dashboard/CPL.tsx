@@ -21,6 +21,8 @@ interface CPL {
   kodeCpl: string;
   deskripsi: string;
   kategori: string;
+  kategoriId?: string;
+  kategoriRef?: { id: string; nama: string };
   bobot: number;
   createdAt?: string;
   updatedAt?: string;
@@ -29,13 +31,14 @@ interface CPL {
 type FormData = {
   kodeCpl: string;
   deskripsi: string;
-  kategori: string;
+  kategoriId: string;
   bobot: string;
 };
 
 const CPLPage = () => {
   const navigate = useNavigate();
   const [cplList, setCplList] = useState<CPL[]>([]);
+  const [kategoriList, setKategoriList] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -48,7 +51,7 @@ const CPLPage = () => {
   const [formData, setFormData] = useState<FormData>({
     kodeCpl: "",
     deskripsi: "",
-    kategori: "",
+    kategoriId: "",
     bobot: "1.0",
   });
 
@@ -57,7 +60,21 @@ const CPLPage = () => {
 
   useEffect(() => {
     fetchCPL();
+    fetchKategori();
   }, []);
+
+  const fetchKategori = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/kategori-cpl`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.data) setKategoriList(result.data);
+    } catch (error) {
+      console.error("Error fetching kategori CPL:", error);
+    }
+  };
 
   const fetchCPL = async () => {
     try {
@@ -89,7 +106,7 @@ const CPLPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.kodeCpl || !formData.deskripsi || !formData.kategori) {
+    if (!formData.kodeCpl || !formData.deskripsi || !formData.kategoriId) {
       toast.error("Semua field harus diisi");
       return;
     }
@@ -115,7 +132,7 @@ const CPLPage = () => {
           body: JSON.stringify({
             kodeCpl: formData.kodeCpl.trim(),
             deskripsi: formData.deskripsi.trim(),
-            kategori: formData.kategori.trim(),
+            kategoriId: formData.kategoriId,
             bobot: bobotValue,
           })
         });
@@ -132,7 +149,7 @@ const CPLPage = () => {
           body: JSON.stringify({
             kodeCpl: formData.kodeCpl.trim(),
             deskripsi: formData.deskripsi.trim(),
-            kategori: formData.kategori.trim(),
+            kategoriId: formData.kategoriId,
             bobot: bobotValue,
           })
         });
@@ -161,7 +178,7 @@ const CPLPage = () => {
     setFormData({
       kodeCpl: cpl.kodeCpl,
       deskripsi: cpl.deskripsi,
-      kategori: cpl.kategori,
+      kategoriId: cpl.kategoriId || "",
       bobot: cpl.bobot.toString(),
     });
     setDialogOpen(true);
@@ -197,7 +214,7 @@ const CPLPage = () => {
     setFormData({
       kodeCpl: "",
       deskripsi: "",
-      kategori: "",
+      kategoriId: "",
       bobot: "1.0",
     });
     setEditingCPL(null);
@@ -212,7 +229,7 @@ const CPLPage = () => {
   const canEdit = role === "admin" || role === "kaprodi";
 
   const kategoriOptions = Array.from(
-    new Set(cplList.map((cpl) => cpl.kategori).filter((k) => k && k.trim() !== ""))
+    new Set(cplList.map((cpl) => cpl.kategoriRef?.nama || cpl.kategori).filter((k) => k && k.trim() !== ""))
   );
 
   const filteredCPLs = cplList.filter((cpl) => {
@@ -220,10 +237,10 @@ const CPLPage = () => {
     const matchSearch =
       cpl.kodeCpl.toLowerCase().includes(q) ||
       cpl.deskripsi.toLowerCase().includes(q) ||
-      (cpl.kategori || "").toLowerCase().includes(q);
+      (cpl.kategoriRef?.nama || cpl.kategori || "").toLowerCase().includes(q);
 
     const matchKategori =
-      kategoriFilter === "all" || cpl.kategori === kategoriFilter;
+      kategoriFilter === "all" || (cpl.kategoriRef?.nama || cpl.kategori) === kategoriFilter;
 
     return matchSearch && matchKategori;
   });
@@ -386,13 +403,19 @@ const CPLPage = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="kategori">Kategori</Label>
-                      <Input
-                        id="kategori"
-                        placeholder="Contoh: Sikap, Pengetahuan, Keterampilan"
-                        value={formData.kategori}
-                        onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
-                        required
-                      />
+                      <Select
+                        value={formData.kategoriId}
+                        onValueChange={(val) => setFormData({ ...formData, kategoriId: val })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih Kategori" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {kategoriList.map((k) => (
+                            <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="bobot">Bobot</Label>
@@ -445,7 +468,7 @@ const CPLPage = () => {
                   <TableRow key={cpl.id}>
                     <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
                     <TableCell>{cpl.deskripsi}</TableCell>
-                    <TableCell>{cpl.kategori}</TableCell>
+                    <TableCell>{cpl.kategoriRef?.nama || cpl.kategori}</TableCell>
                     <TableCell>{(Number(cpl.bobot) * 100).toFixed(1)}%</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

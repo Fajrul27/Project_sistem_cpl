@@ -37,13 +37,20 @@ router.get('/cpmk/:cpmkId', authMiddleware, async (req, res) => {
 // Create teknik penilaian
 router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
     try {
-        const { cpmkId, namaTeknik, bobotPersentase, deskripsi } = req.body;
+        const { cpmkId, namaTeknik, bobotPersentase, deskripsi, teknikRefId } = req.body;
 
         // Validate required fields
-        if (!cpmkId || !namaTeknik || bobotPersentase === undefined) {
+        if (!cpmkId || (!namaTeknik && !teknikRefId) || bobotPersentase === undefined) {
             return res.status(400).json({
-                error: 'CPMK, Nama Teknik, dan Bobot Persentase harus diisi'
+                error: 'CPMK, Nama Teknik (atau Ref ID), dan Bobot Persentase harus diisi'
             });
+        }
+
+        let finalNamaTeknik = namaTeknik;
+        if (teknikRefId) {
+            const ref = await prisma.teknikPenilaianRef.findUnique({ where: { id: teknikRefId } });
+            if (!ref) return res.status(400).json({ error: 'Teknik Penilaian Ref tidak ditemukan' });
+            finalNamaTeknik = ref.nama;
         }
 
         // Validate bobot range
@@ -81,7 +88,8 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res)
         const teknikPenilaian = await prisma.teknikPenilaian.create({
             data: {
                 cpmkId,
-                namaTeknik: namaTeknik.trim(),
+                namaTeknik: finalNamaTeknik.trim(),
+                teknikRefId: teknikRefId || null,
                 bobotPersentase: bobot,
                 deskripsi: deskripsi?.trim() || null
             }
@@ -101,7 +109,7 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res)
 router.put('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
     try {
         const { id } = req.params;
-        const { namaTeknik, bobotPersentase, deskripsi } = req.body;
+        const { namaTeknik, bobotPersentase, deskripsi, teknikRefId } = req.body;
 
         // Check if teknik penilaian exists
         const existing = await prisma.teknikPenilaian.findUnique({
@@ -118,6 +126,14 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, re
 
         if (namaTeknik !== undefined) {
             updateData.namaTeknik = namaTeknik.trim();
+        }
+        if (teknikRefId !== undefined) {
+            updateData.teknikRefId = teknikRefId;
+            // Also update name if ref changed
+            if (teknikRefId) {
+                const ref = await prisma.teknikPenilaianRef.findUnique({ where: { id: teknikRefId } });
+                if (ref) updateData.namaTeknik = ref.nama;
+            }
         }
 
         if (deskripsi !== undefined) {

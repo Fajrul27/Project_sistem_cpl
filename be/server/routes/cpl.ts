@@ -22,6 +22,9 @@ router.get('/', authMiddleware, async (req, res) => {
   try {
     const cpl = await prisma.cpl.findMany({
       where: { isActive: true },
+      include: {
+        kategoriRef: true
+      },
       orderBy: { kodeCpl: 'asc' }
     });
 
@@ -53,7 +56,8 @@ router.get('/:id', authMiddleware, async (req, res) => {
           include: {
             mataKuliah: true
           }
-        }
+        },
+        kategoriRef: true
       }
     });
 
@@ -68,11 +72,122 @@ router.get('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// Get CPL Stats
+router.get('/:id/stats', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Fetch all grades for this CPL
+    const nilaiList = await prisma.nilaiCpl.findMany({
+      where: { cplId: id },
+      include: {
+        mataKuliah: true
+      }
+    });
+
+    if (nilaiList.length === 0) {
+      return res.json({
+        avgNilai: 0,
+        totalMahasiswa: 0,
+        totalMK: 0,
+        trend: 'stable',
+        semesterData: [],
+        distribution: [],
+        mkData: []
+      });
+    }
+
+    // Calculate stats
+    const totalNilai = nilaiList.reduce((sum, item) => sum + Number(item.nilai), 0);
+    const avgNilai = totalNilai / nilaiList.length;
+
+    const uniqueMahasiswa = new Set(nilaiList.map(n => n.mahasiswaId));
+    const uniqueMK = new Set(nilaiList.map(n => n.mataKuliahId));
+
+    // Semester Data (Trend)
+    const semesterMap = new Map();
+    nilaiList.forEach(n => {
+      const key = `${n.tahunAjaran} - Sem ${n.semester}`;
+      if (!semesterMap.has(key)) {
+        semesterMap.set(key, { sum: 0, count: 0, semester: key });
+      }
+      const entry = semesterMap.get(key);
+      entry.sum += Number(n.nilai);
+      entry.count += 1;
+    });
+
+    const semesterData = Array.from(semesterMap.values()).map((entry: any) => ({
+      semester: entry.semester,
+      nilai: Number((entry.sum / entry.count).toFixed(2))
+    }));
+
+    // Determine Trend
+    let trend = 'stable';
+    if (semesterData.length >= 2) {
+      const last = semesterData[semesterData.length - 1].nilai;
+      const prev = semesterData[semesterData.length - 2].nilai;
+      if (last > prev) trend = 'up';
+      else if (last < prev) trend = 'down';
+    }
+
+    // Distribution
+    const ranges = [
+      { range: '0-50', min: 0, max: 50, count: 0 },
+      { range: '51-60', min: 51, max: 60, count: 0 },
+      { range: '61-70', min: 61, max: 70, count: 0 },
+      { range: '71-80', min: 71, max: 80, count: 0 },
+      { range: '81-100', min: 81, max: 100, count: 0 },
+    ];
+
+    nilaiList.forEach(n => {
+      const val = Number(n.nilai);
+      const range = ranges.find(r => val >= r.min && val <= r.max);
+      if (range) range.count++;
+    });
+
+    const distribution = ranges.map(r => ({ range: r.range, count: r.count }));
+
+    // MK Data (Top 10)
+    const mkMap = new Map();
+    nilaiList.forEach(n => {
+      const mkName = n.mataKuliah.namaMk;
+      if (!mkMap.has(mkName)) {
+        mkMap.set(mkName, { sum: 0, count: 0, name: mkName });
+      }
+      const entry = mkMap.get(mkName);
+      entry.sum += Number(n.nilai);
+      entry.count += 1;
+    });
+
+    const mkData = Array.from(mkMap.values())
+      .map((entry: any) => ({
+        name: entry.name,
+        nilai: Number((entry.sum / entry.count).toFixed(2))
+      }))
+      .sort((a, b) => b.nilai - a.nilai)
+      .slice(0, 10);
+
+    res.json({
+      avgNilai: Number(avgNilai.toFixed(2)),
+      totalMahasiswa: uniqueMahasiswa.size,
+      totalMK: uniqueMK.size,
+      trend,
+      semesterData,
+      distribution,
+      mkData
+    });
+
+  } catch (error) {
+    console.error('Get CPL Stats error:', error);
+    res.status(500).json({ error: 'Gagal mengambil statistik CPL' });
+  }
+});
+
 // Create CPL
 router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { kodeCpl, deskripsi, kategori, bobot } = req.body;
+    const { kodeCpl, deskripsi, kategori, kategoriId, bobot } = req.body;
 
     const cpl = await prisma.cpl.create({
       data: {
@@ -107,7 +222,7 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (req, 
     const { id } = req.params;
     const userId = (req as any).userId;
     const userRole = (req as any).userRole;
-    const { kodeCpl, deskripsi, kategori, bobot } = req.body;
+    const { kodeCpl, deskripsi, kategori, kategoriId, bobot } = req.body;
 
     // Check existence and ownership
     const existing = await prisma.cpl.findUnique({ where: { id } });

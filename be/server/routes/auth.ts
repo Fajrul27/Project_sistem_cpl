@@ -13,7 +13,7 @@ const router = Router();
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, fullName } = req.body;
+    const { email, password, fullName, prodiId } = req.body;
 
     // Validation
     if (!email || !password) {
@@ -32,6 +32,14 @@ router.post('/register', async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
+    let fakultasId = null;
+    if (prodiId) {
+      const prodi = await prisma.prodi.findUnique({ where: { id: prodiId } });
+      if (prodi) {
+        fakultasId = prodi.fakultasId;
+      }
+    }
+
     // Create user with profile and role
     const user = await prisma.user.create({
       data: {
@@ -45,7 +53,9 @@ router.post('/register', async (req, res) => {
         },
         profile: {
           create: {
-            namaLengkap: fullName || 'User Baru'
+            namaLengkap: fullName || 'User Baru',
+            prodiId: prodiId || null,
+            fakultasId: fakultasId
           }
         }
       },

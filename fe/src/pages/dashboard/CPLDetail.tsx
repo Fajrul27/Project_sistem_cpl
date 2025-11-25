@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/api-client";
+import { api } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,185 +12,78 @@ import { toast } from "sonner";
 
 interface CPLData {
   id: string;
-  kode_cpl: string;
+  kodeCpl: string;
   deskripsi: string;
   kategori: string;
+  kategoriRef?: { id: string; nama: string };
   bobot: number;
-}
-
-interface CPLStats {
-  avgNilai: number;
-  totalMahasiswa: number;
-  totalMK: number;
-  trend: string;
-  distribution: { range: string; count: number }[];
-  semesterData: { semester: string; nilai: number }[];
-  mkData: { name: string; nilai: number }[];
+  mataKuliah?: any[];
 }
 
 const CPLDetailPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const navigate = useNavigate();
   const [cpl, setCpl] = useState<CPLData | null>(null);
-  const [stats, setStats] = useState<CPLStats | null>(null);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchCPL = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/cpl/${id}`);
+        if (response.data) {
+          setCpl(response.data);
+
+          // Fetch real stats from backend
+          try {
+            const statsResponse = await api.get(`/cpl/${id}/stats`);
+            setStats(statsResponse);
+          } catch (statsError) {
+            console.error("Error fetching stats:", statsError);
+            // Fallback to empty stats if fetch fails
+            setStats({
+              avgNilai: 0,
+              trend: "stable",
+              totalMahasiswa: 0,
+              totalMK: response.data.mataKuliah?.length || 0,
+              semesterData: [],
+              distribution: [],
+              mkData: []
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching CPL:", error);
+        toast.error("Gagal memuat detail CPL");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (id) {
-      fetchCPLDetail();
+      fetchCPL();
     }
   }, [id]);
 
-  const fetchCPLDetail = async () => {
-    try {
-      const supabaseClient = supabase as any;
-      
-      // Fetch CPL data
-      const { data: cplData, error: cplError } = await supabaseClient
-        .from("cpl")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (cplError) throw cplError;
-      setCpl(cplData);
-
-      // Fetch nilai data
-      const { data: nilaiData, error: nilaiError } = await supabaseClient
-        .from("nilai_cpl")
-        .select(`
-          nilai,
-          semester,
-          mahasiswa_id,
-          mata_kuliah:mata_kuliah_id (kode_mk, nama_mk)
-        `)
-        .eq("cpl_id", id);
-
-      if (nilaiError) throw nilaiError;
-
-      // Calculate statistics
-      if (nilaiData && nilaiData.length > 0) {
-        const avgNilai = nilaiData.reduce((sum, item) => sum + parseFloat(item.nilai.toString()), 0) / nilaiData.length;
-        const uniqueStudents = new Set(nilaiData.map((item) => item.mahasiswa_id));
-        const uniqueMK = new Set(nilaiData.map((item) => item.mata_kuliah?.kode_mk));
-
-        // Distribution
-        const ranges = [
-          { range: "0-59", min: 0, max: 59, count: 0 },
-          { range: "60-69", min: 60, max: 69, count: 0 },
-          { range: "70-79", min: 70, max: 79, count: 0 },
-          { range: "80-89", min: 80, max: 89, count: 0 },
-          { range: "90-100", min: 90, max: 100, count: 0 },
-        ];
-
-        nilaiData.forEach((item) => {
-          const nilai = parseFloat(item.nilai.toString());
-          const range = ranges.find((r) => nilai >= r.min && nilai <= r.max);
-          if (range) range.count++;
-        });
-
-        // Semester data
-        const semesterAvg: any = {};
-        nilaiData.forEach((item) => {
-          if (!semesterAvg[item.semester]) {
-            semesterAvg[item.semester] = { total: 0, count: 0 };
-          }
-          semesterAvg[item.semester].total += parseFloat(item.nilai.toString());
-          semesterAvg[item.semester].count += 1;
-        });
-
-        const semesterData = Object.entries(semesterAvg)
-          .map(([sem, data]: [string, any]) => ({
-            semester: `Sem ${sem}`,
-            nilai: parseFloat((data.total / data.count).toFixed(2)),
-          }))
-          .sort((a, b) => a.semester.localeCompare(b.semester));
-
-        // MK data
-        const mkAvg: any = {};
-        nilaiData.forEach((item) => {
-          const mkName = item.mata_kuliah?.kode_mk || "Unknown";
-          if (!mkAvg[mkName]) {
-            mkAvg[mkName] = { total: 0, count: 0 };
-          }
-          mkAvg[mkName].total += parseFloat(item.nilai.toString());
-          mkAvg[mkName].count += 1;
-        });
-
-        const mkData = Object.entries(mkAvg)
-          .map(([name, data]: [string, any]) => ({
-            name,
-            nilai: parseFloat((data.total / data.count).toFixed(2)),
-          }))
-          .sort((a, b) => b.nilai - a.nilai)
-          .slice(0, 10);
-
-        // Trend calculation
-        let trend = "stable";
-        if (semesterData.length >= 2) {
-          const lastTwo = semesterData.slice(-2);
-          const diff = lastTwo[1].nilai - lastTwo[0].nilai;
-          if (diff > 5) trend = "up";
-          else if (diff < -5) trend = "down";
-        }
-
-        setStats({
-          avgNilai: parseFloat(avgNilai.toFixed(2)),
-          totalMahasiswa: uniqueStudents.size,
-          totalMK: uniqueMK.size,
-          trend,
-          distribution: ranges,
-          semesterData,
-          mkData,
-        });
-      } else {
-        setStats({
-          avgNilai: 0,
-          totalMahasiswa: 0,
-          totalMK: 0,
-          trend: "stable",
-          distribution: [],
-          semesterData: [],
-          mkData: [],
-        });
-      }
-    } catch (error: any) {
-      toast.error("Gagal memuat data CPL");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getTrendIcon = () => {
-    if (!stats) return null;
-    switch (stats.trend) {
-      case "up":
-        return <TrendingUp className="h-5 w-5 text-green-500" />;
-      case "down":
-        return <TrendingDown className="h-5 w-5 text-red-500" />;
-      default:
-        return <Minus className="h-5 w-5 text-gray-500" />;
-    }
+    if (stats?.trend === "up") return <TrendingUp className="h-4 w-4 text-green-500" />;
+    if (stats?.trend === "down") return <TrendingDown className="h-4 w-4 text-red-500" />;
+    return <Minus className="h-4 w-4 text-gray-500" />;
   };
 
   const getTrendColor = () => {
-    if (!stats) return "secondary";
-    switch (stats.trend) {
-      case "up":
-        return "default";
-      case "down":
-        return "destructive";
-      default:
-        return "secondary";
-    }
+    if (stats?.trend === "up") return "success";
+    if (stats?.trend === "down") return "destructive";
+    return "secondary";
   };
 
   if (loading) {
     return (
       <DashboardPage title="Detail CPL">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Memuat data CPL...</p>
         </div>
       </DashboardPage>
     );
@@ -198,22 +91,18 @@ const CPLDetailPage = () => {
 
   if (!cpl) {
     return (
-      <DashboardPage title="CPL Tidak Ditemukan">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-center text-muted-foreground">CPL tidak ditemukan</p>
-            <div className="flex justify-center mt-4">
-              <Button onClick={() => navigate("/dashboard/cpl")}>Kembali ke Daftar CPL</Button>
-            </div>
-          </CardContent>
-        </Card>
+      <DashboardPage title="Detail CPL">
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <p className="text-muted-foreground">CPL tidak ditemukan</p>
+          <Button onClick={() => navigate("/dashboard/cpl")}>Kembali ke Daftar</Button>
+        </div>
       </DashboardPage>
     );
   }
 
   return (
     <DashboardPage
-      title={`Detail ${cpl.kode_cpl}`}
+      title={`Detail ${cpl.kodeCpl}`}
       description={cpl.deskripsi}
       actions={
         <Button variant="outline" onClick={() => navigate("/dashboard/cpl")}>
@@ -231,7 +120,7 @@ const CPLDetailPage = () => {
               {getTrendIcon()}
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.avgNilai.toFixed(2) || "N/A"}</div>
+              <div className="text-2xl font-bold">{stats?.avgNilai?.toFixed(2) || "N/A"}</div>
               <Progress value={stats?.avgNilai || 0} className="mt-2" />
               <Badge variant={getTrendColor() as any} className="mt-2">
                 Trend: {stats?.trend === "up" ? "Naik" : stats?.trend === "down" ? "Turun" : "Stabil"}
@@ -264,7 +153,7 @@ const CPLDetailPage = () => {
               <CardTitle className="text-sm font-medium">Kategori</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{cpl.kategori}</div>
+              <div className="text-2xl font-bold">{cpl.kategoriRef?.nama || cpl.kategori || "-"}</div>
               <p className="text-xs text-muted-foreground mt-2">Bobot: {cpl.bobot}</p>
             </CardContent>
           </Card>

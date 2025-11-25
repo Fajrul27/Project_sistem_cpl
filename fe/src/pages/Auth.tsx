@@ -7,6 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { GraduationCap, Eye, EyeOff } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -18,6 +25,8 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [prodiList, setProdiList] = useState<any[]>([]);
+  const [selectedProdi, setSelectedProdi] = useState("");
 
   useEffect(() => {
     // Check if user already logged in
@@ -25,6 +34,20 @@ const Auth = () => {
     if (token) {
       navigate("/dashboard");
     }
+
+    // Fetch Prodi list
+    const fetchProdi = async () => {
+      try {
+        const response = await fetch(`${API_URL}/prodi`);
+        const data = await response.json();
+        if (data.data) {
+          setProdiList(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch prodi:", error);
+      }
+    };
+    fetchProdi();
   }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -84,7 +107,7 @@ const Auth = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, fullName }),
+        body: JSON.stringify({ email, password, fullName, prodiId: selectedProdi }),
       });
 
       // Baca body sebagai text dulu supaya aman kalau backend kirim non-JSON / kosong
@@ -197,6 +220,21 @@ const Auth = () => {
                     required
                     className="bg-card"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-prodi">Program Studi</Label>
+                  <Select value={selectedProdi} onValueChange={setSelectedProdi}>
+                    <SelectTrigger className="bg-card">
+                      <SelectValue placeholder="Pilih Program Studi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {prodiList.map((prodi) => (
+                        <SelectItem key={prodi.id} value={prodi.id}>
+                          {prodi.nama}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>

@@ -23,7 +23,10 @@ router.get('/', authMiddleware, async (req, res) => {
       where.id = { in: accessibleIds };
     } else if (userRole === 'kaprodi') {
       const profile = await prisma.profile.findUnique({ where: { userId } });
-      if (profile?.programStudi) {
+      if (profile?.prodiId) {
+        where.prodiId = profile.prodiId;
+      } else if (profile?.programStudi) {
+        // Fallback for legacy
         where.programStudi = profile.programStudi;
       }
     }
@@ -60,17 +63,25 @@ router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, re
   try {
     const userId = (req as any).userId;
     const userRole = (req as any).userRole;
-    const { kodeMk, namaMk, sks, semester, programStudi } = req.body;
+    const { kodeMk, namaMk, sks, semester, programStudi, prodiId, kurikulumId, jenisMkId } = req.body;
 
     let prodiToUse = programStudi;
 
     // If Kaprodi, force programStudi to be their own
+    // If Kaprodi, force prodiId to be their own
     if (userRole === 'kaprodi') {
       const profile = await prisma.profile.findUnique({ where: { userId } });
-      if (!profile?.programStudi) {
+      if (!profile?.prodiId && !profile?.programStudi) {
         return res.status(400).json({ error: 'Profil Kaprodi tidak memiliki Program Studi' });
       }
-      prodiToUse = profile.programStudi;
+      // Prefer prodiId
+      if (profile.prodiId) {
+        // Check if prodiId matches request if provided? Or just override?
+        // Let's override or ensure consistency
+        prodiToUse = null; // Deprecated field
+      } else {
+        prodiToUse = profile.programStudi;
+      }
     }
 
     const mataKuliah = await prisma.mataKuliah.create({
@@ -80,6 +91,9 @@ router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, re
         sks: parseInt(sks),
         semester: parseInt(semester),
         programStudi: prodiToUse,
+        prodiId: prodiId || (userRole === 'kaprodi' ? (await prisma.profile.findUnique({ where: { userId } }))?.prodiId : null),
+        kurikulumId,
+        jenisMkId,
         createdBy: userId,
       },
     });
@@ -97,7 +111,7 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (req, 
     const { id } = req.params;
     const userId = (req as any).userId;
     const userRole = (req as any).userRole;
-    const { kodeMk, namaMk, sks, semester, programStudi } = req.body;
+    const { kodeMk, namaMk, sks, semester, programStudi, prodiId, kurikulumId, jenisMkId } = req.body;
 
     // Check access
     const existing = await prisma.mataKuliah.findUnique({ where: { id } });
@@ -105,7 +119,12 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (req, 
 
     if (userRole === 'kaprodi') {
       const profile = await prisma.profile.findUnique({ where: { userId } });
-      if (existing.programStudi !== profile?.programStudi) {
+      // Check prodiId match
+      if (existing.prodiId && profile?.prodiId) {
+        if (existing.prodiId !== profile.prodiId) {
+          return res.status(403).json({ error: 'Anda tidak memiliki akses untuk mengedit mata kuliah ini' });
+        }
+      } else if (existing.programStudi !== profile?.programStudi) {
         return res.status(403).json({ error: 'Anda tidak memiliki akses untuk mengedit mata kuliah ini' });
       }
     }
@@ -117,7 +136,10 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (req, 
         namaMk,
         sks: parseInt(sks),
         semester: parseInt(semester),
-        programStudi: userRole === 'admin' ? programStudi : existing.programStudi // Kaprodi cannot change prodi
+        programStudi: userRole === 'admin' ? programStudi : existing.programStudi,
+        prodiId: userRole === 'admin' ? prodiId : existing.prodiId,
+        kurikulumId,
+        jenisMkId
       },
     });
 

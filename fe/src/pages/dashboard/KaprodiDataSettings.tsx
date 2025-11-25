@@ -11,19 +11,29 @@ import { Save, Loader2 } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-const PROGRAM_STUDI_LIST = [
-    "HUKUM",
-    "EKONOMI SYARIAH",
-    "PENDIDIKAN AGAMA ISLAM",
-    "PENDIDIKAN BAHASA INGGRIS",
-    "TEKNIK INFORMATIKA"
-];
+interface Prodi {
+    id: string;
+    nama: string;
+}
+
+interface KaprodiData {
+    id: string;
+    programStudi: string;
+    prodiId: string | null;
+    namaKaprodi: string;
+    nidnKaprodi: string;
+    prodi?: Prodi;
+}
+
+
 
 const KaprodiDataSettings = () => {
-    const [kaprodiList, setKaprodiList] = useState([]);
+    const [kaprodiList, setKaprodiList] = useState<KaprodiData[]>([]);
+    const [prodiList, setProdiList] = useState<Prodi[]>([]);
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
         programStudi: "",
+        prodiId: "",
         namaKaprodi: "",
         nidnKaprodi: ""
     });
@@ -31,7 +41,21 @@ const KaprodiDataSettings = () => {
 
     useEffect(() => {
         fetchKaprodiData();
+        fetchProdiData();
     }, []);
+
+    const fetchProdiData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/prodi`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            if (result.data) setProdiList(result.data);
+        } catch (error) {
+            console.error("Gagal memuat data prodi");
+        }
+    };
 
     const fetchKaprodiData = async () => {
         try {
@@ -74,7 +98,7 @@ const KaprodiDataSettings = () => {
             if (!response.ok) throw new Error();
 
             toast.success("Data kaprodi berhasil disimpan");
-            setFormData({ programStudi: "", namaKaprodi: "", nidnKaprodi: "" });
+            setFormData({ programStudi: "", prodiId: "", namaKaprodi: "", nidnKaprodi: "" });
             fetchKaprodiData();
         } catch (error) {
             toast.error("Gagal menyimpan data kaprodi");
@@ -99,15 +123,22 @@ const KaprodiDataSettings = () => {
                             <div>
                                 <Label>Program Studi</Label>
                                 <Select
-                                    value={formData.programStudi}
-                                    onValueChange={(val) => setFormData({ ...formData, programStudi: val })}
+                                    value={formData.prodiId}
+                                    onValueChange={(val) => {
+                                        const selectedProdi = prodiList.find(p => p.id === val);
+                                        setFormData({
+                                            ...formData,
+                                            prodiId: val,
+                                            programStudi: selectedProdi ? selectedProdi.nama : ""
+                                        });
+                                    }}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Pilih Program Studi" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {PROGRAM_STUDI_LIST.map(prodi => (
-                                            <SelectItem key={prodi} value={prodi}>{prodi}</SelectItem>
+                                        {prodiList.map(prodi => (
+                                            <SelectItem key={prodi.id} value={prodi.id}>{prodi.nama}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -171,9 +202,9 @@ const KaprodiDataSettings = () => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {kaprodiList.map((item: any) => (
+                                    {kaprodiList.map((item) => (
                                         <TableRow key={item.id}>
-                                            <TableCell className="font-medium">{item.programStudi}</TableCell>
+                                            <TableCell className="font-medium">{item.prodi?.nama || item.programStudi}</TableCell>
                                             <TableCell>{item.namaKaprodi}</TableCell>
                                             <TableCell>{item.nidnKaprodi || '-'}</TableCell>
                                         </TableRow>
