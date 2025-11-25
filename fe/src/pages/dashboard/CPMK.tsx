@@ -12,6 +12,8 @@ import { Plus, Edit, Trash2, Loader2, Search, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/DashboardLayout";
+import { MultiTaxonomySelect } from "@/components/MultiTaxonomySelect";
+import { Badge } from "@/components/ui/badge";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -46,7 +48,7 @@ const CPMKPage = () => {
     const [formData, setFormData] = useState({
         kodeCpmk: "",
         deskripsi: "",
-        levelTaksonomi: "",
+        levelTaksonomi: [] as string[], // Array for multi-select
         mataKuliahId: "",
     });
 
@@ -126,7 +128,7 @@ const CPMKPage = () => {
                     body: JSON.stringify({
                         kodeCpmk: formData.kodeCpmk.trim(),
                         deskripsi: formData.deskripsi.trim() || null,
-                        levelTaksonomi: formData.levelTaksonomi || null,
+                        levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi : null,
                     })
                 });
 
@@ -145,7 +147,7 @@ const CPMKPage = () => {
                     body: JSON.stringify({
                         kodeCpmk: formData.kodeCpmk.trim(),
                         deskripsi: formData.deskripsi.trim() || null,
-                        levelTaksonomi: formData.levelTaksonomi || null,
+                        levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi : null,
                         mataKuliahId: formData.mataKuliahId,
                     })
                 });
@@ -171,10 +173,14 @@ const CPMKPage = () => {
 
     const handleEdit = (cpmk: Cpmk) => {
         setEditingCpmk(cpmk);
+        // Convert comma-separated string to array
+        const levels = cpmk.levelTaksonomi
+            ? cpmk.levelTaksonomi.split(',').map(l => l.trim()).filter(Boolean)
+            : [];
         setFormData({
             kodeCpmk: cpmk.kodeCpmk,
             deskripsi: cpmk.deskripsi || "",
-            levelTaksonomi: cpmk.levelTaksonomi || "",
+            levelTaksonomi: levels,
             mataKuliahId: cpmk.mataKuliahId,
         });
         setDialogOpen(true);
@@ -211,7 +217,7 @@ const CPMKPage = () => {
         setFormData({
             kodeCpmk: "",
             deskripsi: "",
-            levelTaksonomi: "",
+            levelTaksonomi: [],
             mataKuliahId: "",
         });
         setEditingCpmk(null);
@@ -307,51 +313,20 @@ const CPMKPage = () => {
                                     <form onSubmit={handleSubmit} className="space-y-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="kodeCpmk">Kode CPMK</Label>
-                                            <div className="flex gap-2">
-                                                <Input
-                                                    id="kodeCpmk"
-                                                    placeholder="Contoh: CPMK 1"
-                                                    value={formData.kodeCpmk}
-                                                    onChange={(e) => setFormData({ ...formData, kodeCpmk: e.target.value })}
-                                                    required
-                                                    className="flex-1"
-                                                />
-                                                <Select
-                                                    value={formData.levelTaksonomi || undefined}
-                                                    onValueChange={(value) => setFormData({ ...formData, levelTaksonomi: value })}
-                                                >
-                                                    <SelectTrigger className="w-[180px]">
-                                                        <SelectValue placeholder="Level Taksonomi" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectGroup>
-                                                            <SelectLabel>Kognitif</SelectLabel>
-                                                            <SelectItem value="C1">C1 - Mengingat</SelectItem>
-                                                            <SelectItem value="C2">C2 - Memahami</SelectItem>
-                                                            <SelectItem value="C3">C3 - Menerapkan</SelectItem>
-                                                            <SelectItem value="C4">C4 - Menganalisis</SelectItem>
-                                                            <SelectItem value="C5">C5 - Mengevaluasi</SelectItem>
-                                                            <SelectItem value="C6">C6 - Mencipta</SelectItem>
-                                                        </SelectGroup>
-                                                        <SelectGroup>
-                                                            <SelectLabel>Afektif</SelectLabel>
-                                                            <SelectItem value="A1">A1 - Menerima</SelectItem>
-                                                            <SelectItem value="A2">A2 - Merespon</SelectItem>
-                                                            <SelectItem value="A3">A3 - Menghargai</SelectItem>
-                                                            <SelectItem value="A4">A4 - Mengorganisasi</SelectItem>
-                                                            <SelectItem value="A5">A5 - Karakterisasi</SelectItem>
-                                                        </SelectGroup>
-                                                        <SelectGroup>
-                                                            <SelectLabel>Psikomotor</SelectLabel>
-                                                            <SelectItem value="P1">P1 - Meniru</SelectItem>
-                                                            <SelectItem value="P2">P2 - Manipulasi</SelectItem>
-                                                            <SelectItem value="P3">P3 - Presisi</SelectItem>
-                                                            <SelectItem value="P4">P4 - Artikulasi</SelectItem>
-                                                            <SelectItem value="P5">P5 - Naturalisasi</SelectItem>
-                                                        </SelectGroup>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+                                            <Input
+                                                id="kodeCpmk"
+                                                placeholder="Contoh: CPMK 1"
+                                                value={formData.kodeCpmk}
+                                                onChange={(e) => setFormData({ ...formData, kodeCpmk: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Level Taksonomi (Opsional)</Label>
+                                            <MultiTaxonomySelect
+                                                value={formData.levelTaksonomi.join(',')}
+                                                onChange={(levels) => setFormData({ ...formData, levelTaksonomi: levels })}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="mataKuliah">Mata Kuliah</Label>
@@ -373,7 +348,7 @@ const CPMKPage = () => {
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="deskripsi">Deskripsi (Opsional)</Label>
+                                            <Label htmlFor="deskripsi">Deskripsi</Label>
                                             <Textarea
                                                 id="deskripsi"
                                                 placeholder="Deskripsi capaian pembelajaran"
@@ -426,9 +401,13 @@ const CPMKPage = () => {
                                             <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
                                             <TableCell>
                                                 {cpmk.levelTaksonomi ? (
-                                                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-purple-100 text-purple-700 text-xs font-medium">
-                                                        {cpmk.levelTaksonomi}
-                                                    </span>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {cpmk.levelTaksonomi.split(',').map((level) => (
+                                                            <Badge key={level.trim()} variant="secondary" className="text-xs">
+                                                                {level.trim()}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
                                                 ) : "-"}
                                             </TableCell>
                                             <TableCell>
@@ -480,7 +459,7 @@ const CPMKPage = () => {
                     </CardContent>
                 </Card>
             </div>
-        </DashboardPage>
+        </DashboardPage >
     );
 }
 

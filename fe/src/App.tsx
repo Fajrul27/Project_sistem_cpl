@@ -8,7 +8,6 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import CPLPage from "./pages/dashboard/CPL";
 import CPLDetailPage from "./pages/dashboard/CPLDetail";
-import CPLMappingPage from "./pages/dashboard/CPLMapping";
 import MataKuliahPage from "./pages/dashboard/MataKuliah";
 import MahasiswaPage from "./pages/dashboard/Mahasiswa";
 import UsersPage from "./pages/dashboard/Users";
@@ -56,14 +55,7 @@ const App = () => (
                 </RequireRole>
               }
             />
-            <Route
-              path="cpl-mapping"
-              element={
-                <RequireRole roles={["admin", "kaprodi"]}>
-                  <CPLMappingPage />
-                </RequireRole>
-              }
-            />
+
             <Route
               path="validasi-cpmk"
               element={
