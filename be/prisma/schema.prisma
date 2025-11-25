@@ -95,7 +95,6 @@ model Cpl {
   kodeCpl               String    @unique @map("kode_cpl")
   deskripsi             String    @db.Text
   kategori              String?
-  bobot                 Decimal   @default(1.00) @db.Decimal(3, 2)
   minimalNilaiTercapai  Decimal   @default(70.00) @map("minimal_nilai_tercapai") @db.Decimal(5, 2)
   isActive              Boolean   @default(true) @map("is_active")
   createdAt             DateTime  @default(now()) @map("created_at")
@@ -165,9 +164,9 @@ model Cpmk {
   id              String    @id @default(uuid())
   kodeCpmk        String    @map("kode_cpmk")
   deskripsi       String?   @db.Text
-  levelTaksonomi  String?   @map("level_taksonomi") // e.g., C1, C2, P1, A1
+  levelTaksonomi  String?   @map("level_taksonomi")
   mataKuliahId    String    @map("mata_kuliah_id")
-  statusValidasi  String    @default("draft") @map("status_validasi") // draft, validated, active
+  statusValidasi  String    @default("draft") @map("status_validasi")
   validatedAt     DateTime? @map("validated_at")
   validatedBy     String?   @map("validated_by")
   isActive        Boolean   @default(true) @map("is_active")
@@ -345,10 +344,6 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_logs")
 }
-
-// ============================================
-// ENUMS
-// ============================================
 
 enum Role {
   admin

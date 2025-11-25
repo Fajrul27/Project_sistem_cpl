@@ -9,6 +9,36 @@ import { canAccessMataKuliah, canAccessCpmk, getAccessibleMataKuliahIds } from '
 
 const router = Router();
 
+// ============================================
+// Helper Functions for Level Taksonomi
+// ============================================
+
+/**
+ * Convert array or string to comma-separated string for storage
+ * @param levels - Can be string[], string, or null
+ * @returns Comma-separated string or null
+ */
+function levelsToString(levels: string[] | string | null | undefined): string | null {
+    if (!levels) return null;
+
+    if (Array.isArray(levels)) {
+        const cleaned = levels.filter(l => l && l.trim()).map(l => l.trim());
+        return cleaned.length > 0 ? cleaned.join(',') : null;
+    }
+
+    return levels.trim() || null;
+}
+
+/**
+ * Convert comma-separated string to array
+ * @param str - Comma-separated string or null
+ * @returns Array of strings
+ */
+function stringToLevels(str: string | null): string[] {
+    if (!str) return [];
+    return str.split(',').map(s => s.trim()).filter(Boolean);
+}
+
 // Get all CPMK (with optional mata kuliah filter)
 router.get('/', authMiddleware, async (req, res) => {
     try {
@@ -200,7 +230,7 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async
             data: {
                 kodeCpmk: kodeCpmk.trim(),
                 deskripsi: deskripsi?.trim() || null,
-                levelTaksonomi: levelTaksonomi?.trim() || null,
+                levelTaksonomi: levelsToString(levelTaksonomi),
                 mataKuliahId,
                 createdBy: userId
             },
@@ -268,7 +298,7 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), asy
             data: {
                 kodeCpmk: kodeCpmk?.trim() || existing.kodeCpmk,
                 deskripsi: deskripsi?.trim() || existing.deskripsi,
-                levelTaksonomi: levelTaksonomi?.trim() || existing.levelTaksonomi
+                levelTaksonomi: levelTaksonomi !== undefined ? levelsToString(levelTaksonomi) : existing.levelTaksonomi
             },
             include: {
                 mataKuliah: {

@@ -21,7 +21,6 @@ interface CPL {
   kodeCpl: string;
   deskripsi: string;
   kategori: string;
-  bobot: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -30,7 +29,6 @@ type FormData = {
   kodeCpl: string;
   deskripsi: string;
   kategori: string;
-  bobot: string;
 };
 
 const CPLPage = () => {
@@ -49,7 +47,6 @@ const CPLPage = () => {
     kodeCpl: "",
     deskripsi: "",
     kategori: "",
-    bobot: "1.0",
   });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -94,12 +91,6 @@ const CPLPage = () => {
       return;
     }
 
-    const bobotValue = parseFloat(formData.bobot);
-    if (isNaN(bobotValue) || bobotValue <= 0) {
-      toast.error("Bobot harus berupa angka positif");
-      return;
-    }
-
     setSubmitting(true);
 
     try {
@@ -116,7 +107,6 @@ const CPLPage = () => {
             kodeCpl: formData.kodeCpl.trim(),
             deskripsi: formData.deskripsi.trim(),
             kategori: formData.kategori.trim(),
-            bobot: bobotValue,
           })
         });
 
@@ -133,7 +123,6 @@ const CPLPage = () => {
             kodeCpl: formData.kodeCpl.trim(),
             deskripsi: formData.deskripsi.trim(),
             kategori: formData.kategori.trim(),
-            bobot: bobotValue,
           })
         });
 
@@ -162,7 +151,6 @@ const CPLPage = () => {
       kodeCpl: cpl.kodeCpl,
       deskripsi: cpl.deskripsi,
       kategori: cpl.kategori,
-      bobot: cpl.bobot.toString(),
     });
     setDialogOpen(true);
   };
@@ -198,7 +186,6 @@ const CPLPage = () => {
       kodeCpl: "",
       deskripsi: "",
       kategori: "",
-      bobot: "1.0",
     });
     setEditingCPL(null);
   };
@@ -308,33 +295,7 @@ const CPLPage = () => {
           </Button>
         </div>
 
-        {/* Bobot Summary Card */}
-        {meta && (
-          <Card className={meta.isValid ? "border-green-500 bg-green-50/50" : "border-red-500 bg-red-50/50"}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-sm font-medium">Total Bobot CPL</CardTitle>
-                  <p className={`text-3xl font-bold mt-1 ${meta.isValid ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                    {(meta.totalBobot * 100).toFixed(2)}%
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Target</p>
-                  <p className="text-2xl font-semibold text-muted-foreground">
-                    100%
-                  </p>
-                </div>
-              </div>
-              {!meta.isValid && (
-                <p className="text-sm text-red-600 mt-2">
-                  ⚠️ Total bobot harus = 100%
-                </p>
-              )}
-            </CardHeader>
-          </Card>
-        )}
+
 
         <Card>
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -394,19 +355,7 @@ const CPLPage = () => {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="bobot">Bobot</Label>
-                      <Input
-                        id="bobot"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        placeholder="1.0"
-                        value={formData.bobot}
-                        onChange={(e) => setFormData({ ...formData, bobot: e.target.value })}
-                        required
-                      />
-                    </div>
+
                     <div className="flex gap-2">
                       <Button
                         type="submit"
@@ -436,7 +385,6 @@ const CPLPage = () => {
                   <TableHead>Kode CPL</TableHead>
                   <TableHead>Deskripsi</TableHead>
                   <TableHead>Kategori</TableHead>
-                  <TableHead>Bobot</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -446,7 +394,6 @@ const CPLPage = () => {
                     <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
                     <TableCell>{cpl.deskripsi}</TableCell>
                     <TableCell>{cpl.kategori}</TableCell>
-                    <TableCell>{(Number(cpl.bobot) * 100).toFixed(1)}%</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button size="sm" variant="ghost" onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}>
