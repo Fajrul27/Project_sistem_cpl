@@ -344,7 +344,7 @@ const CPLMappingPage = () => {
                           step="1"
                           placeholder="100"
                           className="w-20 p-1 text-sm border rounded bg-background text-foreground"
-                          value={selectedCPLs.has(cpl.id) ? Math.round((bobot[cpl.id] ?? 1.0) * 100) : ""}
+                          value={selectedCPLs.has(cpl.id) ? (bobot[cpl.id] ? Math.round(bobot[cpl.id] * 100) : "") : ""}
                           onChange={(e) => handleBobotChange(cpl.id, e.target.value)}
                           disabled={!selectedCPLs.has(cpl.id)}
                         />
@@ -386,8 +386,8 @@ const CPLMappingPage = () => {
                       {percentage > 10 && `${percentage.toFixed(1)}%`}
                     </div>
                     {percentage > 100 && (
-                      <div className="absolute inset-0 flex items-center justify-center text-xs text-red-700 font-semibold">
-                        Melebihi 100%!
+                      <div className="absolute inset-0 flex items-center justify-center text-xs text-white/90 font-semibold drop-shadow-md">
+                        !
                       </div>
                     )}
                   </div>
