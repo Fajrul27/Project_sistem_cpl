@@ -1,10 +1,3 @@
-// ============================================
-// Prisma Schema - Sistem CPL
-// ============================================
-// Database: MySQL
-// ORM: Prisma
-// ============================================
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,30 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================
-// MODELS
-// ============================================
-
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String    @map("password_hash")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  lastLogin     DateTime? @map("last_login")
-  isActive      Boolean   @default(true) @map("is_active")
-  emailVerified Boolean   @default(false) @map("email_verified")
-
-  // Relations
-  role                UserRole?
-  profile             Profile?
-  sessions            Session[]
-  auditLogs           AuditLog[]
-  cplCreated          Cpl[]                      @relation("CplCreatedBy")
-  mkCreated           MataKuliah[]               @relation("MataKuliahCreatedBy")
-  nilaiCreated        NilaiCpl[]                 @relation("NilaiCreatedBy")
-  cpmkCreated         Cpmk[]                     @relation("CpmkCreatedBy")
-  nilaiTeknikCreated  NilaiTeknikPenilaian[]     @relation("NilaiTeknikCreatedBy")
+  id                 String                 @id @default(uuid())
+  email              String                 @unique
+  passwordHash       String                 @map("password_hash")
+  createdAt          DateTime               @default(now()) @map("created_at")
+  updatedAt          DateTime               @updatedAt @map("updated_at")
+  lastLogin          DateTime?              @map("last_login")
+  isActive           Boolean                @default(true) @map("is_active")
+  emailVerified      Boolean                @default(false) @map("email_verified")
+  auditLogs          AuditLog[]
+  cplCreated         Cpl[]                  @relation("CplCreatedBy")
+  cpmkCreated        Cpmk[]                 @relation("CpmkCreatedBy")
+  mkCreated          MataKuliah[]           @relation("MataKuliahCreatedBy")
+  nilaiCreated       NilaiCpl[]             @relation("NilaiCreatedBy")
+  nilaiTeknikCreated NilaiTeknikPenilaian[] @relation("NilaiTeknikCreatedBy")
+  profile            Profile?
+  sessions           Session[]
+  role               UserRole?
 
   @@index([email])
   @@index([isActive])
@@ -50,9 +37,7 @@ model UserRole {
   role      Role     @default(mahasiswa)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([role])
   @@index([userId])
@@ -60,31 +45,29 @@ model UserRole {
 }
 
 model Profile {
-  id            String   @id @default(uuid())
-  userId        String   @unique @map("user_id")
-  namaLengkap   String?  @map("nama_lengkap")
-  nim           String?  @unique
-  nip           String?  @unique
-  nidn          String?  @unique
-  programStudi  String?  @map("program_studi") // DEPRECATED: Use prodiId
-  prodiId       String?  @map("prodi_id")
-  fakultasId    String?  @map("fakultas_id")
-  semester      Int?
-  tahunMasuk    Int?     @map("tahun_masuk")
-  alamat        String?  @db.Text
-  noTelepon     String?  @map("no_telepon")
-  fotoProfile   String?  @map("foto_profile")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  user              User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  prodi             Prodi?                    @relation(fields: [prodiId], references: [id], onDelete: SetNull)
-  fakultas          Fakultas?                 @relation(fields: [fakultasId], references: [id], onDelete: SetNull)
-  nilaiCpl          NilaiCpl[]                @relation("MahasiswaNilai")
-  nilaiTeknik       NilaiTeknikPenilaian[]    @relation("MahasiswaNilaiTeknik")
-  nilaiCpmk         NilaiCpmk[]               @relation("MahasiswaNilaiCpmk")
+  id                 String                 @id @default(uuid())
+  userId             String                 @unique @map("user_id")
+  namaLengkap        String?                @map("nama_lengkap")
+  nim                String?                @unique
+  nip                String?                @unique
+  programStudi       String?                @map("program_studi")
+  semester           Int?
+  tahunMasuk         Int?                   @map("tahun_masuk")
+  alamat             String?                @db.Text
+  noTelepon          String?                @map("no_telepon")
+  fotoProfile        String?                @map("foto_profile")
+  createdAt          DateTime               @default(now()) @map("created_at")
+  updatedAt          DateTime               @updatedAt @map("updated_at")
+  fakultasId         String?                @map("fakultas_id")
+  nidn               String?                @unique
+  prodiId            String?                @map("prodi_id")
   mataKuliahPengampu MataKuliahPengampu[]
+  nilaiCpl           NilaiCpl[]             @relation("MahasiswaNilai")
+  nilaiCpmk          NilaiCpmk[]            @relation("MahasiswaNilaiCpmk")
+  nilaiTeknik        NilaiTeknikPenilaian[] @relation("MahasiswaNilaiTeknik")
+  fakultas           Fakultas?              @relation(fields: [fakultasId], references: [id])
+  prodi              Prodi?                 @relation(fields: [prodiId], references: [id])
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([nim])
   @@index([nip])
@@ -97,59 +80,54 @@ model Profile {
 }
 
 model Cpl {
-  id                    String    @id @default(uuid())
-  kodeCpl               String    @unique @map("kode_cpl")
-  deskripsi             String    @db.Text
-  kategori              String?   // DEPRECATED: Use kategoriId
-  kategoriId            String?   @map("kategori_id")
-  bobot                 Decimal   @default(1.00) @db.Decimal(3, 2)
-  minimalNilaiTercapai  Decimal   @default(70.00) @map("minimal_nilai_tercapai") @db.Decimal(5, 2)
-  isActive              Boolean   @default(true) @map("is_active")
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
-  createdBy             String?   @map("created_by")
-
-  // Relations
-  creator        User?              @relation("CplCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
-  kategoriRef    KategoriCpl?       @relation(fields: [kategoriId], references: [id], onDelete: SetNull)
-  mataKuliah     CplMataKuliah[]
-  nilaiCpl       NilaiCpl[]
-  cpmkMappings   CpmkCplMapping[]
+  id           String           @id @default(uuid())
+  kodeCpl      String           @unique @map("kode_cpl")
+  deskripsi    String           @db.Text
+  kategori     String?
+  isActive     Boolean          @default(true) @map("is_active")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  createdBy    String?          @map("created_by")
+  kategoriId   String?          @map("kategori_id")
+  creator      User?            @relation("CplCreatedBy", fields: [createdBy], references: [id])
+  kategoriRef  KategoriCpl?     @relation(fields: [kategoriId], references: [id])
+  mataKuliah   CplMataKuliah[]
+  cpmkMappings CpmkCplMapping[]
+  nilaiCpl     NilaiCpl[]
 
   @@index([kodeCpl])
   @@index([kategori])
   @@index([kategoriId])
   @@index([isActive])
+  @@index([createdBy], map: "cpl_created_by_fkey")
   @@map("cpl")
 }
 
 model MataKuliah {
-  id         String   @id @default(uuid())
-  kodeMk     String   @unique @map("kode_mk")
-  namaMk     String   @map("nama_mk")
-  sks        Int
-  semester   Int
-  programStudi String? @map("program_studi") // DEPRECATED: Use prodiId
-  prodiId      String? @map("prodi_id")
-  kurikulumId  String? @map("kurikulum_id")
-  jenisMkId    String? @map("jenis_mk_id")
-  deskripsi  String?  @db.Text
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  createdBy  String?  @map("created_by")
-
-  // Relations
-  creator       User?                     @relation("MataKuliahCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
-  prodi         Prodi?                    @relation(fields: [prodiId], references: [id], onDelete: SetNull)
-  kurikulum     Kurikulum?                @relation(fields: [kurikulumId], references: [id], onDelete: SetNull)
-  jenisMk       JenisMataKuliah?          @relation(fields: [jenisMkId], references: [id], onDelete: SetNull)
-  cpl           CplMataKuliah[]
-  nilaiCpl      NilaiCpl[]
-  cpmk          Cpmk[]
-  nilaiTeknik   NilaiTeknikPenilaian[]
-  nilaiCpmk     NilaiCpmk[]
-  pengampu      MataKuliahPengampu[]
+  id           String                 @id @default(uuid())
+  kodeMk       String                 @unique @map("kode_mk")
+  namaMk       String                 @map("nama_mk")
+  sks          Int
+  semester     Int
+  deskripsi    String?                @db.Text
+  isActive     Boolean                @default(true) @map("is_active")
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
+  createdBy    String?                @map("created_by")
+  jenisMkId    String?                @map("jenis_mk_id")
+  kurikulumId  String?                @map("kurikulum_id")
+  prodiId      String?                @map("prodi_id")
+  programStudi String?                @map("program_studi")
+  cpl          CplMataKuliah[]
+  cpmk         Cpmk[]
+  creator      User?                  @relation("MataKuliahCreatedBy", fields: [createdBy], references: [id])
+  jenisMk      JenisMataKuliah?       @relation(fields: [jenisMkId], references: [id])
+  kurikulum    Kurikulum?             @relation(fields: [kurikulumId], references: [id])
+  prodi        Prodi?                 @relation(fields: [prodiId], references: [id])
+  pengampu     MataKuliahPengampu[]
+  nilaiCpl     NilaiCpl[]
+  nilaiCpmk    NilaiCpmk[]
+  nilaiTeknik  NilaiTeknikPenilaian[]
 
   @@index([kodeMk])
   @@index([semester])
@@ -157,20 +135,20 @@ model MataKuliah {
   @@index([prodiId])
   @@index([kurikulumId])
   @@index([isActive])
+  @@index([createdBy], map: "mata_kuliah_created_by_fkey")
+  @@index([jenisMkId], map: "mata_kuliah_jenis_mk_id_fkey")
   @@map("mata_kuliah")
 }
 
 model CplMataKuliah {
-  id              String   @id @default(uuid())
-  cplId           String   @map("cpl_id")
-  mataKuliahId    String   @map("mata_kuliah_id")
-  bobotKontribusi Decimal  @default(1.00) @map("bobot_kontribusi") @db.Decimal(3, 2)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  cpl         Cpl         @relation(fields: [cplId], references: [id], onDelete: Cascade)
-  mataKuliah  MataKuliah  @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  id              String     @id @default(uuid())
+  cplId           String     @map("cpl_id")
+  mataKuliahId    String     @map("mata_kuliah_id")
+  bobotKontribusi Decimal    @default(1.00) @map("bobot_kontribusi") @db.Decimal(3, 2)
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  cpl             Cpl        @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  mataKuliah      MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
 
   @@unique([cplId, mataKuliahId])
   @@index([cplId])
@@ -179,33 +157,32 @@ model CplMataKuliah {
 }
 
 model Cpmk {
-  id              String    @id @default(uuid())
-  kodeCpmk        String    @map("kode_cpmk")
-  deskripsi       String?   @db.Text
-  levelTaksonomi  String?   @map("level_taksonomi") // DEPRECATED: Use levelTaksonomiId
-  levelTaksonomiId String?  @map("level_taksonomi_id")
-  mataKuliahId    String    @map("mata_kuliah_id")
-  statusValidasi  String    @default("draft") @map("status_validasi") // draft, validated, active
-  validatedAt     DateTime? @map("validated_at")
-  validatedBy     String?   @map("validated_by")
-  isActive        Boolean   @default(true) @map("is_active")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  createdBy       String?   @map("created_by")
-
-  // Relations
-  creator           User?              @relation("CpmkCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
-  mataKuliah        MataKuliah         @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
-  levelTaksonomiRef LevelTaksonomi?    @relation(fields: [levelTaksonomiId], references: [id], onDelete: SetNull)
+  id                String            @id @default(uuid())
+  kodeCpmk          String            @map("kode_cpmk")
+  deskripsi         String?           @db.Text
+  levelTaksonomi    String?           @map("level_taksonomi")
+  levelTaksonomiId  String?           @map("level_taksonomi_id")
+  mataKuliahId      String            @map("mata_kuliah_id")
+  statusValidasi    String            @default("draft") @map("status_validasi")
+  validatedAt       DateTime?         @map("validated_at")
+  validatedBy       String?           @map("validated_by")
+  isActive          Boolean           @default(true) @map("is_active")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  createdBy         String?           @map("created_by")
+  creator           User?             @relation("CpmkCreatedBy", fields: [createdBy], references: [id])
+  levelTaksonomiRef LevelTaksonomi?   @relation(fields: [levelTaksonomiId], references: [id])
+  mataKuliah        MataKuliah        @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
   cplMappings       CpmkCplMapping[]
-  teknikPenilaian   TeknikPenilaian[]
   nilaiCpmk         NilaiCpmk[]
+  teknikPenilaian   TeknikPenilaian[]
 
   @@index([mataKuliahId])
   @@index([kodeCpmk])
   @@index([statusValidasi])
   @@index([levelTaksonomiId])
   @@index([isActive])
+  @@index([createdBy], map: "cpmk_created_by_fkey")
   @@map("cpmk")
 }
 
@@ -216,10 +193,8 @@ model CpmkCplMapping {
   bobotPersentase Decimal  @map("bobot_persentase") @db.Decimal(5, 2)
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  cpmk  Cpmk  @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
-  cpl   Cpl   @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  cpl             Cpl      @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  cpmk            Cpmk     @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
 
   @@unique([cpmkId, cplId])
   @@index([cpmkId])
@@ -228,19 +203,17 @@ model CpmkCplMapping {
 }
 
 model TeknikPenilaian {
-  id              String   @id @default(uuid())
-  cpmkId          String   @map("cpmk_id")
-  namaTeknik      String   @map("nama_teknik") // DEPRECATED: Use teknikRefId
-  teknikRefId     String?  @map("teknik_ref_id")
-  bobotPersentase Decimal  @map("bobot_persentase") @db.Decimal(5, 2)
-  deskripsi       String?  @db.Text
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  cpmk        Cpmk                    @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
-  teknikRef   TeknikPenilaianRef?     @relation(fields: [teknikRefId], references: [id], onDelete: SetNull)
-  nilaiTeknik NilaiTeknikPenilaian[]
+  id              String                 @id @default(uuid())
+  cpmkId          String                 @map("cpmk_id")
+  namaTeknik      String                 @map("nama_teknik")
+  teknikRefId     String?                @map("teknik_ref_id")
+  bobotPersentase Decimal                @map("bobot_persentase") @db.Decimal(5, 2)
+  deskripsi       String?                @db.Text
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  nilaiTeknik     NilaiTeknikPenilaian[]
+  cpmk            Cpmk                   @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
+  teknikRef       TeknikPenilaianRef?    @relation(fields: [teknikRefId], references: [id])
 
   @@index([cpmkId])
   @@index([teknikRefId])
@@ -248,51 +221,48 @@ model TeknikPenilaian {
 }
 
 model NilaiCpl {
-  id            String   @id @default(uuid())
-  mahasiswaId   String   @map("mahasiswa_id")
-  cplId         String   @map("cpl_id")
-  mataKuliahId  String   @map("mata_kuliah_id")
-  nilai         Decimal  @db.Decimal(5, 2)
-  semester      Int
-  tahunAjaran   String   @map("tahun_ajaran")
-  catatan       String?  @db.Text
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-  createdBy     String?  @map("created_by")
+  id           String     @id @default(uuid())
+  mahasiswaId  String     @map("mahasiswa_id")
+  cplId        String     @map("cpl_id")
+  mataKuliahId String     @map("mata_kuliah_id")
+  nilai        Decimal    @db.Decimal(5, 2)
+  semester     Int
+  tahunAjaran  String     @map("tahun_ajaran")
+  catatan      String?    @db.Text
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  createdBy    String?    @map("created_by")
+  cpl          Cpl        @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  creator      User?      @relation("NilaiCreatedBy", fields: [createdBy], references: [id])
+  mahasiswa    Profile    @relation("MahasiswaNilai", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
+  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
 
-  // Relations
-  mahasiswa   Profile     @relation("MahasiswaNilai", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
-  cpl         Cpl         @relation(fields: [cplId], references: [id], onDelete: Cascade)
-  mataKuliah  MataKuliah  @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
-  creator     User?       @relation("NilaiCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
-
+  @@unique([mahasiswaId, cplId, mataKuliahId, semester, tahunAjaran])
   @@index([mahasiswaId])
   @@index([cplId])
   @@index([mataKuliahId])
   @@index([semester])
   @@index([tahunAjaran])
-  @@unique([mahasiswaId, cplId, mataKuliahId, semester, tahunAjaran])
+  @@index([createdBy], map: "nilai_cpl_created_by_fkey")
   @@map("nilai_cpl")
 }
 
 model NilaiTeknikPenilaian {
-  id                  String   @id @default(uuid())
-  mahasiswaId         String   @map("mahasiswa_id")
-  teknikPenilaianId   String   @map("teknik_penilaian_id")
-  mataKuliahId        String   @map("mata_kuliah_id")
-  nilai               Decimal  @db.Decimal(5, 2)
-  semester            Int
-  tahunAjaran         String   @map("tahun_ajaran")
-  catatan             String?  @db.Text
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
-  createdBy           String?  @map("created_by")
-
-  // Relations
-  mahasiswa           Profile         @relation("MahasiswaNilaiTeknik", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
-  teknikPenilaian     TeknikPenilaian @relation(fields: [teknikPenilaianId], references: [id], onDelete: Cascade)
-  mataKuliah          MataKuliah      @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
-  creator             User?           @relation("NilaiTeknikCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  id                String          @id @default(uuid())
+  mahasiswaId       String          @map("mahasiswa_id")
+  teknikPenilaianId String          @map("teknik_penilaian_id")
+  mataKuliahId      String          @map("mata_kuliah_id")
+  nilai             Decimal         @db.Decimal(5, 2)
+  semester          Int
+  tahunAjaran       String          @map("tahun_ajaran")
+  catatan           String?         @db.Text
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  createdBy         String?         @map("created_by")
+  creator           User?           @relation("NilaiTeknikCreatedBy", fields: [createdBy], references: [id])
+  mahasiswa         Profile         @relation("MahasiswaNilaiTeknik", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
+  mataKuliah        MataKuliah      @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  teknikPenilaian   TeknikPenilaian @relation(fields: [teknikPenilaianId], references: [id], onDelete: Cascade)
 
   @@unique([mahasiswaId, teknikPenilaianId, semester, tahunAjaran])
   @@index([mahasiswaId])
@@ -300,25 +270,24 @@ model NilaiTeknikPenilaian {
   @@index([mataKuliahId])
   @@index([semester])
   @@index([tahunAjaran])
+  @@index([createdBy], map: "nilai_teknik_penilaian_created_by_fkey")
   @@map("nilai_teknik_penilaian")
 }
 
 model NilaiCpmk {
-  id              String   @id @default(uuid())
-  mahasiswaId     String   @map("mahasiswa_id")
-  cpmkId          String   @map("cpmk_id")
-  mataKuliahId    String   @map("mata_kuliah_id")
-  nilaiAkhir      Decimal  @db.Decimal(5, 2) @map("nilai_akhir")
-  semester        Int
-  tahunAjaran     String   @map("tahun_ajaran")
-  isCalculated    Boolean  @default(true) @map("is_calculated")
-  calculatedAt    DateTime @default(now()) @map("calculated_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  mahasiswa       Profile     @relation("MahasiswaNilaiCpmk", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
-  cpmk            Cpmk        @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
-  mataKuliah      MataKuliah  @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  id           String     @id @default(uuid())
+  mahasiswaId  String     @map("mahasiswa_id")
+  cpmkId       String     @map("cpmk_id")
+  mataKuliahId String     @map("mata_kuliah_id")
+  nilaiAkhir   Decimal    @map("nilai_akhir") @db.Decimal(5, 2)
+  semester     Int
+  tahunAjaran  String     @map("tahun_ajaran")
+  isCalculated Boolean    @default(true) @map("is_calculated")
+  calculatedAt DateTime   @default(now()) @map("calculated_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  cpmk         Cpmk       @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
+  mahasiswa    Profile    @relation("MahasiswaNilaiCpmk", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
+  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
 
   @@unique([mahasiswaId, cpmkId, semester, tahunAjaran])
   @@index([mahasiswaId])
@@ -336,10 +305,8 @@ model Session {
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
   ipAddress String?  @map("ip_address")
-  userAgent String?  @db.Text @map("user_agent")
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?  @map("user_agent") @db.Text
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([token])
@@ -348,19 +315,17 @@ model Session {
 }
 
 model AuditLog {
-  id         BigInt   @id @default(autoincrement())
-  userId     String?  @map("user_id")
-  action     String
-  tableName  String   @map("table_name")
-  recordId   String?  @map("record_id")
-  oldData    Json?    @map("old_data")
-  newData    Json?    @map("new_data")
-  ipAddress  String?  @map("ip_address")
-  userAgent  String?  @db.Text @map("user_agent")
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  // Relations
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id        BigInt   @id @default(autoincrement())
+  userId    String?  @map("user_id")
+  action    String
+  tableName String   @map("table_name")
+  recordId  String?  @map("record_id")
+  oldData   String?  @map("old_data") @db.LongText
+  newData   String?  @map("new_data") @db.LongText
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent") @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([action])
@@ -369,46 +334,30 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// ============================================
-// ENUMS
-// ============================================
-
-enum Role {
-  admin
-  dosen
-  mahasiswa
-  kaprodi
-  dekan
-}
-
 model Fakultas {
-  id        String   @id @default(uuid())
-  nama      String   @unique
-  kode      String   @unique
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
+  id        String    @id @default(uuid())
+  nama      String    @unique
+  kode      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
   prodi     Prodi[]
-  profiles  Profile[] // For Dekan or Dosen's Faculty
-  
+  profiles  Profile[]
+
   @@map("fakultas")
 }
 
 model Prodi {
-  id          String   @id @default(uuid())
-  fakultasId  String   @map("fakultas_id")
-  nama        String   @unique
+  id          String       @id @default(uuid())
+  fakultasId  String       @map("fakultas_id")
+  nama        String       @unique
   kode        String?
-  jenjang     String?  // S1, D3, etc.
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  fakultas    Fakultas      @relation(fields: [fakultasId], references: [id], onDelete: Cascade)
-  profiles    Profile[]
+  jenjang     String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  kaprodiData KaprodiData?
   mataKuliah  MataKuliah[]
-  kaprodiData KaprodiData[]
+  fakultas    Fakultas     @relation(fields: [fakultasId], references: [id], onDelete: Cascade)
+  profiles    Profile[]
 
   @@index([fakultasId])
   @@map("prodi")
@@ -416,7 +365,7 @@ model Prodi {
 
 model TahunAjaran {
   id        String   @id @default(uuid())
-  nama      String   @unique // e.g., "2024/2025"
+  nama      String   @unique
   isActive  Boolean  @default(false) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -426,82 +375,70 @@ model TahunAjaran {
 
 model KategoriCpl {
   id        String   @id @default(uuid())
-  nama      String   @unique // Sikap, Pengetahuan, Keterampilan Umum, Keterampilan Khusus
+  nama      String   @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
   cpl       Cpl[]
 
   @@map("kategori_cpl")
 }
 
 model TeknikPenilaianRef {
-  id          String   @id @default(uuid())
-  nama        String   @unique // Tes Tertulis, Observasi, etc.
-  deskripsi   String?  @db.Text
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
+  id              String            @id @default(uuid())
+  nama            String            @unique
+  deskripsi       String?           @db.Text
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
   teknikPenilaian TeknikPenilaian[]
 
   @@map("teknik_penilaian_ref")
 }
 
 model LevelTaksonomi {
-  id          String   @id @default(uuid())
-  kode        String   @unique // C1, A2, P3
-  deskripsi   String?  @db.Text // Mengingat, Merespon
-  kategori    String?  // Kognitif, Afektif, Psikomotorik
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  cpmk        Cpmk[]
+  id        String   @id @default(uuid())
+  kode      String   @unique
+  deskripsi String?  @db.Text
+  kategori  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  cpmk      Cpmk[]
 
   @@map("level_taksonomi")
 }
 
 model Kurikulum {
-  id           String   @id @default(uuid())
-  nama         String   @unique // Kurikulum 2020
-  tahunMulai   Int      @map("tahun_mulai")
-  tahunSelesai Int?     @map("tahun_selesai")
-  isActive     Boolean  @default(false) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  // Relations
+  id           String       @id @default(uuid())
+  nama         String       @unique
+  tahunMulai   Int          @map("tahun_mulai")
+  tahunSelesai Int?         @map("tahun_selesai")
+  isActive     Boolean      @default(false) @map("is_active")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
   mataKuliah   MataKuliah[]
 
   @@map("kurikulum")
 }
 
 model JenisMataKuliah {
-  id        String   @id @default(uuid())
-  nama      String   @unique // Wajib, Pilihan, MKWU
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
+  id         String       @id @default(uuid())
+  nama       String       @unique
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
   mataKuliah MataKuliah[]
 
   @@map("jenis_mata_kuliah")
 }
 
 model MataKuliahPengampu {
-  id              String      @id @default(uuid())
-  mataKuliahId    String      @map("mata_kuliah_id")
-  dosenId         String      @map("dosen_id")
-  isPengampu      Boolean     @default(true) @map("is_pengampu_utama")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-  
-  // Relations
-  mataKuliah      MataKuliah  @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
-  dosen           Profile     @relation(fields: [dosenId], references: [userId], onDelete: Cascade)
-  
+  id           String     @id @default(uuid())
+  mataKuliahId String     @map("mata_kuliah_id")
+  dosenId      String     @map("dosen_id")
+  isPengampu   Boolean    @default(true) @map("is_pengampu_utama")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  dosen        Profile    @relation(fields: [dosenId], references: [userId], onDelete: Cascade)
+  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+
   @@unique([mataKuliahId, dosenId])
   @@index([mataKuliahId])
   @@index([dosenId])
@@ -509,16 +446,14 @@ model MataKuliahPengampu {
 }
 
 model KaprodiData {
-  id              String   @id @default(uuid())
-  programStudi    String   @unique @map("program_studi") // DEPRECATED: Use prodiId
-  prodiId         String?  @unique @map("prodi_id")
-  namaKaprodi     String   @map("nama_kaprodi")
-  nidnKaprodi     String   @map("nidn_kaprodi")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  
-  // Relations
-  prodi           Prodi?   @relation(fields: [prodiId], references: [id], onDelete: SetNull)
+  id           String   @id @default(uuid())
+  programStudi String   @unique @map("program_studi")
+  prodiId      String?  @unique @map("prodi_id")
+  namaKaprodi  String   @map("nama_kaprodi")
+  nidnKaprodi  String   @map("nidn_kaprodi")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  prodi        Prodi?   @relation(fields: [prodiId], references: [id])
 
   @@index([programStudi])
   @@index([prodiId])
@@ -533,4 +468,12 @@ model Settings {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("settings")
+}
+
+enum Role {
+  admin
+  dosen
+  mahasiswa
+  kaprodi
+  dekan
 }

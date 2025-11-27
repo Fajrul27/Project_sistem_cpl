@@ -16,6 +16,23 @@ router.get('/', authMiddleware, async (req, res) => {
     const userRole = (req as any).userRole;
 
     const where: any = { isActive: true };
+    const { semester, fakultasId, prodiId } = req.query;
+
+    if (semester) {
+      where.semester = parseInt(semester as string);
+    }
+
+    if (prodiId) {
+      where.prodiId = prodiId as string;
+    } else if (fakultasId) {
+      // If only fakultasId is provided, get all prodis in that fakultas
+      const prodis = await prisma.prodi.findMany({
+        where: { fakultasId: fakultasId as string },
+        select: { id: true }
+      });
+      const prodiIds = prodis.map(p => p.id);
+      where.prodiId = { in: prodiIds };
+    }
 
     // Filter based on role
     if (userRole === 'dosen') {

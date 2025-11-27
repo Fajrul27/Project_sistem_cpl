@@ -11,18 +11,41 @@ const router = Router();
 // Get all users (admin only)
 router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async (req, res) => {
   try {
-    const { role } = req.query;
+    const { role, page = 1, limit = 10, q } = req.query;
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const skip = (pageNum - 1) * limitNum;
 
     let where: any = {};
+
+    // Filter by role
     if (role) {
-      // Filter berdasarkan role user (admin/dosen/mahasiswa)
-      where = {
-        role: {
-          role: role as string
-        }
+      where.role = {
+        role: role as string
       };
     }
 
+    // Search filter (email, name, nim)
+    if (q) {
+      const search = q as string;
+      where.OR = [
+        { email: { contains: search } }, // Search by email
+        {
+          profile: {
+            OR: [
+              { namaLengkap: { contains: search } }, // Search by name
+              { nim: { contains: search } }          // Search by NIM
+            ]
+          }
+        }
+      ];
+    }
+
+    // Get total count for pagination
+    const total = await prisma.user.count({ where });
+
+    // Get paginated data
     const users = await prisma.user.findMany({
       where,
       include: {
@@ -31,10 +54,20 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
           include: { prodi: true }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      skip: limitNum === -1 ? undefined : skip, // -1 for all
+      take: limitNum === -1 ? undefined : limitNum
     });
 
-    res.json({ data: users });
+    res.json({
+      data: users,
+      meta: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: limitNum === -1 ? 1 : Math.ceil(total / limitNum)
+      }
+    });
   } catch (error) {
     console.error('Get users error:', error);
     res.status(500).json({ error: 'Gagal mengambil data users' });

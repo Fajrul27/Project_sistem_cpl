@@ -8,14 +8,7 @@ import { authMiddleware, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
-// Helper function to calculate total bobot CPL
-async function getTotalBobotCpl(): Promise<number> {
-  const result = await prisma.cpl.aggregate({
-    where: { isActive: true },
-    _sum: { bobot: true }
-  });
-  return Number(result._sum.bobot || 0);
-}
+
 
 // Get all CPL
 router.get('/', authMiddleware, async (req, res) => {
@@ -28,16 +21,7 @@ router.get('/', authMiddleware, async (req, res) => {
       orderBy: { kodeCpl: 'asc' }
     });
 
-    const totalBobot = await getTotalBobotCpl();
-
-    res.json({
-      data: cpl,
-      meta: {
-        totalBobot: Number(totalBobot.toFixed(2)),
-        isValid: Math.abs(totalBobot - 1.0) < 0.01,
-        expectedTotal: 1.0
-      }
-    });
+    res.json({ data: cpl });
   } catch (error) {
     console.error('Get CPL error:', error);
     res.status(500).json({ error: 'Gagal mengambil data CPL' });
@@ -187,28 +171,21 @@ router.get('/:id/stats', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { kodeCpl, deskripsi, kategori, kategoriId, bobot } = req.body;
+    const { kodeCpl, deskripsi, kategori, kategoriId } = req.body;
 
     const cpl = await prisma.cpl.create({
       data: {
         kodeCpl,
         deskripsi,
         kategori,
-        bobot: parseFloat(bobot) || 1.0,
+        kategoriId,
         createdBy: userId
       }
     });
 
-    // Check total bobot after creation
-    const newTotal = await getTotalBobotCpl();
-    const warning = Math.abs(newTotal - 1.0) > 0.01
-      ? `Peringatan: Total bobot CPL saat ini ${(newTotal * 100).toFixed(2)}%`
-      : null;
-
     res.status(201).json({
       data: cpl,
-      message: 'CPL berhasil dibuat',
-      warning
+      message: 'CPL berhasil dibuat'
     });
   } catch (error) {
     console.error('Create CPL error:', error);
@@ -222,7 +199,7 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (req, 
     const { id } = req.params;
     const userId = (req as any).userId;
     const userRole = (req as any).userRole;
-    const { kodeCpl, deskripsi, kategori, kategoriId, bobot } = req.body;
+    const { kodeCpl, deskripsi, kategori, kategoriId } = req.body;
 
     // Check existence and ownership
     const existing = await prisma.cpl.findUnique({ where: { id } });
@@ -238,20 +215,13 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (req, 
         kodeCpl,
         deskripsi,
         kategori,
-        bobot: parseFloat(bobot) || 1.0
+        kategoriId
       }
     });
 
-    // Check total bobot after update
-    const newTotal = await getTotalBobotCpl();
-    const warning = Math.abs(newTotal - 1.0) > 0.01
-      ? `Peringatan: Total bobot CPL saat ini ${(newTotal * 100).toFixed(2)}%`
-      : null;
-
     res.json({
       data: cpl,
-      message: 'CPL berhasil diupdate',
-      warning
+      message: 'CPL berhasil diupdate'
     });
   } catch (error) {
     console.error('Update CPL error:', error);

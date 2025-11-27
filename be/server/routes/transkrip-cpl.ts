@@ -4,51 +4,29 @@
 
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { authMiddleware, requireRole, requireProdiScope } from '../middleware/auth.js';
 
 const router = Router();
 
 // Helper to calculate weighted average for a list of NilaiCpl
-async function calculateCplScore(nilaiList: any[], cplId: string) {
-  if (nilaiList.length === 0) return { nilai: 0, status: 'belum_tercapai' };
-
-  // Get bobot kontribusi for each mata kuliah
-  const nilaiWithWeights = await Promise.all(
-    nilaiList.map(async (n) => {
-      const mapping = await prisma.cplMataKuliah.findFirst({
-        where: {
-          cplId,
-          mataKuliahId: n.mataKuliahId
-        }
-      });
-
-      return {
-        nilai: Number(n.nilai),
-        bobotKontribusi: mapping ? Number(mapping.bobotKontribusi) : 1.0,
-        sks: n.mataKuliah.sks,
-        semester: n.semester,
-        tahunAjaran: n.tahunAjaran
-      };
-    })
-  );
+function calculateCplScoreSync(nilaiList: any[], cplId: string, weightMap: Map<string, number>, minNilai: number) {
+  if (nilaiList.length === 0) return { nilaiAkhir: 0, status: 'belum_tercapai', semesterTercapai: 0, tahunAjaran: '-' };
 
   // Calculate weighted average: Σ(nilai × bobot × SKS) / Σ(bobot × SKS)
-  const totalWeightedScore = nilaiWithWeights.reduce(
-    (sum, n) => sum + (n.nilai * n.bobotKontribusi * n.sks),
-    0
-  );
-  const totalWeight = nilaiWithWeights.reduce(
-    (sum, n) => sum + (n.bobotKontribusi * n.sks),
-    0
-  );
+  let totalWeightedScore = 0;
+  let totalWeight = 0;
+
+  for (const n of nilaiList) {
+    const key = `${cplId}-${n.mataKuliahId}`;
+    const bobot = weightMap.get(key) ?? 1.0;
+    const sks = n.mataKuliah.sks;
+    const nilai = Number(n.nilai);
+
+    totalWeightedScore += nilai * bobot * sks;
+    totalWeight += bobot * sks;
+  }
 
   const avgScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
-
-  // Get minimum nilai tercapai from CPL
-  const cpl = await prisma.cpl.findUnique({
-    where: { id: cplId }
-  });
-  const minNilai = cpl?.minimalNilaiTercapai ? Number(cpl.minimalNilaiTercapai) : 70;
   const status = avgScore >= minNilai ? 'tercapai' : 'belum_tercapai';
 
   // Get latest semester info
@@ -65,104 +43,134 @@ async function calculateCplScore(nilaiList: any[], cplId: string) {
   };
 }
 
-// GET /api/transkrip-cpl - Get all transkrip records (Aggregated)
-router.get('/', authMiddleware, async (req, res) => {
+// GET /api/transkrip-cpl/analisis - Get aggregated analysis data
+router.get('/analisis', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async (req, res) => {
   try {
-    const { mahasiswaId } = req.query;
+    const { semester } = req.query;
+    const where: any = {};
 
-    const whereClause: any = {};
-    if (mahasiswaId) whereClause.mahasiswaId = mahasiswaId;
+    if (semester && semester !== 'all') {
+      where.semester = Number(semester);
+    }
 
-    // Get all NilaiCpl
-    const nilaiCplList = await prisma.nilaiCpl.findMany({
-      where: whereClause,
-      include: {
-        mahasiswa: true,
-        cpl: true,
-        mataKuliah: true
-      }
+    // 1. Get Average Score per CPL
+    const aggregations = await prisma.nilaiCpl.groupBy({
+      by: ['cplId'],
+      _avg: {
+        nilai: true
+      },
+      where
     });
 
-    // Group by Mahasiswa -> CPL
-    const grouped = new Map<string, Map<string, any[]>>();
+    // Get CPL details for mapping
+    const cpls = await prisma.cpl.findMany({
+      select: { id: true, kodeCpl: true }
+    });
+    const cplMap = new Map(cpls.map(c => [c.id, c.kodeCpl]));
 
-    for (const nilai of nilaiCplList) {
-      if (!grouped.has(nilai.mahasiswaId)) {
-        grouped.set(nilai.mahasiswaId, new Map());
-      }
-      const mMap = grouped.get(nilai.mahasiswaId)!;
-      if (!mMap.has(nilai.cplId)) {
-        mMap.set(nilai.cplId, []);
-      }
-      mMap.get(nilai.cplId)!.push(nilai);
+    const cplData = aggregations.map(agg => ({
+      name: cplMap.get(agg.cplId) || 'Unknown',
+      nilai: Number(agg._avg.nilai?.toFixed(2) || 0)
+    })).sort((a, b) => a.name.localeCompare(b.name));
+
+    // 2. Get Distribution Data (Optimized with Raw Query)
+    const semesterParam = (semester && semester !== 'all') ? Number(semester) : undefined;
+
+    // Use Prisma.sql for safe parameter interpolation if needed, or just conditional logic
+    // Since we can't easily import Prisma class here without checking package.json/imports, 
+    // we'll use separate queries or simple logic. 
+    // Actually, let's import Prisma at the top first.
+
+    let distributionRaw: any[];
+
+    if (semesterParam) {
+      distributionRaw = await prisma.$queryRaw`
+        SELECT
+          CASE
+            WHEN nilai >= 90 THEN '90-100'
+            WHEN nilai >= 80 THEN '80-89'
+            WHEN nilai >= 70 THEN '70-79'
+            WHEN nilai >= 60 THEN '60-69'
+            ELSE '0-59'
+          END as range_name,
+          COUNT(*) as count
+        FROM nilai_cpl
+        WHERE semester = ${semesterParam}
+        GROUP BY
+          CASE
+            WHEN nilai >= 90 THEN '90-100'
+            WHEN nilai >= 80 THEN '80-89'
+            WHEN nilai >= 70 THEN '70-79'
+            WHEN nilai >= 60 THEN '60-69'
+            ELSE '0-59'
+          END
+      `;
+    } else {
+      distributionRaw = await prisma.$queryRaw`
+        SELECT
+          CASE
+            WHEN nilai >= 90 THEN '90-100'
+            WHEN nilai >= 80 THEN '80-89'
+            WHEN nilai >= 70 THEN '70-79'
+            WHEN nilai >= 60 THEN '60-69'
+            ELSE '0-59'
+          END as range_name,
+          COUNT(*) as count
+        FROM nilai_cpl
+        GROUP BY
+          CASE
+            WHEN nilai >= 90 THEN '90-100'
+            WHEN nilai >= 80 THEN '80-89'
+            WHEN nilai >= 70 THEN '70-79'
+            WHEN nilai >= 60 THEN '60-69'
+            ELSE '0-59'
+          END
+      `;
     }
 
-    const result = [];
+    const ranges = [
+      { name: "0-59", min: 0, max: 59, count: 0 },
+      { name: "60-69", min: 60, max: 69, count: 0 },
+      { name: "70-79", min: 70, max: 79, count: 0 },
+      { name: "80-89", min: 80, max: 89, count: 0 },
+      { name: "90-100", min: 90, max: 100, count: 0 },
+    ];
 
-    for (const [mId, cplMap] of grouped.entries()) {
-      for (const [cplId, nilaiList] of cplMap.entries()) {
-        const calc = await calculateCplScore(nilaiList, cplId);
-        const first = nilaiList[0];
-
-        // Get all mata kuliah that contribute to this CPL (via CPMK mappings)
-        const cpmkMappings = await prisma.cpmkCplMapping.findMany({
-          where: { cplId },
-          include: {
-            cpmk: {
-              include: {
-                mataKuliah: true
-              }
-            }
-          }
-        });
-
-        // Extract unique mata kuliah
-        const mataKuliahSet = new Set();
-        const mataKuliahList: any[] = [];
-
-        for (const mapping of cpmkMappings) {
-          if (mapping.cpmk?.mataKuliah && !mataKuliahSet.has(mapping.cpmk.mataKuliah.id)) {
-            mataKuliahSet.add(mapping.cpmk.mataKuliah.id);
-            mataKuliahList.push({
-              id: mapping.cpmk.mataKuliah.id,
-              kodeMk: mapping.cpmk.mataKuliah.kodeMk,
-              namaMk: mapping.cpmk.mataKuliah.namaMk
-            });
-          }
-        }
-
-        result.push({
-          mahasiswaId: mId,
-          cplId,
-          mahasiswa: first.mahasiswa,
-          cpl: first.cpl,
-          mataKuliah: mataKuliahList.length > 0 ? mataKuliahList[0] : null, // First MK for backward compatibility
-          mataKuliahList, // All contributing MK
-          ...calc
-        });
+    for (const row of distributionRaw) {
+      const range = ranges.find(r => r.name === row.range_name);
+      if (range) {
+        range.count = Number(row.count);
       }
     }
+
+    // 3. Radar Data (Top 8 CPL)
+    const radarData = [...cplData]
+      .sort((a, b) => b.nilai - a.nilai)
+      .slice(0, 8)
+      .map(item => ({
+        subject: item.name,
+        nilai: item.nilai,
+        fullMark: 100
+      }));
 
     res.json({
-      success: true,
-      data: result,
-      count: result.length
+      cplData,
+      distributionData: ranges,
+      radarData
     });
+
   } catch (error) {
-    console.error('Error fetching transkrip:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error'
-    });
+    console.error('Analysis error:', error);
+    res.status(500).json({ error: 'Gagal memuat data analisis' });
   }
 });
 
 // GET /api/transkrip-cpl/:mahasiswaId - Get transkrip by mahasiswa
-router.get('/:mahasiswaId', authMiddleware, async (req, res) => {
+router.get('/:mahasiswaId', authMiddleware, requireProdiScope, async (req, res) => {
   try {
     const { mahasiswaId } = req.params;
 
-    // Get all CPLs to ensure we show even those with no score (optional, but good for transcript)
+    // Get all CPLs
     const allCpls = await prisma.cpl.findMany({
       where: { isActive: true },
       orderBy: { kodeCpl: 'asc' }
@@ -176,6 +184,24 @@ router.get('/:mahasiswaId', authMiddleware, async (req, res) => {
         mataKuliah: true
       }
     });
+
+    // Extract IDs for batch fetching weights
+    const cplIds = [...new Set(nilaiCplList.map(n => n.cplId))];
+    const mkIds = [...new Set(nilaiCplList.map(n => n.mataKuliahId))];
+
+    // Batch fetch weights
+    const weights = await prisma.cplMataKuliah.findMany({
+      where: {
+        cplId: { in: cplIds },
+        mataKuliahId: { in: mkIds }
+      }
+    });
+
+    // Create weight map
+    const weightMap = new Map<string, number>();
+    for (const w of weights) {
+      weightMap.set(`${w.cplId}-${w.mataKuliahId}`, Number(w.bobotKontribusi));
+    }
 
     // Group by CPL
     const cplMap = new Map<string, any[]>();
@@ -193,7 +219,8 @@ router.get('/:mahasiswaId', authMiddleware, async (req, res) => {
       let calc;
 
       if (nilaiList.length > 0) {
-        calc = await calculateCplScore(nilaiList, cpl.id);
+        const minNilai = cpl.minimalNilaiTercapai ? Number(cpl.minimalNilaiTercapai) : 70;
+        calc = calculateCplScoreSync(nilaiList, cpl.id, weightMap, minNilai);
       } else {
         calc = {
           nilaiAkhir: 0,
@@ -203,9 +230,16 @@ router.get('/:mahasiswaId', authMiddleware, async (req, res) => {
         };
       }
 
+      const mataKuliahList = nilaiList.map(n => ({
+        id: n.mataKuliah.id,
+        kodeMk: n.mataKuliah.kodeMk,
+        namaMk: n.mataKuliah.namaMk
+      }));
+
       transkrip.push({
         cplId: cpl.id,
         cpl,
+        mataKuliahList,
         ...calc
       });
     }
@@ -230,7 +264,7 @@ router.get('/:mahasiswaId', authMiddleware, async (req, res) => {
           totalCpl,
           tercapai,
           belumTercapai,
-          proses: 0, // Deprecated logic
+          proses: 0,
           avgScore: Number(avgScore.toFixed(2)),
           persentaseTercapai: totalCpl > 0 ? Number(((tercapai / totalCpl) * 100).toFixed(2)) : 0
         }

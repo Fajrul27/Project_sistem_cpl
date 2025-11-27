@@ -56,7 +56,18 @@ router.get('/', authMiddleware, async (req, res) => {
                     }
                 },
                 teknikPenilaian: true,
-                levelTaksonomiRef: true
+                levelTaksonomiRef: true,
+                creator: {
+                    select: {
+                        id: true,
+                        email: true,
+                        profile: {
+                            select: {
+                                namaLengkap: true
+                            }
+                        }
+                    }
+                }
             },
             orderBy: { createdAt: 'desc' }
         });

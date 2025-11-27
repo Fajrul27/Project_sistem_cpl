@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { authMiddleware, requireRole, requirePengampu } from '../middleware/auth.js';
 import { calculateNilaiCpmk, calculateNilaiCplFromCpmk } from '../lib/calculation.js';
 
 const router = Router();
@@ -85,7 +85,7 @@ router.get('/cpmk/:cpmkId/:mahasiswaId', authMiddleware, async (req, res) => {
 });
 
 // Get all nilai teknik for specific Mata Kuliah (Bulk fetch for Input Grid)
-router.get('/mata-kuliah/:mataKuliahId', authMiddleware, async (req, res) => {
+router.get('/mata-kuliah/:mataKuliahId', authMiddleware, requirePengampu('mataKuliahId'), async (req, res) => {
     try {
         const { mataKuliahId } = req.params;
         const { semester, tahunAjaran } = req.query;
@@ -111,7 +111,7 @@ router.get('/mata-kuliah/:mataKuliahId', authMiddleware, async (req, res) => {
 });
 
 // Create/Update nilai teknik penilaian (single)
-router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
+router.post('/', authMiddleware, requireRole('admin', 'dosen'), requirePengampu('mataKuliahId'), async (req, res) => {
     try {
         const userId = (req as any).userId;
         const { mahasiswaId, teknikPenilaianId, mataKuliahId, nilai, semester, tahunAjaran, catatan } = req.body;
@@ -199,10 +199,36 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res)
 router.post('/batch', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
     try {
         const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
         const { entries } = req.body; // Array of { mahasiswaId, teknikPenilaianId, mataKuliahId, nilai, semester, tahunAjaran }
 
         if (!Array.isArray(entries)) {
             return res.status(400).json({ error: 'Entries harus berupa array' });
+        }
+
+        // Manual pengampu validation (mataKuliahId in body array)
+        if (userRole === 'dosen' && entries.length > 0) {
+            const mataKuliahId = entries[0]?.mataKuliahId;
+            if (mataKuliahId) {
+                const profile = await prisma.profile.findUnique({
+                    where: { userId }
+                });
+
+                if (profile) {
+                    const pengampu = await prisma.mataKuliahPengampu.findFirst({
+                        where: {
+                            mataKuliahId,
+                            dosenId: profile.id
+                        }
+                    });
+
+                    if (!pengampu) {
+                        return res.status(403).json({
+                            error: 'Forbidden - You are not pengampu of this mata kuliah'
+                        });
+                    }
+                }
+            }
         }
 
         const results = [];
@@ -306,16 +332,44 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, re
     try {
         const { id } = req.params;
         const { nilai, catatan } = req.body;
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
 
         const existing = await prisma.nilaiTeknikPenilaian.findUnique({
             where: { id },
             include: {
-                teknikPenilaian: true
+                teknikPenilaian: {
+                    include: {
+                        cpmk: {
+                            include: {
+                                mataKuliah: {
+                                    include: {
+                                        pengampu: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         });
 
         if (!existing) {
             return res.status(404).json({ error: 'Nilai tidak ditemukan' });
+        }
+
+        // Check pengampu for dosen
+        if (userRole === 'dosen') {
+            const profile = await prisma.profile.findUnique({ where: { userId } });
+            const isPengampu = existing.teknikPenilaian.cpmk.mataKuliah.pengampu.some(
+                p => p.dosenId === profile?.id
+            );
+
+            if (!isPengampu) {
+                return res.status(403).json({
+                    error: 'Forbidden - You are not pengampu of this mata kuliah'
+                });
+            }
         }
 
         const nilaiNum = parseFloat(nilai);
@@ -355,16 +409,44 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, re
 router.delete('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
     try {
         const { id } = req.params;
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
 
         const existing = await prisma.nilaiTeknikPenilaian.findUnique({
             where: { id },
             include: {
-                teknikPenilaian: true
+                teknikPenilaian: {
+                    include: {
+                        cpmk: {
+                            include: {
+                                mataKuliah: {
+                                    include: {
+                                        pengampu: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         });
 
         if (!existing) {
             return res.status(404).json({ error: 'Nilai tidak ditemukan' });
+        }
+
+        // Check pengampu for dosen
+        if (userRole === 'dosen') {
+            const profile = await prisma.profile.findUnique({ where: { userId } });
+            const isPengampu = existing.teknikPenilaian.cpmk.mataKuliah.pengampu.some(
+                p => p.dosenId === profile?.id
+            );
+
+            if (!isPengampu) {
+                return res.status(403).json({
+                    error: 'Forbidden - You are not pengampu of this mata kuliah'
+                });
+            }
         }
 
         await prisma.nilaiTeknikPenilaian.delete({
@@ -399,7 +481,7 @@ import multer from 'multer';
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Generate Template Excel
-router.get('/template/:mataKuliahId', authMiddleware, async (req, res) => {
+router.get('/template/:mataKuliahId', authMiddleware, requirePengampu('mataKuliahId'), async (req, res) => {
     try {
         const { mataKuliahId } = req.params;
 
@@ -487,8 +569,8 @@ router.get('/template/:mataKuliahId', authMiddleware, async (req, res) => {
     }
 });
 
-// Import Excel
-router.post('/import', authMiddleware, requireRole('admin', 'dosen'), upload.single('file'), async (req, res) => {
+// Import Excel  
+router.post('/import', authMiddleware, requireRole('admin', 'dosen'), requirePengampu('mataKuliahId'), upload.single('file'), async (req, res) => {
     try {
         const userId = (req as any).userId;
         const { mataKuliahId, semester, tahunAjaran } = req.body;
