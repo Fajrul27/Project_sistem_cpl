@@ -56,31 +56,46 @@ const InputNilaiTeknikPage = () => {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        fetchInitialData();
+        fetchStudents();
     }, []);
+
+    useEffect(() => {
+        fetchMataKuliahList();
+        // Reset selected MK when semester changes
+        setSelectedMK("");
+    }, [semester]);
 
     useEffect(() => {
         if (selectedMK) {
             fetchMKData(selectedMK);
         }
-    }, [selectedMK, semester, tahunAjaran]);
+    }, [selectedMK, tahunAjaran]); // Removed semester from here as it triggers MK list reload
 
-    const fetchInitialData = async () => {
+    const fetchStudents = async () => {
         try {
             const token = localStorage.getItem('token');
-            const [mkRes, studentRes] = await Promise.all([
-                fetch(`${API_URL}/mata-kuliah`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`${API_URL}/users?role=mahasiswa`, { headers: { 'Authorization': `Bearer ${token}` } })
-            ]);
-
-            const mkData = await mkRes.json();
-            const studentData = await studentRes.json();
-
-            setMkList(mkData.data || []);
-            setStudents(studentData.data || []);
+            const response = await fetch(`${API_URL}/users?role=mahasiswa`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            setStudents(data.data || []);
         } catch (error) {
-            console.error('Error fetching initial data:', error);
-            toast.error('Gagal memuat data awal');
+            console.error('Error fetching students:', error);
+            toast.error('Gagal memuat data mahasiswa');
+        }
+    };
+
+    const fetchMataKuliahList = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/mata-kuliah?semester=${semester}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            setMkList(data.data || []);
+        } catch (error) {
+            console.error('Error fetching mata kuliah:', error);
+            toast.error('Gagal memuat daftar mata kuliah');
         }
     };
 

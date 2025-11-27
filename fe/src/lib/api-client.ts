@@ -5,16 +5,16 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Storage helpers
-function getToken() {
-  return localStorage.getItem('token');
-}
+// function getToken() {
+//   return localStorage.getItem('token');
+// }
 
-export function setToken(token: string) {
-  localStorage.setItem('token', token);
-}
+// export function setToken(token: string) {
+//   localStorage.setItem('token', token);
+// }
 
 export function clearToken() {
-  localStorage.removeItem('token');
+  // localStorage.removeItem('token');
   localStorage.removeItem('user');
 }
 
@@ -29,11 +29,11 @@ export function getUser() {
 
 // API request helper
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const token = getToken();
+  // const token = getToken();
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
+    // ...(token && { 'Authorization': `Bearer ${token}` }),
     ...options.headers,
   };
 
@@ -43,6 +43,7 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const response = await fetch(url, {
       ...options,
       headers,
+      credentials: 'include', // Send cookies
     });
 
     const data = await response.json();
@@ -72,15 +73,20 @@ export const api = {
 };
 
 // Helper: fetch list of mahasiswa from backend
-export async function fetchMahasiswaList() {
+export async function fetchMahasiswaList(params?: { page?: number; limit?: number; q?: string }) {
   // Backend endpoint: GET /api/users?role=mahasiswa
-  return apiRequest('/users?role=mahasiswa');
+  return api.get('/users', {
+    params: {
+      role: 'mahasiswa',
+      ...params
+    }
+  });
 }
 
 // Helper: fetch all users (admin only)
-export async function fetchAllUsers() {
+export async function fetchAllUsers(params?: { page?: number; limit?: number; q?: string; role?: string }) {
   // Backend endpoint: GET /api/users
-  return apiRequest('/users');
+  return api.get('/users', { params });
 }
 
 // Helper: update user role (admin only)
@@ -187,9 +193,19 @@ export async function submitNilaiCpl(payload: {
 }
 
 // Helper: fetch transkrip CPL data
-export async function fetchTranskripCPL(semester?: string) {
+export async function fetchTranskripCPL(mahasiswaId: string) {
+  return api.get(`/transkrip-cpl/${mahasiswaId}`);
+}
+
+// Helper: fetch analysis data
+export async function fetchAnalisisCPL(semester?: string) {
   const params = semester && semester !== "all" ? { semester } : {};
-  return api.get('/transkrip-cpl', { params });
+  return api.get('/transkrip-cpl/analisis', { params });
+}
+
+// Helper: fetch dashboard stats
+export async function fetchDashboardStats() {
+  return api.get('/dashboard/stats');
 }
 
 // Auth state change callbacks
@@ -206,11 +222,11 @@ export const supabase = {
         });
 
         const session = {
-          access_token: data.token,
+          access_token: 'cookie', // Dummy token for frontend logic compatibility
           user: { id: data.user.id, email: data.user.email }
         };
 
-        setToken(data.token);
+        // setToken(data.token); // No longer needed
         setUser(data.user);
 
         // Trigger auth state change callbacks
@@ -271,13 +287,13 @@ export const supabase = {
     },
 
     getSession: async () => {
-      const token = getToken();
+      // const token = getToken();
       const user = getUser();
-      if (token && user) {
+      if (user) {
         return {
           data: {
             session: {
-              access_token: token,
+              access_token: 'cookie',
               user: { id: user.id, email: user.email }
             }
           },

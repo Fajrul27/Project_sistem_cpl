@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api-client";
+import { api, fetchAnalisisCPL } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
@@ -21,70 +21,13 @@ const AnalisisiPage = () => {
 
   const fetchAnalysisData = async () => {
     try {
-      const response = await api.get('/transkrip-cpl', {
-        params: semester !== "all" ? { semester } : {}
-      });
+      const response = await fetchAnalisisCPL(semester);
 
-      // Handle both response formats: { data: { data: [] } } or { data: [] }
-      const transkripList = response?.data?.data || response?.data || [];
-
-      // Guard against non-array response
-      if (!Array.isArray(transkripList)) {
-        console.error('Invalid response format:', response);
-        toast.error('Format data transkrip tidak valid');
-        return;
+      if (response) {
+        setCplData(response.cplData || []);
+        setRadarData(response.radarData || []);
+        setDistributionData(response.distributionData || []);
       }
-
-      // Check if data is empty
-      if (transkripList.length === 0) {
-        setCplData([]);
-        setRadarData([]);
-        setDistributionData([]);
-        return;
-      }
-
-      // Process data for CPL average
-      const cplAverage: any = {};
-      transkripList.forEach((item: any) => {
-        const kode = item.cpl?.kodeCpl || "Unknown";
-        if (!cplAverage[kode]) {
-          cplAverage[kode] = { total: 0, count: 0, kode };
-        }
-        cplAverage[kode].total += parseFloat(item.nilaiAkhir || 0);
-        cplAverage[kode].count += 1;
-      });
-
-      const chartData = Object.values(cplAverage).map((item: any) => ({
-        name: item.kode,
-        nilai: parseFloat((item.total / item.count).toFixed(2)),
-      }));
-
-      setCplData(chartData);
-
-      // Prepare radar data (limit to top 8 CPL for better visualization)
-      const radarChartData = chartData.slice(0, 8).map((item: any) => ({
-        subject: item.name,
-        nilai: item.nilai,
-        fullMark: 100,
-      }));
-      setRadarData(radarChartData);
-
-      // Process distribution data
-      const ranges = [
-        { name: "0-59", min: 0, max: 59, count: 0 },
-        { name: "60-69", min: 60, max: 69, count: 0 },
-        { name: "70-79", min: 70, max: 79, count: 0 },
-        { name: "80-89", min: 80, max: 89, count: 0 },
-        { name: "90-100", min: 90, max: 100, count: 0 },
-      ];
-
-      transkripList.forEach((item: any) => {
-        const nilai = parseFloat(item.nilaiAkhir);
-        const range = ranges.find((r) => nilai >= r.min && nilai <= r.max);
-        if (range) range.count++;
-      });
-
-      setDistributionData(ranges);
     } catch (error: any) {
       toast.error("Gagal memuat data analisis");
       console.error(error);

@@ -54,29 +54,36 @@ const MataKuliahPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [semesterFilter, setSemesterFilter] = useState<string>("all");
 
+  const [fakultasList, setFakultasList] = useState<any[]>([]);
+  const [fakultasFilter, setFakultasFilter] = useState<string>("all");
+  const [prodiFilter, setProdiFilter] = useState<string>("all");
+
   useEffect(() => {
     fetchMataKuliah();
     fetchMasterData();
-  }, []);
+  }, [semesterFilter, fakultasFilter, prodiFilter]);
 
   const fetchMasterData = async () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [prodiRes, kurikulumRes, jenisMkRes] = await Promise.all([
+      const [prodiRes, kurikulumRes, jenisMkRes, fakultasRes] = await Promise.all([
         fetch(`${API_URL}/prodi`, { headers }),
         fetch(`${API_URL}/kurikulum`, { headers }),
-        fetch(`${API_URL}/jenis-mata-kuliah`, { headers })
+        fetch(`${API_URL}/jenis-mata-kuliah`, { headers }),
+        fetch(`${API_URL}/fakultas`, { headers })
       ]);
 
       const prodiData = await prodiRes.json();
       const kurikulumData = await kurikulumRes.json();
       const jenisMkData = await jenisMkRes.json();
+      const fakultasData = await fakultasRes.json();
 
       if (prodiData.data) setProdiList(prodiData.data);
       if (kurikulumData.data) setKurikulumList(kurikulumData.data);
       if (jenisMkData.data) setJenisMkList(jenisMkData.data);
+      if (fakultasData.data) setFakultasList(fakultasData.data);
     } catch (error) {
       console.error("Error fetching master data:", error);
     }
@@ -87,7 +94,12 @@ const MataKuliahPage = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`${API_URL}/mata-kuliah`, {
+      const params = new URLSearchParams();
+      if (semesterFilter !== 'all') params.append('semester', semesterFilter);
+      if (fakultasFilter !== 'all') params.append('fakultasId', fakultasFilter);
+      if (prodiFilter !== 'all') params.append('prodiId', prodiFilter);
+
+      const response = await fetch(`${API_URL}/mata-kuliah?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         }
@@ -231,24 +243,30 @@ const MataKuliahPage = () => {
 
   const canEdit = role === "admin" || role === "dosen";
 
-  const semesterOptions = Array.from(
-    new Set(mkList.map((mk) => mk.semester).filter((s) => s !== null && s !== undefined))
-  ).sort((a, b) => Number(a) - Number(b));
+  // Static semester options 1-8
+  const semesterOptions = [1, 2, 3, 4, 5, 6, 7, 8];
 
   const filteredMK = mkList.filter((mk) => {
     const q = searchTerm.toLowerCase();
-    const matchSearch =
+    return (
       mk.kodeMk.toLowerCase().includes(q) ||
       mk.namaMk.toLowerCase().includes(q) ||
-      String(mk.semester).includes(q);
-
-    const matchSemester =
-      semesterFilter === "all" || String(mk.semester) === semesterFilter;
-
-    return matchSearch && matchSemester;
+      String(mk.semester).includes(q)
+    );
   });
 
-  const hasActiveFilter = semesterFilter !== "all";
+  // Filtered prodi options based on selected fakultas
+  const filteredProdiOptions = fakultasFilter === 'all'
+    ? prodiList
+    : prodiList.filter(p => p.fakultasId === fakultasFilter);
+
+  const hasActiveFilter = semesterFilter !== "all" || fakultasFilter !== "all" || prodiFilter !== "all";
+
+  const handleResetFilter = () => {
+    setSemesterFilter("all");
+    setFakultasFilter("all");
+    setProdiFilter("all");
+  };
 
   if (loading) {
     return (
@@ -289,43 +307,85 @@ const MataKuliahPage = () => {
                 <span className="sm:hidden">Filter</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-64 space-y-4">
-              <div className="space-y-1">
-                <Label className="text-xs font-medium">Semester</Label>
-                <Select
-                  value={semesterFilter}
-                  onValueChange={(value) => setSemesterFilter(value)}
-                >
-                  <SelectTrigger className="w-full h-8 text-xs">
-                    <SelectValue placeholder="Semua semester" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua semester</SelectItem>
-                    {semesterOptions.map((s) => (
-                      <SelectItem key={String(s)} value={String(s)}>
-                        Semester {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <PopoverContent align="end" className="w-80 space-y-4">
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Fakultas</Label>
+                  <Select
+                    value={fakultasFilter}
+                    onValueChange={(value) => {
+                      setFakultasFilter(value);
+                      setProdiFilter("all"); // Reset prodi when fakultas changes
+                    }}
+                  >
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Semua Fakultas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Fakultas</SelectItem>
+                      {fakultasList.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Program Studi</Label>
+                  <Select
+                    value={prodiFilter}
+                    onValueChange={(value) => setProdiFilter(value)}
+                    disabled={fakultasFilter === 'all' && false} // Optional: disable if no fakultas selected? No, allow global prodi filter
+                  >
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Semua Program Studi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Program Studi</SelectItem>
+                      {filteredProdiOptions.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Semester</Label>
+                  <Select
+                    value={semesterFilter}
+                    onValueChange={(value) => setSemesterFilter(value)}
+                  >
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Semua semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua semester</SelectItem>
+                      {semesterOptions.map((s) => (
+                        <SelectItem key={String(s)} value={String(s)}>
+                          Semester {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="flex justify-between pt-1">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setSemesterFilter("all")}
+                  onClick={handleResetFilter}
                   disabled={!hasActiveFilter}
                 >
                   Reset
                 </Button>
               </div>
             </PopoverContent>
-          </Popover>
+          </Popover >
           <Button variant="outline" onClick={fetchMataKuliah}>
             Muat Ulang
           </Button>
-        </div>
+        </div >
 
         <Card>
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -508,8 +568,8 @@ const MataKuliahPage = () => {
             </Table>
           </CardContent>
         </Card>
-      </div>
-    </DashboardPage>
+      </div >
+    </DashboardPage >
   );
 }
 

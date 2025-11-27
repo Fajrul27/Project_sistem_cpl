@@ -128,7 +128,7 @@ const CPMKPage = () => {
                     body: JSON.stringify({
                         kodeCpmk: formData.kodeCpmk.trim(),
                         deskripsi: formData.deskripsi.trim() || null,
-                        levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi : null,
+                        levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi.join(',') : null,
                     })
                 });
 
@@ -147,7 +147,7 @@ const CPMKPage = () => {
                     body: JSON.stringify({
                         kodeCpmk: formData.kodeCpmk.trim(),
                         deskripsi: formData.deskripsi.trim() || null,
-                        levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi : null,
+                        levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi.join(',') : null,
                         mataKuliahId: formData.mataKuliahId,
                     })
                 });

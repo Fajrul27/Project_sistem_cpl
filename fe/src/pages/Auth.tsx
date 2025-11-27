@@ -30,8 +30,8 @@ const Auth = () => {
 
   useEffect(() => {
     // Check if user already logged in
-    const token = localStorage.getItem('token');
-    if (token) {
+    const user = localStorage.getItem('user');
+    if (user) {
       navigate("/dashboard");
     }
 
@@ -60,6 +60,7 @@ const Auth = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Important for cookies
         body: JSON.stringify({ email, password }),
       });
 
@@ -83,8 +84,8 @@ const Auth = () => {
         throw new Error(message);
       }
 
-      // Store token and user info
-      localStorage.setItem('token', data.token);
+      // Store user info (token is now in HttpOnly cookie)
+      // localStorage.setItem('token', data.token); // Removed
       localStorage.setItem('user', JSON.stringify(data.user));
 
       toast.success("Login berhasil!");
@@ -107,6 +108,7 @@ const Auth = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Important for cookies
         body: JSON.stringify({ email, password, fullName, prodiId: selectedProdi }),
       });
 

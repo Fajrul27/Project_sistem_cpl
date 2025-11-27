@@ -144,9 +144,17 @@ router.post('/login', async (req, res) => {
       }
     });
 
+    // Set HttpOnly cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // true in production
+      sameSite: 'lax', // or 'strict'
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.json({
       message: 'Login berhasil',
-      token,
+      // token, // Token removed from body
       user: {
         id: user.id,
         email: user.email,
@@ -204,7 +212,8 @@ router.get('/me', authMiddleware, async (req, res) => {
 // Logout
 router.post('/logout', authMiddleware, async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    // Get token from cookie or header
+    const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
 
     if (token) {
       // Delete session
@@ -212,6 +221,13 @@ router.post('/logout', authMiddleware, async (req, res) => {
         where: { token }
       });
     }
+
+    // Clear cookie
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
 
     res.json({ message: 'Logout berhasil' });
   } catch (error) {

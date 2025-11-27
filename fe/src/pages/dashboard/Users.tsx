@@ -222,7 +222,7 @@ const UsersPage = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetchAllUsers();
+      const response = await fetchAllUsers({ limit: -1 });
       const data = (response?.data || []) as any[];
 
       const mapped: UserRow[] = data.map((u) => {

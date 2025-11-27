@@ -4,8 +4,8 @@ import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 
-// Get all Prodi
-router.get('/', authMiddleware, async (req, res) => {
+// Get all Prodi (Public access for registration)
+router.get('/', async (req, res) => {
     try {
         const { fakultasId } = req.query;
 

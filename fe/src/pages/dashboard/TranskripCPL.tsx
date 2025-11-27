@@ -4,41 +4,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Printer, FileText, Loader2 } from "lucide-react";
+import { Download, Printer, FileText, Loader2, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/DashboardLayout";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { fetchMahasiswaList } from "@/lib/api-client";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 interface TranskripItem {
-    mahasiswaId: string;
     cplId: string;
     nilaiAkhir: number;
     status: 'tercapai' | 'belum_tercapai';
-    mahasiswa: {
-        namaLengkap: string;
-        nim: string;
-        programStudi: string;
-        semester: number;
-    };
     cpl: {
         kodeCpl: string;
         deskripsi: string;
         kategori: string;
     };
-    mataKuliah: {
-        kodeMk: string;
-        namaMk: string;
-    } | null;
     mataKuliahList?: {
         id: string;
         kodeMk: string;
         namaMk: string;
     }[];
+    // Legacy/Optional
+    mahasiswa?: any;
+    mataKuliah?: any;
 }
 
 interface Mahasiswa {
@@ -74,9 +69,16 @@ const TranskripCPLPage = () => {
     const [transkripList, setTranskripList] = useState<TranskripItem[]>([]);
     const [mahasiswaList, setMahasiswaList] = useState<Mahasiswa[]>([]);
     const [selectedMahasiswa, setSelectedMahasiswa] = useState<string>("");
+    const [currentStudent, setCurrentStudent] = useState<Mahasiswa | null>(null);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
     const [kaprodiData, setKaprodiData] = useState<KaprodiData | null>(null);
+
+    // Combobox state
+    const [openCombobox, setOpenCombobox] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+
     const [settings, setSettings] = useState({
         univName: "UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI CILACAP",
         univAddress: "Jl. Kemerdekaan Barat No.17 Kesugihan Kidul, Kec. Kesugihan, Kabupaten Cilacap, Jawa Tengah 53274",
@@ -97,10 +99,26 @@ const TranskripCPLPage = () => {
         if (roleLoading) return;
 
         if (!isMahasiswa) {
+            // Initial fetch
             fetchMahasiswaOptions();
         }
         fetchSettings();
     }, [isMahasiswa, roleLoading]);
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // Fetch on search change
+    useEffect(() => {
+        if (!isMahasiswa) {
+            fetchMahasiswaOptions(debouncedSearch);
+        }
+    }, [debouncedSearch]);
 
     useEffect(() => {
         if (selectedMahasiswa) {
@@ -143,9 +161,12 @@ const TranskripCPLPage = () => {
         }
     };
 
-    const fetchMahasiswaOptions = async () => {
+    const fetchMahasiswaOptions = async (query: string = "") => {
         try {
-            const response = await fetchMahasiswaList();
+            // Only show loading indicator if searching
+            if (query) setLoading(true);
+
+            const response = await fetchMahasiswaList({ q: query, limit: 20 }); // Limit 20 for dropdown
             const users = response?.data || [];
             const mapped: Mahasiswa[] = users
                 .filter((u: User) => u.profile && u.profile.nim)
@@ -162,6 +183,8 @@ const TranskripCPLPage = () => {
         } catch (error) {
             console.error("Error fetching mahasiswa:", error);
             toast.error("Gagal memuat daftar mahasiswa");
+        } finally {
+            if (query) setLoading(false);
         }
     };
 
@@ -170,18 +193,32 @@ const TranskripCPLPage = () => {
             setLoading(true);
             const token = localStorage.getItem('token');
 
-            const response = await fetch(`${API_URL}/transkrip-cpl?mahasiswaId=${selectedMahasiswa}`, {
+            const response = await fetch(`${API_URL}/transkrip-cpl/${selectedMahasiswa}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
             if (!response.ok) throw new Error('Gagal memuat transkrip');
 
             const result = await response.json();
-            setTranskripList(result.data || []);
+            setTranskripList(result.data?.transkrip || []);
+
+            if (result.data?.mahasiswa) {
+                // Map backend profile to Mahasiswa interface
+                const m = result.data.mahasiswa;
+                setCurrentStudent({
+                    id: m.userId,
+                    profile: {
+                        namaLengkap: m.namaLengkap,
+                        nim: m.nim,
+                        programStudi: m.programStudi,
+                        semester: m.semester
+                    }
+                });
+            }
 
             // Fetch kaprodi data based on student's program studi
-            if (result.data && result.data.length > 0 && result.data[0].mahasiswa?.programStudi) {
-                fetchKaprodiData(result.data[0].mahasiswa.programStudi);
+            if (result.data?.mahasiswa?.programStudi) {
+                fetchKaprodiData(result.data.mahasiswa.programStudi);
             }
         } catch (error) {
             console.error("Error fetching transkrip:", error);
@@ -192,20 +229,23 @@ const TranskripCPLPage = () => {
         }
     };
 
-    const selectedStudent = mahasiswaList.find(m => m.id === selectedMahasiswa) ||
-        (transkripList[0]?.mahasiswa ? {
-            id: selectedMahasiswa,
-            profile: transkripList[0].mahasiswa
-        } : null);
+    const selectedStudent = currentStudent || mahasiswaList.find(m => m.id === selectedMahasiswa);
 
-    const avgScore = transkripList.length > 0
-        ? transkripList.reduce((sum, item) => sum + item.nilaiAkhir, 0) / transkripList.length
+    // Defensive check to ensure transkripList is an array
+    const validTranskripList = Array.isArray(transkripList) ? transkripList : [];
+
+    if (!Array.isArray(transkripList)) {
+        console.error("TranskripList is not an array:", transkripList);
+    }
+
+    const avgScore = validTranskripList.length > 0
+        ? validTranskripList.reduce((sum, item) => sum + item.nilaiAkhir, 0) / validTranskripList.length
         : 0;
 
-    const completedCPL = transkripList.filter(item => item.status === 'tercapai').length;
+    const completedCPL = validTranskripList.filter(item => item.status === 'tercapai').length;
 
     const exportToPDF = async () => {
-        if (!selectedStudent || transkripList.length === 0) {
+        if (!selectedStudent || validTranskripList.length === 0) {
             toast.error("Tidak ada data untuk diexport");
             return;
         }
@@ -322,7 +362,7 @@ const TranskripCPLPage = () => {
             autoTable(doc, {
                 startY: tableStartY,
                 head: [['NO', 'KODE', 'CAPAIAN PEMBELAJARAN / MATA KULIAH', 'NILAI', 'STATUS']],
-                body: transkripList.map((item, index) => [
+                body: validTranskripList.map((item, index) => [
                     index + 1,
                     item.cpl.kodeCpl,
                     `${item.cpl.deskripsi}\nMK: ${item.mataKuliahList && item.mataKuliahList.length > 0
@@ -372,7 +412,7 @@ const TranskripCPLPage = () => {
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
             doc.text(`Rata-rata Nilai : ${avgScore.toFixed(2)}`, 25, finalY);
-            doc.text(`Total CPL Tercapai : ${completedCPL} dari ${transkripList.length}`, 25, finalY + 8);
+            doc.text(`Total CPL Tercapai : ${completedCPL} dari ${validTranskripList.length}`, 25, finalY + 8);
 
             // Footer
             const pageHeight = doc.internal.pageSize.height;
@@ -443,21 +483,68 @@ const TranskripCPLPage = () => {
                     <Card>
                         <CardHeader>
                             <CardTitle>Pilih Mahasiswa</CardTitle>
-                            <CardDescription>Pilih mahasiswa untuk melihat transkrip CPL</CardDescription>
+                            <CardDescription>Cari mahasiswa berdasarkan Nama atau NIM</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Select value={selectedMahasiswa} onValueChange={setSelectedMahasiswa}>
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Pilih Mahasiswa" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {mahasiswaList.map((mhs) => (
-                                        <SelectItem key={mhs.id} value={mhs.id}>
-                                            {mhs.profile.nim} - {mhs.profile.namaLengkap}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={openCombobox}
+                                        className="w-full justify-between"
+                                    >
+                                        {selectedMahasiswa
+                                            ? mahasiswaList.find((mhs) => mhs.id === selectedMahasiswa)?.profile.namaLengkap
+                                            : "Pilih Mahasiswa..."}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[400px] p-0">
+                                    <Command shouldFilter={false}>
+                                        <CommandInput
+                                            placeholder="Cari nama atau NIM..."
+                                            value={searchQuery}
+                                            onValueChange={setSearchQuery}
+                                        />
+                                        <CommandList>
+                                            {loading && searchQuery && (
+                                                <div className="py-6 text-center text-sm text-muted-foreground">
+                                                    Mencari...
+                                                </div>
+                                            )}
+                                            {!loading && mahasiswaList.length === 0 && (
+                                                <CommandEmpty>Mahasiswa tidak ditemukan.</CommandEmpty>
+                                            )}
+                                            <CommandGroup>
+                                                {mahasiswaList.map((mhs) => (
+                                                    <CommandItem
+                                                        key={mhs.id}
+                                                        value={mhs.id}
+                                                        onSelect={(currentValue) => {
+                                                            setSelectedMahasiswa(currentValue === selectedMahasiswa ? "" : currentValue);
+                                                            setOpenCombobox(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                selectedMahasiswa === mhs.id ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        <div className="flex flex-col">
+                                                            <span>{mhs.profile.namaLengkap}</span>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {mhs.profile.nim} - {mhs.profile.programStudi}
+                                                            </span>
+                                                        </div>
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </CardContent>
                     </Card>
                 )}
@@ -479,7 +566,7 @@ const TranskripCPLPage = () => {
                                     <CardTitle className="text-sm font-medium">CPL Tercapai</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{completedCPL} / {transkripList.length}</div>
+                                    <div className="text-2xl font-bold">{completedCPL} / {validTranskripList.length}</div>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -488,7 +575,7 @@ const TranskripCPLPage = () => {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">
-                                        {transkripList.length > 0 ? ((completedCPL / transkripList.length) * 100).toFixed(0) : 0}%
+                                        {validTranskripList.length > 0 ? ((completedCPL / validTranskripList.length) * 100).toFixed(0) : 0}%
                                     </div>
                                 </CardContent>
                             </Card>
@@ -515,7 +602,7 @@ const TranskripCPLPage = () => {
                                     <Button
                                         size="sm"
                                         onClick={exportToPDF}
-                                        disabled={exporting || transkripList.length === 0}
+                                        disabled={exporting || validTranskripList.length === 0}
                                     >
                                         {exporting ? (
                                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -531,7 +618,7 @@ const TranskripCPLPage = () => {
                                     <div className="flex items-center justify-center py-12">
                                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                     </div>
-                                ) : transkripList.length === 0 ? (
+                                ) : validTranskripList.length === 0 ? (
                                     <div className="text-center py-12 text-muted-foreground">
                                         <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                                         <p>Belum ada data transkrip CPL</p>
@@ -550,7 +637,7 @@ const TranskripCPLPage = () => {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {transkripList.map((item, index) => (
+                                            {validTranskripList.map((item, index) => (
                                                 <TableRow key={index}>
                                                     <TableCell className="font-medium">{item.cpl.kodeCpl}</TableCell>
                                                     <TableCell className="max-w-md">{item.cpl.deskripsi}</TableCell>
@@ -703,7 +790,7 @@ const TranskripCPLPage = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {transkripList.map((item, index) => (
+                                {validTranskripList.map((item, index) => (
                                     <tr key={index}>
                                         <td className="border border-black p-2 text-center align-top text-black">{index + 1}</td>
                                         <td className="border border-black p-2 text-center align-top text-black">{item.cpl.kodeCpl}</td>

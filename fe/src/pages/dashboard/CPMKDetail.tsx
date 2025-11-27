@@ -26,6 +26,12 @@ interface Cpmk {
         kodeMk: string;
         namaMk: string;
     };
+    creator?: {
+        email: string;
+        profile?: {
+            namaLengkap: string | null;
+        };
+    };
 }
 
 interface CplMapping {
@@ -412,6 +418,10 @@ const CPMKDetailPage = () => {
                         <div><span className="font-medium">Level Taksonomi:</span> {cpmk.levelTaksonomi || "-"}</div>
                         <div><span className="font-medium">Deskripsi:</span> {cpmk.deskripsi || "-"}</div>
                         <div><span className="font-medium">Mata Kuliah:</span> {cpmk.mataKuliah.kodeMk} - {cpmk.mataKuliah.namaMk}</div>
+                        <div>
+                            <span className="font-medium">Dibuat Oleh:</span>{" "}
+                            {cpmk.creator?.profile?.namaLengkap || cpmk.creator?.email || "-"}
+                        </div>
                     </CardContent>
                 </Card>
 

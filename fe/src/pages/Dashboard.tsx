@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, fetchMahasiswaList } from "@/lib/api-client";
+import { supabase, fetchMahasiswaList, fetchDashboardStats } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, BookOpen, Users, BarChart3, LogOut, TrendingUp, Settings, User as UserIcon, ChevronDown, TrendingDown, Award } from "lucide-react";
@@ -70,124 +70,31 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch CPL stats
-      const { data: cplData, error: cplError } = await (supabase.from("cpl").select("*") as any);
-      if (!cplError && cplData) {
-        setCplStats({ total: cplData.length, avgScore: 0 });
-      }
+      const response = await fetchDashboardStats();
+      const data = response.data;
 
-      // Create CPL Map for lookup
-      const cplMap = new Map();
-      if (cplData) {
-        cplData.forEach((cpl: any) => {
-          cplMap.set(cpl.id, cpl);
-        });
-      }
-
-      // Fetch Mata Kuliah stats
-      const { data: mkData, error: mkError } = await (supabase.from("mata_kuliah").select("*") as any);
-      if (!mkError && mkData) {
-        setMkStats({ total: mkData.length });
-      }
-
-      // Fetch student stats
-      try {
-        const studentData = await fetchMahasiswaList();
-        if (studentData && studentData.data) {
-          setStudentStats({ total: studentData.data.length });
-        }
-      } catch (error) {
-        console.error("Error fetching student stats:", error);
-      }
-
-      // Fetch CPL achievement data for charts
-      // Note: Our custom API client doesn't support joins like supabase-js
-      // So we fetch raw data and map it manually
-      const { data: nilaiData, error: nilaiError } = await (supabase
-        .from("nilai_cpl")
-        .select("*") as any);
-
-      if (!nilaiError && nilaiData) {
-        // Process data for bar chart (average per CPL)
-        const cplAverage: any = {};
-        nilaiData.forEach((item: any) => {
-          // Map cplId to CPL data using the map we created
-          const cpl = cplMap.get(item.cplId || item.cpl_id);
-          const kode = cpl?.kodeCpl || cpl?.kode_cpl || "Unknown";
-
-          if (!cplAverage[kode]) {
-            cplAverage[kode] = { total: 0, count: 0, kode };
-          }
-          cplAverage[kode].total += parseFloat(item.nilai);
-          cplAverage[kode].count += 1;
-        });
-
-        const chartData = Object.values(cplAverage).map((item: any) => ({
-          name: item.kode,
-          nilai: parseFloat((item.total / item.count).toFixed(2)),
-        }));
-        setChartData(chartData);
-
-        // Calculate overall average
-        if (chartData.length > 0) {
-          const avg = chartData.reduce((sum: number, item: any) => sum + item.nilai, 0) / chartData.length;
-          setCplStats({ total: cplData?.length || 0, avgScore: parseFloat(avg.toFixed(2)) });
+      if (data) {
+        // Set basic stats
+        if (data.stats) {
+          setCplStats({
+            total: data.stats.cpl || 0,
+            avgScore: data.stats.avgScore || 0
+          });
+          setMkStats({ total: data.stats.mataKuliah || 0 });
+          setStudentStats({ total: data.stats.users || 0 });
         }
 
-        // Process data for trend line (semester-wise)
-        const semesterAvg: any = {};
-        nilaiData.forEach((item: any) => {
-          const sem = item.semester;
-          if (!semesterAvg[sem]) {
-            semesterAvg[sem] = { total: 0, count: 0, semester: sem };
-          }
-          semesterAvg[sem].total += parseFloat(item.nilai);
-          semesterAvg[sem].count += 1;
-        });
-
-        const trendData = Object.values(semesterAvg)
-          .map((item: any) => ({
-            semester: `Sem ${item.semester} `,
-            nilai: parseFloat((item.total / item.count).toFixed(2)),
-          }))
-          .sort((a: any, b: any) => a.semester.localeCompare(b.semester));
-        setTrendData(trendData);
-
-        // Process distribution data (range based)
-        const ranges = {
-          excellent: { min: 85, max: 100, count: 0, label: "Sangat Baik (85-100)" },
-          good: { min: 70, max: 84, count: 0, label: "Baik (70-84)" },
-          fair: { min: 60, max: 69, count: 0, label: "Cukup (60-69)" },
-          poor: { min: 0, max: 59, count: 0, label: "Kurang (<60)" }
-        };
-
-        nilaiData.forEach((item: any) => {
-          const nilai = parseFloat(item.nilai);
-          if (nilai >= ranges.excellent.min) ranges.excellent.count++;
-          else if (nilai >= ranges.good.min) ranges.good.count++;
-          else if (nilai >= ranges.fair.min) ranges.fair.count++;
-          else ranges.poor.count++;
-        });
-
-        const distribution = Object.values(ranges).map((r: any) => ({
-          name: r.label,
-          value: r.count,
-          percentage: ((r.count / nilaiData.length) * 100).toFixed(1)
-        }));
-        setDistributionData(distribution);
-
-        // Performance data by CPL (top 5)
-        const performance = chartData
-          .sort((a: any, b: any) => b.nilai - a.nilai)
-          .slice(0, 5)
-          .map((item: any) => ({
-            ...item,
-            status: item.nilai >= 80 ? "Excellent" : item.nilai >= 70 ? "Good" : "Need Improvement"
-          }));
-        setPerformanceData(performance);
+        // Set chart data directly from backend response
+        setChartData(data.chartData || []);
+        setTrendData(data.trendData || []);
+        setDistributionData(data.distributionData || []);
+        setPerformanceData(data.performanceData || []);
       }
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error);
+      toast.error("Gagal memuat data dashboard");
+    } finally {
+      setLoading(false);
     }
   };
 

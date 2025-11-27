@@ -65,7 +65,7 @@ const MahasiswaPage = () => {
   const fetchProfiles = async () => {
     try {
       // Ambil daftar mahasiswa dari backend: /api/users?role=mahasiswa
-      const response = await fetchMahasiswaList();
+      const response = await fetchMahasiswaList({ limit: -1 });
       const users = response?.data || [];
 
       const mappedProfiles: Profile[] = users
