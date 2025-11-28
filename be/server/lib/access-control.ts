@@ -55,13 +55,25 @@ export async function canAccessCpl(userId: string, userRole: string, cplId: stri
     // Admin can access everything
     if (userRole === 'admin') return true;
 
+    const cpl = await prisma.cpl.findUnique({
+        where: { id: cplId },
+        include: { prodi: true }
+    });
+
+    if (!cpl) return false;
+
     // Kaprodi can access CPL in their program studi
     if (userRole === 'kaprodi') {
         const profile = await prisma.profile.findUnique({
             where: { userId }
         });
 
-        // Check if CPL is mapped to any mata kuliah in kaprodi's prodi
+        // Jika CPL memiliki prodiId, cek apakah cocok
+        if (cpl.prodiId) {
+            return cpl.prodiId === profile?.prodiId;
+        }
+
+        // Fallback: cek via mata kuliah (untuk CPL lama tanpa prodiId)
         const mappings = await prisma.cplMataKuliah.findMany({
             where: {
                 cplId,

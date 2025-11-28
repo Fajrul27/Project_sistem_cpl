@@ -13,10 +13,36 @@ const router = Router();
 // Get all CPL
 router.get('/', authMiddleware, async (req, res) => {
   try {
+    const userId = (req as any).userId;
+    const userRole = (req as any).userRole;
+    const { prodiId } = req.query;
+
+    const where: any = { isActive: true };
+
+    // Kaprodi hanya bisa lihat CPL dari prodinya
+    if (userRole === 'kaprodi') {
+      const profile = await prisma.profile.findUnique({
+        where: { userId }
+      });
+
+      if (profile?.prodiId) {
+        where.prodiId = profile.prodiId;
+      } else {
+        // Jika kaprodi tidak punya prodiId, kembalikan array kosong
+        return res.json({ data: [] });
+      }
+    }
+
+    // Filter by prodi jika ada query parameter (admin only)
+    if (prodiId && userRole === 'admin') {
+      where.prodiId = prodiId as string;
+    }
+
     const cpl = await prisma.cpl.findMany({
-      where: { isActive: true },
+      where,
       include: {
-        kategoriRef: true
+        kategoriRef: true,
+        prodi: true
       },
       orderBy: { kodeCpl: 'asc' }
     });
@@ -41,7 +67,8 @@ router.get('/:id', authMiddleware, async (req, res) => {
             mataKuliah: true
           }
         },
-        kategoriRef: true
+        kategoriRef: true,
+        prodi: true
       }
     });
 
@@ -171,7 +198,25 @@ router.get('/:id/stats', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { kodeCpl, deskripsi, kategori, kategoriId } = req.body;
+    const userRole = (req as any).userRole;
+    const { kodeCpl, deskripsi, kategori, kategoriId, prodiId } = req.body;
+
+    let finalProdiId = prodiId;
+
+    // Jika kaprodi, paksa menggunakan prodiId mereka
+    if (userRole === 'kaprodi') {
+      const profile = await prisma.profile.findUnique({
+        where: { userId }
+      });
+
+      if (!profile?.prodiId) {
+        return res.status(403).json({
+          error: 'Profile Anda belum memiliki Program Studi. Hubungi admin.'
+        });
+      }
+
+      finalProdiId = profile.prodiId;
+    }
 
     const cpl = await prisma.cpl.create({
       data: {
@@ -179,7 +224,12 @@ router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, re
         deskripsi,
         kategori,
         kategoriId,
+        prodiId: finalProdiId,
         createdBy: userId
+      },
+      include: {
+        kategoriRef: true,
+        prodi: true
       }
     });
 
@@ -199,23 +249,47 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (req, 
     const { id } = req.params;
     const userId = (req as any).userId;
     const userRole = (req as any).userRole;
-    const { kodeCpl, deskripsi, kategori, kategoriId } = req.body;
+    const { kodeCpl, deskripsi, kategori, kategoriId, prodiId } = req.body;
 
-    // Check existence and ownership
-    const existing = await prisma.cpl.findUnique({ where: { id } });
+    // Check existence
+    const existing = await prisma.cpl.findUnique({
+      where: { id },
+      include: { prodi: true }
+    });
     if (!existing) return res.status(404).json({ error: 'CPL tidak ditemukan' });
 
-    if (userRole === 'kaprodi' && existing.createdBy !== userId) {
-      return res.status(403).json({ error: 'Anda hanya dapat mengubah CPL yang Anda buat' });
+    // Validasi akses kaprodi
+    if (userRole === 'kaprodi') {
+      const profile = await prisma.profile.findUnique({
+        where: { userId }
+      });
+
+      // Cek ownership atau prodi match
+      if (existing.createdBy !== userId && existing.prodiId !== profile?.prodiId) {
+        return res.status(403).json({
+          error: 'Anda hanya dapat mengubah CPL dari program studi Anda'
+        });
+      }
+    }
+
+    const updateData: any = {
+      kodeCpl,
+      deskripsi,
+      kategori,
+      kategoriId
+    };
+
+    // Admin bisa update prodiId, kaprodi tidak
+    if (userRole === 'admin') {
+      updateData.prodiId = prodiId;
     }
 
     const cpl = await prisma.cpl.update({
       where: { id },
-      data: {
-        kodeCpl,
-        deskripsi,
-        kategori,
-        kategoriId
+      data: updateData,
+      include: {
+        kategoriRef: true,
+        prodi: true
       }
     });
 
@@ -236,12 +310,20 @@ router.delete('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (re
     const userId = (req as any).userId;
     const userRole = (req as any).userRole;
 
-    // Check existence and ownership
+    // Check existence
     const existing = await prisma.cpl.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: 'CPL tidak ditemukan' });
 
-    if (userRole === 'kaprodi' && existing.createdBy !== userId) {
-      return res.status(403).json({ error: 'Anda hanya dapat menghapus CPL yang Anda buat' });
+    if (userRole === 'kaprodi') {
+      const profile = await prisma.profile.findUnique({
+        where: { userId }
+      });
+
+      if (existing.createdBy !== userId && existing.prodiId !== profile?.prodiId) {
+        return res.status(403).json({
+          error: 'Anda hanya dapat menghapus CPL dari program studi Anda'
+        });
+      }
     }
 
     await prisma.cpl.update({

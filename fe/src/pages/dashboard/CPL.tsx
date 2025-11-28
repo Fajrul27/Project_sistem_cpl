@@ -23,6 +23,8 @@ interface CPL {
   kategori: string;
   kategoriId?: string;
   kategoriRef?: { id: string; nama: string };
+  prodiId?: string;
+  prodi?: { id: string; nama: string; kode?: string };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -31,12 +33,14 @@ type FormData = {
   kodeCpl: string;
   deskripsi: string;
   kategoriId: string;
+  prodiId: string;
 };
 
 const CPLPage = () => {
   const navigate = useNavigate();
   const [cplList, setCplList] = useState<CPL[]>([]);
   const [kategoriList, setKategoriList] = useState<any[]>([]);
+  const [prodiList, setProdiList] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -50,15 +54,31 @@ const CPLPage = () => {
     kodeCpl: "",
     deskripsi: "",
     kategoriId: "",
+    prodiId: "",
   });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [kategoriFilter, setKategoriFilter] = useState<string>("all");
+  const [prodiFilter, setProdiFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchCPL();
     fetchKategori();
+    fetchProdi();
   }, []);
+
+  const fetchProdi = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/prodi`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.data) setProdiList(result.data);
+    } catch (error) {
+      console.error("Error fetching prodi:", error);
+    }
+  };
 
   const fetchKategori = async () => {
     try {
@@ -124,6 +144,7 @@ const CPLPage = () => {
             kodeCpl: formData.kodeCpl.trim(),
             deskripsi: formData.deskripsi.trim(),
             kategoriId: formData.kategoriId,
+            prodiId: formData.prodiId || null,
           })
         });
 
@@ -140,6 +161,7 @@ const CPLPage = () => {
             kodeCpl: formData.kodeCpl.trim(),
             deskripsi: formData.deskripsi.trim(),
             kategoriId: formData.kategoriId,
+            prodiId: formData.prodiId || null,
           })
         });
 
@@ -168,6 +190,7 @@ const CPLPage = () => {
       kodeCpl: cpl.kodeCpl,
       deskripsi: cpl.deskripsi,
       kategoriId: cpl.kategoriId || "",
+      prodiId: cpl.prodiId || "",
     });
     setDialogOpen(true);
   };
@@ -203,6 +226,7 @@ const CPLPage = () => {
       kodeCpl: "",
       deskripsi: "",
       kategoriId: "",
+      prodiId: "",
     });
     setEditingCPL(null);
   };
@@ -224,15 +248,19 @@ const CPLPage = () => {
     const matchSearch =
       cpl.kodeCpl.toLowerCase().includes(q) ||
       cpl.deskripsi.toLowerCase().includes(q) ||
-      (cpl.kategoriRef?.nama || cpl.kategori || "").toLowerCase().includes(q);
+      (cpl.kategoriRef?.nama || cpl.kategori || "").toLowerCase().includes(q) ||
+      (cpl.prodi?.nama || "").toLowerCase().includes(q);
 
     const matchKategori =
       kategoriFilter === "all" || (cpl.kategoriRef?.nama || cpl.kategori) === kategoriFilter;
 
-    return matchSearch && matchKategori;
+    const matchProdi =
+      prodiFilter === "all" || cpl.prodiId === prodiFilter;
+
+    return matchSearch && matchKategori && matchProdi;
   });
 
-  const hasActiveFilter = kategoriFilter !== "all";
+  const hasActiveFilter = kategoriFilter !== "all" || prodiFilter !== "all";
 
   if (loading) {
     return (
@@ -294,12 +322,34 @@ const CPLPage = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-medium">Program Studi</Label>
+                <Select
+                  value={prodiFilter}
+                  onValueChange={(value) => setProdiFilter(value)}
+                >
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue placeholder="Semua program studi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua program studi</SelectItem>
+                    {prodiList.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nama}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex justify-between pt-1">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setKategoriFilter("all")}
+                  onClick={() => {
+                    setKategoriFilter("all");
+                    setProdiFilter("all");
+                  }}
                   disabled={!hasActiveFilter}
                 >
                   Reset
@@ -376,6 +426,25 @@ const CPLPage = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="prodi">Program Studi</Label>
+                      <Select
+                        value={formData.prodiId}
+                        onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
+                        disabled={role === 'kaprodi'}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih Program Studi" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {prodiList.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.nama} {p.kode ? `(${p.kode})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="flex gap-2">
                       <Button
                         type="submit"
@@ -405,6 +474,7 @@ const CPLPage = () => {
                   <TableHead>Kode CPL</TableHead>
                   <TableHead>Deskripsi</TableHead>
                   <TableHead>Kategori</TableHead>
+                  <TableHead>Program Studi</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -414,6 +484,7 @@ const CPLPage = () => {
                     <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
                     <TableCell>{cpl.deskripsi}</TableCell>
                     <TableCell>{cpl.kategoriRef?.nama || cpl.kategori}</TableCell>
+                    <TableCell>{cpl.prodi?.nama || '-'}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button size="sm" variant="ghost" onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}>
@@ -447,6 +518,23 @@ const CPLPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan menghapus CPL. Data yang telah dihapus tidak dapat dikembalikan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardPage>
   );
 }
