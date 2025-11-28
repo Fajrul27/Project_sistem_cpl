@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchMahasiswaList } from "@/lib/api-client";
+import { fetchMahasiswaList, api } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -89,28 +89,12 @@ const MahasiswaPage = () => {
   const fetchStudentProgress = async (studentId: string) => {
     setProgressLoading(true);
     try {
-      const token = localStorage.getItem('token');
-
       // Fetch student's transkrip CPL from backend
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/transkrip-cpl?mahasiswaId=${studentId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) throw new Error('Gagal memuat transkrip CPL');
-
-      const result = await response.json();
+      const result = await api.get('/transkrip-cpl', { params: { mahasiswaId: studentId } });
       const transkripList = result.data || [];
 
       // Fetch total CPL count
-      const cplResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/cpl`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const cplResult = await cplResponse.json();
+      const cplResult = await api.get('/cpl');
       const totalCPL = cplResult.data?.length || 0;
 
       if (transkripList.length > 0) {

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/DashboardLayout";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { api } from "@/lib/api-client";
 
 interface CPMK {
     id: string;
@@ -52,14 +52,8 @@ const ValidasiCPMKPage = () => {
     const fetchCPMK = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-
-            const response = await fetch(`${API_URL}/cpmk`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            const data = await response.json();
-            setCpmkList(Array.isArray(data.data) ? data.data : []);
+            const result = await api.get('/cpmk');
+            setCpmkList(Array.isArray(result.data) ? result.data : []);
         } catch (error) {
             console.error("Error fetching CPMK:", error);
             toast.error("Gagal memuat data CPMK");
@@ -71,18 +65,7 @@ const ValidasiCPMKPage = () => {
     const handleValidate = async (cpmkId: string, newStatus: 'draft' | 'validated' | 'active') => {
         try {
             setUpdating(cpmkId);
-            const token = localStorage.getItem('token');
-
-            const response = await fetch(`${API_URL}/cpmk/${cpmkId}/validate`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ statusValidasi: newStatus })
-            });
-
-            if (!response.ok) throw new Error('Gagal mengubah status validasi');
+            await api.put(`/cpmk/${cpmkId}/validate`, { statusValidasi: newStatus });
 
             toast.success(`Status berhasil diubah menjadi ${newStatus}`);
             await fetchCPMK();

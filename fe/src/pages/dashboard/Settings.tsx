@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { DashboardPage } from "@/components/DashboardLayout";
 import { Loader2, Save } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { api } from "@/lib/api-client";
 
 const SettingsPage = () => {
   const [loading, setLoading] = useState(true);
@@ -29,16 +29,9 @@ const SettingsPage = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/settings`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.data && Object.keys(result.data).length > 0) {
-          setSettings(prev => ({ ...prev, ...result.data }));
-        }
+      const result = await api.get('/settings');
+      if (result.data && Object.keys(result.data).length > 0) {
+        setSettings(prev => ({ ...prev, ...result.data }));
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
@@ -58,17 +51,7 @@ const SettingsPage = () => {
     setSaving(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/settings`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(settings)
-      });
-
-      if (!response.ok) throw new Error('Gagal menyimpan pengaturan');
+      await api.put('/settings', settings);
 
       toast.success("Pengaturan berhasil disimpan");
     } catch (error) {

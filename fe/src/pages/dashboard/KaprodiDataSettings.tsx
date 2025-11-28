@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { DashboardPage } from "@/components/DashboardLayout";
 import { Save, Loader2 } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { api } from "@/lib/api-client";
 
 interface Prodi {
     id: string;
@@ -46,11 +46,7 @@ const KaprodiDataSettings = () => {
 
     const fetchProdiData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/prodi`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const result = await response.json();
+            const result = await api.get('/prodi');
             if (result.data) setProdiList(result.data);
         } catch (error) {
             console.error("Gagal memuat data prodi");
@@ -59,15 +55,8 @@ const KaprodiDataSettings = () => {
 
     const fetchKaprodiData = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/kaprodi-data`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                setKaprodiList(result.data || []);
-            }
+            const result = await api.get('/kaprodi-data');
+            setKaprodiList(result.data || []);
         } catch (error) {
             toast.error("Gagal memuat data kaprodi");
         } finally {
@@ -85,17 +74,7 @@ const KaprodiDataSettings = () => {
 
         setSaving(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/kaprodi-data`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (!response.ok) throw new Error();
+            await api.post('/kaprodi-data', formData);
 
             toast.success("Data kaprodi berhasil disimpan");
             setFormData({ programStudi: "", prodiId: "", namaKaprodi: "", nidnKaprodi: "" });

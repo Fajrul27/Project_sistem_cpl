@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/DashboardLayout";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { api } from "@/lib/api-client";
 
 interface Cpmk {
     id: string;
@@ -101,14 +101,7 @@ const CPMKDetailPage = () => {
 
     const fetchCpmkDetail = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/cpmk/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error('Gagal memuat CPMK');
-
-            const result = await response.json();
+            const result = await api.get(`/cpmk/${id}`);
             setCpmk(result.data);
         } catch (error) {
             console.error('Error fetching CPMK:', error);
@@ -120,14 +113,7 @@ const CPMKDetailPage = () => {
 
     const fetchCplMappings = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/cpmk-mapping/cpmk/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error('Gagal memuat mapping');
-
-            const result = await response.json();
+            const result = await api.get(`/cpmk-mapping/cpmk/${id}`);
             setCplMappings(result.data || []);
         } catch (error) {
             console.error('Error fetching mappings:', error);
@@ -137,14 +123,7 @@ const CPMKDetailPage = () => {
 
     const fetchTeknikPenilaian = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/teknik-penilaian/cpmk/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error('Gagal memuat teknik penilaian');
-
-            const result = await response.json();
+            const result = await api.get(`/teknik-penilaian/cpmk/${id}`);
             setTeknikPenilaian(result.data || []);
         } catch (error) {
             console.error('Error fetching teknik penilaian:', error);
@@ -154,14 +133,7 @@ const CPMKDetailPage = () => {
 
     const fetchAvailableCpl = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/cpl`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error('Gagal memuat CPL');
-
-            const result = await response.json();
+            const result = await api.get('/cpl');
             setAvailableCpl(result.data || []);
         } catch (error) {
             console.error('Error fetching CPL:', error);
@@ -184,43 +156,17 @@ const CPMKDetailPage = () => {
         setSubmitting(true);
 
         try {
-            const token = localStorage.getItem('token');
-
             if (editingMapping) {
-                const response = await fetch(`${API_URL}/cpmk-mapping/${editingMapping.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        bobotPersentase: parseFloat(mappingForm.bobotPersentase),
-                    })
+                await api.put(`/cpmk-mapping/${editingMapping.id}`, {
+                    bobotPersentase: parseFloat(mappingForm.bobotPersentase),
                 });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Gagal update mapping');
-                }
                 toast.success("Mapping berhasil diupdate");
             } else {
-                const response = await fetch(`${API_URL}/cpmk-mapping`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        cpmkId: id,
-                        cplId: mappingForm.cplId,
-                        bobotPersentase: parseFloat(mappingForm.bobotPersentase),
-                    })
+                await api.post('/cpmk-mapping', {
+                    cpmkId: id,
+                    cplId: mappingForm.cplId,
+                    bobotPersentase: parseFloat(mappingForm.bobotPersentase),
                 });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Gagal tambah mapping');
-                }
                 toast.success("Mapping berhasil ditambahkan");
             }
 
@@ -239,14 +185,7 @@ const CPMKDetailPage = () => {
         if (!confirm("Yakin ingin menghapus mapping ini?")) return;
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/cpmk-mapping/${mappingId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error('Gagal hapus mapping');
-
+            await api.delete(`/cpmk-mapping/${mappingId}`);
             toast.success("Mapping berhasil dihapus");
             await fetchCplMappings();
         } catch (error) {
@@ -281,46 +220,20 @@ const CPMKDetailPage = () => {
         setSubmitting(true);
 
         try {
-            const token = localStorage.getItem('token');
-
             if (editingTeknik) {
-                const response = await fetch(`${API_URL}/teknik-penilaian/${editingTeknik.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        namaTeknik: teknikForm.namaTeknik.trim(),
-                        bobotPersentase: parseFloat(teknikForm.bobotPersentase),
-                        deskripsi: teknikForm.deskripsi.trim() || null,
-                    })
+                await api.put(`/teknik-penilaian/${editingTeknik.id}`, {
+                    namaTeknik: teknikForm.namaTeknik.trim(),
+                    bobotPersentase: parseFloat(teknikForm.bobotPersentase),
+                    deskripsi: teknikForm.deskripsi.trim() || null,
                 });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Gagal update teknik penilaian');
-                }
                 toast.success("Teknik penilaian berhasil diupdate");
             } else {
-                const response = await fetch(`${API_URL}/teknik-penilaian`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        cpmkId: id,
-                        namaTeknik: teknikForm.namaTeknik.trim(),
-                        bobotPersentase: parseFloat(teknikForm.bobotPersentase),
-                        deskripsi: teknikForm.deskripsi.trim() || null,
-                    })
+                await api.post('/teknik-penilaian', {
+                    cpmkId: id,
+                    namaTeknik: teknikForm.namaTeknik.trim(),
+                    bobotPersentase: parseFloat(teknikForm.bobotPersentase),
+                    deskripsi: teknikForm.deskripsi.trim() || null,
                 });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Gagal tambah teknik penilaian');
-                }
                 toast.success("Teknik penilaian berhasil ditambahkan");
             }
 
@@ -339,14 +252,7 @@ const CPMKDetailPage = () => {
         if (!confirm("Yakin ingin menghapus teknik penilaian ini?")) return;
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/teknik-penilaian/${teknikId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error('Gagal hapus teknik penilaian');
-
+            await api.delete(`/teknik-penilaian/${teknikId}`);
             toast.success("Teknik penilaian berhasil dihapus");
             await fetchTeknikPenilaian();
         } catch (error) {

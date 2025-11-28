@@ -15,7 +15,7 @@ import { DashboardPage } from "@/components/DashboardLayout";
 import { MultiTaxonomySelect } from "@/components/MultiTaxonomySelect";
 import { Badge } from "@/components/ui/badge";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { api } from "@/lib/api-client";
 
 interface MataKuliah {
     id: string;
@@ -62,16 +62,7 @@ const CPMKPage = () => {
 
     const fetchMataKuliah = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/mata-kuliah`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                }
-            });
-
-            if (!response.ok) throw new Error('Gagal memuat data mata kuliah');
-
-            const result = await response.json();
+            const result = await api.get('/mata-kuliah');
             const data = result.data || result;
             setMataKuliahList(Array.isArray(data) ? data : []);
         } catch (error) {
@@ -83,17 +74,7 @@ const CPMKPage = () => {
     const fetchCpmk = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-
-            const response = await fetch(`${API_URL}/cpmk`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                }
-            });
-
-            if (!response.ok) throw new Error('Gagal memuat data CPMK');
-
-            const result = await response.json();
+            const result = await api.get('/cpmk');
             const data = result.data || result;
             setCpmkList(Array.isArray(data) ? data : []);
         } catch (error) {
@@ -116,43 +97,20 @@ const CPMKPage = () => {
         setSubmitting(true);
 
         try {
-            const token = localStorage.getItem('token');
-
             if (editingCpmk) {
-                const response = await fetch(`${API_URL}/cpmk/${editingCpmk.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        kodeCpmk: formData.kodeCpmk.trim(),
-                        deskripsi: formData.deskripsi.trim() || null,
-                        levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi.join(',') : null,
-                    })
+                await api.put(`/cpmk/${editingCpmk.id}`, {
+                    kodeCpmk: formData.kodeCpmk.trim(),
+                    deskripsi: formData.deskripsi.trim() || null,
+                    levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi.join(',') : null,
                 });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || errorData.detail || 'Gagal update CPMK');
-                }
                 toast.success("CPMK berhasil diupdate");
             } else {
-                const response = await fetch(`${API_URL}/cpmk`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        kodeCpmk: formData.kodeCpmk.trim(),
-                        deskripsi: formData.deskripsi.trim() || null,
-                        levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi.join(',') : null,
-                        mataKuliahId: formData.mataKuliahId,
-                    })
+                await api.post('/cpmk', {
+                    kodeCpmk: formData.kodeCpmk.trim(),
+                    deskripsi: formData.deskripsi.trim() || null,
+                    levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi.join(',') : null,
+                    mataKuliahId: formData.mataKuliahId,
                 });
-
-                if (!response.ok) throw new Error('Gagal tambah CPMK');
                 toast.success("CPMK berhasil ditambahkan");
             }
 
@@ -190,16 +148,9 @@ const CPMKPage = () => {
         if (!confirm("Yakin ingin menghapus CPMK ini?")) return;
 
         try {
-            const token = localStorage.getItem('token');
+            await api.delete(`/cpmk/${id}`);
 
-            const response = await fetch(`${API_URL}/cpmk/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                }
-            });
-
-            if (!response.ok) throw new Error('Gagal hapus CPMK');
+            // if (!response.ok) throw new Error('Gagal hapus CPMK');
 
             toast.success("CPMK berhasil dihapus");
             await fetchCpmk();

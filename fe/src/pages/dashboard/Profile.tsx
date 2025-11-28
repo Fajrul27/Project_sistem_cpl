@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/api-client";
+// import { supabase } from "@/lib/api-client"; // Already imported below
 import { DashboardPage } from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useUserRole } from "@/hooks/useUserRole";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { supabase, api } from "@/lib/api-client";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -48,15 +48,12 @@ const ProfilePage = () => {
   const fetchMasterData = async () => {
     try {
       const [fakultasRes, prodiRes] = await Promise.all([
-        fetch(`${API_URL}/fakultas`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
-        fetch(`${API_URL}/prodi`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+        api.get('/fakultas'),
+        api.get('/prodi')
       ]);
 
-      const fakultasData = await fakultasRes.json();
-      const prodiData = await prodiRes.json();
-
-      if (fakultasData.data) setFakultasList(fakultasData.data);
-      if (prodiData.data) setProdiList(prodiData.data);
+      if (fakultasRes.data) setFakultasList(fakultasRes.data);
+      if (prodiRes.data) setProdiList(prodiRes.data);
     } catch (error) {
       console.error("Error fetching master data:", error);
     }

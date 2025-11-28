@@ -10,6 +10,8 @@ import { Loader2, Save, FileText, AlertCircle, Upload } from "lucide-react";
 import { DashboardPage } from "@/components/DashboardLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+import { api } from "@/lib/api-client";
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 interface Student {
@@ -73,12 +75,8 @@ const InputNilaiTeknikPage = () => {
 
     const fetchStudents = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/users?role=mahasiswa`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            setStudents(data.data || []);
+            const result = await api.get('/users', { params: { role: 'mahasiswa' } });
+            setStudents(result.data || []);
         } catch (error) {
             console.error('Error fetching students:', error);
             toast.error('Gagal memuat data mahasiswa');
@@ -87,12 +85,8 @@ const InputNilaiTeknikPage = () => {
 
     const fetchMataKuliahList = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/mata-kuliah?semester=${semester}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            setMkList(data.data || []);
+            const result = await api.get('/mata-kuliah', { params: { semester } });
+            setMkList(result.data || []);
         } catch (error) {
             console.error('Error fetching mata kuliah:', error);
             toast.error('Gagal memuat daftar mata kuliah');
@@ -102,29 +96,26 @@ const InputNilaiTeknikPage = () => {
     const fetchMKData = async (mkId: string) => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-
             // Fetch CPMK & Teknik Penilaian
-            const cpmkRes = await fetch(`${API_URL}/cpmk/mata-kuliah/${mkId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const cpmkData = await cpmkRes.json();
+            const cpmkData = await api.get(`/cpmk/mata-kuliah/${mkId}`);
             setCpmkList(cpmkData.data || []);
 
             // Fetch existing grades
-            const gradesRes = await fetch(`${API_URL}/nilai-teknik/mata-kuliah/${mkId}?semester=${semester}&tahunAjaran=${tahunAjaran}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (gradesRes.ok) {
-                const gradesData = await gradesRes.json();
-                const existingGrades: Record<string, number> = {};
-
-                gradesData.data.forEach((g: any) => {
-                    existingGrades[`${g.mahasiswaId}_${g.teknikPenilaianId}`] = g.nilai;
+            try {
+                const gradesData = await api.get(`/nilai-teknik/mata-kuliah/${mkId}`, {
+                    params: { semester, tahunAjaran }
                 });
 
+                const existingGrades: Record<string, number> = {};
+                if (gradesData.data) {
+                    gradesData.data.forEach((g: any) => {
+                        existingGrades[`${g.mahasiswaId}_${g.teknikPenilaianId}`] = g.nilai;
+                    });
+                }
                 setGrades(existingGrades);
+            } catch (err) {
+                // Ignore error if no grades found or other issue, just log
+                console.log("No existing grades or error fetching grades", err);
             }
 
         } catch (error) {
@@ -157,8 +148,6 @@ const InputNilaiTeknikPage = () => {
         setSaving(true);
 
         try {
-            const token = localStorage.getItem('token');
-
             // Convert grades state to array for batch API
             const entries = Object.entries(grades).map(([key, value]) => {
                 const [mahasiswaId, teknikPenilaianId] = key.split('_');
@@ -178,21 +167,7 @@ const InputNilaiTeknikPage = () => {
                 return;
             }
 
-            const response = await fetch(`${API_URL}/nilai-teknik/batch`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ entries })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Gagal menyimpan nilai');
-            }
-
-            const result = await response.json();
+            const result = await api.post('/nilai-teknik/batch', { entries });
 
             // Check if there are any errors in the batch response
             if (result.errors && result.errors.length > 0) {
@@ -227,9 +202,8 @@ const InputNilaiTeknikPage = () => {
     const handleDownloadTemplate = async () => {
         if (!selectedMK) return;
         try {
-            const token = localStorage.getItem('token');
             const response = await fetch(`${API_URL}/nilai-teknik/template/${selectedMK}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                credentials: 'include'
             });
 
             if (!response.ok) throw new Error('Gagal download template');
@@ -261,10 +235,9 @@ const InputNilaiTeknikPage = () => {
 
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
             const response = await fetch(`${API_URL}/nilai-teknik/import`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                credentials: 'include',
                 body: formData
             });
 

@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/DashboardLayout";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { api } from "@/lib/api-client";
 
 interface MataKuliah {
   id: string;
@@ -65,25 +65,17 @@ const MataKuliahPage = () => {
 
   const fetchMasterData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
       const [prodiRes, kurikulumRes, jenisMkRes, fakultasRes] = await Promise.all([
-        fetch(`${API_URL}/prodi`, { headers }),
-        fetch(`${API_URL}/kurikulum`, { headers }),
-        fetch(`${API_URL}/jenis-mata-kuliah`, { headers }),
-        fetch(`${API_URL}/fakultas`, { headers })
+        api.get('/prodi'),
+        api.get('/kurikulum'),
+        api.get('/jenis-mata-kuliah'),
+        api.get('/fakultas')
       ]);
 
-      const prodiData = await prodiRes.json();
-      const kurikulumData = await kurikulumRes.json();
-      const jenisMkData = await jenisMkRes.json();
-      const fakultasData = await fakultasRes.json();
-
-      if (prodiData.data) setProdiList(prodiData.data);
-      if (kurikulumData.data) setKurikulumList(kurikulumData.data);
-      if (jenisMkData.data) setJenisMkList(jenisMkData.data);
-      if (fakultasData.data) setFakultasList(fakultasData.data);
+      if (prodiRes.data) setProdiList(prodiRes.data);
+      if (kurikulumRes.data) setKurikulumList(kurikulumRes.data);
+      if (jenisMkRes.data) setJenisMkList(jenisMkRes.data);
+      if (fakultasRes.data) setFakultasList(fakultasRes.data);
     } catch (error) {
       console.error("Error fetching master data:", error);
     }
@@ -92,24 +84,12 @@ const MataKuliahPage = () => {
   const fetchMataKuliah = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const params: any = {};
+      if (semesterFilter !== 'all') params.semester = semesterFilter;
+      if (fakultasFilter !== 'all') params.fakultasId = fakultasFilter;
+      if (prodiFilter !== 'all') params.prodiId = prodiFilter;
 
-      const params = new URLSearchParams();
-      if (semesterFilter !== 'all') params.append('semester', semesterFilter);
-      if (fakultasFilter !== 'all') params.append('fakultasId', fakultasFilter);
-      if (prodiFilter !== 'all') params.append('prodiId', prodiFilter);
-
-      const response = await fetch(`${API_URL}/mata-kuliah?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Gagal memuat data mata kuliah`);
-      }
-
-      const result = await response.json();
+      const result = await api.get('/mata-kuliah', { params });
       const data = result.data || result;
       setMkList(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -132,47 +112,21 @@ const MataKuliahPage = () => {
     setSubmitting(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const payload = {
+        kodeMk: formData.kodeMk.trim(),
+        namaMk: formData.namaMk.trim(),
+        sks: parseInt(formData.sks),
+        semester: parseInt(formData.semester),
+        prodiId: formData.prodiId || null,
+        kurikulumId: formData.kurikulumId || null,
+        jenisMkId: formData.jenisMkId || null,
+      };
 
       if (editingMK) {
-        const response = await fetch(`${API_URL}/mata-kuliah/${editingMK.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            kodeMk: formData.kodeMk.trim(),
-            namaMk: formData.namaMk.trim(),
-            sks: parseInt(formData.sks),
-            semester: parseInt(formData.semester),
-            prodiId: formData.prodiId || null,
-            kurikulumId: formData.kurikulumId || null,
-            jenisMkId: formData.jenisMkId || null,
-          })
-        });
-
-        if (!response.ok) throw new Error('Gagal update mata kuliah');
+        await api.put(`/mata-kuliah/${editingMK.id}`, payload);
         toast.success("Mata kuliah berhasil diupdate");
       } else {
-        const response = await fetch(`${API_URL}/mata-kuliah`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            kodeMk: formData.kodeMk.trim(),
-            namaMk: formData.namaMk.trim(),
-            sks: parseInt(formData.sks),
-            semester: parseInt(formData.semester),
-            prodiId: formData.prodiId || null,
-            kurikulumId: formData.kurikulumId || null,
-            jenisMkId: formData.jenisMkId || null,
-          })
-        });
-
-        if (!response.ok) throw new Error('Gagal tambah mata kuliah');
+        await api.post('/mata-kuliah', payload);
         toast.success("Mata kuliah berhasil ditambahkan");
       }
 
@@ -209,17 +163,7 @@ const MataKuliahPage = () => {
     if (!confirm("Yakin ingin menghapus mata kuliah ini?")) return;
 
     try {
-      const token = localStorage.getItem('token');
-
-      const response = await fetch(`${API_URL}/mata-kuliah/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        }
-      });
-
-      if (!response.ok) throw new Error('Gagal hapus mata kuliah');
-
+      await api.delete(`/mata-kuliah/${id}`);
       toast.success("Mata kuliah berhasil dihapus");
       await fetchMataKuliah();
     } catch (error) {

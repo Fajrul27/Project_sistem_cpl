@@ -10,12 +10,12 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/DashboardLayout";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { fetchMahasiswaList } from "@/lib/api-client";
+import { fetchMahasiswaList, api } from "@/lib/api-client";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 interface TranskripItem {
     cplId: string;
@@ -130,15 +130,9 @@ const TranskripCPLPage = () => {
 
     const fetchSettings = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/settings`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (response.ok) {
-                const result = await response.json();
-                if (result.data && Object.keys(result.data).length > 0) {
-                    setSettings(prev => ({ ...prev, ...result.data }));
-                }
+            const result = await api.get('/settings');
+            if (result.data && Object.keys(result.data).length > 0) {
+                setSettings(prev => ({ ...prev, ...result.data }));
             }
         } catch (error) {
             console.error("Error fetching settings:", error);
@@ -147,15 +141,8 @@ const TranskripCPLPage = () => {
 
     const fetchKaprodiData = async (programStudi: string) => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_URL}/kaprodi-data/${programStudi}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                setKaprodiData(result.data);
-            }
+            const result = await api.get(`/kaprodi-data/${programStudi}`);
+            setKaprodiData(result.data);
         } catch (error) {
             console.error("Error fetching kaprodi data:", error);
         }
@@ -191,15 +178,7 @@ const TranskripCPLPage = () => {
     const fetchTranskrip = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-
-            const response = await fetch(`${API_URL}/transkrip-cpl/${selectedMahasiswa}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error('Gagal memuat transkrip');
-
-            const result = await response.json();
+            const result = await api.get(`/transkrip-cpl/${selectedMahasiswa}`);
             setTranskripList(result.data?.transkrip || []);
 
             if (result.data?.mahasiswa) {

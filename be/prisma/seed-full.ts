@@ -264,9 +264,8 @@ async function main() {
   const cpl1 = await prisma.cpl.create({
     data: {
       kodeCpl: 'CPL-01',
-      deskripsi: 'Mampu menerapkan pemikiran logis, kritis, sistematis, dan inovatif dalam konteks pengembangan atau implementasi ilmu pengetahuan dan teknologi',
+      deskripsi: 'Mampu menerapkan pemikiran logis, kritis, sistematis, dan inovatif dalam konteks pengembangan atau implementasi ilmu pengetahuan dan teknologi yang memperhatikan dan menerapkan nilai humaniora yang sesuai dengan bidang keahliannya.',
       kategori: 'Sikap',
-      bobot: 1.0,
       isActive: true,
       createdBy: admin.id
     }
@@ -275,9 +274,8 @@ async function main() {
   const cpl2 = await prisma.cpl.create({
     data: {
       kodeCpl: 'CPL-02',
-      deskripsi: 'Menguasai konsep teoretis dan prinsip rekayasa perangkat lunak untuk perancangan, pengembangan, dan pengujian sistem perangkat lunak',
-      kategori: 'Pengetahuan',
-      bobot: 1.2,
+      deskripsi: 'Mampu menunjukkan kinerja mandiri, bermutu, dan terukur.',
+      kategori: 'Sikap',
       isActive: true,
       createdBy: admin.id
     }
@@ -286,9 +284,8 @@ async function main() {
   const cpl3 = await prisma.cpl.create({
     data: {
       kodeCpl: 'CPL-03',
-      deskripsi: 'Mampu merancang dan mengimplementasikan sistem informasi dengan mempertimbangkan aspek keamanan, kinerja, dan keandalan',
-      kategori: 'Keterampilan Umum',
-      bobot: 1.3,
+      deskripsi: 'Mampu mengkaji implikasi pengembangan atau implementasi ilmu pengetahuan teknologi yang memperhatikan dan menerapkan nilai humaniora sesuai dengan keahliannya berdasarkan kaidah, tata cara dan etika ilmiah dalam rangka menghasilkan solusi, gagasan, desain atau kritik seni.',
+      kategori: 'Pengetahuan',
       isActive: true,
       createdBy: admin.id
     }
@@ -297,9 +294,8 @@ async function main() {
   const cpl4 = await prisma.cpl.create({
     data: {
       kodeCpl: 'CPL-04',
-      deskripsi: 'Mampu bekerja sama dalam tim multidisiplin dan berkomunikasi efektif dengan stakeholder',
-      kategori: 'Keterampilan Khusus',
-      bobot: 1.0,
+      deskripsi: 'Mampu menyusun deskripsi saintifik hasil kajian tersebut di atas dalam bentuk skripsi atau laporan tugas akhir, dan mengunggahnya dalam laman perguruan tinggi.',
+      kategori: 'Keterampilan Umum',
       isActive: true,
       createdBy: admin.id
     }
@@ -308,9 +304,8 @@ async function main() {
   const cpl5 = await prisma.cpl.create({
     data: {
       kodeCpl: 'CPL-05',
-      deskripsi: 'Mampu mengidentifikasi, menganalisis, dan merumuskan solusi terhadap permasalahan komputasi kompleks',
-      kategori: 'Pengetahuan',
-      bobot: 1.4,
+      deskripsi: 'Mampu mengambil keputusan secara tepat dalam konteks penyelesaian masalah di bidang keahliannya, berdasarkan hasil analisis informasi dan data.',
+      kategori: 'Keterampilan Umum',
       isActive: true,
       createdBy: admin.id
     }
@@ -321,7 +316,6 @@ async function main() {
       kodeCpl: 'CPL-06',
       deskripsi: 'Menguasai konsep dan teknik dalam basis data, termasuk perancangan, implementasi, dan optimasi',
       kategori: 'Pengetahuan',
-      bobot: 1.2,
       isActive: true,
       createdBy: admin.id
     }
@@ -332,7 +326,6 @@ async function main() {
       kodeCpl: 'CPL-07',
       deskripsi: 'Mampu mengaplikasikan teknologi terkini dalam pengembangan aplikasi berbasis web dan mobile',
       kategori: 'Keterampilan Khusus',
-      bobot: 1.3,
       isActive: true,
       createdBy: admin.id
     }
@@ -343,7 +336,6 @@ async function main() {
       kodeCpl: 'CPL-08',
       deskripsi: 'Memahami dan menerapkan prinsip-prinsip kecerdasan buatan dan pembelajaran mesin',
       kategori: 'Pengetahuan',
-      bobot: 1.5,
       isActive: true,
       createdBy: admin.id
     }

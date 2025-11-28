@@ -219,7 +219,7 @@ router.get('/:mahasiswaId', authMiddleware, requireProdiScope, async (req, res) 
       let calc;
 
       if (nilaiList.length > 0) {
-        const minNilai = cpl.minimalNilaiTercapai ? Number(cpl.minimalNilaiTercapai) : 70;
+        const minNilai = 70; // Default passing grade (property minimalNilaiTercapai not in schema)
         calc = calculateCplScoreSync(nilaiList, cpl.id, weightMap, minNilai);
       } else {
         calc = {

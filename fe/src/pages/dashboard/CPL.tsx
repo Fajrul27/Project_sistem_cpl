@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/DashboardLayout";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { api } from "@/lib/api-client";
 
 interface CPL {
   id: string;
@@ -62,11 +62,7 @@ const CPLPage = () => {
 
   const fetchKategori = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/kategori-cpl`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await response.json();
+      const result = await api.get('/kategori-cpl');
       if (result.data) setKategoriList(result.data);
     } catch (error) {
       console.error("Error fetching kategori CPL:", error);
@@ -76,19 +72,7 @@ const CPLPage = () => {
   const fetchCPL = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-
-      const response = await fetch(`${API_URL}/cpl`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Gagal memuat data CPL`);
-      }
-
-      const result = await response.json();
+      const result = await api.get('/cpl');
       const data = result.data || result;
       setCplList(Array.isArray(data) ? data : []);
       setMeta(result.meta || null);
@@ -111,39 +95,19 @@ const CPLPage = () => {
     setSubmitting(true);
 
     try {
-      const token = localStorage.getItem('token');
-
       if (editingCPL) {
-        const response = await fetch(`${API_URL}/cpl/${editingCPL.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            kodeCpl: formData.kodeCpl.trim(),
-            deskripsi: formData.deskripsi.trim(),
-            kategoriId: formData.kategoriId,
-          })
+        await api.put(`/cpl/${editingCPL.id}`, {
+          kodeCpl: formData.kodeCpl.trim(),
+          deskripsi: formData.deskripsi.trim(),
+          kategoriId: formData.kategoriId,
         });
-
-        if (!response.ok) throw new Error('Gagal update CPL');
         toast.success("CPL berhasil diperbarui");
       } else {
-        const response = await fetch(`${API_URL}/cpl`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            kodeCpl: formData.kodeCpl.trim(),
-            deskripsi: formData.deskripsi.trim(),
-            kategoriId: formData.kategoriId,
-          })
+        await api.post('/cpl', {
+          kodeCpl: formData.kodeCpl.trim(),
+          deskripsi: formData.deskripsi.trim(),
+          kategoriId: formData.kategoriId,
         });
-
-        if (!response.ok) throw new Error('Gagal tambah CPL');
         toast.success("CPL berhasil ditambahkan");
       }
 
@@ -176,17 +140,7 @@ const CPLPage = () => {
     if (!deletingId) return;
 
     try {
-      const token = localStorage.getItem('token');
-
-      const response = await fetch(`${API_URL}/cpl/${deletingId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        }
-      });
-
-      if (!response.ok) throw new Error('Gagal hapus CPL');
-
+      await api.delete(`/cpl/${deletingId}`);
       toast.success("CPL berhasil dihapus");
       await fetchCPL();
     } catch (error) {

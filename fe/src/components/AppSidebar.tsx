@@ -46,20 +46,19 @@ export function AppSidebar() {
 
   const visibleMenuItems = useMemo(
     () => {
-      const items = role ? MENU_ITEMS.filter((item) => item.roles.includes(role)) : [];
-      console.log('🔍 Debug Sidebar - Role:', role);
-      console.log('🔍 Debug Sidebar - Visible Items:', items.length, items);
-      return items;
+      return role ? MENU_ITEMS.filter((item) => item.roles.includes(role)) : [];
     },
     [role]
   );
+
 
   // Auto-tutup sidebar di mobile setiap kali ganti halaman
   useEffect(() => {
     if (isMobile && openMobile) {
       toggleSidebar();
     }
-  }, [isMobile, openMobile, location.pathname, toggleSidebar]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   return (
     <Sidebar className="border-r border-sidebar-border" collapsible="icon">
