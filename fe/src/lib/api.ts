@@ -4,7 +4,7 @@
 // This is a temporary stub to replace Supabase
 // Full implementation will be in Express backend
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Mock data for development
 const mockData = {
@@ -98,12 +98,12 @@ export const supabase = {
         };
         setToken(token);
         setUser(user);
-        
+
         // Trigger auth state change callbacks
         setTimeout(() => {
           authCallbacks.forEach(cb => cb('SIGNED_IN', session));
         }, 100);
-        
+
         return {
           data: {
             user: { id: user.id, email: user.email },
@@ -117,7 +117,7 @@ export const supabase = {
         error: { message: 'Email atau password salah' }
       };
     },
-    
+
     signUp: async ({ email, password, options }: { email: string; password: string; options?: any }) => {
       // Check if user already exists
       const existing = mockData.users.find(u => u.email === email);
@@ -127,18 +127,18 @@ export const supabase = {
           error: { message: 'Email sudah terdaftar' }
         };
       }
-      
+
       const newUser = {
         id: String(mockData.users.length + 1),
         email,
         role: 'mahasiswa',
-        profile: { 
+        profile: {
           nama_lengkap: options?.data?.full_name || 'User Baru',
-          nip: '' 
+          nip: ''
         }
       };
       mockData.users.push(newUser);
-      
+
       // Don't auto-login after signup, just return success
       return {
         data: {
@@ -148,13 +148,13 @@ export const supabase = {
         error: null
       };
     },
-    
+
     signOut: async () => {
       clearToken();
       localStorage.removeItem('user');
       return { error: null };
     },
-    
+
     getSession: async () => {
       const token = getToken();
       const user = getUser();
@@ -171,7 +171,7 @@ export const supabase = {
       }
       return { data: { session: null }, error: null };
     },
-    
+
     getUser: async () => {
       const user = getUser();
       if (user) {
@@ -182,28 +182,28 @@ export const supabase = {
       }
       return { data: { user: null }, error: null };
     },
-    
+
     onAuthStateChange: (callback: (event: string, session: any) => void) => {
       // Register callback
       authCallbacks.push(callback);
-      
+
       // Return subscription object with unsubscribe
       return {
-        data: { 
-          subscription: { 
+        data: {
+          subscription: {
             unsubscribe: () => {
               const index = authCallbacks.indexOf(callback);
               if (index > -1) {
                 authCallbacks.splice(index, 1);
               }
-            } 
-          } 
+            }
+          }
         },
         error: null
       };
     }
   },
-  
+
   from: (table: string) => ({
     select: (columns = '*') => {
       const queryBuilder = {
@@ -244,7 +244,7 @@ export const supabase = {
       };
       return queryBuilder;
     },
-    
+
     insert: (values: any) => {
       const result = {
         select: () => ({
@@ -262,7 +262,7 @@ export const supabase = {
       };
       return result;
     },
-    
+
     update: (values: any) => ({
       eq: (column: string, value: any) => {
         const result = {
@@ -284,7 +284,7 @@ export const supabase = {
         return result;
       }
     }),
-    
+
     delete: () => ({
       eq: (column: string, value: any) => {
         const promise = async () => {
