@@ -298,14 +298,10 @@ model NilaiCpmk {
   @@index([cpmkId])
   @@index([mataKuliahId])
   @@index([semester])
-  @@index([tahunAjaran])
-  @@map("nilai_cpmk")
-}
-
 model Session {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
-  token     String   @unique
+  token     String   @db.Text @unique
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
   ipAddress String?  @map("ip_address")
