@@ -2,16 +2,22 @@ version: '3.8'
 
 services:
   db:
-    image: mysql:8.0
+    image: mariadb:latest
     container_name: sistem_cpl_db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: sistem_cpl
     ports:
-      - "3307:3306" # Map to 3307 to avoid conflict with local MySQL
+      - "3307:3306" # Map to 3307 to avoid conflict with local MySQL/MariaDB
     volumes:
       - db_data:/var/lib/mysql
+      - ./sistem_cpl.sql:/docker-entrypoint-initdb.d/sistem_cpl.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   be:
     build: ./be
@@ -25,7 +31,8 @@ services:
       PORT: 3000
       CORS_ORIGIN: http://localhost:8080
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   fe:
     build: ./fe

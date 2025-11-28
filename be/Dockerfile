@@ -17,11 +17,8 @@ RUN npx prisma generate
 # Copy source code
 COPY . .
 
-# Build TypeScript code (optional, but good for production)
-RUN npm run build
-
 # Expose port
 EXPOSE 3000
 
-# Start command
+# Start command (tsx runs TypeScript directly)
 CMD ["npm", "start"]
