@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: sistem_cpl_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sistem_cpl
+    ports:
+      - "3307:3306" # Map to 3307 to avoid conflict with local MySQL
+    volumes:
+      - db_data:/var/lib/mysql
+
+  be:
+    build: ./be
+    container_name: sistem_cpl_be
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: mysql://root:root@db:3306/sistem_cpl
+      JWT_SECRET: your-super-secret-key-change-in-production-minimum-32-characters
+      PORT: 3000
+      CORS_ORIGIN: http://localhost:8080
+    depends_on:
+      - db
+
+  fe:
+    build: ./fe
+    container_name: sistem_cpl_fe
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - be
+
+volumes:
+  db_data:
