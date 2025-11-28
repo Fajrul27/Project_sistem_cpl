@@ -298,6 +298,9 @@ model NilaiCpmk {
   @@index([cpmkId])
   @@index([mataKuliahId])
   @@index([semester])
+  @@map("nilai_cpmk")
+}
+
 model Session {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
