@@ -8,8 +8,6 @@ import { authMiddleware, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
-
-
 // Get all CPL
 router.get('/', authMiddleware, async (req, res) => {
   try {
@@ -29,6 +27,52 @@ router.get('/', authMiddleware, async (req, res) => {
         where.prodiId = profile.prodiId;
       } else {
         // Jika kaprodi tidak punya prodiId, kembalikan array kosong
+        return res.json({ data: [] });
+      }
+    }
+
+    // Dosen: tampilkan semua CPL (karena matching programStudi tidak reliable)
+    // Untuk dosen dengan prodiId di masa depan, bisa ditambahkan filtering
+    if (userRole === 'dosen') {
+      // Jika dosen punya prodiId (data modern), filter by prodiId
+      const profile = await prisma.profile.findUnique({
+        where: { userId }
+      });
+
+      const prodiIds = new Set<string>();
+      let hasLegacyData = false;
+
+      if (profile?.prodiId) {
+        prodiIds.add(profile.prodiId);
+      } else if (profile?.programStudi) {
+        hasLegacyData = true;
+      }
+
+      const teaching = await prisma.mataKuliahPengampu.findMany({
+        where: { dosenId: userId },
+        include: { mataKuliah: true }
+      });
+
+      teaching.forEach(t => {
+        if (t.mataKuliah.prodiId) {
+          prodiIds.add(t.mataKuliah.prodiId);
+        } else if (t.mataKuliah.programStudi) {
+          hasLegacyData = true;
+        }
+      });
+
+      // If we have modern prodiIds, use them for filtering
+      if (prodiIds.size > 0) {
+        where.prodiId = { in: Array.from(prodiIds) };
+      }
+      // If only legacy data (programStudi), show all CPL
+      // because string matching is unreliable
+      else if (hasLegacyData) {
+        // Don't add filter - show all active CPL
+        console.log('[DOSEN] Showing all CPL for dosen with legacy data');
+      }
+      // No data at all
+      else {
         return res.json({ data: [] });
       }
     }

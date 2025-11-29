@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -59,8 +59,8 @@ model Profile {
   fotoProfile        String?                @map("foto_profile")
   createdAt          DateTime               @default(now()) @map("created_at")
   updatedAt          DateTime               @updatedAt @map("updated_at")
-  fakultasId         String?                @map("fakultas_id")
   nidn               String?                @unique
+  fakultasId         String?                @map("fakultas_id")
   prodiId            String?                @map("prodi_id")
   mataKuliahPengampu MataKuliahPengampu[]
   nilaiCpl           NilaiCpl[]             @relation("MahasiswaNilai")
@@ -118,10 +118,10 @@ model MataKuliah {
   createdAt    DateTime               @default(now()) @map("created_at")
   updatedAt    DateTime               @updatedAt @map("updated_at")
   createdBy    String?                @map("created_by")
+  programStudi String?                @map("program_studi")
   jenisMkId    String?                @map("jenis_mk_id")
   kurikulumId  String?                @map("kurikulum_id")
   prodiId      String?                @map("prodi_id")
-  programStudi String?                @map("program_studi")
   cpl          CplMataKuliah[]
   cpmk         Cpmk[]
   creator      User?                  @relation("MataKuliahCreatedBy", fields: [createdBy], references: [id])
@@ -164,16 +164,16 @@ model Cpmk {
   id                String            @id @default(uuid())
   kodeCpmk          String            @map("kode_cpmk")
   deskripsi         String?           @db.Text
-  levelTaksonomi    String?           @map("level_taksonomi")
-  levelTaksonomiId  String?           @map("level_taksonomi_id")
   mataKuliahId      String            @map("mata_kuliah_id")
-  statusValidasi    String            @default("draft") @map("status_validasi")
-  validatedAt       DateTime?         @map("validated_at")
-  validatedBy       String?           @map("validated_by")
   isActive          Boolean           @default(true) @map("is_active")
   createdAt         DateTime          @default(now()) @map("created_at")
   updatedAt         DateTime          @updatedAt @map("updated_at")
   createdBy         String?           @map("created_by")
+  statusValidasi    String            @default("draft") @map("status_validasi")
+  validatedAt       DateTime?         @map("validated_at")
+  validatedBy       String?           @map("validated_by")
+  levelTaksonomi    String?           @map("level_taksonomi")
+  levelTaksonomiId  String?           @map("level_taksonomi_id")
   creator           User?             @relation("CpmkCreatedBy", fields: [createdBy], references: [id])
   levelTaksonomiRef LevelTaksonomi?   @relation(fields: [levelTaksonomiId], references: [id])
   mataKuliah        MataKuliah        @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
@@ -210,11 +210,11 @@ model TeknikPenilaian {
   id              String                 @id @default(uuid())
   cpmkId          String                 @map("cpmk_id")
   namaTeknik      String                 @map("nama_teknik")
-  teknikRefId     String?                @map("teknik_ref_id")
   bobotPersentase Decimal                @map("bobot_persentase") @db.Decimal(5, 2)
   deskripsi       String?                @db.Text
   createdAt       DateTime               @default(now()) @map("created_at")
   updatedAt       DateTime               @updatedAt @map("updated_at")
+  teknikRefId     String?                @map("teknik_ref_id")
   nilaiTeknik     NilaiTeknikPenilaian[]
   cpmk            Cpmk                   @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
   teknikRef       TeknikPenilaianRef?    @relation(fields: [teknikRefId], references: [id])
@@ -298,13 +298,14 @@ model NilaiCpmk {
   @@index([cpmkId])
   @@index([mataKuliahId])
   @@index([semester])
+  @@index([tahunAjaran])
   @@map("nilai_cpmk")
 }
 
 model Session {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
-  token     String   @db.VarChar(1000) @unique
+  token     String   @unique
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
   ipAddress String?  @map("ip_address")
@@ -357,11 +358,11 @@ model Prodi {
   jenjang     String?
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
+  cpl         Cpl[]
   kaprodiData KaprodiData?
   mataKuliah  MataKuliah[]
   fakultas    Fakultas     @relation(fields: [fakultasId], references: [id], onDelete: Cascade)
   profiles    Profile[]
-  cpl         Cpl[]
 
   @@index([fakultasId])
   @@map("prodi")
@@ -452,11 +453,11 @@ model MataKuliahPengampu {
 model KaprodiData {
   id           String   @id @default(uuid())
   programStudi String   @unique @map("program_studi")
-  prodiId      String?  @unique @map("prodi_id")
   namaKaprodi  String   @map("nama_kaprodi")
   nidnKaprodi  String   @map("nidn_kaprodi")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  prodiId      String?  @unique @map("prodi_id")
   prodi        Prodi?   @relation(fields: [prodiId], references: [id])
 
   @@index([programStudi])
