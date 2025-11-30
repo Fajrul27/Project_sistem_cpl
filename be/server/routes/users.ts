@@ -26,6 +26,19 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
       };
     }
 
+    // [SECURITY] Kaprodi only sees users in their prodi
+    const userId = (req as any).userId;
+    const userRole = (req as any).userRole;
+
+    if (userRole === 'kaprodi') {
+      const profile = await prisma.profile.findUnique({ where: { userId } });
+      if (profile?.prodiId) {
+        // Ensure we filter by prodiId in the profile relation
+        if (!where.profile) where.profile = {};
+        where.profile.prodiId = profile.prodiId;
+      }
+    }
+
     // Search filter (email, name, nim)
     if (q) {
       const search = q as string;
@@ -40,6 +53,13 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
           }
         }
       ];
+    }
+
+    // Filter by kelasId
+    if (req.query.kelasId) {
+      const kelasId = req.query.kelasId as string;
+      if (!where.profile) where.profile = {};
+      where.profile.kelasId = kelasId;
     }
 
     // Get total count for pagination

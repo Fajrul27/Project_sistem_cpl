@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useUserRole } from "@/hooks/useUserRole";
 
-import { supabase, api } from "@/lib/api-client";
+import { supabase, api, fetchSemesters, fetchKelas } from "@/lib/api-client";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -38,6 +38,8 @@ const ProfilePage = () => {
   const [editForm, setEditForm] = useState<any>({});
   const [fakultasList, setFakultasList] = useState<any[]>([]);
   const [prodiList, setProdiList] = useState<any[]>([]);
+  const [semesterList, setSemesterList] = useState<any[]>([]);
+  const [kelasList, setKelasList] = useState<any[]>([]);
   const [filteredProdiList, setFilteredProdiList] = useState<any[]>([]);
 
   useEffect(() => {
@@ -47,13 +49,17 @@ const ProfilePage = () => {
 
   const fetchMasterData = async () => {
     try {
-      const [fakultasRes, prodiRes] = await Promise.all([
+      const [fakultasRes, prodiRes, semesterRes, kelasRes] = await Promise.all([
         api.get('/fakultas'),
-        api.get('/prodi')
+        api.get('/prodi'),
+        fetchSemesters(),
+        fetchKelas()
       ]);
 
       if (fakultasRes.data) setFakultasList(fakultasRes.data);
       if (prodiRes.data) setProdiList(prodiRes.data);
+      if (semesterRes.data) setSemesterList(semesterRes.data);
+      if (kelasRes.data) setKelasList(kelasRes.data);
     } catch (error) {
       console.error("Error fetching master data:", error);
     }
@@ -88,6 +94,8 @@ const ProfilePage = () => {
           fakultasId: userData.user.profile?.fakultasId || "",
           prodiId: userData.user.profile?.prodiId || "",
           semester: userData.user.profile?.semester || "",
+          semesterId: userData.user.profile?.semesterId || "",
+          kelasId: userData.user.profile?.kelasId || "",
           alamat: userData.user.profile?.alamat || "",
           noTelepon: userData.user.profile?.noTelepon || ""
         });
@@ -233,6 +241,20 @@ const ProfilePage = () => {
                 </Label>
                 <Input
                   value={`Semester ${profile.semester}`}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+            )}
+
+            {profile?.kelasRef && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4" />
+                  Kelas
+                </Label>
+                <Input
+                  value={profile.kelasRef.nama}
                   disabled
                   className="bg-muted"
                 />
@@ -397,13 +419,47 @@ const ProfilePage = () => {
                   <Label htmlFor="semester" className="text-right">
                     Semester
                   </Label>
-                  <Input
-                    id="semester"
-                    type="number"
-                    value={editForm.semester}
-                    onChange={(e) => setEditForm({ ...editForm, semester: parseInt(e.target.value) || 0 })}
-                    className="col-span-3"
-                  />
+                  <Select
+                    value={editForm.semesterId}
+                    onValueChange={(val) => {
+                      const selected = semesterList.find(s => s.id === val);
+                      setEditForm({
+                        ...editForm,
+                        semesterId: val,
+                        semester: selected?.angka || ""
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Pilih Semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {semesterList.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {role === 'mahasiswa' && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="kelas" className="text-right">
+                    Kelas
+                  </Label>
+                  <Select
+                    value={editForm.kelasId}
+                    onValueChange={(val) => setEditForm({ ...editForm, kelasId: val })}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Pilih Kelas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {kelasList.map((k) => (
+                        <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
@@ -435,13 +491,12 @@ const ProfilePage = () => {
               <Button type="submit" onClick={async () => {
                 try {
                   setLoading(true);
-                  const { error } = await supabase.from('profiles').update(editForm).eq('id', profile.id);
-                  if (error) throw error;
+                  await api.put(`/profile/${profile.id}`, editForm);
                   toast.success("Profil berhasil diperbarui");
                   setIsEditing(false);
                   fetchUserData();
                 } catch (e: any) {
-                  toast.error("Gagal memperbarui profil: " + e.message);
+                  toast.error("Gagal memperbarui profil: " + (e.response?.data?.error || e.message));
                 } finally {
                   setLoading(false);
                 }

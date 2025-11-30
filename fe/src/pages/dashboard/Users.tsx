@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
-import { fetchAllUsers, updateUserRole, createUserWithRole, updateUser, deleteUser, updateProfile } from "@/lib/api-client";
+import { fetchAllUsers, updateUserRole, createUserWithRole, updateUser, deleteUser, updateProfile, fetchKelas } from "@/lib/api-client";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +23,7 @@ interface UserRow {
   fakultas?: string | null;
   programStudi?: string | null;
   semester?: number | null;
+  kelasId?: string | null;
   profileId?: string | null;
 }
 
@@ -36,6 +37,7 @@ interface NewUserForm {
   identityType: "mahasiswa" | "dosen";
   identityNumber: string;
   semester: string;
+  kelasId?: string;
 }
 
 interface EditUserForm {
@@ -47,6 +49,7 @@ interface EditUserForm {
   identityType: "mahasiswa" | "dosen";
   identityNumber: string;
   semester: string;
+  kelasId?: string;
 }
 
 const FAKULTAS_OPTIONS = [
@@ -155,12 +158,12 @@ const ROLE_OPTIONS = [
   { value: "mahasiswa", label: "Mahasiswa" },
   { value: "kaprodi", label: "Kaprodi" },
 ];
-
 const UsersPage = () => {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [creating, setCreating] = useState(false);
+  const [kelasList, setKelasList] = useState<any[]>([]);
   const [newUser, setNewUser] = useState<NewUserForm>({
     fullName: "",
     email: "",
@@ -172,6 +175,7 @@ const UsersPage = () => {
     identityNumber: "",
     // disimpan sebagai string di form, dikirim sebagai number ke backend
     semester: "",
+    kelasId: "",
   });
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [facultyFilter, setFacultyFilter] = useState<string>("all");
@@ -188,9 +192,24 @@ const UsersPage = () => {
     identityType: "mahasiswa",
     identityNumber: "",
     semester: "",
+    kelasId: "",
   });
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadUsers();
+    loadKelas();
+  }, []);
+
+  const loadKelas = async () => {
+    try {
+      const res = await fetchKelas();
+      if (res.data) setKelasList(res.data);
+    } catch (error) {
+      console.error("Error fetching kelas:", error);
+    }
+  };
 
   const selectedFakultas = FAKULTAS_OPTIONS.find(
     (f) => f.value === newUser.fakultas
@@ -267,6 +286,7 @@ const UsersPage = () => {
           fakultas: fakultasName,
           programStudi: prodiName,
           semester: u.profile?.semester,
+          kelasId: u.profile?.kelasId,
           profileId: u.profile?.id,
         };
       });
@@ -341,6 +361,7 @@ const UsersPage = () => {
         nip?: string;
         programStudi?: string | null;
         semester?: number | null;
+        kelasId?: string;
       } = {};
 
       if (newUser.identityNumber.trim()) {
@@ -368,6 +389,10 @@ const UsersPage = () => {
       if (newUser.semester.trim()) {
         const parsed = parseInt(newUser.semester.trim(), 10);
         profilePayload.semester = Number.isNaN(parsed) ? null : parsed;
+      }
+
+      if (newUser.kelasId) {
+        profilePayload.kelasId = newUser.kelasId;
       }
 
       await createUserWithRole(
@@ -467,6 +492,7 @@ const UsersPage = () => {
           nip: newNip,
           programStudi: newProgramStudi,
           semester: newSemester,
+          kelasId: editData.kelasId || null,
         });
       }
 
@@ -754,6 +780,27 @@ const UsersPage = () => {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="new-kelas">Kelas (Mahasiswa)</Label>
+                    <Select
+                      value={newUser.kelasId}
+                      onValueChange={(value) =>
+                        setNewUser({ ...newUser, kelasId: value })
+                      }
+                      disabled={creating}
+                    >
+                      <SelectTrigger id="new-kelas" className="w-full">
+                        <SelectValue placeholder="Pilih kelas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {kelasList.map((k) => (
+                          <SelectItem key={k.id} value={k.id}>
+                            {k.nama}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="new-prodi">Program Studi</Label>
                     <Select
                       value={newUser.prodi}
@@ -947,10 +994,8 @@ const UsersPage = () => {
                               prodi: prodiValue,
                               identityType,
                               identityNumber,
-                              semester:
-                                user.semester !== null && user.semester !== undefined
-                                  ? String(user.semester)
-                                  : "",
+                              semester: user.semester ? String(user.semester) : "",
+                              kelasId: user.kelasId || "",
                             });
                           }}
                         >
@@ -1080,6 +1125,27 @@ const UsersPage = () => {
                     }
                     disabled={savingEdit || deletingId === editingUser.id}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-kelas">Kelas (Mahasiswa)</Label>
+                  <Select
+                    value={editData.kelasId}
+                    onValueChange={(value) =>
+                      setEditData((prev) => ({ ...prev, kelasId: value }))
+                    }
+                    disabled={savingEdit || deletingId === editingUser.id}
+                  >
+                    <SelectTrigger id="edit-kelas" className="w-full">
+                      <SelectValue placeholder="Pilih kelas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {kelasList.map((k) => (
+                        <SelectItem key={k.id} value={k.id}>
+                          {k.nama}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-identitas-tipe">Tipe Identitas</Label>

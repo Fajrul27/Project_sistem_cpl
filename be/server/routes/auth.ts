@@ -187,7 +187,11 @@ router.get('/me', authMiddleware, async (req, res) => {
       where: { id: userId },
       include: {
         role: true,
-        profile: true
+        profile: {
+          include: {
+            kelasRef: true
+          }
+        }
       }
     });
 

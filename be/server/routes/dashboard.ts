@@ -4,12 +4,12 @@
 
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
 // Get dashboard statistics
-router.get('/stats', authMiddleware, async (req, res) => {
+router.get('/stats', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async (req, res) => {
   try {
     // 1. Basic Counts
     const [userCount, cplCount, mataKuliahCount, nilaiCount] = await Promise.all([

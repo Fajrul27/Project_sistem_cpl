@@ -135,7 +135,6 @@ async function main() {
             kodeCpl: 'CPL-01',
             deskripsi: 'Mampu menerapkan pemikiran logis, kritis, sistematis, dan inovatif dalam konteks pengembangan atau implementasi ilmu pengetahuan dan teknologi',
             kategori: 'Sikap',
-            bobot: 1.0,
             createdBy: admin.id
         }
     });
@@ -144,7 +143,6 @@ async function main() {
             kodeCpl: 'CPL-02',
             deskripsi: 'Menguasai konsep teoretis dan prinsip rekayasa perangkat lunak',
             kategori: 'Pengetahuan',
-            bobot: 1.0,
             createdBy: admin.id
         }
     });
@@ -153,7 +151,6 @@ async function main() {
             kodeCpl: 'CPL-03',
             deskripsi: 'Mampu merancang dan mengimplementasikan sistem informasi',
             kategori: 'Keterampilan Umum',
-            bobot: 1.0,
             createdBy: admin.id
         }
     });
@@ -162,7 +159,6 @@ async function main() {
             kodeCpl: 'CPL-04',
             deskripsi: 'Mampu bekerja sama dalam tim multidisiplin',
             kategori: 'Keterampilan Khusus',
-            bobot: 1.0,
             createdBy: admin.id
         }
     });
@@ -171,7 +167,6 @@ async function main() {
             kodeCpl: 'CPL-05',
             deskripsi: 'Mampu mengidentifikasi, menganalisis, dan merumuskan solusi permasalahan',
             kategori: 'Keterampilan Umum',
-            bobot: 1.0,
             createdBy: admin.id
         }
     });

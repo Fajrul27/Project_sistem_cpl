@@ -80,7 +80,7 @@ router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, re
   try {
     const userId = (req as any).userId;
     const userRole = (req as any).userRole;
-    const { kodeMk, namaMk, sks, semester, programStudi, prodiId, kurikulumId, jenisMkId } = req.body;
+    const { kodeMk, namaMk, sks, semester, semesterId, programStudi, prodiId, kurikulumId, jenisMkId } = req.body;
 
     let prodiToUse = programStudi;
 
@@ -107,6 +107,7 @@ router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, re
         namaMk,
         sks: parseInt(sks),
         semester: parseInt(semester),
+        semesterId,
         programStudi: prodiToUse,
         prodiId: prodiId || (userRole === 'kaprodi' ? (await prisma.profile.findUnique({ where: { userId } }))?.prodiId : null),
         kurikulumId,
@@ -128,7 +129,7 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (req, 
     const { id } = req.params;
     const userId = (req as any).userId;
     const userRole = (req as any).userRole;
-    const { kodeMk, namaMk, sks, semester, programStudi, prodiId, kurikulumId, jenisMkId } = req.body;
+    const { kodeMk, namaMk, sks, semester, semesterId, programStudi, prodiId, kurikulumId, jenisMkId } = req.body;
 
     // Check access
     const existing = await prisma.mataKuliah.findUnique({ where: { id } });
@@ -153,6 +154,7 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (req, 
         namaMk,
         sks: parseInt(sks),
         semester: parseInt(semester),
+        semesterId,
         programStudi: userRole === 'admin' ? programStudi : existing.programStudi,
         prodiId: userRole === 'admin' ? prodiId : existing.prodiId,
         kurikulumId,

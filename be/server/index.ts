@@ -49,6 +49,7 @@ import usersRoutes from './routes/users.js';
 import nilaiCplRoutes from './routes/nilai-cpl.js';
 import profileRoutes from './routes/profile.js';
 import transkripCplRoutes from './routes/transkrip-cpl.js';
+import transkripCpmkRoutes from './routes/transkrip-cpmk.js';
 import cpmkRoutes from './routes/cpmk.js';
 import cpmkMappingRoutes from './routes/cpmk-mapping.js';
 import teknikPenilaianRoutes from './routes/teknik-penilaian.js';
@@ -63,6 +64,7 @@ import jenisMataKuliahRoutes from './routes/jenis-mata-kuliah.js';
 import kategoriCplRoutes from './routes/kategori-cpl.js';
 import levelTaksonomiRoutes from './routes/level-taksonomi.js';
 import teknikPenilaianRefRoutes from './routes/teknik-penilaian-ref.js';
+import referencesRoutes from './routes/references.js';
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -74,6 +76,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/nilai-cpl', nilaiCplRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/transkrip-cpl', transkripCplRoutes);
+app.use('/api/transkrip-cpmk', transkripCpmkRoutes);
 app.use('/api/cpmk', cpmkRoutes);
 app.use('/api/cpmk-mapping', cpmkMappingRoutes);
 app.use('/api/teknik-penilaian', teknikPenilaianRoutes);
@@ -88,6 +91,7 @@ app.use('/api/jenis-mata-kuliah', jenisMataKuliahRoutes);
 app.use('/api/kategori-cpl', kategoriCplRoutes);
 app.use('/api/level-taksonomi', levelTaksonomiRoutes);
 app.use('/api/teknik-penilaian-ref', teknikPenilaianRefRoutes);
+app.use('/api/references', referencesRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

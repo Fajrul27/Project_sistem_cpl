@@ -141,6 +141,13 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen'), requirePengampu(
             return res.status(404).json({ error: 'Teknik penilaian tidak ditemukan' });
         }
 
+        // [SECURITY] Verify teknik belongs to the mata kuliah
+        if (teknik.cpmk.mataKuliahId !== mataKuliahId) {
+            return res.status(400).json({
+                error: 'Teknik penilaian tidak sesuai dengan mata kuliah yang dipilih'
+            });
+        }
+
         // Check CPMK validation status
         if (teknik.cpmk.statusValidasi !== 'active' && teknik.cpmk.statusValidasi !== 'validated') {
             return res.status(400).json({
@@ -257,7 +264,8 @@ router.post('/batch', authMiddleware, requireRole('admin', 'dosen'), async (req,
                         cpmk: {
                             select: {
                                 statusValidasi: true,
-                                kodeCpmk: true
+                                kodeCpmk: true,
+                                mataKuliahId: true
                             }
                         }
                     }
@@ -265,6 +273,12 @@ router.post('/batch', authMiddleware, requireRole('admin', 'dosen'), async (req,
 
                 if (!teknikPenilaian) {
                     errors.push({ entry, error: 'Teknik penilaian tidak ditemukan' });
+                    continue;
+                }
+
+                // [SECURITY] Verify teknik belongs to the mata kuliah
+                if (teknikPenilaian.cpmk.mataKuliahId !== mataKuliahId) {
+                    errors.push({ entry, error: 'Teknik penilaian tidak sesuai dengan mata kuliah' });
                     continue;
                 }
 

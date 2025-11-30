@@ -28,7 +28,8 @@ router.get('/mata-kuliah/:mataKuliahId', authMiddleware, async (req, res) => {
                             }
                         }
                     }
-                }
+                },
+                kelas: true
             }
         });
 
@@ -63,7 +64,7 @@ router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, re
     try {
         const userId = (req as any).userId;
         const userRole = (req as any).userRole;
-        const { mataKuliahId, dosenId, isPengampu } = req.body;
+        const { mataKuliahId, dosenId, kelasId, isPengampu } = req.body;
 
         // Check access for Kaprodi
         if (userRole === 'kaprodi') {
@@ -81,6 +82,7 @@ router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, re
             data: {
                 mataKuliahId,
                 dosenId,
+                kelasId,
                 isPengampu: isPengampu ?? true
             }
         });

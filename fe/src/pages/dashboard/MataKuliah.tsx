@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/DashboardLayout";
 
-import { api } from "@/lib/api-client";
+import { api, fetchSemesters } from "@/lib/api-client";
 
 interface MataKuliah {
   id: string;
@@ -27,6 +27,8 @@ interface MataKuliah {
   prodi?: { id: string; nama: string };
   kurikulum?: { id: string; nama: string };
   jenisMk?: { id: string; nama: string };
+  semesterId?: string;
+  semesterRef?: { id: string; nama: string; angka: number };
 }
 
 const MataKuliahPage = () => {
@@ -44,8 +46,11 @@ const MataKuliahPage = () => {
     semester: "1",
     prodiId: "",
     kurikulumId: "",
-    jenisMkId: ""
+    jenisMkId: "",
+    semesterId: ""
   });
+
+  const [semesterList, setSemesterList] = useState<any[]>([]);
 
   const [prodiList, setProdiList] = useState<any[]>([]);
   const [kurikulumList, setKurikulumList] = useState<any[]>([]);
@@ -65,17 +70,19 @@ const MataKuliahPage = () => {
 
   const fetchMasterData = async () => {
     try {
-      const [prodiRes, kurikulumRes, jenisMkRes, fakultasRes] = await Promise.all([
+      const [prodiRes, kurikulumRes, jenisMkRes, fakultasRes, semesterRes] = await Promise.all([
         api.get('/prodi'),
         api.get('/kurikulum'),
         api.get('/jenis-mata-kuliah'),
-        api.get('/fakultas')
+        api.get('/fakultas'),
+        fetchSemesters()
       ]);
 
       if (prodiRes.data) setProdiList(prodiRes.data);
       if (kurikulumRes.data) setKurikulumList(kurikulumRes.data);
       if (jenisMkRes.data) setJenisMkList(jenisMkRes.data);
       if (fakultasRes.data) setFakultasList(fakultasRes.data);
+      if (semesterRes.data) setSemesterList(semesterRes.data);
     } catch (error) {
       console.error("Error fetching master data:", error);
     }
@@ -120,6 +127,7 @@ const MataKuliahPage = () => {
         prodiId: formData.prodiId || null,
         kurikulumId: formData.kurikulumId || null,
         jenisMkId: formData.jenisMkId || null,
+        semesterId: formData.semesterId || null,
       };
 
       if (editingMK) {
@@ -154,7 +162,8 @@ const MataKuliahPage = () => {
       semester: mk.semester.toString(),
       prodiId: mk.prodiId || "",
       kurikulumId: mk.kurikulumId || "",
-      jenisMkId: mk.jenisMkId || ""
+      jenisMkId: mk.jenisMkId || "",
+      semesterId: mk.semesterId || ""
     });
     setDialogOpen(true);
   };
@@ -180,15 +189,16 @@ const MataKuliahPage = () => {
       semester: "1",
       prodiId: "",
       kurikulumId: "",
-      jenisMkId: ""
+      jenisMkId: "",
+      semesterId: ""
     });
     setEditingMK(null);
   };
 
   const canEdit = role === "admin" || role === "dosen";
 
-  // Static semester options 1-8
-  const semesterOptions = [1, 2, 3, 4, 5, 6, 7, 8];
+  // Static semester options 1-8 (fallback if list empty)
+  const semesterOptions = semesterList.length > 0 ? semesterList.map(s => s.angka) : [1, 2, 3, 4, 5, 6, 7, 8];
 
   const filteredMK = mkList.filter((mk) => {
     const q = searchTerm.toLowerCase();
@@ -447,15 +457,26 @@ const MataKuliahPage = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="semester">Semester</Label>
-                        <Input
-                          id="semester"
-                          type="number"
-                          min="1"
-                          max="8"
-                          value={formData.semester}
-                          onChange={(e) => setFormData({ ...formData, semester: e.target.value })}
-                          required
-                        />
+                        <Select
+                          value={formData.semesterId}
+                          onValueChange={(val) => {
+                            const selected = semesterList.find(s => s.id === val);
+                            setFormData({
+                              ...formData,
+                              semesterId: val,
+                              semester: selected?.angka.toString() || "1"
+                            });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih Semester" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {semesterList.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                     <div className="flex gap-2">

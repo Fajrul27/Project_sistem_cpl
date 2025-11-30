@@ -26,7 +26,9 @@ export function useUserRole() {
       setUserId(user.id);
 
       // Role already included in user object from /api/auth/me
-      if (user.role) {
+      if (user.role && typeof user.role === 'object' && 'role' in user.role) {
+        setRole(user.role.role as UserRole);
+      } else if (typeof user.role === 'string') {
         setRole(user.role as UserRole);
       } else {
         setRole(null);

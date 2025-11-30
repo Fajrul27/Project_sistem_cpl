@@ -99,6 +99,7 @@ export async function updateUserRole(userId: string, role: string) {
 }
 
 // Helper: update profile data (admin / user)
+// Helper: update profile data (admin / user)
 export async function updateProfile(
   profileId: string,
   payload: {
@@ -107,6 +108,7 @@ export async function updateProfile(
     nip?: string | null;
     programStudi?: string | null;
     semester?: number | null;
+    kelasId?: string | null;
   }
 ) {
   return apiRequest(`/profiles/${profileId}`, {
@@ -121,7 +123,7 @@ export async function createUserWithRole(
   password: string,
   fullName: string,
   role: string,
-  profileData?: { nim?: string; nip?: string; programStudi?: string | null; semester?: number | null }
+  profileData?: { nim?: string; nip?: string; programStudi?: string | null; semester?: number | null; kelasId?: string }
 ) {
   // Register user (default role di backend: mahasiswa)
   const data = await apiRequest('/auth/register', {
@@ -141,6 +143,7 @@ export async function createUserWithRole(
       nip: profileData.nip ?? null,
       programStudi: profileData.programStudi ?? null,
       semester: profileData.semester ?? null,
+      kelasId: profileData.kelasId ?? null,
     });
   }
 
@@ -197,6 +200,22 @@ export async function fetchTranskripCPL(mahasiswaId: string) {
   return api.get(`/transkrip-cpl/${mahasiswaId}`);
 }
 
+// Helper: fetch transkrip CPL data with semester and tahunAjaran filters
+export async function getTranskrip(mahasiswaId: string, semester?: string, tahunAjaran?: string) {
+  const params = new URLSearchParams();
+  if (semester && semester !== 'all') params.append('semester', semester);
+  if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaran', tahunAjaran);
+  return api.get(`/transkrip-cpl/${mahasiswaId}?${params.toString()}`);
+}
+
+// Helper: fetch transkrip CPMK data
+export async function getTranskripCPMK(mahasiswaId: string, semester?: string, tahunAjaran?: string) {
+  const params = new URLSearchParams();
+  if (semester && semester !== 'all') params.append('semester', semester);
+  if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaran', tahunAjaran);
+  return api.get(`/transkrip-cpmk/${mahasiswaId}?${params.toString()}`);
+}
+
 // Helper: fetch analysis data
 export async function fetchAnalisisCPL(semester?: string) {
   const params = semester && semester !== "all" ? { semester } : {};
@@ -206,6 +225,16 @@ export async function fetchAnalisisCPL(semester?: string) {
 // Helper: fetch dashboard stats
 export async function fetchDashboardStats() {
   return api.get('/dashboard/stats');
+}
+
+// Helper: fetch semesters
+export async function fetchSemesters() {
+  return api.get('/references/semester');
+}
+
+// Helper: fetch kelas
+export async function fetchKelas() {
+  return api.get('/references/kelas');
 }
 
 // Auth state change callbacks

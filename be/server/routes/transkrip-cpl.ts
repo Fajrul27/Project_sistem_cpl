@@ -170,15 +170,41 @@ router.get('/:mahasiswaId', authMiddleware, requireProdiScope, async (req, res) 
   try {
     const { mahasiswaId } = req.params;
 
-    // Get all CPLs
+    const { semester, tahunAjaran } = req.query;
+
+    // Get mahasiswa info first to filter CPLs by Prodi
+    const mahasiswa = await prisma.profile.findUnique({
+      where: { userId: mahasiswaId }
+    });
+
+    if (!mahasiswa) {
+      return res.status(404).json({ success: false, error: 'Mahasiswa tidak ditemukan' });
+    }
+
+    // Get CPLs filtered by Prodi (or general CPLs)
     const allCpls = await prisma.cpl.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        OR: [
+          { prodiId: mahasiswa.prodiId },
+          { prodiId: null }
+        ]
+      },
       orderBy: { kodeCpl: 'asc' }
     });
 
+    // Build where clause
+    const where: any = { mahasiswaId };
+    if (semester && semester !== 'all') {
+      where.semester = Number(semester);
+    }
+    if (tahunAjaran && tahunAjaran !== 'all') {
+      where.tahunAjaran = String(tahunAjaran);
+    }
+
     // Get all NilaiCpl for this student
     const nilaiCplList = await prisma.nilaiCpl.findMany({
-      where: { mahasiswaId },
+      where,
       include: {
         cpl: true,
         mataKuliah: true
@@ -216,19 +242,12 @@ router.get('/:mahasiswaId', authMiddleware, requireProdiScope, async (req, res) 
 
     for (const cpl of allCpls) {
       const nilaiList = cplMap.get(cpl.id) || [];
-      let calc;
 
-      if (nilaiList.length > 0) {
-        const minNilai = 70; // Default passing grade (property minimalNilaiTercapai not in schema)
-        calc = calculateCplScoreSync(nilaiList, cpl.id, weightMap, minNilai);
-      } else {
-        calc = {
-          nilaiAkhir: 0,
-          status: 'belum_tercapai',
-          semesterTercapai: 0,
-          tahunAjaran: '-'
-        };
-      }
+      // Filter: Hanya munculkan CPL yang sudah ada nilainya
+      if (nilaiList.length === 0) continue;
+
+      const minNilai = 70; // Default passing grade
+      const calc = calculateCplScoreSync(nilaiList, cpl.id, weightMap, minNilai);
 
       const mataKuliahList = nilaiList.map(n => ({
         id: n.mataKuliah.id,
@@ -249,11 +268,6 @@ router.get('/:mahasiswaId', authMiddleware, requireProdiScope, async (req, res) 
     const tercapai = transkrip.filter(t => t.status === 'tercapai').length;
     const belumTercapai = transkrip.filter(t => t.status === 'belum_tercapai').length;
     const avgScore = transkrip.reduce((sum, t) => sum + Number(t.nilaiAkhir), 0) / totalCpl || 0;
-
-    // Get mahasiswa info
-    const mahasiswa = await prisma.profile.findUnique({
-      where: { userId: mahasiswaId }
-    });
 
     res.json({
       success: true,

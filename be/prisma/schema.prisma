@@ -68,6 +68,10 @@ model Profile {
   nilaiTeknik        NilaiTeknikPenilaian[] @relation("MahasiswaNilaiTeknik")
   fakultas           Fakultas?              @relation(fields: [fakultasId], references: [id])
   prodi              Prodi?                 @relation(fields: [prodiId], references: [id])
+  semesterRef        Semester?              @relation(fields: [semesterId], references: [id])
+  semesterId         String?                @map("semester_id")
+  kelasRef           Kelas?                 @relation(fields: [kelasId], references: [id])
+  kelasId            String?                @map("kelas_id")
   user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([nim])
@@ -77,6 +81,8 @@ model Profile {
   @@index([prodiId])
   @@index([fakultasId])
   @@index([semester])
+  @@index([semesterId])
+  @@index([kelasId])
   @@map("profiles")
 }
 
@@ -122,12 +128,14 @@ model MataKuliah {
   jenisMkId    String?                @map("jenis_mk_id")
   kurikulumId  String?                @map("kurikulum_id")
   prodiId      String?                @map("prodi_id")
+  semesterId   String?                @map("semester_id")
   cpl          CplMataKuliah[]
   cpmk         Cpmk[]
   creator      User?                  @relation("MataKuliahCreatedBy", fields: [createdBy], references: [id])
   jenisMk      JenisMataKuliah?       @relation(fields: [jenisMkId], references: [id])
   kurikulum    Kurikulum?             @relation(fields: [kurikulumId], references: [id])
   prodi        Prodi?                 @relation(fields: [prodiId], references: [id])
+  semesterRef  Semester?              @relation(fields: [semesterId], references: [id])
   pengampu     MataKuliahPengampu[]
   nilaiCpl     NilaiCpl[]
   nilaiCpmk    NilaiCpmk[]
@@ -135,6 +143,7 @@ model MataKuliah {
 
   @@index([kodeMk])
   @@index([semester])
+  @@index([semesterId])
   @@index([programStudi])
   @@index([prodiId])
   @@index([kurikulumId])
@@ -231,6 +240,7 @@ model NilaiCpl {
   mataKuliahId String     @map("mata_kuliah_id")
   nilai        Decimal    @db.Decimal(5, 2)
   semester     Int
+  semesterId   String?    @map("semester_id")
   tahunAjaran  String     @map("tahun_ajaran")
   catatan      String?    @db.Text
   createdAt    DateTime   @default(now()) @map("created_at")
@@ -240,12 +250,14 @@ model NilaiCpl {
   creator      User?      @relation("NilaiCreatedBy", fields: [createdBy], references: [id])
   mahasiswa    Profile    @relation("MahasiswaNilai", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
   mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  semesterRef  Semester?  @relation(fields: [semesterId], references: [id])
 
   @@unique([mahasiswaId, cplId, mataKuliahId, semester, tahunAjaran])
   @@index([mahasiswaId])
   @@index([cplId])
   @@index([mataKuliahId])
   @@index([semester])
+  @@index([semesterId])
   @@index([tahunAjaran])
   @@index([createdBy], map: "nilai_cpl_created_by_fkey")
   @@map("nilai_cpl")
@@ -258,6 +270,7 @@ model NilaiTeknikPenilaian {
   mataKuliahId      String          @map("mata_kuliah_id")
   nilai             Decimal         @db.Decimal(5, 2)
   semester          Int
+  semesterId        String?         @map("semester_id")
   tahunAjaran       String          @map("tahun_ajaran")
   catatan           String?         @db.Text
   createdAt         DateTime        @default(now()) @map("created_at")
@@ -267,12 +280,14 @@ model NilaiTeknikPenilaian {
   mahasiswa         Profile         @relation("MahasiswaNilaiTeknik", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
   mataKuliah        MataKuliah      @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
   teknikPenilaian   TeknikPenilaian @relation(fields: [teknikPenilaianId], references: [id], onDelete: Cascade)
+  semesterRef       Semester?       @relation(fields: [semesterId], references: [id])
 
   @@unique([mahasiswaId, teknikPenilaianId, semester, tahunAjaran])
   @@index([mahasiswaId])
   @@index([teknikPenilaianId])
   @@index([mataKuliahId])
   @@index([semester])
+  @@index([semesterId])
   @@index([tahunAjaran])
   @@index([createdBy], map: "nilai_teknik_penilaian_created_by_fkey")
   @@map("nilai_teknik_penilaian")
@@ -285,6 +300,7 @@ model NilaiCpmk {
   mataKuliahId String     @map("mata_kuliah_id")
   nilaiAkhir   Decimal    @map("nilai_akhir") @db.Decimal(5, 2)
   semester     Int
+  semesterId   String?    @map("semester_id")
   tahunAjaran  String     @map("tahun_ajaran")
   isCalculated Boolean    @default(true) @map("is_calculated")
   calculatedAt DateTime   @default(now()) @map("calculated_at")
@@ -292,12 +308,14 @@ model NilaiCpmk {
   cpmk         Cpmk       @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
   mahasiswa    Profile    @relation("MahasiswaNilaiCpmk", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
   mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  semesterRef  Semester?  @relation(fields: [semesterId], references: [id])
 
   @@unique([mahasiswaId, cpmkId, semester, tahunAjaran])
   @@index([mahasiswaId])
   @@index([cpmkId])
   @@index([mataKuliahId])
   @@index([semester])
+  @@index([semesterId])
   @@index([tahunAjaran])
   @@map("nilai_cpmk")
 }
@@ -438,15 +456,18 @@ model MataKuliahPengampu {
   id           String     @id @default(uuid())
   mataKuliahId String     @map("mata_kuliah_id")
   dosenId      String     @map("dosen_id")
+  kelasId      String?    @map("kelas_id")
   isPengampu   Boolean    @default(true) @map("is_pengampu_utama")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
   dosen        Profile    @relation(fields: [dosenId], references: [userId], onDelete: Cascade)
   mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  kelas        Kelas?     @relation(fields: [kelasId], references: [id])
 
-  @@unique([mataKuliahId, dosenId])
+  @@unique([mataKuliahId, dosenId, kelasId])
   @@index([mataKuliahId])
   @@index([dosenId])
+  @@index([kelasId])
   @@map("mata_kuliah_pengampu")
 }
 
@@ -481,4 +502,33 @@ enum Role {
   mahasiswa
   kaprodi
   dekan
+}
+
+model Semester {
+  id        String   @id @default(uuid())
+  nama      String   @unique
+  angka     Int      @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  mataKuliah  MataKuliah[]
+  nilaiCpl    NilaiCpl[]
+  nilaiCpmk   NilaiCpmk[]
+  nilaiTeknik NilaiTeknikPenilaian[]
+  profiles    Profile[]
+
+  @@map("semester")
+}
+
+model Kelas {
+  id        String   @id @default(uuid())
+  nama      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  pengampu MataKuliahPengampu[]
+  profiles Profile[]
+
+  @@map("kelas")
 }

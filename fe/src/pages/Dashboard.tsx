@@ -30,11 +30,10 @@ const Dashboard = () => {
   const [trendData, setTrendData] = useState<any[]>([]);
   const [distributionData, setDistributionData] = useState<any[]>([]);
   const [performanceData, setPerformanceData] = useState<any[]>([]);
-  const { role } = useUserRole();
+  const { role, loading: roleLoading } = useUserRole();
 
   useEffect(() => {
     checkUser();
-    fetchDashboardData();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
@@ -45,6 +44,12 @@ const Dashboard = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  useEffect(() => {
+    if (!roleLoading && role && role !== 'mahasiswa') {
+      fetchDashboardData();
+    }
+  }, [role, roleLoading]);
 
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();

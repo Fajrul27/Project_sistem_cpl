@@ -10,7 +10,7 @@ import { Loader2, Save, FileText, AlertCircle, Upload } from "lucide-react";
 import { DashboardPage } from "@/components/DashboardLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-import { api } from "@/lib/api-client";
+import { api, fetchKelas } from "@/lib/api-client";
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -46,8 +46,10 @@ const InputNilaiTeknikPage = () => {
     const [mkList, setMkList] = useState<MataKuliah[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
     const [cpmkList, setCpmkList] = useState<CPMK[]>([]);
+    const [kelasList, setKelasList] = useState<any[]>([]);
 
     const [selectedMK, setSelectedMK] = useState<string>("");
+    const [selectedKelas, setSelectedKelas] = useState<string>("");
     const [semester, setSemester] = useState<string>("1");
     const [tahunAjaran, setTahunAjaran] = useState<string>(
         `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`
@@ -58,7 +60,7 @@ const InputNilaiTeknikPage = () => {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        fetchStudents();
+        fetchInitialData();
     }, []);
 
     useEffect(() => {
@@ -73,9 +75,32 @@ const InputNilaiTeknikPage = () => {
         }
     }, [selectedMK, tahunAjaran]); // Removed semester from here as it triggers MK list reload
 
-    const fetchStudents = async () => {
+    useEffect(() => {
+        if (selectedKelas) {
+            fetchStudents();
+        } else {
+            setStudents([]);
+        }
+    }, [selectedKelas]);
+
+    const fetchInitialData = async () => {
         try {
-            const result = await api.get('/users', { params: { role: 'mahasiswa' } });
+            const kelasRes = await fetchKelas();
+            if (kelasRes.data) setKelasList(kelasRes.data);
+        } catch (error) {
+            console.error("Error fetching initial data:", error);
+        }
+    };
+
+    const fetchStudents = async () => {
+        if (!selectedKelas) return;
+        try {
+            const result = await api.get('/users', {
+                params: {
+                    role: 'mahasiswa',
+                    kelasId: selectedKelas
+                }
+            });
             setStudents(result.data || []);
         } catch (error) {
             console.error('Error fetching students:', error);
@@ -274,7 +299,21 @@ const InputNilaiTeknikPage = () => {
                         <CardTitle>Filter Data</CardTitle>
                         <CardDescription>Pilih Mata Kuliah dan Periode Akademik</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                            <Label>Semester</Label>
+                            <Select value={semester} onValueChange={setSemester}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                                        <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
                         <div className="space-y-2">
                             <Label>Mata Kuliah</Label>
                             <Select value={selectedMK} onValueChange={setSelectedMK}>
@@ -290,14 +329,14 @@ const InputNilaiTeknikPage = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Semester</Label>
-                            <Select value={semester} onValueChange={setSemester}>
+                            <Label>Kelas</Label>
+                            <Select value={selectedKelas} onValueChange={setSelectedKelas}>
                                 <SelectTrigger>
-                                    <SelectValue />
+                                    <SelectValue placeholder="Pilih Kelas" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                                        <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                    {kelasList.map(k => (
+                                        <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -314,7 +353,7 @@ const InputNilaiTeknikPage = () => {
                     </CardContent>
                 </Card>
 
-                {selectedMK && (
+                {selectedMK && selectedKelas && (
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
@@ -353,6 +392,10 @@ const InputNilaiTeknikPage = () => {
                             ) : cpmkList.length === 0 ? (
                                 <div className="text-center py-8 text-muted-foreground">
                                     Belum ada CPMK atau Teknik Penilaian untuk mata kuliah ini.
+                                </div>
+                            ) : students.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    Tidak ada mahasiswa di kelas ini.
                                 </div>
                             ) : (
                                 <Table>

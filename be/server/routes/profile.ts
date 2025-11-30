@@ -8,6 +8,8 @@ import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 
+// Force TS re-check
+
 // Update profile
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
@@ -23,7 +25,9 @@ router.put('/:id', authMiddleware, async (req, res) => {
       alamat,
       noTelepon,
       prodiId,
-      fakultasId
+      fakultasId,
+      semesterId,
+      kelasId
     } = req.body;
 
     // Check if profile belongs to current user or user is admin
@@ -41,21 +45,47 @@ router.put('/:id', authMiddleware, async (req, res) => {
       return res.status(403).json({ error: 'Tidak memiliki akses untuk mengupdate profile ini' });
     }
 
+    // Prepare update data
+    const updateData: any = {
+      namaLengkap,
+      nim: nim || null,
+      nip: nip || null,
+      programStudi: programStudi || null,
+      tahunMasuk: tahunMasuk ? parseInt(tahunMasuk) : null,
+      alamat: alamat || null,
+      noTelepon: noTelepon || null,
+      prodiId: prodiId || null,
+      fakultasId: fakultasId || null,
+      semesterId: semesterId || null,
+      kelasId: kelasId || null
+    };
+
+    // Handle semester logic
+    if (semesterId) {
+      const semesterRef = await prisma.semester.findUnique({
+        where: { id: semesterId }
+      });
+      if (semesterRef) {
+        updateData.semester = semesterRef.angka;
+      }
+    } else if (semester) {
+      // Fallback: if only semester int is provided, try to find matching semesterId
+      updateData.semester = parseInt(semester);
+      const semesterRef = await prisma.semester.findUnique({
+        where: { angka: parseInt(semester) }
+      });
+      if (semesterRef) {
+        updateData.semesterId = semesterRef.id;
+      }
+    } else {
+      updateData.semester = null;
+      updateData.semesterId = null;
+    }
+
     // Update profile
     const updatedProfile = await prisma.profile.update({
       where: { id },
-      data: {
-        namaLengkap,
-        nim: nim || null,
-        nip: nip || null,
-        programStudi: programStudi || null,
-        semester: semester ? parseInt(semester) : null,
-        tahunMasuk: tahunMasuk ? parseInt(tahunMasuk) : null,
-        alamat: alamat || null,
-        noTelepon: noTelepon || null,
-        prodiId: prodiId || null,
-        fakultasId: fakultasId || null
-      }
+      data: updateData
     });
 
     res.json({
@@ -82,7 +112,9 @@ router.get('/:id', authMiddleware, async (req, res) => {
             email: true,
             role: true
           }
-        }
+        },
+        semesterRef: true,
+        kelasRef: true
       }
     });
 
