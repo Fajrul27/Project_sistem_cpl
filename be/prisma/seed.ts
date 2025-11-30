@@ -139,6 +139,20 @@ async function main() {
   });
   console.log('✅ Mahasiswa users created');
 
+  // Find Prodi Informatika (or Teknik Informatika)
+  const prodiInformatika = await prisma.prodi.findFirst({
+    where: {
+      OR: [
+        { nama: 'Informatika' },
+        { nama: 'Teknik Informatika' }
+      ]
+    }
+  });
+
+  if (!prodiInformatika) {
+    console.warn('⚠️ Prodi Informatika not found. Run seed_fakultas_prodi.ts first!');
+  }
+
   // 4. Create CPL
   console.log('\nCreating CPL...');
   const cpl1 = await prisma.cpl.create({
@@ -146,7 +160,8 @@ async function main() {
       kodeCpl: 'CPL-01',
       deskripsi: 'Mampu menerapkan pemikiran logis, kritis, sistematis, dan inovatif dalam konteks pengembangan atau implementasi ilmu pengetahuan dan teknologi',
       kategori: 'Sikap',
-      createdBy: admin.id
+      createdBy: admin.id,
+      prodiId: prodiInformatika?.id
     }
   });
 
@@ -155,7 +170,8 @@ async function main() {
       kodeCpl: 'CPL-02',
       deskripsi: 'Menguasai konsep teoretis dan prinsip rekayasa perangkat lunak',
       kategori: 'Pengetahuan',
-      createdBy: admin.id
+      createdBy: admin.id,
+      prodiId: prodiInformatika?.id
     }
   });
 
@@ -164,7 +180,8 @@ async function main() {
       kodeCpl: 'CPL-03',
       deskripsi: 'Mampu merancang dan mengimplementasikan sistem informasi',
       kategori: 'Keterampilan Umum',
-      createdBy: admin.id
+      createdBy: admin.id,
+      prodiId: prodiInformatika?.id
     }
   });
 
@@ -173,7 +190,8 @@ async function main() {
       kodeCpl: 'CPL-04',
       deskripsi: 'Mampu bekerja sama dalam tim multidisiplin',
       kategori: 'Keterampilan Khusus',
-      createdBy: admin.id
+      createdBy: admin.id,
+      prodiId: prodiInformatika?.id
     }
   });
 
@@ -182,7 +200,8 @@ async function main() {
       kodeCpl: 'CPL-05',
       deskripsi: 'Mampu mengidentifikasi, menganalisis, dan merumuskan solusi permasalahan',
       kategori: 'Keterampilan Umum',
-      createdBy: admin.id
+      createdBy: admin.id,
+      prodiId: prodiInformatika?.id
     }
   });
   console.log('✅ CPL created');

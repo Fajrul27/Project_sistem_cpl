@@ -190,6 +190,10 @@ const CPLPage = () => {
     new Set(cplList.map((cpl) => cpl.kategoriRef?.nama || cpl.kategori).filter((k) => k && k.trim() !== ""))
   );
 
+  // Filter prodi options based on available CPLs
+  const availableProdiIds = new Set(cplList.map(cpl => cpl.prodiId).filter(Boolean));
+  const filterProdiOptions = prodiList.filter(p => availableProdiIds.has(p.id));
+
   const filteredCPLs = cplList.filter((cpl) => {
     const q = searchTerm.toLowerCase();
     const matchSearch =
@@ -280,7 +284,7 @@ const CPLPage = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua program studi</SelectItem>
-                    {prodiList.map((p) => (
+                    {filterProdiOptions.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.nama}
                       </SelectItem>
