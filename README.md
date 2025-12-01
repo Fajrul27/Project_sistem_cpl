@@ -48,6 +48,7 @@ Sistem CPL adalah aplikasi fullstack yang dirancang untuk membantu institusi pen
 
 ### 📚 CPMK Management
 - CRUD operations untuk CPMK
+- **[NEW]** Integrasi Level Taksonomi (Bloom's Taxonomy: Kognitif, Afektif, Psikomotor)
 - Workflow validasi CPMK (draft → validated → active)
 - Mapping CPMK ke CPL dengan persentase bobot
 
@@ -59,7 +60,8 @@ Sistem CPL adalah aplikasi fullstack yang dirancang untuk membantu institusi pen
 
 ### 📈 Reporting & Analytics
 - Dashboard statistik
-- Transkrip CPL mahasiswa
+- Transkrip CPL mahasiswa (View & Print)
+- Filter CPL per Prodi yang dinamis
 - Export ke PDF
 - Analisis pencapaian CPL
 
@@ -137,6 +139,9 @@ npm run prisma:push
 
 # (Optional) Seed database
 npm run prisma:seed
+
+# [PENTING] Seed Level Taksonomi (C1-C6, A1-A5, P1-P5)
+npx tsx prisma/seed_level_taksonomi.ts
 ```
 
 ### 3. Setup Frontend
