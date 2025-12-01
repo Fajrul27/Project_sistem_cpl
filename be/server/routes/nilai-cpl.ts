@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { authMiddleware, requireRole, requirePengampu } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -70,14 +70,14 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
 });
 
 // Create nilai CPL
-router.post('/', authMiddleware, requireRole('dosen'), async (req, res) => {
+router.post('/', authMiddleware, requireRole('dosen'), requirePengampu('mataKuliahId'), async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { cplId, mataKuliahId, nilai, semester, tahunAjaran } = req.body;
+    const { mahasiswaId, cplId, mataKuliahId, nilai, semester, tahunAjaran } = req.body;
 
     const nilaiCpl = await prisma.nilaiCpl.create({
       data: {
-        mahasiswaId: userId,
+        mahasiswaId,
         cplId,
         mataKuliahId,
         nilai: parseFloat(nilai),

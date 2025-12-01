@@ -515,10 +515,19 @@ router.get('/template/:mataKuliahId', authMiddleware, requirePengampu('mataKulia
             orderBy: { kodeCpmk: 'asc' }
         });
 
-        // Get Mahasiswa List (who have sessions/roles, or just all mahasiswa)
-        // For simplicity, get all mahasiswa. Ideally filter by KRS if available.
-        const mahasiswaList = await prisma.user.findMany({
+        // Get Mahasiswa List (only those enrolled in this mata kuliah)
+        const mahasiswaList = await prisma.nilaiCpl.findMany({
+            where: { mataKuliahId },
+            select: { mahasiswaId: true },
+            distinct: ['mahasiswaId']
+        });
+
+        const mahasiswaIds = mahasiswaList.map(m => m.mahasiswaId);
+        
+        // Get full mahasiswa data
+        const mahasiswaData = await prisma.user.findMany({
             where: {
+                id: { in: mahasiswaIds },
                 role: { role: 'mahasiswa' },
                 profile: { isNot: null }
             },
@@ -539,7 +548,7 @@ router.get('/template/:mataKuliahId', authMiddleware, requirePengampu('mataKulia
         });
 
         // Prepare Data Rows
-        const data = mahasiswaList.map((m, index) => {
+        const data = mahasiswaData.map((m, index) => {
             const row: any = {
                 'No': index + 1,
                 'NIM': m.profile?.nim || '-',

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchMahasiswaList, api } from "@/lib/api-client";
+import { fetchMahasiswaList, fetchMataKuliahPengampu, api, getUser } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +47,22 @@ interface TranskripItem {
   status?: string;
 }
 
+interface MataKuliah {
+  id: string;
+  kodeMk: string;
+  namaMk: string;
+  semester: number;
+  prodi?: { nama: string };
+}
+
+interface MataKuliahPengampu {
+  id: string;
+  mataKuliahId: string;
+  dosenId: string;
+  isPengampu: boolean;
+  mataKuliah: MataKuliah;
+}
+
 const MahasiswaPage = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,15 +73,63 @@ const MahasiswaPage = () => {
   const [studentProgress, setStudentProgress] = useState<StudentProgress | null>(null);
   const [progressLoading, setProgressLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [mataKuliahList, setMataKuliahList] = useState<MataKuliahPengampu[]>([]);
+  const [selectedMataKuliah, setSelectedMataKuliah] = useState<string>("");
+  const [userRole, setUserRole] = useState<string>("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    fetchProfiles();
+    initializeData();
   }, []);
 
-  const fetchProfiles = async () => {
+  const initializeData = async () => {
+    const user = getUser();
+    if (user) {
+      setCurrentUser(user);
+      setUserRole(user.role || "");
+      
+      // If user is dosen, fetch mata kuliah yang diampu
+      if (user.role === 'dosen') {
+        await fetchMataKuliahForDosen(user.id);
+      } else {
+        // For other roles, fetch all mahasiswa
+        await fetchProfiles();
+      }
+    } else {
+      // Fallback: fetch all mahasiswa
+      await fetchProfiles();
+    }
+  };
+
+  const fetchMataKuliahForDosen = async (dosenId: string) => {
+    try {
+      const response = await fetchMataKuliahPengampu(dosenId);
+      const mataKuliahData = response?.data || [];
+      setMataKuliahList(mataKuliahData);
+      
+      // Auto-select "all" if available
+      if (mataKuliahData.length > 0) {
+        setSelectedMataKuliah("all");
+        await fetchProfilesForAllMataKuliah();
+      } else {
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error fetching mata kuliah:', error);
+      toast.error("Gagal memuat data mata kuliah");
+      setLoading(false);
+    }
+  };
+
+  const fetchProfiles = async (mataKuliahId?: string) => {
     try {
       // Ambil daftar mahasiswa dari backend: /api/users?role=mahasiswa
-      const response = await fetchMahasiswaList({ limit: -1 });
+      const params: any = { limit: -1 };
+      if (mataKuliahId) {
+        params.mataKuliahId = mataKuliahId;
+      }
+      
+      const response = await fetchMahasiswaList(params);
       const users = response?.data || [];
 
       const mappedProfiles: Profile[] = users
@@ -137,6 +201,42 @@ const MahasiswaPage = () => {
     await fetchStudentProgress(student.id);
   };
 
+  const handleMataKuliahChange = async (mataKuliahId: string) => {
+    setSelectedMataKuliah(mataKuliahId);
+    setLoading(true);
+    if (mataKuliahId === "all") {
+      // Fetch mahasiswa dari semua mata kuliah yang diampu
+      await fetchProfilesForAllMataKuliah();
+    } else {
+      // Fetch mahasiswa dari mata kuliah spesifik
+      await fetchProfiles(mataKuliahId);
+    }
+  };
+
+  const fetchProfilesForAllMataKuliah = async () => {
+    try {
+      // Ambil daftar mahasiswa dari backend: /api/users?role=mahasiswa (tanpa mataKuliahId untuk role dosen)
+      const response = await fetchMahasiswaList({ limit: -1 });
+      const users = response?.data || [];
+
+      const mappedProfiles: Profile[] = users
+        .filter((user: User) => user.profile && user.profile.nim)
+        .map((user: User) => ({
+          id: user.id,
+          full_name: user.profile.namaLengkap || "",
+          nim: user.profile.nim,
+          prodi: user.profile.prodi?.nama || user.profile.programStudi,
+          semester: user.profile.semester,
+        }));
+
+      setProfiles(mappedProfiles);
+    } catch (error: any) {
+      toast.error("Gagal memuat data mahasiswa");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const semesterOptions = Array.from(
     new Set(profiles.map((p) => p.semester).filter((s) => s !== null && s !== undefined))
   ).sort((a, b) => Number(a) - Number(b));
@@ -174,10 +274,33 @@ const MahasiswaPage = () => {
     );
   }
 
+  // Show message for dosen with no mata kuliah
+  if (userRole === 'dosen' && mataKuliahList.length === 0) {
+    return (
+      <DashboardPage title="Data Mahasiswa">
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                Tidak Ada Mata Kuliah
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Anda belum ditugaskan sebagai pengampu pada mata kuliah manapun.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </DashboardPage>
+    );
+  }
+
   return (
     <DashboardPage
       title="Data Mahasiswa"
-      description="Daftar mahasiswa terdaftar dengan progress CPL"
+      description={userRole === 'dosen' 
+        ? "Daftar mahasiswa yang mengikuti mata kuliah Anda" 
+        : "Daftar mahasiswa terdaftar dengan progress CPL"
+      }
     >
       <div className="space-y-6">
         <div className="flex flex-wrap items-center gap-2">
@@ -190,59 +313,106 @@ const MahasiswaPage = () => {
               className="pl-9"
             />
           </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={hasActiveFilter ? "default" : "outline"}
-                size="sm"
-                className="gap-2"
-                disabled={semesterOptions.length === 0 && prodiOptions.length === 0}
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="hidden sm:inline">Filter</span>
-                <span className="sm:hidden">Filter</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-72 space-y-4">
-              <div className="space-y-1">
-                <Label className="text-xs font-medium">Semester</Label>
-                <Select
-                  value={semesterFilter}
-                  onValueChange={(value) => setSemesterFilter(value)}
+          
+          {/* Filter Button - Only Mata Kuliah for Dosen */}
+          {userRole === 'dosen' && mataKuliahList.length > 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={selectedMataKuliah ? "default" : "outline"}
+                  size="sm"
+                  className="gap-2"
                 >
-                  <SelectTrigger className="w-full h-8 text-xs">
-                    <SelectValue placeholder="Semua semester" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua semester</SelectItem>
-                    {semesterOptions.map((s) => (
-                      <SelectItem key={String(s)} value={String(s)}>
-                        Semester {s}
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span className="hidden sm:inline">Mata Kuliah</span>
+                  <span className="sm:hidden">MK</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 space-y-4">
+                {/* Mata Kuliah Filter */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Mata Kuliah</Label>
+                  <Select
+                    value={selectedMataKuliah}
+                    onValueChange={handleMataKuliahChange}
+                  >
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Pilih Mata Kuliah" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Mata Kuliah</SelectItem>
+                      {mataKuliahList.map((mk) => (
+                        <SelectItem key={mk.mataKuliah.id} value={mk.mataKuliah.id}>
+                          {mk.mataKuliah.kodeMk} - {mk.mataKuliah.namaMk} (Semester {mk.mataKuliah.semester})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+          
+          {/* Filter Button for Non-Dosen Roles */}
+          {userRole !== 'dosen' && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={hasActiveFilter ? "default" : "outline"}
+                  size="sm"
+                  className="gap-2"
+                  disabled={semesterOptions.length === 0 && prodiOptions.length === 0}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span className="hidden sm:inline">Filter</span>
+                  <span className="sm:hidden">Filter</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 space-y-4">
+                {/* Semester Filter */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Semester</Label>
+                  <Select
+                    value={semesterFilter}
+                    onValueChange={(value) => setSemesterFilter(value)}
+                  >
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Semua semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua semester</SelectItem>
+                      {semesterOptions.map((s) => (
+                        <SelectItem key={String(s)} value={String(s)}>
+                          Semester {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Program Studi Filter */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Program Studi</Label>
+                  <Select
+                    value={prodiFilter}
+                    onValueChange={(value) => setProdiFilter(value)}
+                    disabled={prodiOptions.length === 0}
+                  >
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Semua prodi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua prodi</SelectItem>
+                      {prodiOptions.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-medium">Program Studi</Label>
-                <Select
-                  value={prodiFilter}
-                  onValueChange={(value) => setProdiFilter(value)}
-                  disabled={prodiOptions.length === 0}
-                >
-                  <SelectTrigger className="w-full h-8 text-xs">
-                    <SelectValue placeholder="Semua prodi" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua prodi</SelectItem>
-                    {prodiOptions.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              
+              {/* Reset Button */}
               <div className="flex justify-between pt-1">
                 <Button
                   type="button"
@@ -251,15 +421,28 @@ const MahasiswaPage = () => {
                   onClick={() => {
                     setSemesterFilter("all");
                     setProdiFilter("all");
+                    setSearchTerm("");
                   }}
                   disabled={!hasActiveFilter}
                 >
-                  Reset
+                  Reset Filter
                 </Button>
               </div>
             </PopoverContent>
           </Popover>
-          <Button variant="outline" onClick={fetchProfiles}>
+          )}
+          
+          <Button variant="outline" onClick={() => {
+            if (userRole === 'dosen' && selectedMataKuliah) {
+              if (selectedMataKuliah === "all") {
+                fetchProfilesForAllMataKuliah();
+              } else {
+                fetchProfiles(selectedMataKuliah);
+              }
+            } else {
+              fetchProfiles();
+            }
+          }}>
             Muat Ulang
           </Button>
         </div>

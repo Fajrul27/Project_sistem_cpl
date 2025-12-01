@@ -84,6 +84,8 @@ router.get('/cpmk/:cpmkId', authMiddleware, async (req, res) => {
 // Create CPMK-CPL mapping
 router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
     try {
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
         const { cpmkId, cplId, bobotPersentase } = req.body;
 
         // Validate required fields
@@ -101,12 +103,35 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res)
             });
         }
 
-        // Check if CPMK exists
+        // Check if CPMK exists and get mata kuliah info
         const cpmk = await prisma.cpmk.findUnique({
-            where: { id: cpmkId }
+            where: { id: cpmkId },
+            include: { mataKuliah: true }
         });
         if (!cpmk) {
             return res.status(404).json({ error: 'CPMK tidak ditemukan' });
+        }
+
+        // [SECURITY] Check if dosen is pengampu of this mata kuliah
+        if (userRole === 'dosen') {
+            const profile = await prisma.profile.findUnique({
+                where: { userId }
+            });
+
+            if (profile) {
+                const pengampu = await prisma.mataKuliahPengampu.findFirst({
+                    where: {
+                        mataKuliahId: cpmk.mataKuliahId,
+                        dosenId: profile.id
+                    }
+                });
+
+                if (!pengampu) {
+                    return res.status(403).json({ 
+                        error: 'Anda tidak memiliki akses ke mata kuliah ini' 
+                    });
+                }
+            }
         }
 
         // Check if CPL exists

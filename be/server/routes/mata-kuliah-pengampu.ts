@@ -131,4 +131,126 @@ router.delete('/:id', authMiddleware, requireRole('admin', 'kaprodi'), async (re
     }
 });
 
+// Get daftar peserta (mahasiswa) untuk mata kuliah yang diampu dosen
+router.get('/peserta/:mataKuliahId', authMiddleware, requireRole('dosen'), async (req, res) => {
+    try {
+        const { mataKuliahId } = req.params;
+        const userId = (req as any).userId;
+
+        // Verifikasi bahwa dosen adalah pengampu mata kuliah ini
+        const pengampuCheck = await prisma.mataKuliahPengampu.findFirst({
+            where: { 
+                mataKuliahId, 
+                dosenId: userId,
+                isPengampu: true 
+            },
+            include: {
+                mataKuliah: true
+            }
+        });
+
+        if (!pengampuCheck) {
+            return res.status(403).json({ error: 'Anda tidak memiliki akses ke mata kuliah ini' });
+        }
+
+        const mataKuliah = pengampuCheck.mataKuliah;
+
+        // Ambil semua mahasiswa yang mengikuti mata kuliah ini
+        // Berdasarkan program studi dan semester yang sesuai
+        let mahasiswaList = [];
+
+        if (mataKuliah.prodiId) {
+            // Gunakan prodiId yang baru
+            mahasiswaList = await prisma.profile.findMany({
+                where: {
+                    prodiId: mataKuliah.prodiId,
+                    semester: mataKuliah.semester,
+                    user: {
+                        role: {
+                            role: 'mahasiswa'
+                        }
+                    }
+                },
+                select: {
+                    userId: true,
+                    namaLengkap: true,
+                    nim: true,
+                    programStudi: true,
+                    prodiId: true,
+                    kelasId: true,
+                    user: {
+                        select: {
+                            email: true
+                        }
+                    },
+                    kelasRef: {
+                        select: {
+                            nama: true
+                        }
+                    },
+                    prodi: {
+                        select: {
+                            nama: true
+                        }
+                    }
+                }
+            });
+        } else if (mataKuliah.programStudi) {
+            // Fallback untuk programStudi yang lama
+            mahasiswaList = await prisma.profile.findMany({
+                where: {
+                    programStudi: mataKuliah.programStudi,
+                    semester: mataKuliah.semester,
+                    user: {
+                        role: {
+                            role: 'mahasiswa'
+                        }
+                    }
+                },
+                select: {
+                    userId: true,
+                    namaLengkap: true,
+                    nim: true,
+                    programStudi: true,
+                    prodiId: true,
+                    kelasId: true,
+                    user: {
+                        select: {
+                            email: true
+                        }
+                    },
+                    kelasRef: {
+                        select: {
+                            nama: true
+                        }
+                    },
+                    prodi: {
+                        select: {
+                            nama: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Format data untuk response
+        const peserta = mahasiswaList.map(mahasiswa => ({
+            userId: mahasiswa.userId,
+            namaLengkap: mahasiswa.namaLengkap,
+            nim: mahasiswa.nim,
+            email: mahasiswa.user?.email || 'Tidak ada email',
+            kelas: mahasiswa.kelasRef?.nama || 'Tidak ada kelas',
+            programStudi: mahasiswa.prodi?.nama || mahasiswa.programStudi || 'Tidak ada program studi'
+        }));
+
+        res.json({ 
+            data: peserta,
+            total: peserta.length
+        });
+    } catch (error) {
+        console.error('Error fetching peserta:', error);
+        res.status(500).json({ error: 'Failed to fetch peserta' });
+    }
+});
+
 export default router;

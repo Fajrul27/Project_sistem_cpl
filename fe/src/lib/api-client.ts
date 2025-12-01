@@ -72,8 +72,13 @@ export const api = {
   delete: (endpoint: string, options: RequestInit = {}) => apiRequest(endpoint, { ...options, method: 'DELETE' }),
 };
 
-// Helper: fetch list of mahasiswa from backend
-export async function fetchMahasiswaList(params?: { page?: number; limit?: number; q?: string }) {
+// Helper: fetch mahasiswa list with optional mataKuliahId filter for dosen
+export async function fetchMahasiswaList(params?: { 
+  page?: number; 
+  limit?: number; 
+  q?: string; 
+  mataKuliahId?: string;
+}) {
   // Backend endpoint: GET /api/users?role=mahasiswa
   return api.get('/users', {
     params: {
@@ -81,6 +86,11 @@ export async function fetchMahasiswaList(params?: { page?: number; limit?: numbe
       ...params
     }
   });
+}
+
+// Helper: fetch mata kuliah yang diampu oleh dosen
+export async function fetchMataKuliahPengampu(dosenId: string) {
+  return api.get(`/mata-kuliah-pengampu/dosen/${dosenId}`);
 }
 
 // Helper: fetch all users (admin only)

@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Loader2, ArrowLeft, AlertCircle } from "lucide-react";
+import { Plus, Edit, Trash2, Loader2, ArrowLeft, AlertCircle, BookOpen, User, Hash, GraduationCap } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -87,6 +88,37 @@ const CPMKDetailPage = () => {
         bobotPersentase: "",
         deskripsi: "",
     });
+
+    // Level Taksonomi mapping
+    const levelTaksonomiMap: { [key: string]: string } = {
+        "C1": "Mengingat",
+        "C2": "Memahami", 
+        "C3": "Menerapkan",
+        "C4": "Menganalisis",
+        "C5": "Mengevaluasi",
+        "C6": "Mencipta",
+        "P1": "Persepsi",
+        "P2": "Respon",
+        "P3": "Penilaian",
+        "P4": "Organisasi",
+        "P5": "Karakterisasi",
+        "A1": "Menerima",
+        "A2": "Merespons", 
+        "A3": "Menghargai",
+        "A4": "Mengelola",
+        "A5": "Menginternalisasi",
+        "K1": "Mengingat",
+        "K2": "Memahami",
+        "K3": "Menerapkan",
+        "K4": "Menganalisis", 
+        "K5": "Mengevaluasi",
+        "K6": "Mencipta"
+    };
+
+    const getLevelTaksonomiDeskripsi = (level: string | null) => {
+        if (!level) return "-";
+        return levelTaksonomiMap[level] || level;
+    };
 
     const canEdit = role === "admin" || role === "dosen";
 
@@ -314,19 +346,76 @@ const CPMKDetailPage = () => {
                     Kembali ke Daftar CPMK
                 </Button>
 
-                {/* Info Card */}
-                <Card>
+                {/* Info Cards */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {/* Kode CPMK Card */}
+                    <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+                        <div className="h-2 bg-gradient-to-r from-primary to-primary/60" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Kode CPMK</CardTitle>
+                            <Hash className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{cpmk.kodeCpmk}</div>
+                            <p className="text-xs text-muted-foreground">Identifikasi CPMK</p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Level Taksonomi Card */}
+                    <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+                        <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-400" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Level Taksonomi</CardTitle>
+                            <GraduationCap className="h-4 w-4 text-muted-foreground group-hover:text-orange-600 group-hover:scale-110 transition-all duration-300" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{getLevelTaksonomiDeskripsi(cpmk.levelTaksonomi)}</div>
+                            <p className="text-xs text-muted-foreground">{cpmk.levelTaksonomi || "-"}</p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Mata Kuliah Card */}
+                    <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+                        <div className="h-2 bg-gradient-to-r from-blue-500 to-blue-400" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Mata Kuliah</CardTitle>
+                            <BookOpen className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 group-hover:scale-110 transition-all duration-300" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-lg font-bold leading-tight">{cpmk.mataKuliah.kodeMk}</div>
+                            <p className="text-xs text-muted-foreground">{cpmk.mataKuliah.namaMk}</p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Pembuat Card */}
+                    <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+                        <div className="h-2 bg-gradient-to-r from-purple-500 to-purple-400" />
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Dibuat Oleh</CardTitle>
+                            <User className="h-4 w-4 text-muted-foreground group-hover:text-purple-600 group-hover:scale-110 transition-all duration-300" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-lg font-bold leading-tight truncate">
+                                {cpmk.creator?.profile?.namaLengkap || cpmk.creator?.email || "-"}
+                            </div>
+                            <p className="text-xs text-muted-foreground">Pembuat CPMK</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Deskripsi Card */}
+                <Card className="hover:shadow-lg transition-shadow duration-300">
                     <CardHeader>
-                        <CardTitle>Informasi CPMK</CardTitle>
+                        <CardTitle className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5 text-green-600" />
+                            Deskripsi CPMK
+                        </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2">
-                        <div><span className="font-medium">Kode:</span> {cpmk.kodeCpmk}</div>
-                        <div><span className="font-medium">Level Taksonomi:</span> {cpmk.levelTaksonomi || "-"}</div>
-                        <div><span className="font-medium">Deskripsi:</span> {cpmk.deskripsi || "-"}</div>
-                        <div><span className="font-medium">Mata Kuliah:</span> {cpmk.mataKuliah.kodeMk} - {cpmk.mataKuliah.namaMk}</div>
-                        <div>
-                            <span className="font-medium">Dibuat Oleh:</span>{" "}
-                            {cpmk.creator?.profile?.namaLengkap || cpmk.creator?.email || "-"}
+                    <CardContent>
+                        <div className="rounded-lg bg-muted p-4">
+                            <p className="text-sm leading-relaxed">
+                                {cpmk.deskripsi || "Tidak ada deskripsi untuk CPMK ini."}
+                            </p>
                         </div>
                     </CardContent>
                 </Card>

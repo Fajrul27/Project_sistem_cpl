@@ -39,6 +39,150 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
       }
     }
 
+    // [SECURITY] Dosen only sees mahasiswa in specific mata kuliah (if mataKuliahId is provided)
+    if (userRole === 'dosen') {
+      const mataKuliahId = req.query.mataKuliahId as string;
+      
+      if (mataKuliahId) {
+        // Verify dosen teaches this specific mata kuliah
+        const isPengampu = await prisma.mataKuliahPengampu.findFirst({
+          where: { 
+            mataKuliahId, 
+            dosenId: userId,
+            isPengampu: true 
+          }
+        });
+
+        if (!isPengampu) {
+          return res.status(403).json({ error: 'Anda tidak memiliki akses ke mata kuliah ini' });
+        }
+
+        // Get mata kuliah info to filter mahasiswa by program studi and semester
+        const mataKuliah = await prisma.mataKuliah.findUnique({
+          where: { id: mataKuliahId }
+        });
+
+        if (!mataKuliah) {
+          return res.status(404).json({ error: 'Mata kuliah tidak ditemukan' });
+        }
+
+        // Get mahasiswa based on program studi and semester
+        let mahasiswaList: { userId: string }[] = [];
+        
+        if (mataKuliah.prodiId) {
+          // Use new prodiId field
+          mahasiswaList = await prisma.profile.findMany({
+            where: {
+              prodiId: mataKuliah.prodiId,
+              semester: mataKuliah.semester,
+              user: {
+                role: {
+                  role: 'mahasiswa'
+                }
+              }
+            },
+            select: {
+              userId: true
+            }
+          });
+        } else if (mataKuliah.programStudi) {
+          // Fallback for old programStudi field
+          mahasiswaList = await prisma.profile.findMany({
+            where: {
+              programStudi: mataKuliah.programStudi,
+              semester: mataKuliah.semester,
+              user: {
+                role: {
+                  role: 'mahasiswa'
+                }
+              }
+            },
+            select: {
+              userId: true
+            }
+          });
+        }
+
+        const mahasiswaIds = mahasiswaList.map(m => m.userId);
+        where.id = { in: mahasiswaIds };
+      } else {
+        // If no mataKuliahId provided, get all mahasiswa from all mata kuliah taught by this dosen
+        const mataKuliahPengampuList = await prisma.mataKuliahPengampu.findMany({
+          where: {
+            dosenId: userId,
+            isPengampu: true
+          },
+          include: {
+            mataKuliah: true
+          }
+        });
+
+        // Collect all unique program studi and semester combinations
+        const uniqueFilters = new Set<string>();
+        
+        for (const mkPengampu of mataKuliahPengampuList) {
+          const mk = mkPengampu.mataKuliah;
+          if (mk.prodiId) {
+            uniqueFilters.add(`prodiId:${mk.prodiId}:semester:${mk.semester}`);
+          } else if (mk.programStudi) {
+            uniqueFilters.add(`programStudi:${mk.programStudi}:semester:${mk.semester}`);
+          }
+        }
+
+        // Get mahasiswa from all these combinations
+        let allMahasiswaList: { userId: string }[] = [];
+        
+        for (const filter of uniqueFilters) {
+          const parts = filter.split(':');
+          if (parts[0] === 'prodiId') {
+            const prodiId = parts[1];
+            const semester = parseInt(parts[3]);
+            
+            const mahasiswaList = await prisma.profile.findMany({
+              where: {
+                prodiId: prodiId,
+                semester: semester,
+                user: {
+                  role: {
+                    role: 'mahasiswa'
+                  }
+                }
+              },
+              select: {
+                userId: true
+              }
+            });
+            
+            allMahasiswaList.push(...mahasiswaList);
+          } else if (parts[0] === 'programStudi') {
+            const programStudi = parts[1];
+            const semester = parseInt(parts[3]);
+            
+            const mahasiswaList = await prisma.profile.findMany({
+              where: {
+                programStudi: programStudi,
+                semester: semester,
+                user: {
+                  role: {
+                    role: 'mahasiswa'
+                  }
+                }
+              },
+              select: {
+                userId: true
+              }
+            });
+            
+            allMahasiswaList.push(...mahasiswaList);
+          }
+        }
+
+        // Remove duplicates
+        const uniqueMahasiswaIds = [...new Set(allMahasiswaList.map(m => m.userId))];
+        where.id = { in: uniqueMahasiswaIds };
+      }
+    }
+
     // Search filter (email, name, nim)
     if (q) {
       const search = q as string;
