@@ -13,7 +13,7 @@
     "prisma:push": "prisma db push",
     "prisma:pull": "prisma db pull",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:seed": "tsx prisma/seed_fakultas_prodi.ts && tsx prisma/seed_comprehensive.ts",
     "prisma:reset": "prisma migrate reset"
   },
   "dependencies": {

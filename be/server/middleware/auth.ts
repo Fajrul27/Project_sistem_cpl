@@ -89,7 +89,7 @@ export const requirePengampu = (paramName: string = 'mataKuliahId') => {
       const pengampu = await prisma.mataKuliahPengampu.findFirst({
         where: {
           mataKuliahId,
-          dosenId: profile.id
+          dosenId: userId // Use userId directly as it is the FK in MataKuliahPengampu
         }
       });
 

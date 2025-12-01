@@ -75,6 +75,79 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+// Get available semesters for accessible Mata Kuliah
+router.get('/semesters', authMiddleware, async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+    const userRole = (req as any).userRole;
+
+    const where: any = { isActive: true };
+
+    // Filter based on role
+    if (userRole === 'dosen') {
+      const accessibleIds = await getAccessibleMataKuliahIds(userId, userRole);
+      where.id = { in: accessibleIds };
+    } else if (userRole === 'kaprodi') {
+      const profile = await prisma.profile.findUnique({ where: { userId } });
+      if (profile?.prodiId) {
+        where.prodiId = profile.prodiId;
+      } else if (profile?.programStudi) {
+        where.programStudi = profile.programStudi;
+      }
+    }
+
+    // Get distinct semesters
+    const mataKuliahs = await prisma.mataKuliah.findMany({
+      where,
+      select: { semester: true },
+      distinct: ['semester'],
+      orderBy: { semester: 'asc' }
+    });
+
+    const semesters = mataKuliahs.map(mk => mk.semester);
+
+    res.json({ data: semesters });
+  } catch (error) {
+    console.error('Get Semesters error:', error);
+    res.status(500).json({ error: 'Gagal mengambil data semester' });
+  }
+});
+
+// Get classes for a specific Mata Kuliah (assigned to user)
+router.get('/:id/kelas', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).userId;
+    const userRole = (req as any).userRole;
+
+    const where: any = { mataKuliahId: id };
+
+    // If dosen, only show their assigned classes
+    if (userRole === 'dosen') {
+      where.dosenId = userId;
+    }
+
+    const pengampu = await prisma.mataKuliahPengampu.findMany({
+      where,
+      include: {
+        kelas: true
+      },
+      distinct: ['kelasId'] // Ensure unique classes
+    });
+
+    // Extract classes and filter out nulls (if any)
+    const kelasList = pengampu
+      .map(p => p.kelas)
+      .filter(k => k !== null)
+      .sort((a, b) => a!.nama.localeCompare(b!.nama));
+
+    res.json({ data: kelasList });
+  } catch (error) {
+    console.error('Get Kelas for MK error:', error);
+    res.status(500).json({ error: 'Gagal mengambil data kelas' });
+  }
+});
+
 // Create Mata Kuliah
 router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), async (req, res) => {
   try {

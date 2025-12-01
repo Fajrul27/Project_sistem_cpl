@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Loader2, Save, FileText, AlertCircle, Upload } from "lucide-react";
+import { Loader2, Save, FileText, AlertCircle, Upload, CheckCircle2, XCircle } from "lucide-react";
 import { DashboardPage } from "@/components/DashboardLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { api, fetchKelas } from "@/lib/api-client";
 
@@ -33,6 +35,7 @@ interface CPMK {
     id: string;
     kodeCpmk: string;
     teknikPenilaian: TeknikPenilaian[];
+    statusValidasi: string;
 }
 
 interface MataKuliah {
@@ -47,6 +50,7 @@ const InputNilaiTeknikPage = () => {
     const [students, setStudents] = useState<Student[]>([]);
     const [cpmkList, setCpmkList] = useState<CPMK[]>([]);
     const [kelasList, setKelasList] = useState<any[]>([]);
+    const [availableSemesters, setAvailableSemesters] = useState<number[]>([]);
 
     const [selectedMK, setSelectedMK] = useState<string>("");
     const [selectedKelas, setSelectedKelas] = useState<string>("");
@@ -58,16 +62,38 @@ const InputNilaiTeknikPage = () => {
     const [grades, setGrades] = useState<Record<string, number>>({}); // key: studentId_teknikId
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
     useEffect(() => {
         fetchInitialData();
+        fetchAvailableSemesters();
     }, []);
 
     useEffect(() => {
-        fetchMataKuliahList();
-        // Reset selected MK when semester changes
-        setSelectedMK("");
+        fetchInitialData();
+        fetchAvailableSemesters();
+    }, []);
+
+    // When semester changes, fetch MKs for that semester
+    useEffect(() => {
+        if (semester) {
+            fetchMataKuliahList(semester);
+            setSelectedMK("");
+            setSelectedKelas("");
+            setKelasList([]);
+        }
     }, [semester]);
+
+    // When MK changes, fetch classes for that MK
+    useEffect(() => {
+        if (selectedMK) {
+            fetchKelasForMK(selectedMK);
+            fetchMKData(selectedMK);
+        } else {
+            setKelasList([]);
+            setSelectedKelas("");
+        }
+    }, [selectedMK]);
 
     useEffect(() => {
         if (selectedMK) {
@@ -84,11 +110,39 @@ const InputNilaiTeknikPage = () => {
     }, [selectedKelas]);
 
     const fetchInitialData = async () => {
+        // No longer fetching initial kelas list
+    };
+
+    const fetchKelasForMK = async (mkId: string) => {
         try {
-            const kelasRes = await fetchKelas();
-            if (kelasRes.data) setKelasList(kelasRes.data);
+            const result = await api.get(`/mata-kuliah/${mkId}/kelas`);
+            setKelasList(result.data || []);
+            // Auto-select first class if available
+            if (result.data && result.data.length > 0) {
+                setSelectedKelas(result.data[0].id);
+            } else {
+                setSelectedKelas("");
+            }
         } catch (error) {
-            console.error("Error fetching initial data:", error);
+            console.error("Error fetching kelas:", error);
+            toast.error("Gagal memuat data kelas");
+        }
+    };
+
+    const fetchAvailableSemesters = async () => {
+        try {
+            const result = await api.get('/mata-kuliah/semesters');
+            if (result.data) {
+                setAvailableSemesters(result.data);
+                // If current semester is not in the list and list is not empty, select the first one
+                if (result.data.length > 0 && !result.data.includes(parseInt(semester))) {
+                    setSemester(result.data[0].toString());
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching semesters:", error);
+            // Fallback to 1-8 if error
+            setAvailableSemesters([1, 2, 3, 4, 5, 6, 7, 8]);
         }
     };
 
@@ -98,7 +152,11 @@ const InputNilaiTeknikPage = () => {
             const result = await api.get('/users', {
                 params: {
                     role: 'mahasiswa',
-                    kelasId: selectedKelas
+                    kelasId: selectedKelas,
+                    mataKuliahId: selectedMK,
+                    limit: -1,
+                    sortBy: 'nim',
+                    sortOrder: 'asc'
                 }
             });
             setStudents(result.data || []);
@@ -108,9 +166,9 @@ const InputNilaiTeknikPage = () => {
         }
     };
 
-    const fetchMataKuliahList = async () => {
+    const fetchMataKuliahList = async (sem: string) => {
         try {
-            const result = await api.get('/mata-kuliah', { params: { semester } });
+            const result = await api.get('/mata-kuliah', { params: { semester: sem } });
             setMkList(result.data || []);
         } catch (error) {
             console.error('Error fetching mata kuliah:', error);
@@ -125,6 +183,8 @@ const InputNilaiTeknikPage = () => {
             const cpmkData = await api.get(`/cpmk/mata-kuliah/${mkId}`);
             setCpmkList(cpmkData.data || []);
 
+
+
             // Fetch existing grades
             try {
                 const gradesData = await api.get(`/nilai-teknik/mata-kuliah/${mkId}`, {
@@ -132,12 +192,22 @@ const InputNilaiTeknikPage = () => {
                 });
 
                 const existingGrades: Record<string, number> = {};
+                let maxDate: Date | null = null;
+
                 if (gradesData.data) {
                     gradesData.data.forEach((g: any) => {
                         existingGrades[`${g.mahasiswaId}_${g.teknikPenilaianId}`] = g.nilai;
+
+                        if (g.updatedAt) {
+                            const date = new Date(g.updatedAt);
+                            if (!maxDate || date > maxDate) {
+                                maxDate = date;
+                            }
+                        }
                     });
                 }
                 setGrades(existingGrades);
+                setLastUpdated(maxDate);
             } catch (err) {
                 // Ignore error if no grades found or other issue, just log
                 console.log("No existing grades or error fetching grades", err);
@@ -214,6 +284,7 @@ const InputNilaiTeknikPage = () => {
                 }
             } else {
                 toast.success(`Berhasil menyimpan ${result.data?.length || 0} nilai`);
+                setLastUpdated(new Date());
             }
 
         } catch (error) {
@@ -227,7 +298,7 @@ const InputNilaiTeknikPage = () => {
     const handleDownloadTemplate = async () => {
         if (!selectedMK) return;
         try {
-            const response = await fetch(`${API_URL}/nilai-teknik/template/${selectedMK}`, {
+            const response = await fetch(`${API_URL}/nilai-teknik/template/${selectedMK}?kelasId=${selectedKelas}&semester=${semester}&tahunAjaran=${encodeURIComponent(tahunAjaran)}`, {
                 credentials: 'include'
             });
 
@@ -307,9 +378,15 @@ const InputNilaiTeknikPage = () => {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                                        <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
-                                    ))}
+                                    {availableSemesters.length > 0 ? (
+                                        availableSemesters.map(s => (
+                                            <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                        ))
+                                    ) : (
+                                        [1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                                            <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                        ))
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -359,6 +436,11 @@ const InputNilaiTeknikPage = () => {
                             <div>
                                 <CardTitle>Form Input Nilai</CardTitle>
                                 <CardDescription>Masukkan nilai untuk setiap mahasiswa per teknik penilaian</CardDescription>
+                                {lastUpdated && (
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Terakhir disimpan: {lastUpdated.toLocaleString('id-ID')}
+                                    </p>
+                                )}
                             </div>
                             <div className="flex gap-2">
                                 <Button variant="outline" onClick={handleDownloadTemplate} disabled={loading || !selectedMK}>
@@ -408,7 +490,27 @@ const InputNilaiTeknikPage = () => {
                                                     colSpan={cpmk.teknikPenilaian.length}
                                                     className="text-center border-l border-r bg-muted/50"
                                                 >
-                                                    {cpmk.kodeCpmk}
+                                                    <div className="flex flex-col items-center gap-1 py-2">
+                                                        <span>{cpmk.kodeCpmk}</span>
+                                                        {cpmk.statusValidasi === 'validated' || cpmk.statusValidasi === 'active' ? (
+                                                            <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-[10px] h-5 px-1">
+                                                                <CheckCircle2 className="w-3 h-3 mr-1" /> Valid
+                                                            </Badge>
+                                                        ) : (
+                                                            <TooltipProvider>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger>
+                                                                        <Badge variant="destructive" className="text-[10px] h-5 px-1">
+                                                                            <XCircle className="w-3 h-3 mr-1" /> Draft
+                                                                        </Badge>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>
+                                                                        <p>CPMK belum divalidasi Kaprodi</p>
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            </TooltipProvider>
+                                                        )}
+                                                    </div>
                                                 </TableHead>
                                             ))}
                                         </TableRow>
@@ -448,6 +550,8 @@ const InputNilaiTeknikPage = () => {
                                                                     placeholder="0"
                                                                     value={grades[`${student.id}_${teknik.id}`] ?? ""}
                                                                     onChange={e => handleGradeChange(student.id, teknik.id, e.target.value)}
+                                                                    disabled={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active'}
+                                                                    title={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active' ? "CPMK belum divalidasi" : ""}
                                                                 />
                                                             </TableCell>
                                                         ))

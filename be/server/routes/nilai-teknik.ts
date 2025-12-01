@@ -225,7 +225,7 @@ router.post('/batch', authMiddleware, requireRole('admin', 'dosen'), async (req,
                     const pengampu = await prisma.mataKuliahPengampu.findFirst({
                         where: {
                             mataKuliahId,
-                            dosenId: profile.id
+                            dosenId: userId // Use userId directly
                         }
                     });
 
@@ -376,7 +376,7 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, re
         if (userRole === 'dosen') {
             const profile = await prisma.profile.findUnique({ where: { userId } });
             const isPengampu = existing.teknikPenilaian.cpmk.mataKuliah.pengampu.some(
-                p => p.dosenId === profile?.id
+                p => p.dosenId === userId // Use userId directly
             );
 
             if (!isPengampu) {
@@ -453,7 +453,7 @@ router.delete('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req,
         if (userRole === 'dosen') {
             const profile = await prisma.profile.findUnique({ where: { userId } });
             const isPengampu = existing.teknikPenilaian.cpmk.mataKuliah.pengampu.some(
-                p => p.dosenId === profile?.id
+                p => p.dosenId === userId // Use userId directly
             );
 
             if (!isPengampu) {
@@ -498,6 +498,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/template/:mataKuliahId', authMiddleware, requirePengampu('mataKuliahId'), async (req, res) => {
     try {
         const { mataKuliahId } = req.params;
+        const { kelasId } = req.query;
 
         // Get Mata Kuliah info
         const mk = await prisma.mataKuliah.findUnique({
@@ -515,25 +516,83 @@ router.get('/template/:mataKuliahId', authMiddleware, requirePengampu('mataKulia
             orderBy: { kodeCpmk: 'asc' }
         });
 
-        // Get Mahasiswa List (only those enrolled in this mata kuliah)
-        const mahasiswaList = await prisma.nilaiCpl.findMany({
-            where: { mataKuliahId },
-            select: { mahasiswaId: true },
-            distinct: ['mahasiswaId']
-        });
+        // Get Classes for this Mata Kuliah (assigned to this Dosen or all if Admin)
+        // If kelasId is provided, use it. Otherwise get all classes for this MK.
+        let targetKelasIds: string[] = [];
 
-        const mahasiswaIds = mahasiswaList.map(m => m.mahasiswaId);
-        
-        // Get full mahasiswa data
+        if (kelasId) {
+            targetKelasIds = [kelasId as string];
+        } else {
+            // Get all classes for this MK
+            // If Dosen, only get classes they teach
+            const userId = (req as any).userId;
+            const userRole = (req as any).userRole;
+
+            const pengampuWhere: any = { mataKuliahId };
+            if (userRole === 'dosen') {
+                pengampuWhere.dosenId = userId;
+            }
+
+            const pengampuClasses = await prisma.mataKuliahPengampu.findMany({
+                where: pengampuWhere,
+                select: { kelasId: true }
+            });
+            targetKelasIds = pengampuClasses
+                .map(p => p.kelasId)
+                .filter((id): id is string => id !== null);
+        }
+
+        // Get Mahasiswa in these classes
+        // Also filter by semester if needed? Usually students in a class are in the same semester.
+        // But let's just trust the class assignment.
+        // Fetch existing grades if semester and tahunAjaran are provided
+        const { semester, tahunAjaran } = req.query;
+        let existingGradesMap = new Map<string, Map<string, number>>();
+
+        // Get Mahasiswa in these classes
+        const mahasiswaWhere: any = {
+            role: { role: 'mahasiswa' },
+            profile: {
+                kelasId: { in: targetKelasIds },
+            }
+        };
+
+        // Filter by Prodi (CRITICAL: Kelas is shared across prodis)
+        if (mk.prodiId) {
+            mahasiswaWhere.profile.prodiId = mk.prodiId;
+        } else if (mk.programStudi) {
+            mahasiswaWhere.profile.programStudi = mk.programStudi;
+        }
+
+        // Filter by semester if provided
+        if (semester) {
+            mahasiswaWhere.profile.semester = parseInt(semester as string);
+        }
+
         const mahasiswaData = await prisma.user.findMany({
-            where: {
-                id: { in: mahasiswaIds },
-                role: { role: 'mahasiswa' },
-                profile: { isNot: null }
-            },
+            where: mahasiswaWhere,
             include: { profile: true },
             orderBy: { profile: { nim: 'asc' } }
         });
+
+        if (semester && tahunAjaran) {
+            const existingGrades = await prisma.nilaiTeknikPenilaian.findMany({
+                where: {
+                    mataKuliahId,
+                    semester: parseInt(semester as string),
+                    tahunAjaran: tahunAjaran as string,
+                    mahasiswaId: { in: mahasiswaData.map(m => m.id) }
+                }
+            });
+
+            // Map: MahasiswaID -> (TeknikID -> Nilai)
+            existingGrades.forEach(g => {
+                if (!existingGradesMap.has(g.mahasiswaId)) {
+                    existingGradesMap.set(g.mahasiswaId, new Map());
+                }
+                existingGradesMap.get(g.mahasiswaId)!.set(g.teknikPenilaianId, Number(g.nilai));
+            });
+        }
 
         // Prepare Header
         const headers = ['No', 'NIM', 'Nama Mahasiswa'];
@@ -555,10 +614,11 @@ router.get('/template/:mataKuliahId', authMiddleware, requirePengampu('mataKulia
                 'Nama Mahasiswa': m.profile?.namaLengkap || '-'
             };
 
-            // Initialize empty grades
+            // Fill grades
+            const studentGrades = existingGradesMap.get(m.id);
             teknikIds.forEach((id, idx) => {
-                // Use header name as key
-                row[headers[3 + idx]] = '';
+                const val = studentGrades?.get(id);
+                row[headers[3 + idx]] = val !== undefined ? val : '';
             });
 
             return row;
@@ -593,7 +653,7 @@ router.get('/template/:mataKuliahId', authMiddleware, requirePengampu('mataKulia
 });
 
 // Import Excel  
-router.post('/import', authMiddleware, requireRole('admin', 'dosen'), requirePengampu('mataKuliahId'), upload.single('file'), async (req, res) => {
+router.post('/import', authMiddleware, requireRole('admin', 'dosen'), upload.single('file'), requirePengampu('mataKuliahId'), async (req, res) => {
     try {
         const userId = (req as any).userId;
         const { mataKuliahId, semester, tahunAjaran } = req.body;

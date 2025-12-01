@@ -73,11 +73,12 @@ export const api = {
 };
 
 // Helper: fetch mahasiswa list with optional mataKuliahId filter for dosen
-export async function fetchMahasiswaList(params?: { 
-  page?: number; 
-  limit?: number; 
-  q?: string; 
+export async function fetchMahasiswaList(params?: {
+  page?: number;
+  limit?: number;
+  q?: string;
   mataKuliahId?: string;
+  fakultasId?: string;
 }) {
   // Backend endpoint: GET /api/users?role=mahasiswa
   return api.get('/users', {
@@ -245,6 +246,11 @@ export async function fetchSemesters() {
 // Helper: fetch kelas
 export async function fetchKelas() {
   return api.get('/references/kelas');
+}
+
+// Helper: fetch fakultas
+export async function fetchFakultasList() {
+  return api.get('/references/fakultas');
 }
 
 // Auth state change callbacks

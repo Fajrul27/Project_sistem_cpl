@@ -35,4 +35,17 @@ router.get('/kelas', authMiddleware, async (req, res) => {
     }
 });
 
+// Get all Fakultas
+router.get('/fakultas', authMiddleware, async (req, res) => {
+    try {
+        const fakultas = await prisma.fakultas.findMany({
+            orderBy: { nama: 'asc' }
+        });
+        res.json({ data: fakultas });
+    } catch (error) {
+        console.error('Get fakultas error:', error);
+        res.status(500).json({ error: 'Gagal mengambil data fakultas' });
+    }
+});
+
 export default router;

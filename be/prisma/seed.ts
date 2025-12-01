@@ -13,6 +13,20 @@ async function main() {
   // Hash password
   const hashedPassword = await bcrypt.hash('admin123', 10);
 
+  // Find Prodi Informatika (or Teknik Informatika) - MOVED TO TOP
+  const prodiInformatika = await prisma.prodi.findFirst({
+    where: {
+      OR: [
+        { nama: 'Informatika' },
+        { nama: 'Teknik Informatika' }
+      ]
+    }
+  });
+
+  if (!prodiInformatika) {
+    console.warn('⚠️ Prodi Informatika not found. Make sure seed_fakultas_prodi.ts is run first!');
+  }
+
   // Create admin user
   console.log('Creating admin user...');
   const admin = await prisma.user.create({
@@ -51,7 +65,10 @@ async function main() {
         create: {
           namaLengkap: 'Dr. Budi Santoso, M.Kom',
           nip: '198801010001',
-          programStudi: 'Teknik Informatika'
+          namaLengkap: 'Dr. Budi Santoso, M.Kom',
+          nip: '198801010001',
+          programStudi: 'Teknik Informatika',
+          prodiId: prodiInformatika?.id
         }
       }
     }
@@ -69,7 +86,10 @@ async function main() {
         create: {
           namaLengkap: 'Dr. Siti Aisyah, M.T',
           nip: '198802020002',
-          programStudi: 'Teknik Informatika'
+          namaLengkap: 'Dr. Siti Aisyah, M.T',
+          nip: '198802020002',
+          programStudi: 'Teknik Informatika',
+          prodiId: prodiInformatika?.id
         }
       }
     }
@@ -90,7 +110,10 @@ async function main() {
         create: {
           namaLengkap: 'Ahmad Rizki Wijaya',
           nim: '2101010001',
+          namaLengkap: 'Ahmad Rizki Wijaya',
+          nim: '2101010001',
           programStudi: 'Teknik Informatika',
+          prodiId: prodiInformatika?.id,
           semester: 5,
           tahunMasuk: 2021
         }
@@ -110,7 +133,10 @@ async function main() {
         create: {
           namaLengkap: 'Siti Nurhaliza',
           nim: '2101010002',
+          namaLengkap: 'Siti Nurhaliza',
+          nim: '2101010002',
           programStudi: 'Teknik Informatika',
+          prodiId: prodiInformatika?.id,
           semester: 5,
           tahunMasuk: 2021
         }
@@ -130,7 +156,10 @@ async function main() {
         create: {
           namaLengkap: 'Budi Hartono',
           nim: '2101010003',
+          namaLengkap: 'Budi Hartono',
+          nim: '2101010003',
           programStudi: 'Teknik Informatika',
+          prodiId: prodiInformatika?.id,
           semester: 5,
           tahunMasuk: 2021
         }
@@ -139,19 +168,7 @@ async function main() {
   });
   console.log('✅ Mahasiswa users created');
 
-  // Find Prodi Informatika (or Teknik Informatika)
-  const prodiInformatika = await prisma.prodi.findFirst({
-    where: {
-      OR: [
-        { nama: 'Informatika' },
-        { nama: 'Teknik Informatika' }
-      ]
-    }
-  });
 
-  if (!prodiInformatika) {
-    console.warn('⚠️ Prodi Informatika not found. Run seed_fakultas_prodi.ts first!');
-  }
 
   // 4. Create CPL
   console.log('\nCreating CPL...');

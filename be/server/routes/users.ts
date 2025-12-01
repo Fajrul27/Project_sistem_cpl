@@ -42,14 +42,14 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
     // [SECURITY] Dosen only sees mahasiswa in specific mata kuliah (if mataKuliahId is provided)
     if (userRole === 'dosen') {
       const mataKuliahId = req.query.mataKuliahId as string;
-      
+
       if (mataKuliahId) {
         // Verify dosen teaches this specific mata kuliah
         const isPengampu = await prisma.mataKuliahPengampu.findFirst({
-          where: { 
-            mataKuliahId, 
+          where: {
+            mataKuliahId,
             dosenId: userId,
-            isPengampu: true 
+            isPengampu: true
           }
         });
 
@@ -68,7 +68,7 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
 
         // Get mahasiswa based on program studi and semester
         let mahasiswaList: { userId: string }[] = [];
-        
+
         if (mataKuliah.prodiId) {
           // Use new prodiId field
           mahasiswaList = await prisma.profile.findMany({
@@ -119,7 +119,7 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
 
         // Collect all unique program studi and semester combinations
         const uniqueFilters = new Set<string>();
-        
+
         for (const mkPengampu of mataKuliahPengampuList) {
           const mk = mkPengampu.mataKuliah;
           if (mk.prodiId) {
@@ -131,13 +131,13 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
 
         // Get mahasiswa from all these combinations
         let allMahasiswaList: { userId: string }[] = [];
-        
+
         for (const filter of uniqueFilters) {
           const parts = filter.split(':');
           if (parts[0] === 'prodiId') {
             const prodiId = parts[1];
             const semester = parseInt(parts[3]);
-            
+
             const mahasiswaList = await prisma.profile.findMany({
               where: {
                 prodiId: prodiId,
@@ -152,12 +152,12 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
                 userId: true
               }
             });
-            
+
             allMahasiswaList.push(...mahasiswaList);
           } else if (parts[0] === 'programStudi') {
             const programStudi = parts[1];
             const semester = parseInt(parts[3]);
-            
+
             const mahasiswaList = await prisma.profile.findMany({
               where: {
                 programStudi: programStudi,
@@ -172,7 +172,7 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
                 userId: true
               }
             });
-            
+
             allMahasiswaList.push(...mahasiswaList);
           }
         }
@@ -206,8 +206,41 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
       where.profile.kelasId = kelasId;
     }
 
+    // Filter by fakultasId
+    if (req.query.fakultasId) {
+      const fakultasId = req.query.fakultasId as string;
+      if (!where.profile) where.profile = {};
+
+      // Filter by prodi's fakultas
+      where.profile.prodi = {
+        fakultasId: fakultasId
+      };
+    }
+
     // Get total count for pagination
     const total = await prisma.user.count({ where });
+
+    // Sorting
+    const { sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    let orderBy: any = {};
+
+    if (sortBy === 'nim') {
+      orderBy = {
+        profile: {
+          nim: sortOrder as string
+        }
+      };
+    } else if (sortBy === 'nama') {
+      orderBy = {
+        profile: {
+          namaLengkap: sortOrder as string
+        }
+      };
+    } else {
+      orderBy = {
+        [sortBy as string]: sortOrder as string
+      };
+    }
 
     // Get paginated data
     const users = await prisma.user.findMany({
@@ -215,10 +248,17 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
       include: {
         role: true,
         profile: {
-          include: { prodi: true }
+          include: {
+            prodi: {
+              include: {
+                fakultas: true
+              }
+            },
+            kelasRef: true
+          }
         }
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       skip: limitNum === -1 ? undefined : skip, // -1 for all
       take: limitNum === -1 ? undefined : limitNum
     });

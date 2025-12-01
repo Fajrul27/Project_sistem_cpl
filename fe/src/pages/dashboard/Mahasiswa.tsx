@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchMahasiswaList, fetchMataKuliahPengampu, api, getUser } from "@/lib/api-client";
+import { fetchMahasiswaList, fetchMataKuliahPengampu, fetchFakultasList, api, getUser, fetchTranskripCPL } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,15 @@ interface Profile {
   nim: string | null;
   prodi: string | null;
   semester: number | null;
+  fakultasId: string | null;
+  fakultasName: string | null;
+  kelasName: string | null;
+}
+
+interface Fakultas {
+  id: string;
+  nama: string;
+  kode: string;
 }
 
 interface StudentProgress {
@@ -35,9 +44,10 @@ interface User {
   profile?: {
     nim: string | null;
     namaLengkap: string | null;
-    prodi?: { nama: string };
+    prodi?: { nama: string; fakultasId?: string; fakultas?: { nama: string } };
     programStudi?: string;
     semester: number | null;
+    kelasRef?: { nama: string };
   };
 }
 
@@ -69,6 +79,9 @@ const MahasiswaPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [semesterFilter, setSemesterFilter] = useState<string>("all");
   const [prodiFilter, setProdiFilter] = useState<string>("all");
+  const [kelasFilter, setKelasFilter] = useState<string>("all");
+  const [fakultasFilter, setFakultasFilter] = useState<string>("all");
+  const [fakultasList, setFakultasList] = useState<Fakultas[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
   const [studentProgress, setStudentProgress] = useState<StudentProgress | null>(null);
   const [progressLoading, setProgressLoading] = useState(false);
@@ -80,14 +93,24 @@ const MahasiswaPage = () => {
 
   useEffect(() => {
     initializeData();
+    loadFakultas();
   }, []);
+
+  const loadFakultas = async () => {
+    try {
+      const response = await fetchFakultasList();
+      setFakultasList(response.data || []);
+    } catch (error) {
+      console.error("Failed to load fakultas", error);
+    }
+  };
 
   const initializeData = async () => {
     const user = getUser();
     if (user) {
       setCurrentUser(user);
       setUserRole(user.role || "");
-      
+
       // If user is dosen, fetch mata kuliah yang diampu
       if (user.role === 'dosen') {
         await fetchMataKuliahForDosen(user.id);
@@ -101,12 +124,38 @@ const MahasiswaPage = () => {
     }
   };
 
+  const fetchProfilesForAllMataKuliah = async () => {
+    try {
+      const response = await fetchMahasiswaList({ limit: -1 });
+      const users = response?.data || [];
+
+      const mappedProfiles: Profile[] = users
+        .filter((user: User) => user.profile && user.profile.nim)
+        .map((user: User) => ({
+          id: user.id,
+          full_name: user.profile.namaLengkap || "",
+          nim: user.profile.nim,
+          prodi: user.profile.prodi?.nama || user.profile.programStudi,
+          semester: user.profile.semester,
+          fakultasId: user.profile.prodi?.fakultasId || null,
+          fakultasName: user.profile.prodi?.fakultas?.nama || null,
+          kelasName: user.profile.kelasRef?.nama || null,
+        }));
+
+      setProfiles(mappedProfiles);
+    } catch (error: any) {
+      toast.error("Gagal memuat data mahasiswa");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchMataKuliahForDosen = async (dosenId: string) => {
     try {
       const response = await fetchMataKuliahPengampu(dosenId);
       const mataKuliahData = response?.data || [];
       setMataKuliahList(mataKuliahData);
-      
+
       // Auto-select "all" if available
       if (mataKuliahData.length > 0) {
         setSelectedMataKuliah("all");
@@ -128,7 +177,7 @@ const MahasiswaPage = () => {
       if (mataKuliahId) {
         params.mataKuliahId = mataKuliahId;
       }
-      
+
       const response = await fetchMahasiswaList(params);
       const users = response?.data || [];
 
@@ -140,6 +189,9 @@ const MahasiswaPage = () => {
           nim: user.profile.nim,
           prodi: user.profile.prodi?.nama || user.profile.programStudi,
           semester: user.profile.semester,
+          fakultasId: user.profile.prodi?.fakultasId || null,
+          fakultasName: user.profile.prodi?.fakultas?.nama || null,
+          kelasName: user.profile.kelasRef?.nama || null,
         }));
 
       setProfiles(mappedProfiles);
@@ -154,7 +206,7 @@ const MahasiswaPage = () => {
     setProgressLoading(true);
     try {
       // Fetch student's transkrip CPL from backend
-      const result = await api.get('/transkrip-cpl', { params: { mahasiswaId: studentId } });
+      const result = await fetchTranskripCPL(studentId);
       const transkripList = result.data || [];
 
       // Fetch total CPL count
@@ -195,55 +247,47 @@ const MahasiswaPage = () => {
     }
   };
 
-  const handleViewProgress = async (student: Profile) => {
+  const handleMataKuliahChange = (value: string) => {
+    setSelectedMataKuliah(value);
+    if (value === "all") {
+      fetchProfilesForAllMataKuliah();
+    } else {
+      fetchProfiles(value);
+    }
+  };
+
+  const handleViewProgress = (student: Profile) => {
     setSelectedStudent(student);
     setDialogOpen(true);
-    await fetchStudentProgress(student.id);
-  };
-
-  const handleMataKuliahChange = async (mataKuliahId: string) => {
-    setSelectedMataKuliah(mataKuliahId);
-    setLoading(true);
-    if (mataKuliahId === "all") {
-      // Fetch mahasiswa dari semua mata kuliah yang diampu
-      await fetchProfilesForAllMataKuliah();
-    } else {
-      // Fetch mahasiswa dari mata kuliah spesifik
-      await fetchProfiles(mataKuliahId);
-    }
-  };
-
-  const fetchProfilesForAllMataKuliah = async () => {
-    try {
-      // Ambil daftar mahasiswa dari backend: /api/users?role=mahasiswa (tanpa mataKuliahId untuk role dosen)
-      const response = await fetchMahasiswaList({ limit: -1 });
-      const users = response?.data || [];
-
-      const mappedProfiles: Profile[] = users
-        .filter((user: User) => user.profile && user.profile.nim)
-        .map((user: User) => ({
-          id: user.id,
-          full_name: user.profile.namaLengkap || "",
-          nim: user.profile.nim,
-          prodi: user.profile.prodi?.nama || user.profile.programStudi,
-          semester: user.profile.semester,
-        }));
-
-      setProfiles(mappedProfiles);
-    } catch (error: any) {
-      toast.error("Gagal memuat data mahasiswa");
-    } finally {
-      setLoading(false);
-    }
+    fetchStudentProgress(student.id);
   };
 
   const semesterOptions = Array.from(
     new Set(profiles.map((p) => p.semester).filter((s) => s !== null && s !== undefined))
   ).sort((a, b) => Number(a) - Number(b));
 
+  // Filter prodi options based on selected fakultas
   const prodiOptions = Array.from(
-    new Set(profiles.map((p) => p.prodi).filter((p): p is string => !!p && p.trim() !== ""))
+    new Set(
+      profiles
+        .filter(p => fakultasFilter === "all" || p.fakultasId === fakultasFilter)
+        .map((p) => p.prodi)
+        .filter((p): p is string => !!p && p.trim() !== "")
+    )
   );
+
+  const kelasOptions = Array.from(
+    new Set(
+      profiles
+        .filter(p =>
+          (fakultasFilter === "all" || p.fakultasId === fakultasFilter) &&
+          (prodiFilter === "all" || p.prodi === prodiFilter) &&
+          (semesterFilter === "all" || (p.semester !== null && String(p.semester) === semesterFilter))
+        )
+        .map((p) => p.kelasName)
+        .filter((k): k is string => !!k && k.trim() !== "")
+    )
+  ).sort();
 
   const filteredProfiles = profiles.filter((profile) => {
     const q = searchTerm.toLowerCase();
@@ -259,23 +303,18 @@ const MahasiswaPage = () => {
     const matchProdi =
       prodiFilter === "all" || profile.prodi === prodiFilter;
 
-    return matchSearch && matchSemester && matchProdi;
+    const matchFakultas =
+      fakultasFilter === "all" || profile.fakultasId === fakultasFilter;
+
+    const matchKelas =
+      kelasFilter === "all" || profile.kelasName === kelasFilter;
+
+    return matchSearch && matchSemester && matchProdi && matchFakultas && matchKelas;
   });
 
-  const hasActiveFilter = semesterFilter !== "all" || prodiFilter !== "all";
+  const hasActiveFilter = semesterFilter !== "all" || prodiFilter !== "all" || fakultasFilter !== "all" || kelasFilter !== "all";
 
-  if (loading) {
-    return (
-      <DashboardPage title="Data Mahasiswa">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      </DashboardPage>
-    );
-  }
-
-  // Show message for dosen with no mata kuliah
-  if (userRole === 'dosen' && mataKuliahList.length === 0) {
+  if (userRole === 'dosen' && mataKuliahList.length === 0 && !loading) {
     return (
       <DashboardPage title="Data Mahasiswa">
         <Card>
@@ -297,8 +336,8 @@ const MahasiswaPage = () => {
   return (
     <DashboardPage
       title="Data Mahasiswa"
-      description={userRole === 'dosen' 
-        ? "Daftar mahasiswa yang mengikuti mata kuliah Anda" 
+      description={userRole === 'dosen'
+        ? "Daftar mahasiswa yang mengikuti mata kuliah Anda"
         : "Daftar mahasiswa terdaftar dengan progress CPL"
       }
     >
@@ -313,7 +352,7 @@ const MahasiswaPage = () => {
               className="pl-9"
             />
           </div>
-          
+
           {/* Filter Button - Only Mata Kuliah for Dosen */}
           {userRole === 'dosen' && mataKuliahList.length > 0 && (
             <Popover>
@@ -352,7 +391,7 @@ const MahasiswaPage = () => {
               </PopoverContent>
             </Popover>
           )}
-          
+
           {/* Filter Button for Non-Dosen Roles */}
           {userRole !== 'dosen' && (
             <Popover>
@@ -363,18 +402,70 @@ const MahasiswaPage = () => {
                   className="gap-2"
                   disabled={semesterOptions.length === 0 && prodiOptions.length === 0}
                 >
-                  <SlidersHorizontal className="h-4 w-4" />
                   <span className="hidden sm:inline">Filter</span>
                   <span className="sm:hidden">Filter</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-72 space-y-4">
+                {/* Fakultas Filter */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Fakultas</Label>
+                  <Select
+                    value={fakultasFilter}
+                    onValueChange={(value) => {
+                      setFakultasFilter(value);
+                      setProdiFilter("all");
+                      setKelasFilter("all");
+                    }}
+                  >
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Semua fakultas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua fakultas</SelectItem>
+                      {fakultasList.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>
+                          {f.nama}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Program Studi Filter */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Program Studi</Label>
+                  <Select
+                    value={prodiFilter}
+                    onValueChange={(value) => {
+                      setProdiFilter(value);
+                      setKelasFilter("all");
+                    }}
+                    disabled={prodiOptions.length === 0}
+                  >
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Semua prodi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua prodi</SelectItem>
+                      {prodiOptions.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Semester Filter */}
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Semester</Label>
                   <Select
                     value={semesterFilter}
-                    onValueChange={(value) => setSemesterFilter(value)}
+                    onValueChange={(value) => {
+                      setSemesterFilter(value);
+                      setKelasFilter("all");
+                    }}
                   >
                     <SelectTrigger className="w-full h-8 text-xs">
                       <SelectValue placeholder="Semua semester" />
@@ -389,49 +480,51 @@ const MahasiswaPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
-                {/* Program Studi Filter */}
+
+                {/* Kelas Filter */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">Program Studi</Label>
+                  <Label className="text-xs font-medium">Kelas</Label>
                   <Select
-                    value={prodiFilter}
-                    onValueChange={(value) => setProdiFilter(value)}
-                    disabled={prodiOptions.length === 0}
+                    value={kelasFilter}
+                    onValueChange={(value) => setKelasFilter(value)}
+                    disabled={kelasOptions.length === 0}
                   >
                     <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Semua prodi" />
+                      <SelectValue placeholder="Semua kelas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Semua prodi</SelectItem>
-                      {prodiOptions.map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {p}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Reset Button */}
-              <div className="flex justify-between pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSemesterFilter("all");
-                    setProdiFilter("all");
-                    setSearchTerm("");
-                  }}
-                  disabled={!hasActiveFilter}
-                >
-                  Reset Filter
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+                      <SelectItem value="all">Semua kelas</SelectItem>
+                      {kelasOptions.map((k) => (
+                        <SelectItem key={k} value={k}>
+                          {k}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Reset Button */}
+                <div className="flex justify-between pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSemesterFilter("all");
+                      setProdiFilter("all");
+                      setSearchTerm("");
+                      setFakultasFilter("all");
+                      setKelasFilter("all");
+                    }}
+                    disabled={!hasActiveFilter}
+                  >
+                    Reset Filter
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
-          
+
           <Button variant="outline" onClick={() => {
             if (userRole === 'dosen' && selectedMataKuliah) {
               if (selectedMataKuliah === "all") {
@@ -460,15 +553,17 @@ const MahasiswaPage = () => {
                 <TableRow>
                   <TableHead>NIM</TableHead>
                   <TableHead>Nama Lengkap</TableHead>
+                  <TableHead>Fakultas</TableHead>
                   <TableHead>Program Studi</TableHead>
                   <TableHead>Semester</TableHead>
+                  <TableHead>Kelas</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProfiles.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                       Tidak ada data mahasiswa
                     </TableCell>
                   </TableRow>
@@ -477,6 +572,7 @@ const MahasiswaPage = () => {
                     <TableRow key={profile.id}>
                       <TableCell className="font-medium">{profile.nim || "-"}</TableCell>
                       <TableCell>{profile.full_name}</TableCell>
+                      <TableCell>{profile.fakultasName || "-"}</TableCell>
                       <TableCell>
                         {profile.prodi ? (
                           <Badge variant="secondary">{profile.prodi}</Badge>
@@ -487,6 +583,7 @@ const MahasiswaPage = () => {
                       <TableCell>
                         {profile.semester ? `Semester ${profile.semester}` : "-"}
                       </TableCell>
+                      <TableCell>{profile.kelasName || "-"}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           size="sm"
@@ -621,8 +718,8 @@ const MahasiswaPage = () => {
             ) : null}
           </DialogContent>
         </Dialog>
-      </div>
-    </DashboardPage>
+      </div >
+    </DashboardPage >
   );
 };
 
