@@ -230,16 +230,17 @@ const TranskripCPLPage = () => {
 
     const updateStudentInfo = (m: any) => {
         if (m) {
+            const programStudi = m.prodi?.nama || m.programStudi;
             setCurrentStudent({
                 id: m.userId,
                 profile: {
                     namaLengkap: m.namaLengkap,
                     nim: m.nim,
-                    programStudi: m.programStudi,
+                    programStudi: programStudi,
                     semester: m.semester
                 }
             });
-            if (m.programStudi) fetchKaprodiData(m.programStudi);
+            if (programStudi) fetchKaprodiData(programStudi);
         }
     };
 

@@ -634,23 +634,23 @@ const UsersPage = () => {
             identityType: val === "mahasiswa" ? "mahasiswa" : "dosen"
           }));
         }} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4 bg-slate-200 dark:bg-muted p-1 rounded-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100 dark:bg-muted p-1 rounded-xl gap-2 h-auto">
             <TabsTrigger
               value="staff"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 rounded-full"
+              className="py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-foreground/10 transition-all duration-300 ease-in-out rounded-lg font-medium"
             >
               Dosen & Tenaga Kependidikan
             </TabsTrigger>
             <TabsTrigger
               value="mahasiswa"
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 rounded-full"
+              className="py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-foreground/10 transition-all duration-300 ease-in-out rounded-lg font-medium"
             >
               Mahasiswa
             </TabsTrigger>
           </TabsList>
 
           {/* Staff Tab Content */}
-          <TabsContent value="staff">
+          <TabsContent value="staff" className="animate-in fade-in slide-in-from-top-4 duration-500">
             <Card>
               <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
@@ -987,7 +987,7 @@ const UsersPage = () => {
           </TabsContent>
 
           {/* Mahasiswa Tab Content */}
-          <TabsContent value="mahasiswa">
+          <TabsContent value="mahasiswa" className="animate-in fade-in slide-in-from-top-4 duration-500">
             <Card>
               <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
