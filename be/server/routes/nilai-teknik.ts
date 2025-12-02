@@ -189,6 +189,23 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen'), requirePengampu(
             }
         });
 
+        // [NEW] Save Rubrik Data if provided
+        const { rubrikData } = req.body; // Array of { rubrikLevelId }
+        if (Array.isArray(rubrikData) && rubrikData.length > 0) {
+            // Delete existing rubric scores for this grade
+            await prisma.nilaiRubrik.deleteMany({
+                where: { nilaiTeknikId: nilaiTeknik.id }
+            });
+
+            // Insert new rubric scores
+            await prisma.nilaiRubrik.createMany({
+                data: rubrikData.map((r: any) => ({
+                    nilaiTeknikId: nilaiTeknik.id,
+                    rubrikLevelId: r.rubrikLevelId
+                }))
+            });
+        }
+
         // Trigger auto-calculate CPMK nilai
         await calculateNilaiCpmk(mahasiswaId, teknik.cpmkId, mataKuliahId, parseInt(semester), tahunAjaran);
 
@@ -315,6 +332,22 @@ router.post('/batch', authMiddleware, requireRole('admin', 'dosen'), async (req,
                         createdBy: userId
                     }
                 });
+
+                // [NEW] Save Rubrik Data if provided
+                if (Array.isArray(entry.rubrikData) && entry.rubrikData.length > 0) {
+                    // Delete existing rubric scores for this grade
+                    await prisma.nilaiRubrik.deleteMany({
+                        where: { nilaiTeknikId: nilaiTeknik.id }
+                    });
+
+                    // Insert new rubric scores
+                    await prisma.nilaiRubrik.createMany({
+                        data: entry.rubrikData.map((r: any) => ({
+                            nilaiTeknikId: nilaiTeknik.id,
+                            rubrikLevelId: r.rubrikLevelId
+                        }))
+                    });
+                }
 
                 results.push(nilaiTeknik);
 

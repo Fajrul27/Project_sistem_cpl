@@ -39,7 +39,8 @@ router.get('/kelas', authMiddleware, async (req, res) => {
 router.get('/fakultas', authMiddleware, async (req, res) => {
     try {
         const fakultas = await prisma.fakultas.findMany({
-            orderBy: { nama: 'asc' }
+            orderBy: { nama: 'asc' },
+            include: { prodi: true }
         });
         res.json({ data: fakultas });
     } catch (error) {

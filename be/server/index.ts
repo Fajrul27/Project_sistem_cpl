@@ -2,13 +2,10 @@
 // Express Server dengan Prisma + MySQL
 // ============================================
 
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -65,6 +62,8 @@ import kategoriCplRoutes from './routes/kategori-cpl.js';
 import levelTaksonomiRoutes from './routes/level-taksonomi.js';
 import teknikPenilaianRefRoutes from './routes/teknik-penilaian-ref.js';
 import referencesRoutes from './routes/references.js';
+import rubrikRoutes from './routes/rubrik.js';
+import evaluasiRoutes from './routes/evaluasi.js';
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -92,6 +91,8 @@ app.use('/api/kategori-cpl', kategoriCplRoutes);
 app.use('/api/level-taksonomi', levelTaksonomiRoutes);
 app.use('/api/teknik-penilaian-ref', teknikPenilaianRefRoutes);
 app.use('/api/references', referencesRoutes);
+app.use('/api/rubrik', rubrikRoutes);
+app.use('/api/evaluasi', evaluasiRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

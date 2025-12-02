@@ -190,6 +190,9 @@ router.get('/:mahasiswaId', authMiddleware, requireProdiScope, async (req, res) 
           { prodiId: null }
         ]
       },
+      include: {
+        kategoriRef: true
+      },
       orderBy: { kodeCpl: 'asc' }
     });
 
@@ -257,7 +260,10 @@ router.get('/:mahasiswaId', authMiddleware, requireProdiScope, async (req, res) 
 
       transkrip.push({
         cplId: cpl.id,
-        cpl,
+        cpl: {
+          ...cpl,
+          kategori: cpl.kategoriRef?.nama || cpl.kategori // Fallback to old string field if needed
+        },
         mataKuliahList,
         ...calc
       });

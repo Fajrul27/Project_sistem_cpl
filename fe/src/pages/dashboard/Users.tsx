@@ -1,4 +1,4 @@
-import { useEffect, useState, FormEvent, ChangeEvent } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { DashboardPage } from "@/components/DashboardLayout";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from "@/components/ui/table";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
-import { fetchAllUsers, updateUserRole, createUserWithRole, updateUser, deleteUser, updateProfile, fetchKelas } from "@/lib/api-client";
+import { fetchAllUsers, updateUserRole, createUserWithRole, updateUser, deleteUser, updateProfile, fetchKelas, fetchFakultasList } from "@/lib/api-client";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -32,8 +32,8 @@ interface NewUserForm {
   email: string;
   password: string;
   role: string;
-  fakultas: string;
-  prodi: string;
+  fakultasId: string;
+  prodiId: string;
   identityType: "mahasiswa" | "dosen";
   identityNumber: string;
   semester: string;
@@ -44,113 +44,16 @@ interface EditUserForm {
   fullName: string;
   email: string;
   role: string;
-  fakultas: string;
-  prodi: string;
+  fakultas: string; // This is actually fakultasId
+  prodi: string;    // This is actually prodiId
   identityType: "mahasiswa" | "dosen";
   identityNumber: string;
   semester: string;
   kelasId?: string;
 }
 
-const FAKULTAS_OPTIONS = [
-  {
-    value: "fkip",
-    label: "Fakultas Keguruan dan Ilmu Pendidikan (FKIP)",
-    prodi: [
-      {
-        value: "bk",
-        label: "Bimbingan dan Konseling",
-      },
-      {
-        value: "pgsd",
-        label: "Pendidikan Guru SD (PGSD)",
-      },
-      {
-        value: "piaud",
-        label: "Pendidikan Islam Anak Usia Dini (PIAUD)",
-      },
-      {
-        value: "mpi",
-        label: "Manajemen Pendidikan Islam (MPI)",
-      },
-    ],
-  },
-  {
-    value: "fmikom",
-    label: "Fakultas Matematika dan Komputer (FMIKOM)",
-    prodi: [
-      {
-        value: "matematika",
-        label: "Matematika",
-      },
-      {
-        value: "informatika",
-        label: "Informatika",
-      },
-      {
-        value: "sistem-informasi",
-        label: "Sistem Informasi",
-      },
-    ],
-  },
-  {
-    value: "fti",
-    label: "Fakultas Teknologi Industri (FTI)",
-    prodi: [
-      {
-        value: "ti",
-        label: "Teknik Industri (Fakultas Teknologi Industri - FTI)",
-      },
-      {
-        value: "teknik-kimia",
-        label: "Teknik Kimia",
-      },
-      {
-        value: "teknik-mesin",
-        label: "Teknik Mesin (Fakultas Teknologi Industri - FTI)",
-      },
-    ],
-  },
-  {
-    value: "fe",
-    label: "Fakultas Ekonomi (FE)",
-    prodi: [
-      {
-        value: "manajemen",
-        label: "Manajemen",
-      },
-      {
-        value: "ekonomi-pembangunan",
-        label: "Ekonomi Pembangunan",
-      },
-    ],
-  },
-  {
-    value: "fki",
-    label: "Fakultas Keagamaan Islam (FKI)",
-    prodi: [
-      {
-        value: "pai",
-        label: "Pendidikan Agama Islam (PAI)",
-      },
-      {
-        value: "pgmi",
-        label: "Pendidikan Guru Madrasah Ibtidaiyah (PGMI)",
-      },
-      {
-        value: "kpi",
-        label: "Komunikasi dan Penyiaran Islam (KPI)",
-      },
-      {
-        value: "ahwal-al-syakhshiyyah",
-        label: "Ahwal Al-Syakhshiyyah / Hukum Keluarga Islam",
-      },
-    ],
-  },
-];
-
-type ProdiOption = { value: string; label: string };
-type FakultasOption = { value: string; label: string; prodi: ProdiOption[] };
+type ProdiOption = { id: string; nama: string; kode: string };
+type FakultasOption = { id: string; nama: string; kode: string; prodi: ProdiOption[] };
 
 const ROLE_OPTIONS = [
   { value: "admin", label: "Admin" },
@@ -158,9 +61,11 @@ const ROLE_OPTIONS = [
   { value: "mahasiswa", label: "Mahasiswa" },
   { value: "kaprodi", label: "Kaprodi" },
 ];
+
 const UsersPage = () => {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fakultasList, setFakultasList] = useState<FakultasOption[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [creating, setCreating] = useState(false);
   const [kelasList, setKelasList] = useState<any[]>([]);
@@ -169,11 +74,10 @@ const UsersPage = () => {
     email: "",
     password: "",
     role: "mahasiswa",
-    fakultas: "",
-    prodi: "",
+    fakultasId: "",
+    prodiId: "",
     identityType: "mahasiswa",
     identityNumber: "",
-    // disimpan sebagai string di form, dikirim sebagai number ke backend
     semester: "",
     kelasId: "",
   });
@@ -200,7 +104,17 @@ const UsersPage = () => {
   useEffect(() => {
     loadUsers();
     loadKelas();
+    loadFakultas();
   }, []);
+
+  const loadFakultas = async () => {
+    try {
+      const res = await fetchFakultasList();
+      if (res.data) setFakultasList(res.data);
+    } catch (error) {
+      console.error("Error fetching fakultas:", error);
+    }
+  };
 
   const loadKelas = async () => {
     try {
@@ -211,32 +125,28 @@ const UsersPage = () => {
     }
   };
 
-  const selectedFakultas = FAKULTAS_OPTIONS.find(
-    (f) => f.value === newUser.fakultas
+  const selectedFakultas = fakultasList.find(
+    (f) => f.id === newUser.fakultasId
   );
 
-  const selectedEditFakultas = FAKULTAS_OPTIONS.find(
-    (f) => f.value === editData.fakultas
+  const selectedEditFakultas = fakultasList.find(
+    (f) => f.id === editData.fakultas
   );
 
   const selectedFacultyFilter =
     facultyFilter === "all"
       ? undefined
-      : FAKULTAS_OPTIONS.find((f) => f.value === facultyFilter);
+      : fakultasList.find((f) => f.id === facultyFilter);
 
   const programFilterOptions: ProdiOption[] = selectedFacultyFilter
     ? (selectedFacultyFilter.prodi as ProdiOption[])
-    : (FAKULTAS_OPTIONS.flatMap((f) => f.prodi) as ProdiOption[]);
+    : (fakultasList.flatMap((f) => f.prodi) as ProdiOption[]);
 
   const hasActiveFilter =
     roleFilter !== "all" ||
     facultyFilter !== "all" ||
     programFilter !== "all" ||
     semesterFilter !== "all";
-
-  useEffect(() => {
-    loadUsers();
-  }, []);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -260,16 +170,16 @@ const UsersPage = () => {
             // Try to infer faculty from prodi name
             prodiName = fullProgram;
 
-            // Search in FAKULTAS_OPTIONS
-            for (const fak of FAKULTAS_OPTIONS) {
+            // Search in fakultasList
+            for (const fak of fakultasList) {
               const foundProdi = fak.prodi.find(p =>
-                p.label.toLowerCase() === fullProgram.toLowerCase() ||
-                p.value.toLowerCase() === fullProgram.toLowerCase()
+                p.nama.toLowerCase() === fullProgram.toLowerCase() ||
+                p.kode.toLowerCase() === fullProgram.toLowerCase()
               );
 
               if (foundProdi) {
-                fakultasName = fak.label;
-                prodiName = foundProdi.label; // Normalize to label
+                fakultasName = fak.nama;
+                prodiName = foundProdi.nama; // Normalize to label
                 break;
               }
             }
@@ -318,12 +228,12 @@ const UsersPage = () => {
     const facultyLabelFilter =
       facultyFilter === "all"
         ? undefined
-        : FAKULTAS_OPTIONS.find((f) => f.value === facultyFilter)?.label;
+        : fakultasList.find((f) => f.id === facultyFilter)?.nama;
 
     const programLabelFilter =
       programFilter === "all"
         ? undefined
-        : programFilterOptions.find((p) => p.value === programFilter)?.label;
+        : programFilterOptions.find((p) => p.id === programFilter)?.nama;
 
     const matchFacultyFilter =
       !facultyLabelFilter || u.fakultas === facultyLabelFilter;
@@ -362,6 +272,8 @@ const UsersPage = () => {
         programStudi?: string | null;
         semester?: number | null;
         kelasId?: string;
+        prodiId?: string;
+        fakultasId?: string;
       } = {};
 
       if (newUser.identityNumber.trim()) {
@@ -372,18 +284,20 @@ const UsersPage = () => {
         }
       }
 
-      if (newUser.fakultas || newUser.prodi) {
-        const fakultasLabel = FAKULTAS_OPTIONS.find(
-          (f) => f.value === newUser.fakultas
-        )?.label;
+      if (newUser.fakultasId || newUser.prodiId) {
+        const fakultasLabel = fakultasList.find(
+          (f) => f.id === newUser.fakultasId
+        )?.nama;
         const prodiLabel = selectedFakultas?.prodi.find(
-          (p) => p.value === newUser.prodi
-        )?.label;
+          (p) => p.id === newUser.prodiId
+        )?.nama;
 
         const combined = [fakultasLabel, prodiLabel]
           .filter(Boolean)
           .join(" - ");
         profilePayload.programStudi = combined || null;
+        profilePayload.prodiId = newUser.prodiId;
+        profilePayload.fakultasId = newUser.fakultasId;
       }
 
       if (newUser.semester.trim()) {
@@ -409,11 +323,12 @@ const UsersPage = () => {
         email: "",
         password: "",
         role: "mahasiswa",
-        fakultas: "",
-        prodi: "",
+        fakultasId: "",
+        prodiId: "",
         identityType: "mahasiswa",
         identityNumber: "",
         semester: "",
+        kelasId: "",
       });
       await loadUsers();
     } catch (error: any) {
@@ -463,18 +378,23 @@ const UsersPage = () => {
         newNip = null;
       }
 
+      let prodiId: string | null = null;
+      let fakultasId: string | null = null;
+
       if (editData.fakultas || editData.prodi) {
-        const fakultasLabel = FAKULTAS_OPTIONS.find(
-          (f) => f.value === editData.fakultas
-        )?.label;
+        const fakultasLabel = fakultasList.find(
+          (f) => f.id === editData.fakultas
+        )?.nama;
         const prodiLabel = selectedEditFakultas?.prodi.find(
-          (p) => p.value === editData.prodi
-        )?.label;
+          (p) => p.id === editData.prodi
+        )?.nama;
 
         const combined = [fakultasLabel, prodiLabel]
           .filter(Boolean)
           .join(" - ");
         newProgramStudi = combined || null;
+        prodiId = editData.prodi || null;
+        fakultasId = editData.fakultas || null;
       } else {
         newProgramStudi = null;
       }
@@ -493,6 +413,8 @@ const UsersPage = () => {
           programStudi: newProgramStudi,
           semester: newSemester,
           kelasId: editData.kelasId || null,
+          prodiId,
+          fakultasId,
         });
       }
 
@@ -603,13 +525,13 @@ const UsersPage = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Semua fakultas</SelectItem>
-                      {FAKULTAS_OPTIONS.map((fak) => (
+                      {fakultasList.map((fak) => (
                         <SelectItem
-                          key={fak.value}
-                          value={fak.value}
+                          key={fak.id}
+                          value={fak.id}
                           className="whitespace-normal text-xs"
                         >
-                          {fak.label}
+                          {fak.nama}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -630,8 +552,8 @@ const UsersPage = () => {
                     <SelectContent>
                       <SelectItem value="all">Semua prodi</SelectItem>
                       {programFilterOptions.map((p) => (
-                        <SelectItem key={p.value} value={p.value}>
-                          {p.label}
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.nama}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -742,12 +664,12 @@ const UsersPage = () => {
                   <div className="space-y-2">
                     <Label htmlFor="new-fakultas">Fakultas</Label>
                     <Select
-                      value={newUser.fakultas}
+                      value={newUser.fakultasId}
                       onValueChange={(value) =>
                         setNewUser({
                           ...newUser,
-                          fakultas: value,
-                          prodi: "",
+                          fakultasId: value,
+                          prodiId: "",
                         })
                       }
                       disabled={creating}
@@ -756,9 +678,9 @@ const UsersPage = () => {
                         <SelectValue placeholder="Pilih fakultas" />
                       </SelectTrigger>
                       <SelectContent>
-                        {FAKULTAS_OPTIONS.map((fak) => (
-                          <SelectItem key={fak.value} value={fak.value}>
-                            {fak.label}
+                        {fakultasList.map((fak) => (
+                          <SelectItem key={fak.id} value={fak.id}>
+                            {fak.nama}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -803,9 +725,9 @@ const UsersPage = () => {
                   <div className="space-y-2">
                     <Label htmlFor="new-prodi">Program Studi</Label>
                     <Select
-                      value={newUser.prodi}
+                      value={newUser.prodiId}
                       onValueChange={(value) =>
-                        setNewUser({ ...newUser, prodi: value })
+                        setNewUser({ ...newUser, prodiId: value })
                       }
                       disabled={creating || !selectedFakultas}
                     >
@@ -820,8 +742,8 @@ const UsersPage = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {selectedFakultas?.prodi.map((p) => (
-                          <SelectItem key={p.value} value={p.value}>
-                            {p.label}
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.nama}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -960,17 +882,17 @@ const UsersPage = () => {
                             let fakultasValue = "";
                             let prodiValue = "";
                             if (user.fakultas) {
-                              const fak = FAKULTAS_OPTIONS.find(
-                                (f) => f.label === user.fakultas
+                              const fak = fakultasList.find(
+                                (f) => f.nama === user.fakultas
                               );
                               if (fak) {
-                                fakultasValue = fak.value;
+                                fakultasValue = fak.id;
                                 if (user.programStudi) {
                                   const pOpt = fak.prodi.find(
-                                    (p) => p.label === user.programStudi
+                                    (p) => p.nama === user.programStudi
                                   );
                                   if (pOpt) {
-                                    prodiValue = pOpt.value;
+                                    prodiValue = pOpt.id;
                                   }
                                 }
                               }
@@ -1069,9 +991,9 @@ const UsersPage = () => {
                       <SelectValue placeholder="Pilih fakultas" />
                     </SelectTrigger>
                     <SelectContent>
-                      {FAKULTAS_OPTIONS.map((fak) => (
-                        <SelectItem key={fak.value} value={fak.value}>
-                          {fak.label}
+                      {fakultasList.map((fak) => (
+                        <SelectItem key={fak.id} value={fak.id}>
+                          {fak.nama}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1101,8 +1023,8 @@ const UsersPage = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {selectedEditFakultas?.prodi.map((p) => (
-                        <SelectItem key={p.value} value={p.value}>
-                          {p.label}
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.nama}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1246,8 +1168,8 @@ const UsersPage = () => {
             )}
           </DialogContent>
         </Dialog>
-      </div>
-    </DashboardPage>
+      </div >
+    </DashboardPage >
   );
 };
 

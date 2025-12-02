@@ -26,6 +26,7 @@ model User {
   profile            Profile?
   sessions           Session[]
   role               UserRole?
+  evaluasiDosen      EvaluasiMataKuliah[]
 
   @@index([email])
   @@index([isActive])
@@ -140,6 +141,7 @@ model MataKuliah {
   nilaiCpl     NilaiCpl[]
   nilaiCpmk    NilaiCpmk[]
   nilaiTeknik  NilaiTeknikPenilaian[]
+  evaluasi     EvaluasiMataKuliah[]
 
   @@index([kodeMk])
   @@index([semester])
@@ -189,6 +191,7 @@ model Cpmk {
   cplMappings       CpmkCplMapping[]
   nilaiCpmk         NilaiCpmk[]
   teknikPenilaian   TeknikPenilaian[]
+  rubrik            Rubrik?
 
   @@index([mataKuliahId])
   @@index([kodeCpmk])
@@ -225,6 +228,7 @@ model TeknikPenilaian {
   updatedAt       DateTime               @updatedAt @map("updated_at")
   teknikRefId     String?                @map("teknik_ref_id")
   nilaiTeknik     NilaiTeknikPenilaian[]
+  // rubrik relation removed - now at CPMK level
   cpmk            Cpmk                   @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
   teknikRef       TeknikPenilaianRef?    @relation(fields: [teknikRefId], references: [id])
 
@@ -276,6 +280,7 @@ model NilaiTeknikPenilaian {
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime        @updatedAt @map("updated_at")
   createdBy         String?         @map("created_by")
+  nilaiRubrik       NilaiRubrik[]
   creator           User?           @relation("NilaiTeknikCreatedBy", fields: [createdBy], references: [id])
   mahasiswa         Profile         @relation("MahasiswaNilaiTeknik", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
   mataKuliah        MataKuliah      @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
@@ -527,8 +532,104 @@ model Kelas {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+
   pengampu MataKuliahPengampu[]
   profiles Profile[]
 
   @@map("kelas")
+}
+
+// ============================================
+// RUBRIC SYSTEM (NEW)
+// ============================================
+
+model Rubrik {
+  id          String            @id @default(uuid())
+  cpmkId      String            @unique @map("cpmk_id")
+  deskripsi   String?           @db.Text
+  isActive    Boolean           @default(true) @map("is_active")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  cpmk        Cpmk              @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
+  kriteria    RubrikKriteria[]
+
+  @@index([cpmkId])
+  @@map("rubrik")
+}
+
+model RubrikKriteria {
+  id        String        @id @default(uuid())
+  rubrikId  String        @map("rubrik_id")
+  deskripsi String        @db.Text
+  bobot     Decimal       @default(1.00) @db.Decimal(5, 2)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  rubrik    Rubrik        @relation(fields: [rubrikId], references: [id], onDelete: Cascade)
+  levels    RubrikLevel[]
+
+  @@index([rubrikId])
+  @@map("rubrik_kriteria")
+}
+
+model RubrikLevel {
+  id          String         @id @default(uuid())
+  kriteriaId  String         @map("kriteria_id")
+  deskripsi   String         @db.Text
+  nilai       Decimal        @db.Decimal(5, 2) // e.g., 100, 80, 60
+  label       String?        // e.g., "Sangat Baik", "Baik"
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  kriteria    RubrikKriteria @relation(fields: [kriteriaId], references: [id], onDelete: Cascade)
+  nilaiRubrik NilaiRubrik[]
+
+  @@index([kriteriaId])
+  @@map("rubrik_level")
+}
+
+model NilaiRubrik {
+  id            String      @id @default(uuid())
+  nilaiTeknikId String      @map("nilai_teknik_id")
+  rubrikLevelId String      @map("rubrik_level_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  
+  // Note: We link to NilaiTeknikPenilaian to store the breakdown
+  nilaiTeknik   NilaiTeknikPenilaian @relation(fields: [nilaiTeknikId], references: [id], onDelete: Cascade)
+  rubrikLevel   RubrikLevel          @relation(fields: [rubrikLevelId], references: [id], onDelete: Cascade)
+
+  @@unique([nilaiTeknikId, rubrikLevelId]) // One level per criteria per student grade
+  @@index([nilaiTeknikId])
+  @@index([rubrikLevelId])
+  @@map("nilai_rubrik")
+}
+
+// ============================================
+// CQI SYSTEM (NEW)
+// ============================================
+
+model EvaluasiMataKuliah {
+  id           String     @id @default(uuid())
+  mataKuliahId String     @map("mata_kuliah_id")
+  dosenId      String     @map("dosen_id")
+  semester     Int
+  tahunAjaran  String     @map("tahun_ajaran")
+  
+  // Evaluasi Dosen
+  kendala      String?    @db.Text
+  rencanaPerbaikan String? @db.Text @map("rencana_perbaikan")
+  
+  // Status
+  status       String     @default("submitted") // submitted, reviewed
+  feedbackKaprodi String? @db.Text @map("feedback_kaprodi")
+  
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  dosen        User       @relation(fields: [dosenId], references: [id])
+
+  @@unique([mataKuliahId, dosenId, semester, tahunAjaran])
+  @@index([mataKuliahId])
+  @@index([dosenId])
+  @@map("evaluasi_mata_kuliah")
 }

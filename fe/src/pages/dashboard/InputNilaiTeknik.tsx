@@ -6,11 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Loader2, Save, FileText, AlertCircle, Upload, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, Save, FileText, AlertCircle, Upload, CheckCircle2, XCircle, Settings } from "lucide-react";
 import { DashboardPage } from "@/components/DashboardLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RubrikDialog } from "@/components/RubrikDialog";
+import { RubrikGradingDialog } from "@/components/RubrikGradingDialog";
+import { Gavel } from "lucide-react";
 
 import { api, fetchKelas } from "@/lib/api-client";
 
@@ -63,6 +66,21 @@ const InputNilaiTeknikPage = () => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+    // Rubrik Dialog State (CPMK Level)
+    const [rubrikDialogOpen, setRubrikDialogOpen] = useState(false);
+    const [selectedCpmkForRubrik, setSelectedCpmkForRubrik] = useState<any>(null);
+
+    // Rubrik Grading State
+    const [gradingDialogOpen, setGradingDialogOpen] = useState(false);
+    const [gradingData, setGradingData] = useState<{
+        studentId: string;
+        teknikId: string;
+        cpmkId: string;
+        studentName: string;
+        teknikName: string;
+    } | null>(null);
+    const [rubrikGrades, setRubrikGrades] = useState<Record<string, any[]>>({}); // key: studentId_teknikId -> rubrikData array
 
     useEffect(() => {
         fetchInitialData();
@@ -238,6 +256,35 @@ const InputNilaiTeknikPage = () => {
         }));
     };
 
+    const handleOpenGrading = (student: Student, cpmk: CPMK, teknik: TeknikPenilaian) => {
+        setGradingData({
+            studentId: student.id,
+            teknikId: teknik.id,
+            cpmkId: cpmk.id,
+            studentName: student.profile?.namaLengkap || student.email,
+            teknikName: teknik.namaTeknik
+        });
+        setGradingDialogOpen(true);
+    };
+
+    const handleSaveGrading = (nilai: number, rubrikData: any[]) => {
+        if (!gradingData) return;
+
+        const key = `${gradingData.studentId}_${gradingData.teknikId}`;
+
+        // Update numeric grade
+        setGrades(prev => ({
+            ...prev,
+            [key]: nilai
+        }));
+
+        // Store rubric data for batch save
+        setRubrikGrades(prev => ({
+            ...prev,
+            [key]: rubrikData
+        }));
+    };
+
     const handleSave = async () => {
         if (!selectedMK) return;
         setSaving(true);
@@ -252,7 +299,8 @@ const InputNilaiTeknikPage = () => {
                     mataKuliahId: selectedMK,
                     nilai: value,
                     semester: parseInt(semester),
-                    tahunAjaran
+                    tahunAjaran,
+                    rubrikData: rubrikGrades[key] // Include rubric data if available
                 };
             });
 
@@ -490,8 +538,23 @@ const InputNilaiTeknikPage = () => {
                                                     colSpan={cpmk.teknikPenilaian.length}
                                                     className="text-center border-l border-r bg-muted/50"
                                                 >
-                                                    <div className="flex flex-col items-center gap-1 py-2">
-                                                        <span>{cpmk.kodeCpmk}</span>
+                                                    <div className="flex flex-col items-center gap-2 py-2">
+                                                        <span className="font-semibold">{cpmk.kodeCpmk}</span>
+
+                                                        {/* Rubrik Button - CPMK Level */}
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-7 text-[10px] px-2 border-primary/40 hover:bg-primary/10"
+                                                            onClick={() => {
+                                                                setSelectedCpmkForRubrik(cpmk);
+                                                                setRubrikDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <Settings className="h-3 w-3 mr-1" />
+                                                            Rubrik
+                                                        </Button>
+
                                                         {cpmk.statusValidasi === 'validated' || cpmk.statusValidasi === 'active' ? (
                                                             <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-[10px] h-5 px-1">
                                                                 <CheckCircle2 className="w-3 h-3 mr-1" /> Valid
@@ -519,8 +582,10 @@ const InputNilaiTeknikPage = () => {
                                                 cpmk.teknikPenilaian.length > 0 ? (
                                                     cpmk.teknikPenilaian.map(teknik => (
                                                         <TableHead key={teknik.id} className="text-center min-w-[100px] border-l border-r text-xs">
-                                                            {teknik.namaTeknik} <br />
-                                                            <span className="text-muted-foreground">({teknik.bobotPersentase}%)</span>
+                                                            <div className="flex flex-col items-center gap-0.5 py-1">
+                                                                <div className="font-medium">{teknik.namaTeknik}</div>
+                                                                <div className="text-[10px] text-muted-foreground">({teknik.bobotPersentase}%)</div>
+                                                            </div>
                                                         </TableHead>
                                                     ))
                                                 ) : (
@@ -553,6 +618,17 @@ const InputNilaiTeknikPage = () => {
                                                                     disabled={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active'}
                                                                     title={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active' ? "CPMK belum divalidasi" : ""}
                                                                 />
+                                                                {(cpmk.statusValidasi === 'validated' || cpmk.statusValidasi === 'active') && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 ml-1 text-muted-foreground hover:text-primary"
+                                                                        title="Nilai dengan Rubrik"
+                                                                        onClick={() => handleOpenGrading(student, cpmk, teknik)}
+                                                                    >
+                                                                        <Gavel className="h-4 w-4" />
+                                                                    </Button>
+                                                                )}
                                                             </TableCell>
                                                         ))
                                                     ) : (
@@ -568,7 +644,33 @@ const InputNilaiTeknikPage = () => {
                     </Card>
                 )}
             </div>
-        </DashboardPage>
+
+            {/* Rubrik Dialog - CPMK Level */}
+            {
+                selectedCpmkForRubrik && (
+                    <RubrikDialog
+                        open={rubrikDialogOpen}
+                        onOpenChange={setRubrikDialogOpen}
+                        cpmkId={selectedCpmkForRubrik.id}
+                        cpmkInfo={selectedCpmkForRubrik}
+                    />
+                )
+            }
+
+            {/* Rubrik Grading Dialog */}
+            {
+                gradingData && (
+                    <RubrikGradingDialog
+                        open={gradingDialogOpen}
+                        onOpenChange={setGradingDialogOpen}
+                        cpmkId={gradingData.cpmkId}
+                        mahasiswaName={gradingData.studentName}
+                        teknikName={gradingData.teknikName}
+                        onSave={handleSaveGrading}
+                    />
+                )
+            }
+        </DashboardPage >
     );
 };
 

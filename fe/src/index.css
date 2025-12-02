@@ -21,7 +21,7 @@ All colors MUST be HSL.
 
     --primary: 214 95% 36%;
     --primary-foreground: 0 0% 100%;
-    
+
     --secondary: 142 76% 36%;
     --secondary-foreground: 0 0% 100%;
 
@@ -39,7 +39,7 @@ All colors MUST be HSL.
     --ring: 214 95% 36%;
 
     --radius: 0.75rem;
-    
+
     --gradient-primary: linear-gradient(135deg, hsl(214 95% 36%) 0%, hsl(214 95% 46%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(142 76% 36%) 0%, hsl(142 76% 46%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(214 95% 36%) 0%, hsl(142 76% 36%) 100%);
@@ -83,12 +83,12 @@ All colors MUST be HSL.
     --border: 217 15% 30%;
     --input: 217 15% 30%;
     --ring: 214 95% 46%;
-    
+
     --gradient-primary: linear-gradient(135deg, hsl(214 95% 46%) 0%, hsl(214 95% 56%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(142 76% 46%) 0%, hsl(142 76% 56%) 100%);
     /* Gradient hero di mode gelap dibuat lebih gelap dan selaras dengan background/card */
     --gradient-hero: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(217 33% 17%) 100%);
-    
+
     --sidebar-background: 217 33% 17%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 214 95% 46%;
@@ -115,10 +115,12 @@ All colors MUST be HSL.
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
+
 /* stylelint-enable */
 
 /* stylelint-disable */
 @layer utilities {
+
   /* Smooth transitions for all interactive elements */
   .smooth-hover {
     @apply transition-all duration-300 ease-in-out;
@@ -142,7 +144,21 @@ All colors MUST be HSL.
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* Hide number input spinners */
+  .no-spinner::-webkit-outer-spin-button,
+  .no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+
+  .no-spinner[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
 }
+
 /* stylelint-enable */
 
 /* Custom scrollbar */
@@ -172,6 +188,7 @@ All colors MUST be HSL.
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -183,6 +200,7 @@ All colors MUST be HSL.
     opacity: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -194,6 +212,7 @@ All colors MUST be HSL.
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);

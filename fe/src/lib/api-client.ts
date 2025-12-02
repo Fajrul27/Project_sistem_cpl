@@ -120,6 +120,8 @@ export async function updateProfile(
     programStudi?: string | null;
     semester?: number | null;
     kelasId?: string | null;
+    prodiId?: string | null;
+    fakultasId?: string | null;
   }
 ) {
   return apiRequest(`/profiles/${profileId}`, {
@@ -134,7 +136,7 @@ export async function createUserWithRole(
   password: string,
   fullName: string,
   role: string,
-  profileData?: { nim?: string; nip?: string; programStudi?: string | null; semester?: number | null; kelasId?: string }
+  profileData?: { nim?: string; nip?: string; programStudi?: string | null; semester?: number | null; kelasId?: string; prodiId?: string; fakultasId?: string }
 ) {
   // Register user (default role di backend: mahasiswa)
   const data = await apiRequest('/auth/register', {
@@ -155,6 +157,8 @@ export async function createUserWithRole(
       programStudi: profileData.programStudi ?? null,
       semester: profileData.semester ?? null,
       kelasId: profileData.kelasId ?? null,
+      prodiId: profileData.prodiId ?? null,
+      fakultasId: profileData.fakultasId ?? null,
     });
   }
 
@@ -251,6 +255,35 @@ export async function fetchKelas() {
 // Helper: fetch fakultas
 export async function fetchFakultasList() {
   return api.get('/references/fakultas');
+}
+
+// Helper: Rubric API (CPMK Level)
+export async function fetchRubrik(cpmkId: string) {
+  return api.get(`/rubrik/${cpmkId}`);
+}
+
+export async function saveRubrik(payload: any) {
+  return api.post('/rubrik', payload);
+}
+
+export async function deleteRubrik(id: string) {
+  return api.delete(`/rubrik/${id}`);
+}
+
+// Helper: CQI / Evaluasi API
+export async function fetchEvaluasiMataKuliah(mataKuliahId: string, semester?: string, tahunAjaran?: string) {
+  const params: any = {};
+  if (semester) params.semester = semester;
+  if (tahunAjaran) params.tahunAjaran = tahunAjaran;
+  return api.get(`/evaluasi/mata-kuliah/${mataKuliahId}`, { params });
+}
+
+export async function submitEvaluasiMataKuliah(payload: any) {
+  return api.post('/evaluasi', payload);
+}
+
+export async function reviewEvaluasiMataKuliah(id: string, feedback: string) {
+  return api.put(`/evaluasi/${id}/review`, { feedbackKaprodi: feedback });
 }
 
 // Auth state change callbacks

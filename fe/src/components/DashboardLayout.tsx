@@ -125,24 +125,28 @@ export function DashboardLayout({ children, title, description, actions }: Dashb
       <SidebarProvider defaultOpen={true}>
         <div className="min-h-screen flex w-full bg-background">
           {/* Sidebar */}
-          <AppSidebar />
+          <div className="print:hidden">
+            <AppSidebar />
+          </div>
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Navbar */}
-            <DashboardNavbar
-              title={pageMeta.title}
-              actions={pageMeta.actions}
-              user={user}
-              profile={profile}
-              role={role}
-            />
+            <div className="print:hidden">
+              <DashboardNavbar
+                title={pageMeta.title}
+                actions={pageMeta.actions}
+                user={user}
+                profile={profile}
+                role={role}
+              />
+            </div>
 
             {/* Page Content */}
             <main className="flex-1 overflow-y-auto">
               <div className="container mx-auto p-4 md:p-6 lg:p-8">
                 {pageMeta.description && (
-                  <div className="mb-6">
+                  <div className="mb-6 print:hidden">
                     <p className="text-sm md:text-base text-muted-foreground">
                       {pageMeta.description}
                     </p>

@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, fetchMahasiswaList, fetchDashboardStats } from "@/lib/api-client";
+import { supabase, fetchMahasiswaList, fetchDashboardStats, fetchTranskripCPL } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, BookOpen, Users, BarChart3, LogOut, TrendingUp, Settings, User as UserIcon, ChevronDown, TrendingDown, Award } from "lucide-react";
@@ -46,10 +46,83 @@ const Dashboard = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (!roleLoading && role && role !== 'mahasiswa') {
-      fetchDashboardData();
+    if (!roleLoading && role) {
+      if (role === 'mahasiswa') {
+        fetchStudentDashboardData();
+      } else {
+        fetchDashboardData();
+      }
     }
-  }, [role, roleLoading]);
+  }, [role, roleLoading, user]);
+
+  const fetchStudentDashboardData = async () => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetchTranskripCPL(user.id);
+      const data = response.data;
+
+      if (data && data.summary) {
+        // Set basic stats for student
+        setCplStats({
+          total: data.summary.totalCpl || 0,
+          avgScore: data.summary.avgScore || 0
+        });
+        // For student, MK total could be count of transkrip items or just 0 if not available
+        setMkStats({ total: data.transkrip?.length || 0 });
+        setStudentStats({ total: 1 }); // Just themselves
+
+        // Map transkrip data to charts
+        if (data.transkrip) {
+          // Bar Chart: CPL Scores
+          const cplChartData = data.transkrip.map((t: any) => ({
+            name: t.cpl.kodeCpl,
+            nilai: t.nilaiAkhir
+          }));
+          setChartData(cplChartData);
+
+          // Performance: Top 5 CPL
+          const perfData = [...cplChartData]
+            .sort((a: any, b: any) => b.nilai - a.nilai)
+            .slice(0, 5)
+            .map((item: any) => ({
+              ...item,
+              status: item.nilai >= 80 ? "Excellent" : item.nilai >= 70 ? "Good" : "Need Improvement"
+            }));
+          setPerformanceData(perfData);
+
+          // Distribution
+          const dist = [
+            { name: "Sangat Baik (>85)", value: 0 },
+            { name: "Baik (70-85)", value: 0 },
+            { name: "Cukup (60-70)", value: 0 },
+            { name: "Kurang (<60)", value: 0 },
+          ];
+
+          data.transkrip.forEach((t: any) => {
+            const n = t.nilaiAkhir;
+            if (n >= 85) dist[0].value++;
+            else if (n >= 70) dist[1].value++;
+            else if (n >= 60) dist[2].value++;
+            else dist[3].value++;
+          });
+
+          const total = data.transkrip.length;
+          const distData = dist.map(d => ({
+            ...d,
+            percentage: total > 0 ? ((d.value / total) * 100).toFixed(1) : "0.0"
+          })).filter(d => d.value > 0);
+
+          setDistributionData(distData);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching student dashboard:", error);
+      toast.error("Gagal memuat data dashboard mahasiswa");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -70,7 +143,8 @@ const Dashboard = () => {
       console.error('Error fetching profile:', error);
     }
 
-    setLoading(false);
+    // Don't set loading false here, wait for data fetch
+    if (!role) setLoading(false);
   };
 
   const fetchDashboardData = async () => {
@@ -126,29 +200,29 @@ const Dashboard = () => {
 
   const stats = [
     {
-      title: "Total CPL",
+      title: role === 'mahasiswa' ? "CPL Saya" : "Total CPL",
       value: cplStats.total.toString(),
-      description: "Capaian Pembelajaran terdaftar",
+      description: role === 'mahasiswa' ? "CPL yang diambil" : "Capaian Pembelajaran terdaftar",
       icon: GraduationCap,
       gradient: "bg-gradient-primary",
     },
     {
-      title: "Mata Kuliah",
+      title: role === 'mahasiswa' ? "Mata Kuliah" : "Mata Kuliah",
       value: mkStats.total.toString(),
-      description: "Mata kuliah aktif",
+      description: role === 'mahasiswa' ? "Mata kuliah diambil" : "Mata kuliah aktif",
       icon: BookOpen,
       gradient: "bg-gradient-secondary",
     },
     {
-      title: "Mahasiswa",
-      value: studentStats.total.toString(),
-      description: "Mahasiswa terdaftar",
+      title: role === 'mahasiswa' ? "Status" : "Mahasiswa",
+      value: role === 'mahasiswa' ? "Aktif" : studentStats.total.toString(),
+      description: role === 'mahasiswa' ? "Semester 5" : "Mahasiswa terdaftar",
       icon: Users,
       gradient: "bg-gradient-primary",
     },
     {
-      title: "Rata-rata CPL",
-      value: cplStats.avgScore > 0 ? `${cplStats.avgScore}% ` : "N/A",
+      title: role === 'mahasiswa' ? "Rata-rata Nilai" : "Rata-rata CPL",
+      value: cplStats.avgScore > 0 ? `${cplStats.avgScore}` : "N/A",
       description: "Pencapaian keseluruhan",
       icon: BarChart3,
       gradient: "bg-gradient-secondary",
@@ -160,7 +234,7 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-in fade-in duration-700">
         {stats.map((stat, index) => (
           <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-            <div className={`h - 2 ${stat.gradient} `} />
+            <div className={`h-2 ${stat.gradient}`} />
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 group">
               <CardTitle className="text-sm font-medium group-hover:text-primary transition-colors">
                 {stat.title}
@@ -194,7 +268,7 @@ const Dashboard = () => {
                   <YAxis domain={[0, 100]} className="text-xs" />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="nilai" fill="hsl(var(--primary))" name="Rata-rata Nilai" />
+                  <Bar dataKey="nilai" fill="hsl(var(--primary))" name="Nilai" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -207,31 +281,59 @@ const Dashboard = () => {
 
         <Card className="hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
-            <CardTitle>Tren Semester</CardTitle>
-            <CardDescription>Perkembangan nilai rata-rata</CardDescription>
+            <CardTitle>{role === 'mahasiswa' ? "Distribusi Nilai" : "Tren Semester"}</CardTitle>
+            <CardDescription>{role === 'mahasiswa' ? "Sebaran nilai CPL Anda" : "Perkembangan nilai rata-rata"}</CardDescription>
           </CardHeader>
           <CardContent>
-            {trendData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="semester" className="text-xs" />
-                  <YAxis domain={[0, 100]} className="text-xs" />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="nilai"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    name="Rata-rata Nilai"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            {role === 'mahasiswa' ? (
+              distributionData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={distributionData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percentage }) => `${name}: ${percentage}%`}
+                      outerRadius={80}
+                      fill="hsl(var(--primary))"
+                      dataKey="value"
+                    >
+                      {distributionData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'][index % 4]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => `${value} CPL`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
+                  <p className="text-muted-foreground">Belum ada data distribusi</p>
+                </div>
+              )
             ) : (
-              <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                <p className="text-muted-foreground">Belum ada data tren</p>
-              </div>
+              trendData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={trendData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="semester" className="text-xs" />
+                    <YAxis domain={[0, 100]} className="text-xs" />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="nilai"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      name="Rata-rata Nilai"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
+                  <p className="text-muted-foreground">Belum ada data tren</p>
+                </div>
+              )
             )}
           </CardContent>
         </Card>
@@ -240,7 +342,7 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 animate-in fade-in duration-1000">
         <Card>
           <CardHeader>
-            <CardTitle>Distribusi Nilai</CardTitle>
+            <CardTitle>Distribusi Nilai (Global)</CardTitle>
             <CardDescription>Sebaran kategori pencapaian</CardDescription>
           </CardHeader>
           <CardContent>
@@ -252,13 +354,13 @@ const Dashboard = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percentage }) => `${name}: ${percentage}% `}
+                    label={({ name, percentage }) => `${name}: ${percentage}%`}
                     outerRadius={80}
                     fill="hsl(var(--primary))"
                     dataKey="value"
                   >
                     {distributionData.map((entry: any, index: number) => (
-                      <Cell key={`cell - ${index} `} fill={['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'][index]} />
+                      <Cell key={`cell-${index}`} fill={['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'][index % 4]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value) => `${value} nilai`} />

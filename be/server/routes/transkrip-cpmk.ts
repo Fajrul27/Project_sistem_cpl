@@ -34,6 +34,7 @@ router.get('/:mahasiswaId', async (req, res) => {
         }
 
         // Fetch Nilai CPMK
+        console.log('Fetching Nilai CPMK for:', { where });
         const nilaiCpmkList = await prisma.nilaiCpmk.findMany({
             where,
             include: {
@@ -46,14 +47,15 @@ router.get('/:mahasiswaId', async (req, res) => {
                 { cpmk: { kodeCpmk: 'asc' } }
             ]
         });
+        console.log('Found Nilai CPMK:', nilaiCpmkList.length);
 
         // Format response
         const transkrip = nilaiCpmkList.map((item: any) => ({
             id: item.id,
             kodeCpmk: item.cpmk.kodeCpmk,
             deskripsi: item.cpmk.deskripsi,
-            nilai: item.nilai,
-            status: item.nilai >= 70 ? 'tercapai' : 'belum_tercapai', // Threshold example
+            nilai: Number(item.nilaiAkhir),
+            status: item.nilaiAkhir >= 70 ? 'tercapai' : 'belum_tercapai', // Threshold example
             mataKuliah: {
                 kodeMk: item.mataKuliah.kodeMk,
                 namaMk: item.mataKuliah.namaMk,
@@ -65,14 +67,16 @@ router.get('/:mahasiswaId', async (req, res) => {
 
         res.json({
             success: true,
-            mahasiswa: {
-                userId: mahasiswa.userId,
-                namaLengkap: mahasiswa.namaLengkap,
-                nim: mahasiswa.nim,
-                programStudi: mahasiswa.prodi?.nama || mahasiswa.programStudi,
-                semester: mahasiswa.semester
-            },
-            transkrip
+            data: {
+                mahasiswa: {
+                    userId: mahasiswa.userId,
+                    namaLengkap: mahasiswa.namaLengkap,
+                    nim: mahasiswa.nim,
+                    programStudi: mahasiswa.prodi?.nama || mahasiswa.programStudi,
+                    semester: mahasiswa.semester
+                },
+                transkrip
+            }
         });
 
     } catch (error) {

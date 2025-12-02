@@ -26,6 +26,10 @@ import NotFound from "./pages/NotFound";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { RequireRole } from "@/components/RequireRole";
 
+// New OBE Pages
+import RubrikManager from "./pages/dashboard/RubrikManager";
+import EvaluasiMataKuliah from "./pages/dashboard/EvaluasiMataKuliah";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -122,7 +126,13 @@ const App = () => (
             />
 
             <Route path="transkrip-cpl" element={<TranskripCPLPage />} />
+            <Route path="transkrip-cpl/:mahasiswaId" element={<TranskripCPLPage />} />
             <Route path="analisis" element={<AnalisisiPage />} />
+
+            {/* New OBE Routes */}
+            <Route path="rubrik/:cpmkId" element={<RubrikManager />} />
+            <Route path="evaluasi/:mataKuliahId" element={<EvaluasiMataKuliah />} />
+
             <Route
               path="settings"
               element={
@@ -147,7 +157,7 @@ const App = () => (
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
+  </QueryClientProvider >
 );
 
 export default App;

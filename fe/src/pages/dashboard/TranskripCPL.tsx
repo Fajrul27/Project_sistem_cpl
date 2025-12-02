@@ -236,230 +236,6 @@ const TranskripCPLPage = () => {
         : 0;
     const completedCPL = validTranskripList.filter(item => item.status === 'tercapai').length;
 
-    const exportToPDF = async () => {
-        if (!selectedStudent) {
-            toast.error("Tidak ada data untuk diexport");
-            return;
-        }
-
-        if (activeTab === 'cpmk') {
-            toast.info("Fitur export PDF untuk transkrip CPMK belum tersedia. Silakan gunakan fitur Print.");
-            return;
-        }
-
-        if (validTranskripList.length === 0) {
-            toast.error("Tidak ada data CPL untuk diexport");
-            return;
-        }
-
-        setExporting(true);
-
-        try {
-            const doc = new jsPDF();
-
-            // Function to load image
-            const loadImage = (url: string): Promise<string> => {
-                return new Promise((resolve, reject) => {
-                    const img = new Image();
-                    img.crossOrigin = "Anonymous";
-                    img.src = url;
-                    img.onload = () => {
-                        const canvas = document.createElement("canvas");
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext("2d");
-                        if (ctx) {
-                            ctx.drawImage(img, 0, 0);
-                            resolve(canvas.toDataURL("image/png"));
-                        } else {
-                            reject(new Error("Canvas context is null"));
-                        }
-                    };
-                    img.onerror = (err) => reject(err);
-                });
-            };
-
-            // Try loading logo from settings or fallback
-            let logoData = '';
-            try {
-                logoData = await loadImage(settings.logoUrl || '/logo.png');
-            } catch (err) {
-                console.warn("Failed to load logo, trying fallback...", err);
-                try {
-                    logoData = await loadImage("https://lp3.unugha.ac.id/wp-content/uploads/2021/11/cropped-cropped-unugha-Transparan-glow2.png");
-                } catch (err2) {
-                    console.error("Failed to load logo for PDF:", err2);
-                }
-            }
-
-            // Layout Constants
-            const MARGIN_LEFT = 20;
-            const HEADER_CENTER_X = 105; // Center of A4 (210mm / 2)
-            const COL_1_LABEL_X = 20;
-            const COL_1_SEP_X = 55;
-            const COL_1_VAL_X = 58;
-            const COL_2_LABEL_X = 120;
-            const COL_2_SEP_X = 155;
-            const COL_2_VAL_X = 158;
-
-            if (logoData) {
-                doc.addImage(logoData, 'PNG', MARGIN_LEFT, 10, 25, 25);
-            }
-
-            // Header Text
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text(settings.univName, HEADER_CENTER_X, 18, { align: 'center' });
-
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-
-            // Split address if too long
-            const addressLines = doc.splitTextToSize(settings.univAddress, 150);
-            doc.text(addressLines, HEADER_CENTER_X, 24, { align: 'center' });
-
-            doc.text(settings.univContact, HEADER_CENTER_X, 29 + (addressLines.length - 1) * 4, { align: 'center' });
-
-            // Line separator
-            const lineY = 35 + (addressLines.length - 1) * 4;
-            doc.setDrawColor(0);
-            doc.setLineWidth(1);
-            doc.line(10, lineY, 200, lineY);
-            doc.setLineWidth(0.5);
-            doc.line(10, lineY + 2, 200, lineY + 2);
-
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text('TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN', HEADER_CENTER_X, lineY + 13, { align: 'center' });
-
-            // Student Info
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            const startY = lineY + 25;
-
-            // Left Column
-            doc.text(`Program Studi`, COL_1_LABEL_X, startY);
-            doc.text(`:`, COL_1_SEP_X, startY);
-            doc.text(`${selectedStudent.profile?.programStudi?.toUpperCase() || '-'}`, COL_1_VAL_X, startY);
-
-            doc.text(`NIM`, COL_1_LABEL_X, startY + 6);
-            doc.text(`:`, COL_1_SEP_X, startY + 6);
-            doc.text(`${selectedStudent.profile?.nim || '-'}`, COL_1_VAL_X, startY + 6);
-
-            // Right Column
-            doc.text(`Jenjang Pendidikan`, COL_2_LABEL_X, startY);
-            doc.text(`:`, COL_2_SEP_X, startY);
-            doc.text(`SARJANA`, COL_2_VAL_X, startY);
-
-            doc.text(`Nama`, COL_2_LABEL_X, startY + 6);
-            doc.text(`:`, COL_2_SEP_X, startY + 6);
-            doc.text(`${selectedStudent.profile?.namaLengkap?.toUpperCase() || '-'}`, COL_2_VAL_X, startY + 6);
-
-            doc.text(`Semester`, COL_2_LABEL_X, startY + 12);
-            doc.text(`:`, COL_2_SEP_X, startY + 12);
-            doc.text(`${selectedStudent.profile?.semester || '-'}`, COL_2_VAL_X, startY + 12);
-
-            // CPL Table
-            const tableStartY = startY + 20;
-            autoTable(doc, {
-                startY: tableStartY,
-                head: [['NO', 'KODE', 'CAPAIAN PEMBELAJARAN / MATA KULIAH', 'NILAI', 'STATUS']],
-                body: validTranskripList.map((item, index) => [
-                    index + 1,
-                    item.cpl.kodeCpl,
-                    `${item.cpl.deskripsi}\nMK: ${item.mataKuliahList && item.mataKuliahList.length > 0
-                        ? item.mataKuliahList.map((mk) => mk.namaMk).join(', ')
-                        : (item.mataKuliah?.namaMk || '-')}`,
-                    item.nilaiAkhir.toFixed(2),
-                    item.status === 'tercapai' ? 'Tercapai' : 'Belum'
-                ]),
-                theme: 'plain',
-                styles: {
-                    lineColor: [0, 0, 0],
-                    lineWidth: 0.1,
-                    fontSize: 9,
-                    textColor: [0, 0, 0],
-                    valign: 'top'
-                },
-                headStyles: {
-                    fillColor: [240, 240, 240], // Light gray like print view
-                    textColor: [0, 0, 0],
-                    fontStyle: 'bold',
-                    halign: 'center',
-                    lineWidth: 0.1,
-                    lineColor: [0, 0, 0]
-                },
-                columnStyles: {
-                    0: { cellWidth: 10, halign: 'center' },
-                    1: { cellWidth: 20, halign: 'center' },
-                    2: { cellWidth: 'auto' },
-                    3: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
-                    4: { cellWidth: 25, halign: 'center' }
-                },
-                didParseCell: function (data) {
-                    // Add borders to every cell
-                    data.cell.styles.lineWidth = 0.1;
-                    data.cell.styles.lineColor = [0, 0, 0];
-                }
-            });
-
-            // Summary
-            const finalY = (doc as any).lastAutoTable.finalY + 10;
-
-            // Draw box for summary
-            doc.setDrawColor(0);
-            doc.setLineWidth(0.1);
-            doc.rect(20, finalY - 5, 80, 20);
-
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Rata-rata Nilai : ${avgScore.toFixed(2)}`, 25, finalY);
-            doc.text(`Total CPL Tercapai : ${completedCPL} dari ${validTranskripList.length}`, 25, finalY + 8);
-
-            // Footer
-            const pageHeight = doc.internal.pageSize.height;
-
-            // Signature section
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.text(`Cilacap, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 130, pageHeight - 50);
-            doc.text('Ketua Program Studi,', 130, pageHeight - 44);
-
-            // Signature Name from Kaprodi Data
-            doc.setFont('helvetica', 'bold');
-            if (kaprodiData && kaprodiData.namaKaprodi) {
-                const kaprodiName = kaprodiData.namaKaprodi.toUpperCase();
-                const kaprodiNameLines = doc.splitTextToSize(kaprodiName, 60);
-                doc.text(kaprodiNameLines, 130, pageHeight - 20);
-
-                // NIDN
-                if (kaprodiData.nidnKaprodi) {
-                    doc.setFont('helvetica', 'normal');
-                    doc.text(`NIDN. ${kaprodiData.nidnKaprodi}`, 130, pageHeight - 15);
-                }
-            } else {
-                // Fallback to settings
-                const kaprodiNameFallback = settings.kaprodiName || "( ........................................................ )";
-                const kaprodiNameLines = doc.splitTextToSize(kaprodiNameFallback, 60);
-                doc.text(kaprodiNameLines, 130, pageHeight - 20);
-
-                if (settings.kaprodiNip) {
-                    doc.setFont('helvetica', 'normal');
-                    doc.text(`NIP. ${settings.kaprodiNip}`, 130, pageHeight - 15);
-                }
-            }
-
-            // Save
-            doc.save(`Transkrip-CPL-${selectedStudent.profile?.nim || 'unknown'}-${selectedStudent.profile?.namaLengkap || 'unknown'}.pdf`);
-            toast.success("PDF berhasil diunduh");
-        } catch (error) {
-            console.error("Error exporting PDF:", error);
-            toast.error("Gagal export PDF");
-        } finally {
-            setExporting(false);
-        }
-    };
-
     const handlePrint = () => {
         window.print();
     };
@@ -548,7 +324,7 @@ const TranskripCPLPage = () => {
                         </div>
 
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-2">
+                            <TabsList className="grid w-full grid-cols-2 mb-6">
                                 <TabsTrigger value="cpl">Transkrip CPL</TabsTrigger>
                                 <TabsTrigger value="cpmk">Transkrip CPMK</TabsTrigger>
                             </TabsList>
@@ -577,10 +353,6 @@ const TranskripCPLPage = () => {
                                         </div>
                                         <div className="flex gap-2">
                                             <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-4 w-4 mr-2" />Print</Button>
-                                            <Button size="sm" onClick={exportToPDF} disabled={exporting || validTranskripList.length === 0}>
-                                                {exporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-                                                Export PDF
-                                            </Button>
                                         </div>
                                     </CardHeader>
                                     <CardContent>
@@ -619,6 +391,37 @@ const TranskripCPLPage = () => {
                             </TabsContent>
 
                             <TabsContent value="cpmk">
+                                <div className="grid gap-4 md:grid-cols-3 mb-6">
+                                    <Card>
+                                        <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Rata-rata Nilai</CardTitle></CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">
+                                                {transkripCpmkList.length > 0
+                                                    ? (transkripCpmkList.reduce((sum, item) => sum + item.nilai, 0) / transkripCpmkList.length).toFixed(2)
+                                                    : "0.00"}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">CPMK Tercapai</CardTitle></CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">
+                                                {transkripCpmkList.filter(item => item.status === 'tercapai').length} / {transkripCpmkList.length}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Persentase Kelulusan</CardTitle></CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">
+                                                {transkripCpmkList.length > 0
+                                                    ? ((transkripCpmkList.filter(item => item.status === 'tercapai').length / transkripCpmkList.length) * 100).toFixed(0)
+                                                    : 0}%
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
                                 <Card>
                                     <CardHeader className="flex flex-row items-center justify-between">
                                         <div>
@@ -650,7 +453,6 @@ const TranskripCPLPage = () => {
                                                         <TableRow key={index}>
                                                             <TableCell>
                                                                 <div className="font-medium">{item.mataKuliah.namaMk}</div>
-                                                                <div className="text-xs text-muted-foreground">{item.mataKuliah.kodeMk} - Sem {item.mataKuliah.semester}</div>
                                                             </TableCell>
                                                             <TableCell className="font-medium">{item.kodeCpmk}</TableCell>
                                                             <TableCell className="max-w-md">{item.deskripsi}</TableCell>
@@ -671,10 +473,170 @@ const TranskripCPLPage = () => {
                 )}
             </div>
 
-            {/* Print View - Simplified for now, just showing active tab content logic would be needed for full print support */}
-            {/* Ideally, we should have separate print components or conditional rendering based on activeTab */}
+            {/* PRINT LAYOUT */}
+            {selectedStudent && (
+                <div className="hidden print:block bg-white text-black">
+                    <style>{`
+                        @media print {
+                            @page { margin: 0; }
+                            body { margin: 0; }
+                        }
+                    `}</style>
+                    <div className="p-10">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-4 relative border-b-4 border-black pb-2">
+                            <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center">
+                                <img src={settings.logoUrl || "/logo.png"} alt="Logo" className="w-full h-full object-contain" />
+                            </div>
+                            <div className="flex-1 text-center px-4">
+                                <h1 className="text-xl font-bold uppercase tracking-wide leading-tight">{settings.univName}</h1>
+                                <p className="text-sm mt-1 leading-tight">{settings.univAddress}</p>
+                                <p className="text-sm mt-1 leading-tight">{settings.univContact}</p>
+                            </div>
+                            <div className="w-24 h-24 flex-shrink-0"></div> {/* Spacer for centering */}
+                        </div>
+
+                        <div className="border-b border-black mb-6"></div>
+
+                        <h2 className="text-center text-xl font-bold mb-8 uppercase">
+                            {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CPMK SEMENTARA'}
+                        </h2>
+
+                        {/* Student Info */}
+                        <div className="grid grid-cols-2 gap-x-12 mb-8 text-sm">
+                            <div className="space-y-2">
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <div>Program Studi</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">{selectedStudent.profile?.programStudi || '-'}</div>
+                                </div>
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <div>NIM</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">{selectedStudent.profile?.nim || '-'}</div>
+                                </div>
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <div>Tempat Lahir</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">-</div>
+                                </div>
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <div>Tanggal Lahir</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">-</div>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <div>Jenjang Pendidikan</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">SARJANA</div>
+                                </div>
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <div>Nama</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">{selectedStudent.profile?.namaLengkap || '-'}</div>
+                                </div>
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <div>Tahun Masuk</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">-</div>
+                                </div>
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <div>Semester</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">{selectedStudent.profile?.semester || '-'}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Table */}
+                        <div className="mb-8">
+                            <table className="w-full border-collapse border border-black text-sm">
+                                <thead>
+                                    <tr className="bg-gray-100">
+                                        <th className="border border-black p-2 w-10 text-center">NO</th>
+                                        <th className="border border-black p-2 w-24 text-center">KODE</th>
+                                        <th className="border border-black p-2 text-left">{activeTab === 'cpl' ? 'CAPAIAN PEMBELAJARAN / MATA KULIAH' : 'MATA KULIAH / CPMK'}</th>
+                                        <th className="border border-black p-2 w-20 text-center">NILAI</th>
+                                        <th className="border border-black p-2 w-24 text-center">STATUS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {activeTab === 'cpl' ? (
+                                        validTranskripList.map((item, index) => (
+                                            <tr key={index}>
+                                                <td className="border border-black p-2 text-center">{index + 1}</td>
+                                                <td className="border border-black p-2 text-center">{item.cpl.kodeCpl}</td>
+                                                <td className="border border-black p-2">
+                                                    <div className="font-bold mb-1">{item.cpl.deskripsi}</div>
+                                                    <div className="text-xs text-gray-600">
+                                                        MK: {item.mataKuliahList && item.mataKuliahList.length > 0
+                                                            ? item.mataKuliahList.map((mk) => mk.namaMk).join(', ')
+                                                            : (item.mataKuliah?.namaMk || '-')}
+                                                    </div>
+                                                </td>
+                                                <td className="border border-black p-2 text-center font-bold">{item.nilaiAkhir.toFixed(2)}</td>
+                                                <td className="border border-black p-2 text-center">
+                                                    {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        transkripCpmkList.map((item, index) => (
+                                            <tr key={index}>
+                                                <td className="border border-black p-2 text-center">{index + 1}</td>
+                                                <td className="border border-black p-2 text-center">{item.mataKuliah.kodeMk}</td>
+                                                <td className="border border-black p-2">
+                                                    <div className="font-bold">{item.mataKuliah.namaMk}</div>
+                                                    <div className="text-xs mb-1">Kode CPMK: {item.kodeCpmk}</div>
+                                                    <div className="text-xs italic">{item.deskripsi}</div>
+                                                </td>
+                                                <td className="border border-black p-2 text-center font-bold">{item.nilai.toFixed(2)}</td>
+                                                <td className="border border-black p-2 text-center">
+                                                    {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Summary & Footer */}
+                        <div className="flex justify-between items-end break-inside-avoid">
+                            <div className="border border-black p-4 w-64">
+                                <div className="font-bold mb-2">KETERANGAN</div>
+                                <div className="grid grid-cols-[1fr_auto] gap-2 text-sm">
+                                    <div>Rata-rata Nilai</div>
+                                    <div className="font-bold">: {avgScore.toFixed(2)}</div>
+                                    <div>Total {activeTab === 'cpl' ? 'CPL' : 'CPMK'} Tercapai</div>
+                                    <div className="font-bold">: {activeTab === 'cpl' ? completedCPL : transkripCpmkList.filter(i => i.status === 'tercapai').length} / {activeTab === 'cpl' ? validTranskripList.length : transkripCpmkList.length}</div>
+                                </div>
+                            </div>
+
+                            <div className="text-center">
+                                <div className="mb-20">
+                                    <div className="text-sm">Cilacap, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                                    <div className="font-bold text-sm">Ketua Program Studi</div>
+                                    <div className="text-sm italic">Informatika / Informatika</div>
+                                </div>
+                                <div>
+                                    <div className="font-bold underline uppercase">
+                                        {kaprodiData?.namaKaprodi || settings.kaprodiName || "( ........................................................ )"}
+                                    </div>
+                                    <div className="text-sm">
+                                        NIDN. {kaprodiData?.nidnKaprodi || settings.kaprodiNip || "........................"}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardPage>
     );
 };
 
 export default TranskripCPLPage;
+
