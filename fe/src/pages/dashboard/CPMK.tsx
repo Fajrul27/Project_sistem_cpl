@@ -320,8 +320,8 @@ const CPMKPage = () => {
                                         <span className="truncate">
                                             {mataKuliahFilter === 'all'
                                                 ? "Filter Mata Kuliah"
-                                                : mataKuliahList.find(mk => (mk.mataKuliah?.id || mk.id) === mataKuliahFilter)?.mataKuliah?.kodeMk ||
-                                                mataKuliahList.find(mk => (mk.mataKuliah?.id || mk.id) === mataKuliahFilter)?.kodeMk ||
+                                                : mataKuliahList.find(mk => (mk.mataKuliah?.id || mk.id) === mataKuliahFilter)?.mataKuliah?.namaMk ||
+                                                mataKuliahList.find(mk => (mk.mataKuliah?.id || mk.id) === mataKuliahFilter)?.namaMk ||
                                                 "Filter Mata Kuliah"
                                             }
                                         </span>
@@ -340,19 +340,29 @@ const CPMKPage = () => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">Semua Mata Kuliah</SelectItem>
-                                            {mataKuliahList.map((mk) => {
-                                                // Handle both structure types (direct MK or MKPengampu)
-                                                const id = mk.mataKuliah?.id || mk.id;
-                                                const kode = mk.mataKuliah?.kodeMk || mk.kodeMk;
-                                                const nama = mk.mataKuliah?.namaMk || mk.namaMk;
-                                                const semester = mk.mataKuliah?.semester || mk.semester;
+                                            {(() => {
+                                                // Deduplicate mataKuliahList based on unique ID
+                                                const uniqueMK = mataKuliahList.reduce((acc: any[], current) => {
+                                                    const id = current.mataKuliah?.id || current.id;
+                                                    if (!acc.find(item => (item.mataKuliah?.id || item.id) === id)) {
+                                                        acc.push(current);
+                                                    }
+                                                    return acc;
+                                                }, []);
 
-                                                return (
-                                                    <SelectItem key={id} value={id}>
-                                                        {kode} - {nama} {semester ? `(Semester ${semester})` : ''}
-                                                    </SelectItem>
-                                                );
-                                            })}
+                                                return uniqueMK.map((mk: any) => {
+                                                    // Handle both structure types (direct MK or MKPengampu)
+                                                    const id = mk.mataKuliah?.id || mk.id;
+                                                    const nama = mk.mataKuliah?.namaMk || mk.namaMk;
+                                                    const semester = mk.mataKuliah?.semester || mk.semester;
+
+                                                    return (
+                                                        <SelectItem key={id} value={id}>
+                                                            {nama} {semester ? `(Semester ${semester})` : ''}
+                                                        </SelectItem>
+                                                    );
+                                                });
+                                            })()}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -378,7 +388,7 @@ const CPMKPage = () => {
                                 <SelectItem value="all">Semua Mata Kuliah</SelectItem>
                                 {mataKuliahList.map((mk) => (
                                     <SelectItem key={mk.id} value={mk.id}>
-                                        {mk.kodeMk} - {mk.namaMk}
+                                        {mk.namaMk}
                                     </SelectItem>
                                 ))}
                             </SelectContent>

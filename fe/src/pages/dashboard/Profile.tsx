@@ -24,6 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useUserRole } from "@/hooks/useUserRole";
 
 import { supabase, api, fetchSemesters, fetchKelas } from "@/lib/api-client";
@@ -41,6 +49,7 @@ const ProfilePage = () => {
   const [semesterList, setSemesterList] = useState<any[]>([]);
   const [kelasList, setKelasList] = useState<any[]>([]);
   const [filteredProdiList, setFilteredProdiList] = useState<any[]>([]);
+  const [teachingAssignments, setTeachingAssignments] = useState<any[]>([]);
 
   useEffect(() => {
     fetchUserData();
@@ -97,7 +106,6 @@ const ProfilePage = () => {
           semesterId: userData.user.profile?.semesterId || "",
           kelasId: userData.user.profile?.kelasId || "",
           alamat: userData.user.profile?.alamat || "",
-          noTelepon: userData.user.profile?.noTelepon || ""
         });
       }
     } catch (error) {
@@ -107,6 +115,24 @@ const ProfilePage = () => {
       setLoading(false);
     }
   };
+
+  const isDosen = role === 'dosen' || user?.role === 'dosen' || user?.user_metadata?.role === 'dosen' || profile?.role === 'dosen';
+
+  useEffect(() => {
+    if (isDosen && user?.id) {
+      const fetchAssignments = async () => {
+        try {
+          const assignmentsRes = await api.get(`/mata-kuliah-pengampu/dosen/${user.id}`);
+          if (assignmentsRes.data) {
+            setTeachingAssignments(assignmentsRes.data);
+          }
+        } catch (error) {
+          console.error("Error fetching teaching assignments:", error);
+        }
+      };
+      fetchAssignments();
+    }
+  }, [isDosen, user?.id]);
 
   if (loading) {
     return (
@@ -233,7 +259,7 @@ const ProfilePage = () => {
               </div>
             )}
 
-            {profile?.semester && (
+            {profile?.semester && !isDosen && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
@@ -247,7 +273,7 @@ const ProfilePage = () => {
               </div>
             )}
 
-            {profile?.kelasRef && (
+            {profile?.kelasRef && !isDosen && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <GraduationCap className="h-4 w-4" />
@@ -305,16 +331,74 @@ const ProfilePage = () => {
           </Card>
         )}
 
+        {/* Mata Kuliah yang Diampu (Only for Dosen) */}
+        {isDosen && (
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Mata Kuliah yang Diampu
+              </CardTitle>
+              <CardDescription>Daftar mata kuliah yang Anda ajar semester ini</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {teachingAssignments.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Kode MK</TableHead>
+                      <TableHead>Mata Kuliah</TableHead>
+                      <TableHead>Semester</TableHead>
+                      <TableHead>Kelas</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(() => {
+                      // Deduplicate assignments based on unique combination of mataKuliahId and kelasId
+                      const uniqueAssignments = teachingAssignments.reduce((acc: any[], current) => {
+                        const exists = acc.find(
+                          (item: any) =>
+                            item.mataKuliah?.id === current.mataKuliah?.id &&
+                            item.kelas?.id === current.kelas?.id
+                        );
+                        if (!exists) {
+                          acc.push(current);
+                        }
+                        return acc;
+                      }, []);
+
+                      return uniqueAssignments.map((assignment) => (
+                        <TableRow key={assignment.id}>
+                          <TableCell>{assignment.mataKuliah?.kodeMk || '-'}</TableCell>
+                          <TableCell>{assignment.mataKuliah?.namaMk || '-'}</TableCell>
+                          <TableCell>Semester {assignment.mataKuliah?.semester || '-'}</TableCell>
+                          <TableCell>{assignment.kelas?.nama || '-'}</TableCell>
+                        </TableRow>
+                      ));
+                    })()}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">
+                  Belum ada mata kuliah yang diampu.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Action Buttons */}
         <Card className="md:col-span-2">
           <CardContent className="pt-6">
             <div className="flex gap-4">
-              <Button
-                onClick={() => setIsEditing(true)}
-                className="flex-1"
-              >
-                Edit Profil
-              </Button>
+              {role !== 'dosen' && role !== 'mahasiswa' && (
+                <Button
+                  onClick={() => setIsEditing(true)}
+                  className="flex-1"
+                >
+                  Edit Profil
+                </Button>
+              )}
               <Button
                 onClick={() => navigate('/dashboard')}
                 variant="outline"

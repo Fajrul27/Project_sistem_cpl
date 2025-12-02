@@ -20,7 +20,23 @@ const allowedOrigins = [
 ].filter(Boolean) as string[];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // Allow any localhost origin
+    if (origin.startsWith('http://localhost:')) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+
+    // For development, we might want to log blocked origins
+    console.log('Blocked by CORS:', origin);
+    callback(null, false);
+  },
   credentials: true
 }));
 app.use(express.json());

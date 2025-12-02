@@ -4,25 +4,69 @@
 
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { authMiddleware, requireRole, getUserProfile } from '../middleware/auth.js';
 
 const router = Router();
 
 // Get dashboard statistics
 router.get('/stats', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async (req, res) => {
   try {
+    const userId = (req as any).userId;
+    const userRole = (req as any).userRole;
+
+    // Define filters
+    let userFilter: any = {};
+    let cplFilter: any = { isActive: true };
+    let mkFilter: any = { isActive: true };
+    let nilaiFilter: any = {};
+    let prodiId: string | null = null;
+
+    // Apply filters for Dosen and Kaprodi
+    if (userRole === 'dosen' || userRole === 'kaprodi') {
+      const profile = await getUserProfile(userId);
+      if (profile && profile.prodiId) {
+        prodiId = profile.prodiId;
+
+        // Filter users (mahasiswa) by prodi
+        userFilter = {
+          role: 'mahasiswa',
+          profile: { prodiId }
+        };
+
+        // Filter CPL by prodi
+        cplFilter = {
+          ...cplFilter,
+          prodiId
+        };
+
+        // Filter Mata Kuliah by prodi
+        mkFilter = {
+          ...mkFilter,
+          prodiId
+        };
+
+        // Filter Nilai by mahasiswa's prodi
+        nilaiFilter = {
+          mahasiswa: {
+            prodiId
+          }
+        };
+      }
+    }
+
     // 1. Basic Counts
     const [userCount, cplCount, mataKuliahCount, nilaiCount] = await Promise.all([
-      prisma.user.count(),
-      prisma.cpl.count({ where: { isActive: true } }),
-      prisma.mataKuliah.count({ where: { isActive: true } }),
-      prisma.nilaiCpl.count()
+      prisma.user.count({ where: userFilter }),
+      prisma.cpl.count({ where: cplFilter }),
+      prisma.mataKuliah.count({ where: mkFilter }),
+      prisma.nilaiCpl.count({ where: nilaiFilter })
     ]);
 
     // 2. CPL Average & Performance (Bar Chart & Top 5)
     // Group by CPL and calculate average
     const cplAggregations = await prisma.nilaiCpl.groupBy({
       by: ['cplId'],
+      where: nilaiFilter,
       _avg: {
         nilai: true
       },
@@ -63,6 +107,7 @@ router.get('/stats', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), a
     // 3. Semester Trend (Line Chart)
     const semesterAggregations = await prisma.nilaiCpl.groupBy({
       by: ['semester'],
+      where: nilaiFilter,
       _avg: {
         nilai: true
       }
@@ -75,41 +120,65 @@ router.get('/stats', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), a
       }))
       .sort((a, b) => a.semester.localeCompare(b.semester));
 
-    // 4. Distribution (Pie Chart) - Using Raw Query for efficiency with ranges
-    // Ranges: Excellent (85-100), Good (70-84), Fair (60-69), Poor (<60)
-    const distributionCounts = await prisma.$queryRaw`
-      SELECT
-        SUM(CASE WHEN nilai >= 85 THEN 1 ELSE 0 END) as excellent,
-        SUM(CASE WHEN nilai >= 70 AND nilai < 85 THEN 1 ELSE 0 END) as good,
-        SUM(CASE WHEN nilai >= 60 AND nilai < 70 THEN 1 ELSE 0 END) as fair,
-        SUM(CASE WHEN nilai < 60 THEN 1 ELSE 0 END) as poor,
-        COUNT(*) as total
-      FROM nilai_cpl
-    `;
+    // 4. Distribution (Pie Chart)
+    // Construct raw query with optional filtering
+    let distributionCounts;
+
+    if (prodiId) {
+      // Filtered query for specific prodi
+      distributionCounts = await prisma.$queryRaw`
+        SELECT
+          SUM(CASE WHEN nc.nilai >= 85 THEN 1 ELSE 0 END) as excellent,
+          SUM(CASE WHEN nc.nilai >= 70 AND nc.nilai < 85 THEN 1 ELSE 0 END) as good,
+          SUM(CASE WHEN nc.nilai >= 60 AND nc.nilai < 70 THEN 1 ELSE 0 END) as fair,
+          SUM(CASE WHEN nc.nilai < 60 THEN 1 ELSE 0 END) as poor,
+          COUNT(*) as total
+        FROM nilai_cpl nc
+        JOIN profiles p ON nc.mahasiswa_id = p.user_id
+        WHERE p.prodi_id = ${prodiId}
+      `;
+    } else {
+      // Global query
+      distributionCounts = await prisma.$queryRaw`
+        SELECT
+          SUM(CASE WHEN nilai >= 85 THEN 1 ELSE 0 END) as excellent,
+          SUM(CASE WHEN nilai >= 70 AND nilai < 85 THEN 1 ELSE 0 END) as good,
+          SUM(CASE WHEN nilai >= 60 AND nilai < 70 THEN 1 ELSE 0 END) as fair,
+          SUM(CASE WHEN nilai < 60 THEN 1 ELSE 0 END) as poor,
+          COUNT(*) as total
+        FROM nilai_cpl
+      `;
+    }
+
+    // Helper to safely convert BigInt to Number
+    const toNumber = (val: any) => {
+      if (typeof val === 'bigint') return Number(val);
+      return Number(val || 0);
+    };
 
     const distResult: any = Array.isArray(distributionCounts) ? distributionCounts[0] : distributionCounts;
-    const total = Number(distResult.total || 0);
+    const total = toNumber(distResult.total);
 
     const distributionData = [
       {
         name: "Sangat Baik (85-100)",
-        value: Number(distResult.excellent || 0),
-        percentage: total > 0 ? ((Number(distResult.excellent || 0) / total) * 100).toFixed(1) : "0.0"
+        value: toNumber(distResult.excellent),
+        percentage: total > 0 ? ((toNumber(distResult.excellent) / total) * 100).toFixed(1) : "0.0"
       },
       {
         name: "Baik (70-84)",
-        value: Number(distResult.good || 0),
-        percentage: total > 0 ? ((Number(distResult.good || 0) / total) * 100).toFixed(1) : "0.0"
+        value: toNumber(distResult.good),
+        percentage: total > 0 ? ((toNumber(distResult.good) / total) * 100).toFixed(1) : "0.0"
       },
       {
         name: "Cukup (60-69)",
-        value: Number(distResult.fair || 0),
-        percentage: total > 0 ? ((Number(distResult.fair || 0) / total) * 100).toFixed(1) : "0.0"
+        value: toNumber(distResult.fair),
+        percentage: total > 0 ? ((toNumber(distResult.fair) / total) * 100).toFixed(1) : "0.0"
       },
       {
         name: "Kurang (<60)",
-        value: Number(distResult.poor || 0),
-        percentage: total > 0 ? ((Number(distResult.poor || 0) / total) * 100).toFixed(1) : "0.0"
+        value: toNumber(distResult.poor),
+        percentage: total > 0 ? ((toNumber(distResult.poor) / total) * 100).toFixed(1) : "0.0"
       }
     ];
 

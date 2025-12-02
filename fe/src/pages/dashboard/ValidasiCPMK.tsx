@@ -214,7 +214,7 @@ const ValidasiCPMKPage = () => {
                                         <span className="truncate">
                                             {selectedMataKuliah === 'all'
                                                 ? "Filter Mata Kuliah"
-                                                : mataKuliahList.find(mk => mk.mataKuliah.id === selectedMataKuliah)?.mataKuliah.kodeMk || "Filter Mata Kuliah"
+                                                : mataKuliahList.find(mk => mk.mataKuliah.id === selectedMataKuliah)?.mataKuliah.namaMk || "Filter Mata Kuliah"
                                             }
                                         </span>
                                     </div>
@@ -232,11 +232,22 @@ const ValidasiCPMKPage = () => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">Semua Mata Kuliah</SelectItem>
-                                            {mataKuliahList.map((mk) => (
-                                                <SelectItem key={mk.mataKuliah.id} value={mk.mataKuliah.id}>
-                                                    {mk.mataKuliah.kodeMk} - {mk.mataKuliah.namaMk} (Semester {mk.mataKuliah.semester})
-                                                </SelectItem>
-                                            ))}
+                                            {(() => {
+                                                // Deduplicate mataKuliahList based on unique ID
+                                                const uniqueMK = mataKuliahList.reduce((acc: any[], current) => {
+                                                    const id = current.mataKuliah?.id;
+                                                    if (!acc.find(item => item.mataKuliah?.id === id)) {
+                                                        acc.push(current);
+                                                    }
+                                                    return acc;
+                                                }, []);
+
+                                                return uniqueMK.map((mk: any) => (
+                                                    <SelectItem key={mk.mataKuliah.id} value={mk.mataKuliah.id}>
+                                                        {mk.mataKuliah.namaMk} (Semester {mk.mataKuliah.semester})
+                                                    </SelectItem>
+                                                ));
+                                            })()}
                                         </SelectContent>
                                     </Select>
                                 </div>

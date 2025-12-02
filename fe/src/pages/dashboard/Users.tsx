@@ -12,6 +12,7 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface UserRow {
   id: string;
@@ -85,6 +86,7 @@ const UsersPage = () => {
   const [facultyFilter, setFacultyFilter] = useState<string>("all");
   const [programFilter, setProgramFilter] = useState<string>("all");
   const [semesterFilter, setSemesterFilter] = useState<string>("all");
+  const [kelasFilter, setKelasFilter] = useState<string>("all");
   const [showCreate, setShowCreate] = useState(false);
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
   const [editData, setEditData] = useState<EditUserForm>({
@@ -100,6 +102,7 @@ const UsersPage = () => {
   });
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("staff");
 
   useEffect(() => {
     loadUsers();
@@ -146,7 +149,11 @@ const UsersPage = () => {
     roleFilter !== "all" ||
     facultyFilter !== "all" ||
     programFilter !== "all" ||
-    semesterFilter !== "all";
+    roleFilter !== "all" ||
+    facultyFilter !== "all" ||
+    programFilter !== "all" ||
+    semesterFilter !== "all" ||
+    kelasFilter !== "all";
 
   const loadUsers = async () => {
     setLoading(true);
@@ -251,7 +258,9 @@ const UsersPage = () => {
       matchRole &&
       matchFacultyFilter &&
       matchProgramFilter &&
-      matchSemesterFilter
+      matchProgramFilter &&
+      matchSemesterFilter &&
+      (kelasFilter === "all" || u.kelasId === kelasFilter)
     );
   });
 
@@ -493,24 +502,14 @@ const UsersPage = () => {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-80 space-y-4">
               <div className="grid grid-cols-1 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium">Role</Label>
-                  <Select
-                    value={roleFilter}
-                    onValueChange={(value) => setRoleFilter(value)}
-                  >
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Semua role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua role</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="dosen">Dosen</SelectItem>
-                      <SelectItem value="mahasiswa">Mahasiswa</SelectItem>
-                      <SelectItem value="kaprodi">Kaprodi</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Role Filter - Only for Staff/Dosen if needed, but user asked for specific filters. 
+                    If activeTab is staff, user said "fakultas dan prodi". 
+                    If activeTab is mahasiswa, user said "fakultas, prodi, semester, kelas".
+                    So we hide Role filter for now as per instruction, or maybe keep it for Staff?
+                    User instruction: "pada Separate Tab dosen, fungsi filter mnampilkan fakultas dan prodi"
+                    So I will hide Role filter.
+                */}
+
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Fakultas</Label>
                   <Select
@@ -559,25 +558,49 @@ const UsersPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium">Semester</Label>
-                  <Select
-                    value={semesterFilter}
-                    onValueChange={(value) => setSemesterFilter(value)}
-                  >
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Semua semester" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua semester</SelectItem>
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                        <SelectItem key={s} value={String(s)}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+
+                {activeTab === "mahasiswa" && (
+                  <>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Semester</Label>
+                      <Select
+                        value={semesterFilter}
+                        onValueChange={(value) => setSemesterFilter(value)}
+                      >
+                        <SelectTrigger className="w-full h-8 text-xs">
+                          <SelectValue placeholder="Semua semester" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua semester</SelectItem>
+                          {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                            <SelectItem key={s} value={String(s)}>
+                              {s}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Kelas</Label>
+                      <Select
+                        value={kelasFilter}
+                        onValueChange={(value) => setKelasFilter(value)}
+                      >
+                        <SelectTrigger className="w-full h-8 text-xs">
+                          <SelectValue placeholder="Semua kelas" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua kelas</SelectItem>
+                          {kelasList.map((k) => (
+                            <SelectItem key={k.id} value={k.id}>
+                              {k.nama}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex justify-between pt-1">
                 <Button
@@ -589,6 +612,7 @@ const UsersPage = () => {
                     setFacultyFilter("all");
                     setProgramFilter("all");
                     setSemesterFilter("all");
+                    setKelasFilter("all");
                   }}
                 >
                   Reset
@@ -601,336 +625,706 @@ const UsersPage = () => {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <CardTitle className="text-base md:text-lg">Daftar Pengguna</CardTitle>
-              <CardDescription className="text-xs md:text-sm text-muted-foreground">
-                Menampilkan <span className="font-medium">{filteredUsers.length}</span> dari{" "}
-                <span className="font-medium">{users.length}</span> pengguna
-              </CardDescription>
-            </div>
-            <Button
-              size="sm"
-              onClick={() => setShowCreate((prev) => !prev)}
-              className="mt-2 sm:mt-0"
+        <Tabs value={activeTab} onValueChange={(val) => {
+          setActiveTab(val);
+          setShowCreate(false);
+          setNewUser(prev => ({
+            ...prev,
+            role: val === "mahasiswa" ? "mahasiswa" : "dosen",
+            identityType: val === "mahasiswa" ? "mahasiswa" : "dosen"
+          }));
+        }} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4 bg-slate-200 dark:bg-muted p-1 rounded-full">
+            <TabsTrigger
+              value="staff"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 rounded-full"
             >
-              {showCreate ? "Tutup" : "Tambah Pengguna"}
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {showCreate && (
-              <div className="mb-6 border rounded-lg p-4 bg-muted/30">
-                <form
-                  onSubmit={handleCreateUser}
-                  className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-end"
+              Dosen & Tenaga Kependidikan
+            </TabsTrigger>
+            <TabsTrigger
+              value="mahasiswa"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 rounded-full"
+            >
+              Mahasiswa
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Staff Tab Content */}
+          <TabsContent value="staff">
+            <Card>
+              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-base md:text-lg">Daftar Dosen & Staff</CardTitle>
+                  <CardDescription className="text-xs md:text-sm text-muted-foreground">
+                    Menampilkan <span className="font-medium">{filteredUsers.filter(u => u.role !== 'mahasiswa').length}</span> pengguna
+                  </CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setShowCreate((prev) => !prev)}
+                  className="mt-2 sm:mt-0"
                 >
-                  <div className="space-y-2">
-                    <Label htmlFor="new-fullname">Nama Lengkap</Label>
-                    <Input
-                      id="new-fullname"
-                      placeholder="Nama lengkap"
-                      value={newUser.fullName}
-                      onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
-                      disabled={creating}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-email">Email</Label>
-                    <Input
-                      id="new-email"
-                      type="email"
-                      placeholder="nama@example.com"
-                      value={newUser.email}
-                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                      disabled={creating}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password">Password</Label>
-                    <Input
-                      id="new-password"
-                      type="password"
-                      placeholder="Minimal 6 karakter"
-                      value={newUser.password}
-                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                      disabled={creating}
-                      required
-                      minLength={6}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-fakultas">Fakultas</Label>
-                    <Select
-                      value={newUser.fakultasId}
-                      onValueChange={(value) =>
-                        setNewUser({
-                          ...newUser,
-                          fakultasId: value,
-                          prodiId: "",
-                        })
-                      }
-                      disabled={creating}
+                  {showCreate ? "Tutup Form" : "Tambah Pengguna"}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {showCreate && (
+                  <div className="mb-6 border rounded-lg p-4 bg-muted/30">
+                    <form
+                      onSubmit={handleCreateUser}
+                      className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-start"
                     >
-                      <SelectTrigger id="new-fakultas" className="w-full">
-                        <SelectValue placeholder="Pilih fakultas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {fakultasList.map((fak) => (
-                          <SelectItem key={fak.id} value={fak.id}>
-                            {fak.nama}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-semester">Semester (Mahasiswa)</Label>
-                    <Input
-                      id="new-semester"
-                      type="number"
-                      min={1}
-                      max={14}
-                      placeholder="Contoh: 1, 2, 3 ..."
-                      value={newUser.semester}
-                      onChange={(e) =>
-                        setNewUser({ ...newUser, semester: e.target.value })
-                      }
-                      disabled={creating}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-kelas">Kelas (Mahasiswa)</Label>
-                    <Select
-                      value={newUser.kelasId}
-                      onValueChange={(value) =>
-                        setNewUser({ ...newUser, kelasId: value })
-                      }
-                      disabled={creating}
-                    >
-                      <SelectTrigger id="new-kelas" className="w-full">
-                        <SelectValue placeholder="Pilih kelas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {kelasList.map((k) => (
-                          <SelectItem key={k.id} value={k.id}>
-                            {k.nama}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-prodi">Program Studi</Label>
-                    <Select
-                      value={newUser.prodiId}
-                      onValueChange={(value) =>
-                        setNewUser({ ...newUser, prodiId: value })
-                      }
-                      disabled={creating || !selectedFakultas}
-                    >
-                      <SelectTrigger id="new-prodi" className="w-full">
-                        <SelectValue
-                          placeholder={
-                            selectedFakultas
-                              ? "Pilih program studi"
-                              : "Pilih fakultas dulu"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {selectedFakultas?.prodi.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.nama}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-identitas-tipe">Tipe Identitas</Label>
-                    <Select
-                      value={newUser.identityType}
-                      onValueChange={(value) =>
-                        setNewUser({
-                          ...newUser,
-                          identityType: value as "mahasiswa" | "dosen",
-                          identityNumber: "",
-                        })
-                      }
-                      disabled={creating}
-                    >
-                      <SelectTrigger id="new-identitas-tipe" className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="mahasiswa">Mahasiswa (NIM)</SelectItem>
-                        <SelectItem value="dosen">Dosen (NIP)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-identitas">
-                      {newUser.identityType === "mahasiswa" ? "NIM" : "NIP"}
-                    </Label>
-                    <Input
-                      id="new-identitas"
-                      placeholder={
-                        newUser.identityType === "mahasiswa"
-                          ? "Masukkan NIM (opsional)"
-                          : "Masukkan NIP (opsional)"
-                      }
-                      value={newUser.identityNumber}
-                      onChange={(e) =>
-                        setNewUser({ ...newUser, identityNumber: e.target.value })
-                      }
-                      disabled={creating}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-role">Role</Label>
-                    <Select
-                      value={newUser.role}
-                      onValueChange={(value) => setNewUser({ ...newUser, role: value })}
-                    >
-                      <SelectTrigger id="new-role" className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROLE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="md:col-span-2 lg:col-span-4 flex justify-end">
-                    <Button type="submit" disabled={creating}>
-                      {creating ? "Menyimpan..." : "Simpan Pengguna"}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            )}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Nama</TableHead>
-                  <TableHead>Identitas</TableHead>
-                  <TableHead>Fakultas</TableHead>
-                  <TableHead>Program Studi</TableHead>
-                  <TableHead className="text-center">Semester</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
-                      Tidak ada data pengguna
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-mono text-xs md:text-sm">
-                        {user.email}
-                      </TableCell>
-                      <TableCell>{user.namaLengkap || "-"}</TableCell>
-                      <TableCell>
-                        {user.nim ? (
-                          <Badge variant="secondary" className="inline-flex">NIM: {user.nim}</Badge>
-                        ) : user.nip ? (
-                          <Badge variant="outline" className="inline-flex">NIP: {user.nip}</Badge>
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-                      <TableCell className="max-w-[220px]">
-                        <span className="block text-xs md:text-sm whitespace-normal break-words">
-                          {user.fakultas || "-"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="max-w-[240px]">
-                        <span className="block text-xs md:text-sm whitespace-normal break-words">
-                          {user.programStudi || "-"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center text-xs md:text-sm">
-                        {user.semester !== null && user.semester !== undefined
-                          ? user.semester
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-primary text-primary hover:bg-primary/10 dark:hover:bg-primary/20"
-                          onClick={() => {
-                            setEditingUser(user);
-                            // Mapping awal untuk fakultas, prodi, dan identitas
-                            let fakultasValue = "";
-                            let prodiValue = "";
-                            if (user.fakultas) {
-                              const fak = fakultasList.find(
-                                (f) => f.nama === user.fakultas
-                              );
-                              if (fak) {
-                                fakultasValue = fak.id;
-                                if (user.programStudi) {
-                                  const pOpt = fak.prodi.find(
-                                    (p) => p.nama === user.programStudi
-                                  );
-                                  if (pOpt) {
-                                    prodiValue = pOpt.id;
-                                  }
-                                }
-                              }
-                            }
-
+                      {/* Role Selection - First */}
+                      <div className="space-y-2">
+                        <Label htmlFor="new-role">Role</Label>
+                        <Select
+                          value={newUser.role}
+                          onValueChange={(value) => {
                             let identityType: "mahasiswa" | "dosen" = "mahasiswa";
-                            let identityNumber = "";
-                            if (user.nim) {
-                              identityType = "mahasiswa";
-                              identityNumber = user.nim;
-                            } else if (user.nip) {
+                            if (value === "dosen" || value === "kaprodi") {
                               identityType = "dosen";
-                              identityNumber = user.nip;
                             }
-
-                            setEditData({
-                              fullName: user.namaLengkap || "",
-                              email: user.email,
-                              role: user.role,
-                              fakultas: fakultasValue,
-                              prodi: prodiValue,
+                            setNewUser({
+                              ...newUser,
+                              role: value,
                               identityType,
-                              identityNumber,
-                              semester: user.semester ? String(user.semester) : "",
-                              kelasId: user.kelasId || "",
+                              // Reset semester/kelas if not mahasiswa
+                              semester: value === "mahasiswa" ? newUser.semester : "",
+                              kelasId: value === "mahasiswa" ? newUser.kelasId : ""
                             });
                           }}
                         >
-                          Kelola
+                          <SelectTrigger id="new-role" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROLE_OPTIONS.filter(opt => opt.value !== "mahasiswa").map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="new-fullname">Nama Lengkap</Label>
+                        <Input
+                          id="new-fullname"
+                          placeholder="Nama lengkap"
+                          value={newUser.fullName}
+                          onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+                          disabled={creating}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-email">Email</Label>
+                        <Input
+                          id="new-email"
+                          type="email"
+                          placeholder="nama@example.com"
+                          value={newUser.email}
+                          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                          disabled={creating}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">Password</Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          placeholder="Minimal 6 karakter"
+                          value={newUser.password}
+                          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                          disabled={creating}
+                          required
+                          minLength={6}
+                        />
+                      </div>
+
+                      {/* Identity Type & Number */}
+                      <div className="space-y-2">
+                        <Label htmlFor="new-identitas-tipe">Tipe Identitas</Label>
+                        <Select
+                          value={newUser.identityType}
+                          onValueChange={(value) =>
+                            setNewUser({
+                              ...newUser,
+                              identityType: value as "mahasiswa" | "dosen",
+                              identityNumber: "",
+                            })
+                          }
+                          disabled={creating}
+                        >
+                          <SelectTrigger id="new-identitas-tipe" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mahasiswa">Mahasiswa (NIM)</SelectItem>
+                            <SelectItem value="dosen">Dosen/Staff (NIP/NIDN)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-identitas">
+                          {newUser.identityType === "mahasiswa" ? "NIM" : "NIP/NIDN"}
+                        </Label>
+                        <Input
+                          id="new-identitas"
+                          placeholder={
+                            newUser.identityType === "mahasiswa"
+                              ? "Masukkan NIM"
+                              : "Masukkan NIP/NIDN"
+                          }
+                          value={newUser.identityNumber}
+                          onChange={(e) =>
+                            setNewUser({ ...newUser, identityNumber: e.target.value })
+                          }
+                          disabled={creating}
+                        />
+                      </div>
+
+                      {/* Fakultas & Prodi - Always show unless Admin maybe? Keeping it for all for now */}
+                      <div className="space-y-2">
+                        <Label htmlFor="new-fakultas">Fakultas</Label>
+                        <Select
+                          value={newUser.fakultasId}
+                          onValueChange={(value) =>
+                            setNewUser({
+                              ...newUser,
+                              fakultasId: value,
+                              prodiId: "",
+                            })
+                          }
+                          disabled={creating}
+                        >
+                          <SelectTrigger id="new-fakultas" className="w-full">
+                            <SelectValue placeholder="Pilih fakultas" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {fakultasList.map((fak) => (
+                              <SelectItem key={fak.id} value={fak.id}>
+                                {fak.nama}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-prodi">Program Studi</Label>
+                        <Select
+                          value={newUser.prodiId}
+                          onValueChange={(value) =>
+                            setNewUser({ ...newUser, prodiId: value })
+                          }
+                          disabled={creating || !selectedFakultas}
+                        >
+                          <SelectTrigger id="new-prodi" className="w-full">
+                            <SelectValue
+                              placeholder={
+                                selectedFakultas
+                                  ? "Pilih program studi"
+                                  : "Pilih fakultas dulu"
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedFakultas?.prodi.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.nama}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Semester & Kelas - Only for Mahasiswa */}
+                      {newUser.role === "mahasiswa" && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-semester">Semester</Label>
+                            <Input
+                              id="new-semester"
+                              type="number"
+                              min={1}
+                              max={14}
+                              placeholder="Contoh: 1, 2, 3 ..."
+                              value={newUser.semester}
+                              onChange={(e) =>
+                                setNewUser({ ...newUser, semester: e.target.value })
+                              }
+                              disabled={creating}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-kelas">Kelas</Label>
+                            <Select
+                              value={newUser.kelasId}
+                              onValueChange={(value) =>
+                                setNewUser({ ...newUser, kelasId: value })
+                              }
+                              disabled={creating}
+                            >
+                              <SelectTrigger id="new-kelas" className="w-full">
+                                <SelectValue placeholder="Pilih kelas" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {kelasList.map((k) => (
+                                  <SelectItem key={k.id} value={k.id}>
+                                    {k.nama}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </>
+                      )}
+
+                      <div className="md:col-span-2 lg:col-span-4 flex justify-end mt-4">
+                        <Button type="submit" disabled={creating}>
+                          {creating ? "Menyimpan..." : "Simpan Pengguna"}
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                      </div>
+                    </form>
+                  </div>
                 )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>NIP/NIDN</TableHead>
+                      <TableHead>Fakultas</TableHead>
+                      <TableHead>Program Studi</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.filter(u => u.role !== 'mahasiswa').length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground">
+                          Tidak ada data dosen/staff
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredUsers.filter(u => u.role !== 'mahasiswa').map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-mono text-xs md:text-sm">
+                            {user.email}
+                          </TableCell>
+                          <TableCell>{user.namaLengkap || "-"}</TableCell>
+                          <TableCell>
+                            {user.nip ? (
+                              <Badge variant="outline" className="inline-flex">{user.nip}</Badge>
+                            ) : (
+                              "-"
+                            )}
+                          </TableCell>
+                          <TableCell className="max-w-[220px]">
+                            <span className="block text-xs md:text-sm whitespace-normal break-words">
+                              {user.fakultas || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="max-w-[240px]">
+                            <span className="block text-xs md:text-sm whitespace-normal break-words">
+                              {user.programStudi || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">
+                              {user.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-primary text-primary hover:bg-primary/10 dark:hover:bg-primary/20"
+                              onClick={() => {
+                                setEditingUser(user);
+                                // Mapping logic...
+                                let fakultasValue = "";
+                                let prodiValue = "";
+                                if (user.fakultas) {
+                                  const fak = fakultasList.find(f => f.nama === user.fakultas);
+                                  if (fak) {
+                                    fakultasValue = fak.id;
+                                    if (user.programStudi) {
+                                      const pOpt = fak.prodi.find(p => p.nama === user.programStudi);
+                                      if (pOpt) prodiValue = pOpt.id;
+                                    }
+                                  }
+                                }
+                                let identityType: "mahasiswa" | "dosen" = "dosen";
+                                let identityNumber = user.nip || user.nim || "";
+
+                                setEditData({
+                                  fullName: user.namaLengkap || "",
+                                  email: user.email,
+                                  role: user.role,
+                                  fakultas: fakultasValue,
+                                  prodi: prodiValue,
+                                  identityType,
+                                  identityNumber,
+                                  semester: "",
+                                  kelasId: "",
+                                });
+                              }}
+                            >
+                              Kelola
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Mahasiswa Tab Content */}
+          <TabsContent value="mahasiswa">
+            <Card>
+              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-base md:text-lg">Daftar Mahasiswa</CardTitle>
+                  <CardDescription className="text-xs md:text-sm text-muted-foreground">
+                    Menampilkan <span className="font-medium">{filteredUsers.filter(u => u.role === 'mahasiswa').length}</span> mahasiswa
+                  </CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setShowCreate((prev) => !prev)}
+                  className="mt-2 sm:mt-0"
+                >
+                  {showCreate ? "Tutup Form" : "Tambah Pengguna"}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {showCreate && (
+                  <div className="mb-6 border rounded-lg p-4 bg-muted/30">
+                    <form
+                      onSubmit={handleCreateUser}
+                      className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-start"
+                    >
+                      {/* Role Selection - First */}
+                      <div className="space-y-2">
+                        <Label htmlFor="new-role">Role</Label>
+                        <Select
+                          value={newUser.role}
+                          onValueChange={(value) => {
+                            let identityType: "mahasiswa" | "dosen" = "mahasiswa";
+                            if (value === "dosen" || value === "kaprodi") {
+                              identityType = "dosen";
+                            }
+                            setNewUser({
+                              ...newUser,
+                              role: value,
+                              identityType,
+                              // Reset semester/kelas if not mahasiswa
+                              semester: value === "mahasiswa" ? newUser.semester : "",
+                              kelasId: value === "mahasiswa" ? newUser.kelasId : ""
+                            });
+                          }}
+                        >
+                          <SelectTrigger id="new-role" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROLE_OPTIONS.filter(opt => opt.value === "mahasiswa").map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="new-fullname">Nama Lengkap</Label>
+                        <Input
+                          id="new-fullname"
+                          placeholder="Nama lengkap"
+                          value={newUser.fullName}
+                          onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+                          disabled={creating}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-email">Email</Label>
+                        <Input
+                          id="new-email"
+                          type="email"
+                          placeholder="nama@example.com"
+                          value={newUser.email}
+                          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                          disabled={creating}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">Password</Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          placeholder="Minimal 6 karakter"
+                          value={newUser.password}
+                          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                          disabled={creating}
+                          required
+                          minLength={6}
+                        />
+                      </div>
+
+                      {/* Identity Type & Number */}
+                      <div className="space-y-2">
+                        <Label htmlFor="new-identitas-tipe">Tipe Identitas</Label>
+                        <Select
+                          value={newUser.identityType}
+                          onValueChange={(value) =>
+                            setNewUser({
+                              ...newUser,
+                              identityType: value as "mahasiswa" | "dosen",
+                              identityNumber: "",
+                            })
+                          }
+                          disabled={creating}
+                        >
+                          <SelectTrigger id="new-identitas-tipe" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mahasiswa">Mahasiswa (NIM)</SelectItem>
+                            <SelectItem value="dosen">Dosen/Staff (NIP/NIDN)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-identitas">
+                          {newUser.identityType === "mahasiswa" ? "NIM" : "NIP/NIDN"}
+                        </Label>
+                        <Input
+                          id="new-identitas"
+                          placeholder={
+                            newUser.identityType === "mahasiswa"
+                              ? "Masukkan NIM"
+                              : "Masukkan NIP/NIDN"
+                          }
+                          value={newUser.identityNumber}
+                          onChange={(e) =>
+                            setNewUser({ ...newUser, identityNumber: e.target.value })
+                          }
+                          disabled={creating}
+                        />
+                      </div>
+
+                      {/* Fakultas & Prodi - Always show unless Admin maybe? Keeping it for all for now */}
+                      <div className="space-y-2">
+                        <Label htmlFor="new-fakultas">Fakultas</Label>
+                        <Select
+                          value={newUser.fakultasId}
+                          onValueChange={(value) =>
+                            setNewUser({
+                              ...newUser,
+                              fakultasId: value,
+                              prodiId: "",
+                            })
+                          }
+                          disabled={creating}
+                        >
+                          <SelectTrigger id="new-fakultas" className="w-full">
+                            <SelectValue placeholder="Pilih fakultas" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {fakultasList.map((fak) => (
+                              <SelectItem key={fak.id} value={fak.id}>
+                                {fak.nama}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-prodi">Program Studi</Label>
+                        <Select
+                          value={newUser.prodiId}
+                          onValueChange={(value) =>
+                            setNewUser({ ...newUser, prodiId: value })
+                          }
+                          disabled={creating || !selectedFakultas}
+                        >
+                          <SelectTrigger id="new-prodi" className="w-full">
+                            <SelectValue
+                              placeholder={
+                                selectedFakultas
+                                  ? "Pilih program studi"
+                                  : "Pilih fakultas dulu"
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedFakultas?.prodi.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.nama}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Semester & Kelas - Only for Mahasiswa */}
+                      {newUser.role === "mahasiswa" && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-semester">Semester</Label>
+                            <Input
+                              id="new-semester"
+                              type="number"
+                              min={1}
+                              max={14}
+                              placeholder="Contoh: 1, 2, 3 ..."
+                              value={newUser.semester}
+                              onChange={(e) =>
+                                setNewUser({ ...newUser, semester: e.target.value })
+                              }
+                              disabled={creating}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-kelas">Kelas</Label>
+                            <Select
+                              value={newUser.kelasId}
+                              onValueChange={(value) =>
+                                setNewUser({ ...newUser, kelasId: value })
+                              }
+                              disabled={creating}
+                            >
+                              <SelectTrigger id="new-kelas" className="w-full">
+                                <SelectValue placeholder="Pilih kelas" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {kelasList.map((k) => (
+                                  <SelectItem key={k.id} value={k.id}>
+                                    {k.nama}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </>
+                      )}
+
+                      <div className="md:col-span-2 lg:col-span-4 flex justify-end mt-4">
+                        <Button type="submit" disabled={creating}>
+                          {creating ? "Menyimpan..." : "Simpan Pengguna"}
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>NIM</TableHead>
+                      <TableHead>Fakultas</TableHead>
+                      <TableHead>Program Studi</TableHead>
+                      <TableHead className="text-center">Semester</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.filter(u => u.role === 'mahasiswa').length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center text-muted-foreground">
+                          Tidak ada data mahasiswa
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredUsers.filter(u => u.role === 'mahasiswa').map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-mono text-xs md:text-sm">
+                            {user.email}
+                          </TableCell>
+                          <TableCell>{user.namaLengkap || "-"}</TableCell>
+                          <TableCell>
+                            {user.nim ? (
+                              <Badge variant="secondary" className="inline-flex">{user.nim}</Badge>
+                            ) : (
+                              "-"
+                            )}
+                          </TableCell>
+                          <TableCell className="max-w-[220px]">
+                            <span className="block text-xs md:text-sm whitespace-normal break-words">
+                              {user.fakultas || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="max-w-[240px]">
+                            <span className="block text-xs md:text-sm whitespace-normal break-words">
+                              {user.programStudi || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center text-xs md:text-sm">
+                            {user.semester || "-"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">
+                              {user.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-primary text-primary hover:bg-primary/10 dark:hover:bg-primary/20"
+                              onClick={() => {
+                                setEditingUser(user);
+                                // Mapping logic...
+                                let fakultasValue = "";
+                                let prodiValue = "";
+                                if (user.fakultas) {
+                                  const fak = fakultasList.find(f => f.nama === user.fakultas);
+                                  if (fak) {
+                                    fakultasValue = fak.id;
+                                    if (user.programStudi) {
+                                      const pOpt = fak.prodi.find(p => p.nama === user.programStudi);
+                                      if (pOpt) prodiValue = pOpt.id;
+                                    }
+                                  }
+                                }
+
+                                setEditData({
+                                  fullName: user.namaLengkap || "",
+                                  email: user.email,
+                                  role: user.role,
+                                  fakultas: fakultasValue,
+                                  prodi: prodiValue,
+                                  identityType: "mahasiswa",
+                                  identityNumber: user.nim || "",
+                                  semester: user.semester ? String(user.semester) : "",
+                                  kelasId: user.kelasId || "",
+                                });
+                              }}
+                            >
+                              Kelola
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         <Dialog
           open={!!editingUser}
@@ -949,7 +1343,45 @@ const UsersPage = () => {
             </DialogHeader>
 
             {editingUser && (
-              <div className="space-y-4 mt-2">
+              <div className="space-y-4 mt-2 max-h-[70vh] overflow-y-auto pr-2">
+                {/* Role Selection - First */}
+                <div className="space-y-2">
+                  <Label htmlFor="edit-role">Role</Label>
+                  <Select
+                    value={editData.role}
+                    onValueChange={(value) => {
+                      let identityType: "mahasiswa" | "dosen" = "mahasiswa";
+                      if (value === "dosen" || value === "kaprodi") {
+                        identityType = "dosen";
+                      }
+                      setEditData((prev) => ({
+                        ...prev,
+                        role: value,
+                        identityType,
+                        // Reset semester/kelas if not mahasiswa
+                        semester: value === "mahasiswa" ? prev.semester : "",
+                        kelasId: value === "mahasiswa" ? prev.kelasId : ""
+                      }));
+                    }}
+                    disabled={savingEdit || deletingId === editingUser.id}
+                  >
+                    <SelectTrigger id="edit-role" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROLE_OPTIONS.filter(opt =>
+                        activeTab === "mahasiswa"
+                          ? opt.value === "mahasiswa"
+                          : opt.value !== "mahasiswa"
+                      ).map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="edit-email">Email</Label>
                   <Input
@@ -974,6 +1406,52 @@ const UsersPage = () => {
                     disabled={savingEdit || deletingId === editingUser.id}
                   />
                 </div>
+
+                {/* Identity Type & Number */}
+                <div className="space-y-2">
+                  <Label htmlFor="edit-identitas-tipe">Tipe Identitas</Label>
+                  <Select
+                    value={editData.identityType}
+                    onValueChange={(value) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        identityType: value as "mahasiswa" | "dosen",
+                        identityNumber: "",
+                      }))
+                    }
+                    disabled={savingEdit || deletingId === editingUser.id}
+                  >
+                    <SelectTrigger id="edit-identitas-tipe" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mahasiswa">Mahasiswa (NIM)</SelectItem>
+                      <SelectItem value="dosen">Dosen/Staff (NIP/NIDN)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-identitas">
+                    {editData.identityType === "mahasiswa" ? "NIM" : "NIP/NIDN"}
+                  </Label>
+                  <Input
+                    id="edit-identitas"
+                    placeholder={
+                      editData.identityType === "mahasiswa"
+                        ? "Masukkan NIM"
+                        : "Masukkan NIP/NIDN"
+                    }
+                    value={editData.identityNumber}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        identityNumber: e.target.value,
+                      }))
+                    }
+                    disabled={savingEdit || deletingId === editingUser.id}
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="edit-fakultas">Fakultas</Label>
                   <Select
@@ -1030,109 +1508,51 @@ const UsersPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-semester">Semester (Mahasiswa)</Label>
-                  <Input
-                    id="edit-semester"
-                    type="number"
-                    min={1}
-                    max={14}
-                    placeholder="Contoh: 1, 2, 3 ..."
-                    value={editData.semester}
-                    onChange={(e) =>
-                      setEditData((prev) => ({
-                        ...prev,
-                        semester: e.target.value,
-                      }))
-                    }
-                    disabled={savingEdit || deletingId === editingUser.id}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-kelas">Kelas (Mahasiswa)</Label>
-                  <Select
-                    value={editData.kelasId}
-                    onValueChange={(value) =>
-                      setEditData((prev) => ({ ...prev, kelasId: value }))
-                    }
-                    disabled={savingEdit || deletingId === editingUser.id}
-                  >
-                    <SelectTrigger id="edit-kelas" className="w-full">
-                      <SelectValue placeholder="Pilih kelas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {kelasList.map((k) => (
-                        <SelectItem key={k.id} value={k.id}>
-                          {k.nama}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-identitas-tipe">Tipe Identitas</Label>
-                  <Select
-                    value={editData.identityType}
-                    onValueChange={(value) =>
-                      setEditData((prev) => ({
-                        ...prev,
-                        identityType: value as "mahasiswa" | "dosen",
-                        identityNumber: "",
-                      }))
-                    }
-                    disabled={savingEdit || deletingId === editingUser.id}
-                  >
-                    <SelectTrigger id="edit-identitas-tipe" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="mahasiswa">Mahasiswa (NIM)</SelectItem>
-                      <SelectItem value="dosen">Dosen (NIP)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-identitas">
-                    {editData.identityType === "mahasiswa" ? "NIM" : "NIP"}
-                  </Label>
-                  <Input
-                    id="edit-identitas"
-                    placeholder={
-                      editData.identityType === "mahasiswa"
-                        ? "Masukkan NIM (opsional)"
-                        : "Masukkan NIP (opsional)"
-                    }
-                    value={editData.identityNumber}
-                    onChange={(e) =>
-                      setEditData((prev) => ({
-                        ...prev,
-                        identityNumber: e.target.value,
-                      }))
-                    }
-                    disabled={savingEdit || deletingId === editingUser.id}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-role">Role</Label>
-                  <Select
-                    value={editData.role}
-                    onValueChange={(value) =>
-                      setEditData((prev) => ({ ...prev, role: value }))
-                    }
-                    disabled={savingEdit || deletingId === editingUser.id}
-                  >
-                    <SelectTrigger id="edit-role" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+
+                {/* Semester & Kelas - Only for Mahasiswa */}
+                {editData.role === "mahasiswa" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-semester">Semester</Label>
+                      <Input
+                        id="edit-semester"
+                        type="number"
+                        min={1}
+                        max={14}
+                        placeholder="Contoh: 1, 2, 3 ..."
+                        value={editData.semester}
+                        onChange={(e) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            semester: e.target.value,
+                          }))
+                        }
+                        disabled={savingEdit || deletingId === editingUser.id}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-kelas">Kelas</Label>
+                      <Select
+                        value={editData.kelasId}
+                        onValueChange={(value) =>
+                          setEditData((prev) => ({ ...prev, kelasId: value }))
+                        }
+                        disabled={savingEdit || deletingId === editingUser.id}
+                      >
+                        <SelectTrigger id="edit-kelas" className="w-full">
+                          <SelectValue placeholder="Pilih kelas" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {kelasList.map((k) => (
+                            <SelectItem key={k.id} value={k.id}>
+                              {k.nama}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-2">
                   <Button

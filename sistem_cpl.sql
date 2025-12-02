@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 02 Des 2025 pada 06.23
+-- Waktu pembuatan: 02 Des 2025 pada 10.40
 -- Versi server: 10.4.32-MariaDB
 -- Versi PHP: 8.2.12
 
@@ -452,7 +452,9 @@ INSERT INTO `mata_kuliah_pengampu` (`id`, `mata_kuliah_id`, `dosen_id`, `kelas_i
 ('a1ad7348-f485-41b9-9655-832eaa404a79', '5b36edab-4962-47de-9d27-3d0b379be7dd', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', NULL, 1, '2025-12-01 16:47:17.925', '2025-12-01 16:47:17.925'),
 ('a5830a65-d3c6-4565-91c9-54050a7312c0', 'cea3583d-77a9-4a8d-ad70-746b25f15065', '133d79ea-b30f-4183-94ff-d587c99352e2', NULL, 1, '2025-12-01 16:47:18.553', '2025-12-01 16:47:18.553'),
 ('bd868458-6c14-41ba-9e25-a956aad25f86', '1936ca45-b910-4787-a2ce-94e25481930f', 'ed42925d-924d-4517-b779-6dbf76cf923f', NULL, 1, '2025-12-01 16:47:19.028', '2025-12-01 16:47:19.028'),
-('f004252d-7437-4693-b1e6-cc40463fc6f3', 'a04d7243-1d02-492a-8deb-3244d8db0e46', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', NULL, 1, '2025-12-01 16:47:18.774', '2025-12-01 16:47:18.774');
+('cd2423e1-15c3-45ca-865e-b3094bc2c7a2', 'a04d7243-1d02-492a-8deb-3244d8db0e46', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', '45dfe50d-d026-480d-8e13-acabc38ef212', 1, '2025-12-02 05:54:49.438', '2025-12-02 05:54:49.438'),
+('f004252d-7437-4693-b1e6-cc40463fc6f3', 'a04d7243-1d02-492a-8deb-3244d8db0e46', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', NULL, 1, '2025-12-01 16:47:18.774', '2025-12-01 16:47:18.774'),
+('f71c188c-2561-4895-816c-c3766cd26385', 'a04d7243-1d02-492a-8deb-3244d8db0e46', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', '9213c787-0cce-4c93-9d2a-93034e5c96ec', 1, '2025-12-02 05:54:29.156', '2025-12-02 05:54:29.156');
 
 -- --------------------------------------------------------
 
@@ -954,7 +956,7 @@ CREATE TABLE `profiles` (
 
 INSERT INTO `profiles` (`id`, `user_id`, `nama_lengkap`, `nim`, `nip`, `program_studi`, `semester`, `tahun_masuk`, `alamat`, `no_telepon`, `foto_profile`, `created_at`, `updated_at`, `nidn`, `fakultas_id`, `prodi_id`, `semester_id`, `kelas_id`) VALUES
 ('08e59957-5b2a-4568-bd5e-d41578ba0740', 'a3493848-185f-46fa-93df-d1f7124fabc1', 'Doni Tata', '210003', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.798', '2025-12-01 16:47:17.886', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
-('1d4fb9a6-205b-4f02-959c-3baa6eeca005', 'dce817fb-29ac-4b9f-a098-54881d30844d', 'Kartika Sari', '210010', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.828', '2025-12-01 16:47:17.916', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
+('1d4fb9a6-205b-4f02-959c-3baa6eeca005', 'dce817fb-29ac-4b9f-a098-54881d30844d', 'Kartika Sari', '210010', NULL, 'Fakultas Keagamaan Islam - Pendidikan Guru Madrasah Ibtidaiyah', 5, NULL, NULL, NULL, NULL, '2025-12-01 16:47:17.828', '2025-12-02 08:04:25.791', NULL, 'cb88c0fa-b7ba-497e-8e71-140edf841f38', '662b9844-00b2-4f89-9a86-e88349a09f72', '63da5a92-77f8-43c7-a230-4db67cdbe97e', '9213c787-0cce-4c93-9d2a-93034e5c96ec'),
 ('1e40b0c2-1131-4e66-8bff-08e49ed21603', '07f726a9-13c2-428a-91a5-dc40670a8b3a', 'Rina Wati', '210002', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.794', '2025-12-01 16:47:17.882', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
 ('22d27141-01c2-46d8-9bbd-a7ed77af24da', '133d79ea-b30f-4183-94ff-d587c99352e2', 'Rudi Hermawan, Ph.D', NULL, 'DOS003', NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-01 16:47:17.786', '2025-12-01 16:47:17.786', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', NULL, NULL),
 ('2d7984db-4c88-4869-be40-3462df00b54b', '92a0b9b8-6c70-416e-a9d2-21ab93766e38', 'Hadi Sucipto', '210007', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.816', '2025-12-01 16:47:17.903', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
@@ -964,7 +966,7 @@ INSERT INTO `profiles` (`id`, `user_id`, `nama_lengkap`, `nim`, `nip`, `program_
 ('86e8a917-3843-4fc4-85fd-1a1f0f896ab5', '0d82d749-e8d8-453a-ab55-4e4a310b94a5', 'Joko Anwar', '210009', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.824', '2025-12-01 16:47:17.912', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
 ('91e8c4c3-b7c8-443d-8616-c0108c235313', 'b8dabe0c-dd26-4958-9f15-1bfedb71f5df', 'Gita Gutawa', '210006', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.812', '2025-12-01 16:47:17.899', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
 ('a067955e-ba67-4ca6-bfb3-ae049cf6c5db', '9ae74e2a-1a03-4e75-a546-ad608df4db5f', 'Ahmad Fajrul', '210001', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.790', '2025-12-01 16:47:17.876', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
-('b41e7a67-b343-498f-9088-d81cb0c87069', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', 'Budi Santoso, M.Kom', NULL, 'DOS001', NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-01 16:47:17.778', '2025-12-01 16:47:17.778', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', NULL, NULL),
+('b41e7a67-b343-498f-9088-d81cb0c87069', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', 'Budi Santoso, M.Kom', NULL, 'DOS001', 'Fakultas Matematika dan Komputer - Informatika', 5, NULL, NULL, NULL, NULL, '2025-12-01 16:47:17.778', '2025-12-02 05:54:00.504', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', 'e7823f06-e3c8-4328-b138-08e190352f36'),
 ('cd823fc2-7774-44bd-913c-657adb90d273', 'c37f443d-c904-433e-b244-1aa9014d7114', 'Indah Permata', '210008', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.820', '2025-12-01 16:47:17.908', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
 ('f6b9523d-01c5-4f5d-8faf-a975d456863b', '9197693b-0488-4735-96d4-3fcbe6915879', 'Dr. Kaprodi Informatika', NULL, 'KAP001', NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-01 16:47:17.767', '2025-12-01 16:47:17.767', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', NULL, NULL),
 ('f6cd4ba5-64ef-409d-af96-adcced27d56a', '56a45ba1-b6d8-4f76-8864-839825a973e2', 'Fajar Nugraha', '210005', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.808', '2025-12-01 16:47:17.895', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
@@ -1097,9 +1099,10 @@ CREATE TABLE `sessions` (
 
 INSERT INTO `sessions` (`id`, `user_id`, `token`, `expires_at`, `created_at`, `ip_address`, `user_agent`) VALUES
 ('1252ed18-1cf4-4d78-967d-2f042df37201', '133d79ea-b30f-4183-94ff-d587c99352e2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMzNkNzllYS1iMzBmLTQxODMtOTRmZi1kNTg3Yzk5MzUyZTIiLCJlbWFpbCI6ImRvc2VuM0B1bml2LmFjLmlkIiwicm9sZSI6ImRvc2VuIiwiaWF0IjoxNzY0NjQ4NzE3LCJleHAiOj', '2025-12-09 04:11:57.727', '2025-12-02 04:11:57.762', NULL, NULL),
-('c22f173d-7276-4c84-aac0-63c224ce0acf', '6905fdcb-4e17-4183-95ac-7653529c8cab', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTA1ZmRjYi00ZTE3LTQxODMtOTVhYy03NjUzNTI5YzhjYWIiLCJlbWFpbCI6ImFkbWluQHVuaXYuYWMuaWQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjQ2NTEwMTYsImV4cCI6MT', '2025-12-09 04:50:16.970', '2025-12-02 04:50:17.018', NULL, NULL),
-('cf52c5d0-f514-4965-932a-bf1a3f708325', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5YjBjNDRkMS03OWU4LTRiNjMtOGI0My02MzJmNTc1ZGYzY2QiLCJlbWFpbCI6ImRvc2VuMUB1bml2LmFjLmlkIiwicm9sZSI6ImRvc2VuIiwiaWF0IjoxNzY0NjA4MTc0LCJleHAiOj', '2025-12-08 16:56:14.186', '2025-12-01 16:56:14.188', NULL, NULL),
-('f8c7fe35-5074-4c30-adf9-1976fdafa839', '7fce08fd-a465-4401-b277-efb163c57ecd', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3ZmNlMDhmZC1hNDY1LTQ0MDEtYjI3Ny1lZmIxNjNjNTdlY2QiLCJlbWFpbCI6InhAZ21haWwuY29tIiwicm9sZSI6ImRvc2VuIiwiaWF0IjoxNzY0NjUxMDc5LCJleHAiOjE3NjUyNT', '2025-12-09 04:51:19.669', '2025-12-02 04:51:19.671', NULL, NULL);
+('54269f7a-4f2e-4c67-ad94-f77a2a79749d', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5YjBjNDRkMS03OWU4LTRiNjMtOGI0My02MzJmNTc1ZGYzY2QiLCJlbWFpbCI6ImRvc2VuMUB1bml2LmFjLmlkIiwicm9sZSI6ImRvc2VuIiwiaWF0IjoxNzY0NjY3NTc3LCJleHAiOj', '2025-12-09 09:26:17.565', '2025-12-02 09:26:17.567', NULL, NULL),
+('5859965c-86e8-4520-b28b-a97a05f62540', '7fce08fd-a465-4401-b277-efb163c57ecd', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3ZmNlMDhmZC1hNDY1LTQ0MDEtYjI3Ny1lZmIxNjNjNTdlY2QiLCJlbWFpbCI6InhAZ21haWwuY29tIiwicm9sZSI6ImRvc2VuIiwiaWF0IjoxNzY0NjY3NTM5LCJleHAiOjE3NjUyNz', '2025-12-09 09:25:39.592', '2025-12-02 09:25:39.596', NULL, NULL),
+('a874c188-4202-4bbf-a556-cebfc7a7da73', '6905fdcb-4e17-4183-95ac-7653529c8cab', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTA1ZmRjYi00ZTE3LTQxODMtOTVhYy03NjUzNTI5YzhjYWIiLCJlbWFpbCI6ImFkbWluQHVuaXYuYWMuaWQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjQ2NjgxODksImV4cCI6MT', '2025-12-09 09:36:29.717', '2025-12-02 09:36:29.747', NULL, NULL),
+('fb2fecb7-50f2-41ba-af4f-f1c55f27b950', 'dce817fb-29ac-4b9f-a098-54881d30844d', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJkY2U4MTdmYi0yOWFjLTRiOWYtYTA5OC01NDg4MWQzMDg0NGQiLCJlbWFpbCI6IjIxMDAxMEBtaHMudW5pdi5hYy5pZCIsInJvbGUiOiJtYWhhc2lzd2EiLCJpYXQiOjE3NjQ2NjgyNz', '2025-12-09 09:37:58.536', '2025-12-02 09:37:58.537', NULL, NULL);
 
 -- --------------------------------------------------------
 

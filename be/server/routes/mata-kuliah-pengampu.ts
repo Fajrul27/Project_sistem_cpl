@@ -48,7 +48,8 @@ router.get('/dosen/:dosenId', authMiddleware, async (req, res) => {
         const assignments = await prisma.mataKuliahPengampu.findMany({
             where: { dosenId },
             include: {
-                mataKuliah: true
+                mataKuliah: true,
+                kelas: true
             }
         });
 
@@ -139,10 +140,10 @@ router.get('/peserta/:mataKuliahId', authMiddleware, requireRole('dosen'), async
 
         // Verifikasi bahwa dosen adalah pengampu mata kuliah ini
         const pengampuCheck = await prisma.mataKuliahPengampu.findFirst({
-            where: { 
-                mataKuliahId, 
+            where: {
+                mataKuliahId,
                 dosenId: userId,
-                isPengampu: true 
+                isPengampu: true
             },
             include: {
                 mataKuliah: true
@@ -243,7 +244,7 @@ router.get('/peserta/:mataKuliahId', authMiddleware, requireRole('dosen'), async
             programStudi: mahasiswa.prodi?.nama || mahasiswa.programStudi || 'Tidak ada program studi'
         }));
 
-        res.json({ 
+        res.json({
             data: peserta,
             total: peserta.length
         });

@@ -324,9 +324,19 @@ const TranskripCPLPage = () => {
                         </div>
 
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-2 mb-6">
-                                <TabsTrigger value="cpl">Transkrip CPL</TabsTrigger>
-                                <TabsTrigger value="cpmk">Transkrip CPMK</TabsTrigger>
+                            <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-200 dark:bg-muted p-1 rounded-full">
+                                <TabsTrigger
+                                    value="cpl"
+                                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 rounded-full"
+                                >
+                                    Transkrip CPL
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="cpmk"
+                                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300 rounded-full"
+                                >
+                                    Transkrip CPMK
+                                </TabsTrigger>
                             </TabsList>
 
                             <TabsContent value="cpl">
