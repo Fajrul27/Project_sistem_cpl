@@ -90,29 +90,24 @@ const CPMKDetailPage = () => {
     });
 
     // Level Taksonomi mapping
-    const levelTaksonomiMap: { [key: string]: string } = {
-        "C1": "Mengingat",
-        "C2": "Memahami", 
-        "C3": "Menerapkan",
-        "C4": "Menganalisis",
-        "C5": "Mengevaluasi",
-        "C6": "Mencipta",
-        "P1": "Persepsi",
-        "P2": "Respon",
-        "P3": "Penilaian",
-        "P4": "Organisasi",
-        "P5": "Karakterisasi",
-        "A1": "Menerima",
-        "A2": "Merespons", 
-        "A3": "Menghargai",
-        "A4": "Mengelola",
-        "A5": "Menginternalisasi",
-        "K1": "Mengingat",
-        "K2": "Memahami",
-        "K3": "Menerapkan",
-        "K4": "Menganalisis", 
-        "K5": "Mengevaluasi",
-        "K6": "Mencipta"
+    const [levelTaksonomiMap, setLevelTaksonomiMap] = useState<{ [key: string]: string }>({});
+
+    useEffect(() => {
+        fetchLevelTaksonomi();
+    }, []);
+
+    const fetchLevelTaksonomi = async () => {
+        try {
+            const result = await api.get('/level-taksonomi');
+            const data = result.data || [];
+            const map: { [key: string]: string } = {};
+            data.forEach((item: any) => {
+                map[item.kode] = item.deskripsi;
+            });
+            setLevelTaksonomiMap(map);
+        } catch (error) {
+            console.error('Error fetching level taksonomi:', error);
+        }
     };
 
     const getLevelTaksonomiDeskripsi = (level: string | null) => {

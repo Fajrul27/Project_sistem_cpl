@@ -8,6 +8,18 @@ async function main() {
     console.log('🌱 Seeding database...\n');
     // Hash password
     const hashedPassword = await bcrypt.hash('admin123', 10);
+    // Find Prodi Informatika (or Teknik Informatika) - MOVED TO TOP
+    const prodiInformatika = await prisma.prodi.findFirst({
+        where: {
+            OR: [
+                { nama: 'Informatika' },
+                { nama: 'Teknik Informatika' }
+            ]
+        }
+    });
+    if (!prodiInformatika) {
+        console.warn('⚠️ Prodi Informatika not found. Make sure seed_fakultas_prodi.ts is run first!');
+    }
     // Create admin user
     console.log('Creating admin user...');
     const admin = await prisma.user.create({
@@ -45,7 +57,10 @@ async function main() {
                 create: {
                     namaLengkap: 'Dr. Budi Santoso, M.Kom',
                     nip: '198801010001',
-                    programStudi: 'Teknik Informatika'
+                    namaLengkap: 'Dr. Budi Santoso, M.Kom',
+                    nip: '198801010001',
+                    programStudi: 'Teknik Informatika',
+                    prodiId: prodiInformatika?.id
                 }
             }
         }
@@ -62,7 +77,10 @@ async function main() {
                 create: {
                     namaLengkap: 'Dr. Siti Aisyah, M.T',
                     nip: '198802020002',
-                    programStudi: 'Teknik Informatika'
+                    namaLengkap: 'Dr. Siti Aisyah, M.T',
+                    nip: '198802020002',
+                    programStudi: 'Teknik Informatika',
+                    prodiId: prodiInformatika?.id
                 }
             }
         }
@@ -82,7 +100,10 @@ async function main() {
                 create: {
                     namaLengkap: 'Ahmad Rizki Wijaya',
                     nim: '2101010001',
+                    namaLengkap: 'Ahmad Rizki Wijaya',
+                    nim: '2101010001',
                     programStudi: 'Teknik Informatika',
+                    prodiId: prodiInformatika?.id,
                     semester: 5,
                     tahunMasuk: 2021
                 }
@@ -101,7 +122,10 @@ async function main() {
                 create: {
                     namaLengkap: 'Siti Nurhaliza',
                     nim: '2101010002',
+                    namaLengkap: 'Siti Nurhaliza',
+                    nim: '2101010002',
                     programStudi: 'Teknik Informatika',
+                    prodiId: prodiInformatika?.id,
                     semester: 5,
                     tahunMasuk: 2021
                 }
@@ -120,7 +144,10 @@ async function main() {
                 create: {
                     namaLengkap: 'Budi Hartono',
                     nim: '2101010003',
+                    namaLengkap: 'Budi Hartono',
+                    nim: '2101010003',
                     programStudi: 'Teknik Informatika',
+                    prodiId: prodiInformatika?.id,
                     semester: 5,
                     tahunMasuk: 2021
                 }
@@ -135,7 +162,8 @@ async function main() {
             kodeCpl: 'CPL-01',
             deskripsi: 'Mampu menerapkan pemikiran logis, kritis, sistematis, dan inovatif dalam konteks pengembangan atau implementasi ilmu pengetahuan dan teknologi',
             kategori: 'Sikap',
-            createdBy: admin.id
+            createdBy: admin.id,
+            prodiId: prodiInformatika?.id
         }
     });
     const cpl2 = await prisma.cpl.create({
@@ -143,7 +171,8 @@ async function main() {
             kodeCpl: 'CPL-02',
             deskripsi: 'Menguasai konsep teoretis dan prinsip rekayasa perangkat lunak',
             kategori: 'Pengetahuan',
-            createdBy: admin.id
+            createdBy: admin.id,
+            prodiId: prodiInformatika?.id
         }
     });
     const cpl3 = await prisma.cpl.create({
@@ -151,7 +180,8 @@ async function main() {
             kodeCpl: 'CPL-03',
             deskripsi: 'Mampu merancang dan mengimplementasikan sistem informasi',
             kategori: 'Keterampilan Umum',
-            createdBy: admin.id
+            createdBy: admin.id,
+            prodiId: prodiInformatika?.id
         }
     });
     const cpl4 = await prisma.cpl.create({
@@ -159,7 +189,8 @@ async function main() {
             kodeCpl: 'CPL-04',
             deskripsi: 'Mampu bekerja sama dalam tim multidisiplin',
             kategori: 'Keterampilan Khusus',
-            createdBy: admin.id
+            createdBy: admin.id,
+            prodiId: prodiInformatika?.id
         }
     });
     const cpl5 = await prisma.cpl.create({
@@ -167,7 +198,8 @@ async function main() {
             kodeCpl: 'CPL-05',
             deskripsi: 'Mampu mengidentifikasi, menganalisis, dan merumuskan solusi permasalahan',
             kategori: 'Keterampilan Umum',
-            createdBy: admin.id
+            createdBy: admin.id,
+            prodiId: prodiInformatika?.id
         }
     });
     console.log('✅ CPL created');
