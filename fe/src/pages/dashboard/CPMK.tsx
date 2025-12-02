@@ -8,14 +8,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup, SelectLabel } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Loader2, Search, Eye } from "lucide-react";
+import { Plus, Edit, Trash2, Loader2, Search, Eye, SlidersHorizontal } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/DashboardLayout";
 import { MultiTaxonomySelect } from "@/components/MultiTaxonomySelect";
 import { Badge } from "@/components/ui/badge";
 
-import { api } from "@/lib/api-client";
+import { api, fetchFakultasList, fetchProdiList, fetchMataKuliahPengampu, getUser } from "@/lib/api-client";
 
 interface MataKuliah {
     id: string;
@@ -38,7 +39,7 @@ interface Cpmk {
 const CPMKPage = () => {
     const navigate = useNavigate();
     const [cpmkList, setCpmkList] = useState<Cpmk[]>([]);
-    const [mataKuliahList, setMataKuliahList] = useState<MataKuliah[]>([]);
+    const [mataKuliahList, setMataKuliahList] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -54,15 +55,72 @@ const CPMKPage = () => {
 
     const [searchTerm, setSearchTerm] = useState("");
     const [mataKuliahFilter, setMataKuliahFilter] = useState<string>("all");
+    const [fakultasList, setFakultasList] = useState<any[]>([]);
+    const [prodiList, setProdiList] = useState<any[]>([]);
+    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
+    const [selectedProdi, setSelectedProdi] = useState<string>("all");
 
     useEffect(() => {
-        fetchMataKuliah();
+        fetchInitialData();
         fetchCpmk();
     }, []);
 
-    const fetchMataKuliah = async () => {
+    useEffect(() => {
+        fetchProdi();
+    }, [selectedFakultas]);
+
+    useEffect(() => {
+        fetchMataKuliah();
+    }, [selectedProdi]);
+
+    const fetchInitialData = async () => {
         try {
-            const result = await api.get('/mata-kuliah');
+            const [fakultasRes, prodiRes] = await Promise.all([
+                fetchFakultasList(),
+                fetchProdiList()
+            ]);
+            setFakultasList(fakultasRes.data || []);
+            setProdiList(prodiRes.data || []);
+
+            // If user is dosen, fetch taught courses
+            const user = getUser();
+            if (user && user.role === 'dosen') {
+                const mkRes = await fetchMataKuliahPengampu(user.id);
+                setMataKuliahList(mkRes.data || []);
+            } else {
+                fetchMataKuliah();
+            }
+        } catch (error) {
+            console.error("Error fetching initial data:", error);
+        }
+    };
+
+    const fetchProdi = async () => {
+        try {
+            const fakultasId = selectedFakultas !== 'all' ? selectedFakultas : undefined;
+            const res = await fetchProdiList(fakultasId);
+            setProdiList(res.data || []);
+
+            // Reset selected Prodi if not in new list
+            if (selectedProdi !== 'all') {
+                const exists = (res.data || []).find((p: any) => p.id === selectedProdi);
+                if (!exists) setSelectedProdi("all");
+            }
+        } catch (error) {
+            console.error("Error fetching prodi:", error);
+        }
+    };
+
+    const fetchMataKuliah = async () => {
+        // Skip if user is dosen (already fetched in initialData)
+        const user = getUser();
+        if (user && user.role === 'dosen') return;
+
+        try {
+            const params: any = {};
+            if (selectedProdi !== 'all') params.prodiId = selectedProdi;
+
+            const result = await api.get('/mata-kuliah', { params });
             const data = result.data || result;
             setMataKuliahList(Array.isArray(data) ? data : []);
         } catch (error) {
@@ -216,19 +274,116 @@ const CPMKPage = () => {
                             className="pl-9"
                         />
                     </div>
-                    <Select value={mataKuliahFilter} onValueChange={setMataKuliahFilter}>
-                        <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Filter Mata Kuliah" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Semua Mata Kuliah</SelectItem>
-                            {mataKuliahList.map((mk) => (
-                                <SelectItem key={mk.id} value={mk.id}>
-                                    {mk.kodeMk} - {mk.namaMk}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+
+
+                    {role !== 'dosen' && (
+                        <>
+                            <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
+                                <SelectTrigger className="w-[200px]">
+                                    <SelectValue placeholder="Filter Fakultas" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Fakultas</SelectItem>
+                                    {fakultasList.map((fak) => (
+                                        <SelectItem key={fak.id} value={fak.id}>
+                                            {fak.nama}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={selectedProdi} onValueChange={setSelectedProdi}>
+                                <SelectTrigger className="w-[200px]">
+                                    <SelectValue placeholder="Filter Prodi" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Prodi</SelectItem>
+                                    {prodiList.map((prodi) => (
+                                        <SelectItem key={prodi.id} value={prodi.id}>
+                                            {prodi.nama}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </>
+                    )}
+
+                    {role === 'dosen' ? (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={mataKuliahFilter !== "all" ? "default" : "outline"}
+                                    className="gap-2 w-[200px] justify-between"
+                                >
+                                    <div className="flex items-center gap-2 truncate">
+                                        <SlidersHorizontal className="h-4 w-4 shrink-0" />
+                                        <span className="truncate">
+                                            {mataKuliahFilter === 'all'
+                                                ? "Filter Mata Kuliah"
+                                                : mataKuliahList.find(mk => (mk.mataKuliah?.id || mk.id) === mataKuliahFilter)?.mataKuliah?.kodeMk ||
+                                                mataKuliahList.find(mk => (mk.mataKuliah?.id || mk.id) === mataKuliahFilter)?.kodeMk ||
+                                                "Filter Mata Kuliah"
+                                            }
+                                        </span>
+                                    </div>
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="start" className="w-80 space-y-4">
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Mata Kuliah</Label>
+                                    <Select
+                                        value={mataKuliahFilter}
+                                        onValueChange={setMataKuliahFilter}
+                                    >
+                                        <SelectTrigger className="w-full h-8 text-xs">
+                                            <SelectValue placeholder="Pilih Mata Kuliah" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Semua Mata Kuliah</SelectItem>
+                                            {mataKuliahList.map((mk) => {
+                                                // Handle both structure types (direct MK or MKPengampu)
+                                                const id = mk.mataKuliah?.id || mk.id;
+                                                const kode = mk.mataKuliah?.kodeMk || mk.kodeMk;
+                                                const nama = mk.mataKuliah?.namaMk || mk.namaMk;
+                                                const semester = mk.mataKuliah?.semester || mk.semester;
+
+                                                return (
+                                                    <SelectItem key={id} value={id}>
+                                                        {kode} - {nama} {semester ? `(Semester ${semester})` : ''}
+                                                    </SelectItem>
+                                                );
+                                            })}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex justify-between pt-1">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setMataKuliahFilter("all")}
+                                        disabled={mataKuliahFilter === "all"}
+                                    >
+                                        Reset Filter
+                                    </Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    ) : (
+                        <Select value={mataKuliahFilter} onValueChange={setMataKuliahFilter}>
+                            <SelectTrigger className="w-[200px]">
+                                <SelectValue placeholder="Filter Mata Kuliah" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua Mata Kuliah</SelectItem>
+                                {mataKuliahList.map((mk) => (
+                                    <SelectItem key={mk.id} value={mk.id}>
+                                        {mk.kodeMk} - {mk.namaMk}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
                     <Button variant="outline" onClick={fetchCpmk}>
                         Muat Ulang
                     </Button>
@@ -290,11 +445,16 @@ const CPMKPage = () => {
                                                     <SelectValue placeholder="Pilih Mata Kuliah" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {mataKuliahList.map((mk) => (
-                                                        <SelectItem key={mk.id} value={mk.id}>
-                                                            {mk.kodeMk} - {mk.namaMk}
-                                                        </SelectItem>
-                                                    ))}
+                                                    {mataKuliahList.map((mk) => {
+                                                        const id = mk.mataKuliah?.id || mk.id;
+                                                        const kode = mk.mataKuliah?.kodeMk || mk.kodeMk;
+                                                        const nama = mk.mataKuliah?.namaMk || mk.namaMk;
+                                                        return (
+                                                            <SelectItem key={id} value={id}>
+                                                                {kode} - {nama}
+                                                            </SelectItem>
+                                                        );
+                                                    })}
                                                 </SelectContent>
                                             </Select>
                                         </div>

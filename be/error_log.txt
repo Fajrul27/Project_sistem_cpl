@@ -1,0 +1,176 @@
+﻿≡ƒî▒ Seeding Fakultas dan Program Studi UNUGHA...
+
+
+≡ƒôÜ Processing Fakultas: Fakultas Keguruan dan Ilmu Pendidikan (FKIP)
+node.exe : Γ¥î Error 
+seeding data: PrismaC
+lientInitializationEr
+ror: 
+At line:1 char:1
++ & "C:\Program Files
+\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Γ¥î Err   
+ or seedi...lizat    
+ionError: :Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+Invalid `prisma.fakul
+tas.upsert()` 
+invocation in
+D:\PERKULIAHAN\PKL\Pr
+oject_sistem_cpl\be\p
+risma\seed_fakultas_p
+rodi.ts:66:59
+
+  63 for (const 
+fakultas of 
+fakultasData) {
+  64     
+console.log(`\n≡ƒôÜ 
+Processing Fakultas: 
+${fakultas.nama} 
+(${fakultas.kode})`);
+  65 
+ΓåÆ 66     const 
+createdFakultas = 
+await prisma.fakultas
+.upsert(
+error: Environment 
+variable not found: 
+DATABASE_URL.
+  -->  
+schema.prisma:8
+   | 
+ 7 |   provider = 
+"mysql"
+ 8 |   url      = 
+env("DATABASE_URL")
+   | 
+
+Validation Error 
+Count: 1
+    at $n.handleReque
+stError (D:\PERKULIAH
+AN\PKL\Project_sistem
+_cpl\be\node_modules\
+@prisma\client\runtim
+e\library.js:121:7615
+)
+    at $n.handleAndLo
+gRequestError (D:\PER
+KULIAHAN\PKL\Project_
+sistem_cpl\be\node_mo
+dules\@prisma\client\
+runtime\library.js:12
+1:6623)
+    at $n.request (D:
+\PERKULIAHAN\PKL\Proj
+ect_sistem_cpl\be\nod
+e_modules\@prisma\cli
+ent\runtime\library.j
+s:121:6307)
+    at async l (D:\PE
+RKULIAHAN\PKL\Project
+_sistem_cpl\be\node_m
+odules\@prisma\client
+\runtime\library.js:1
+30:9633)
+    at async 
+seedFakultasProdi (D:
+\PERKULIAHAN\PKL\Proj
+ect_sistem_cpl\be\pri
+sma\seed_fakultas_pro
+di.ts:66:37) {
+  clientVersion: 
+'5.22.0',
+  errorCode: 
+undefined
+}
+Fatal error: PrismaCl
+ientInitializationErr
+or: 
+Invalid `prisma.fakul
+tas.upsert()` 
+invocation in
+D:\PERKULIAHAN\PKL\Pr
+oject_sistem_cpl\be\p
+risma\seed_fakultas_p
+rodi.ts:66:59
+
+  63 for (const 
+fakultas of 
+fakultasData) {
+  64     
+console.log(`\n≡ƒôÜ 
+Processing Fakultas: 
+${fakultas.nama} 
+(${fakultas.kode})`);
+  65 
+ΓåÆ 66     const 
+createdFakultas = 
+await prisma.fakultas
+.upsert(
+error: Environment 
+variable not found: 
+DATABASE_URL.
+  -->  
+schema.prisma:8
+   | 
+ 7 |   provider = 
+"mysql"
+ 8 |   url      = 
+env("DATABASE_URL")
+   | 
+
+Validation Error 
+Count: 1
+    at $n.handleReque
+stError (D:\PERKULIAH
+AN\PKL\Project_sistem
+_cpl\be\node_modules\
+@prisma\client\runtim
+e\library.js:121:7615
+)
+    at $n.handleAndLo
+gRequestError (D:\PER
+KULIAHAN\PKL\Project_
+sistem_cpl\be\node_mo
+dules\@prisma\client\
+runtime\library.js:12
+1:6623)
+    at $n.request (D:
+\PERKULIAHAN\PKL\Proj
+ect_sistem_cpl\be\nod
+e_modules\@prisma\cli
+ent\runtime\library.j
+s:121:6307)
+    at async l (D:\PE
+RKULIAHAN\PKL\Project
+_sistem_cpl\be\node_m
+odules\@prisma\client
+\runtime\library.js:1
+30:9633)
+    at async 
+seedFakultasProdi (D:
+\PERKULIAHAN\PKL\Proj
+ect_sistem_cpl\be\pri
+sma\seed_fakultas_pro
+di.ts:66:37) {
+  clientVersion: 
+'5.22.0',
+  errorCode: 
+undefined
+}

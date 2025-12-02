@@ -358,16 +358,21 @@ const MahasiswaPage = () => {
             <Popover>
               <PopoverTrigger asChild>
                 <Button
-                  variant={selectedMataKuliah ? "default" : "outline"}
-                  size="sm"
-                  className="gap-2"
+                  variant={selectedMataKuliah !== "all" ? "default" : "outline"}
+                  className="gap-2 w-[200px] justify-between"
                 >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  <span className="hidden sm:inline">Mata Kuliah</span>
-                  <span className="sm:hidden">MK</span>
+                  <div className="flex items-center gap-2 truncate">
+                    <SlidersHorizontal className="h-4 w-4 shrink-0" />
+                    <span className="truncate">
+                      {selectedMataKuliah === 'all' || !selectedMataKuliah
+                        ? "Filter Mata Kuliah"
+                        : mataKuliahList.find(mk => mk.mataKuliah.id === selectedMataKuliah)?.mataKuliah.kodeMk || "Filter Mata Kuliah"
+                      }
+                    </span>
+                  </div>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-80 space-y-4">
+              <PopoverContent align="start" className="w-80 space-y-4">
                 {/* Mata Kuliah Filter */}
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Mata Kuliah</Label>

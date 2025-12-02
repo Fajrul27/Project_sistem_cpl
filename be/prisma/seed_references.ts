@@ -1,4 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 const prisma = new PrismaClient();
 
@@ -27,16 +30,42 @@ async function main() {
     console.log('Semesters seeded.');
 
     // Seed Kelas
-    const classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    const classMappings = {
+        'A': 'Kelas A',
+        'B': 'Kelas B',
+        'C': 'Kelas C',
+        'D': 'Kelas D',
+        'E': 'Kelas E',
+        'F': 'Kelas F',
+        'G': 'Kelas G',
+        'H': 'Kelas H'
+    };
 
-    for (const cls of classes) {
+    const targetClasses = ['Kelas A', 'Kelas B', 'Kelas C'];
+
+    console.log('Renaming/Creating Classes...');
+
+    // 1. Rename existing single-letter classes if they exist
+    for (const [oldName, newName] of Object.entries(classMappings)) {
+        const existing = await prisma.kelas.findUnique({ where: { nama: oldName } });
+        if (existing) {
+            console.log(`Renaming class ${oldName} to ${newName}...`);
+            await prisma.kelas.update({
+                where: { id: existing.id },
+                data: { nama: newName }
+            });
+        }
+    }
+
+    // 2. Ensure target classes exist
+    for (const cls of targetClasses) {
         await prisma.kelas.upsert({
             where: { nama: cls },
             update: {},
             create: { nama: cls },
         });
     }
-    console.log('Classes seeded.');
+    console.log('Classes seeded/updated.');
 }
 
 main()

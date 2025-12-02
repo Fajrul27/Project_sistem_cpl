@@ -82,7 +82,7 @@ router.get('/cpmk/:cpmkId', authMiddleware, async (req, res) => {
 });
 
 // Create CPMK-CPL mapping
-router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
+router.post('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async (req, res) => {
     try {
         const userId = (req as any).userId;
         const userRole = (req as any).userRole;
@@ -112,23 +112,35 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res)
             return res.status(404).json({ error: 'CPMK tidak ditemukan' });
         }
 
-        // [SECURITY] Check if dosen is pengampu of this mata kuliah
-        if (userRole === 'dosen') {
-            const profile = await prisma.profile.findUnique({
-                where: { userId }
-            });
+        // [SECURITY] Check access
+        // 1. Admin: Allowed (by requireRole)
+        // 2. Kaprodi: Allowed if same prodi
+        // 3. Dosen: Allowed if creator OR pengampu
 
-            if (profile) {
+        if (userRole === 'kaprodi') {
+            const profile = await prisma.profile.findUnique({ where: { userId } });
+            if (!profile || !profile.prodiId || profile.prodiId !== cpmk.mataKuliah.prodiId) {
+                // Fallback check for legacy programStudi
+                if (!profile?.programStudi || profile.programStudi !== cpmk.mataKuliah.programStudi) {
+                    return res.status(403).json({ error: 'Anda tidak memiliki akses ke mata kuliah ini (Prodi mismatch)' });
+                }
+            }
+        } else if (userRole === 'dosen') {
+            // Check if creator
+            if (cpmk.createdBy === userId) {
+                // Allowed
+            } else {
+                // Check if pengampu
                 const pengampu = await prisma.mataKuliahPengampu.findFirst({
                     where: {
                         mataKuliahId: cpmk.mataKuliahId,
-                        dosenId: profile.id
+                        dosenId: userId // userId is FK in MataKuliahPengampu based on schema
                     }
                 });
 
                 if (!pengampu) {
-                    return res.status(403).json({ 
-                        error: 'Anda tidak memiliki akses ke mata kuliah ini' 
+                    return res.status(403).json({
+                        error: 'Anda tidak memiliki akses ke mata kuliah ini (Bukan Pengampu/Creator)'
                     });
                 }
             }
@@ -201,7 +213,7 @@ router.post('/', authMiddleware, requireRole('admin', 'dosen'), async (req, res)
 });
 
 // Update CPMK-CPL mapping (update bobot)
-router.put('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
+router.put('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async (req, res) => {
     try {
         const { id } = req.params;
         const { bobotPersentase } = req.body;
@@ -325,7 +337,7 @@ router.post('/batch', authMiddleware, requireRole('admin', 'dosen'), async (req,
 });
 
 // Delete CPMK-CPL mapping
-router.delete('/:id', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
+router.delete('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async (req, res) => {
     try {
         const { id } = req.params;
 

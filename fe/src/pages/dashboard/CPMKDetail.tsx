@@ -436,6 +436,9 @@ const CPMKDetailPage = () => {
                                 <DialogContent>
                                     <DialogHeader>
                                         <DialogTitle>{editingMapping ? "Edit Mapping CPL" : "Tambah Mapping CPL"}</DialogTitle>
+                                        <DialogDescription>
+                                            {editingMapping ? "Edit bobot mapping CPL yang sudah ada." : "Tambahkan mapping baru antara CPMK dan CPL."}
+                                        </DialogDescription>
                                     </DialogHeader>
                                     <form onSubmit={handleSubmitMapping} className="space-y-4">
                                         <div className="space-y-2">
@@ -574,6 +577,9 @@ const CPMKDetailPage = () => {
                                         <DialogTitle>
                                             {editingTeknik ? "Edit Teknik Penilaian" : "Tambah Teknik Penilaian"}
                                         </DialogTitle>
+                                        <DialogDescription>
+                                            {editingTeknik ? "Edit detail teknik penilaian." : "Tambahkan teknik penilaian baru untuk CPMK ini."}
+                                        </DialogDescription>
                                     </DialogHeader>
                                     <form onSubmit={handleSubmitTeknik} className="space-y-4">
                                         <div className="space-y-2">

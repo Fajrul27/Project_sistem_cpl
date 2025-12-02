@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 02, 2025 at 03:55 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Waktu pembuatan: 02 Des 2025 pada 06.23
+-- Versi server: 10.4.32-MariaDB
+-- Versi PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -24,7 +24,7 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `audit_logs`
+-- Struktur dari tabel `audit_logs`
 --
 
 CREATE TABLE `audit_logs` (
@@ -43,7 +43,7 @@ CREATE TABLE `audit_logs` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `cpl`
+-- Struktur dari tabel `cpl`
 --
 
 CREATE TABLE `cpl` (
@@ -60,12 +60,13 @@ CREATE TABLE `cpl` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `cpl`
+-- Dumping data untuk tabel `cpl`
 --
 
 INSERT INTO `cpl` (`id`, `kode_cpl`, `deskripsi`, `kategori`, `is_active`, `created_at`, `updated_at`, `created_by`, `kategori_id`, `prodi_id`) VALUES
 ('386cd3b5-4347-49d3-bcdf-bac2d6570879', 'CPL-10', 'Mampu melakukan pengamanan data dan sistem informasi', NULL, 1, '2025-12-01 16:47:17.865', '2025-12-01 16:47:17.865', '9197693b-0488-4735-96d4-3fcbe6915879', '9efa8000-a5dc-45cb-90c7-256f119d864f', 'a030d74c-45de-4937-ac55-95c0dded211f'),
 ('51850e8a-0d12-4871-a45c-05b2dc21a671', 'CPL-06', 'Mampu menunjukkan kinerja mandiri, bermutu, dan terukur', NULL, 1, '2025-12-01 16:47:17.853', '2025-12-01 16:47:17.853', '9197693b-0488-4735-96d4-3fcbe6915879', 'a36f0952-2dbe-4c6f-b1c4-7b2b756338b9', 'a030d74c-45de-4937-ac55-95c0dded211f'),
+('51d4127f-f85c-4139-a2e4-b502f330461a', 'CPL-010', 'Mampu menerapkan pemikiran logis, kritis, sistematis, dan inovatif dalam konteks pengembangan atau implementasi ilmu pengetahuan dan teknologi Managemen', NULL, 1, '2025-12-02 04:28:15.406', '2025-12-02 04:28:15.406', '6905fdcb-4e17-4183-95ac-7653529c8cab', 'a36f0952-2dbe-4c6f-b1c4-7b2b756338b9', '261c62ea-4e4f-4a82-ae8a-d20b3b9819e8'),
 ('570a38e7-f5a7-4642-b5cd-2aa01ddb05ba', 'CPL-02', 'Menjunjung tinggi nilai kemanusiaan dalam menjalankan tugas berdasarkan agama, moral, dan etika', NULL, 1, '2025-12-01 16:47:17.837', '2025-12-01 16:47:17.837', '9197693b-0488-4735-96d4-3fcbe6915879', 'd30e2abe-c85d-4091-a55f-8ddf10d9d45f', 'a030d74c-45de-4937-ac55-95c0dded211f'),
 ('5771505b-640f-4348-ae11-a98a2db91cf2', 'CPL-04', 'Menguasai konsep teoretis arsitektur, organisasi, dan sistem komputer', NULL, 1, '2025-12-01 16:47:17.845', '2025-12-01 16:47:17.845', '9197693b-0488-4735-96d4-3fcbe6915879', 'fd99248b-6936-4c32-822f-c92de970ca30', 'a030d74c-45de-4937-ac55-95c0dded211f'),
 ('bd76eca3-6732-4b70-999f-282b32d83191', 'CPL-07', 'Mampu merancang dan membangun aplikasi berbasis web', NULL, 1, '2025-12-01 16:47:17.856', '2025-12-01 16:47:17.856', '9197693b-0488-4735-96d4-3fcbe6915879', '9efa8000-a5dc-45cb-90c7-256f119d864f', 'a030d74c-45de-4937-ac55-95c0dded211f'),
@@ -78,7 +79,7 @@ INSERT INTO `cpl` (`id`, `kode_cpl`, `deskripsi`, `kategori`, `is_active`, `crea
 -- --------------------------------------------------------
 
 --
--- Table structure for table `cpl_mata_kuliah`
+-- Struktur dari tabel `cpl_mata_kuliah`
 --
 
 CREATE TABLE `cpl_mata_kuliah` (
@@ -91,7 +92,7 @@ CREATE TABLE `cpl_mata_kuliah` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `cpl_mata_kuliah`
+-- Dumping data untuk tabel `cpl_mata_kuliah`
 --
 
 INSERT INTO `cpl_mata_kuliah` (`id`, `cpl_id`, `mata_kuliah_id`, `bobot_kontribusi`, `created_at`, `updated_at`) VALUES
@@ -109,7 +110,7 @@ INSERT INTO `cpl_mata_kuliah` (`id`, `cpl_id`, `mata_kuliah_id`, `bobot_kontribu
 -- --------------------------------------------------------
 
 --
--- Table structure for table `cpmk`
+-- Struktur dari tabel `cpmk`
 --
 
 CREATE TABLE `cpmk` (
@@ -129,7 +130,7 @@ CREATE TABLE `cpmk` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `cpmk`
+-- Dumping data untuk tabel `cpmk`
 --
 
 INSERT INTO `cpmk` (`id`, `kode_cpmk`, `deskripsi`, `mata_kuliah_id`, `is_active`, `created_at`, `updated_at`, `created_by`, `status_validasi`, `validated_at`, `validated_by`, `level_taksonomi`, `level_taksonomi_id`) VALUES
@@ -142,12 +143,13 @@ INSERT INTO `cpmk` (`id`, `kode_cpmk`, `deskripsi`, `mata_kuliah_id`, `is_active
 ('beb1f9a5-4beb-41fa-a9d4-67e684045396', 'CPMK-INF-304-1', 'Mampu memahami konsep dasar Jaringan Komputer', 'a04d7243-1d02-492a-8deb-3244d8db0e46', 1, '2025-12-01 16:47:18.779', '2025-12-01 16:47:18.779', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', 'validated', NULL, NULL, NULL, 'f465d843-316a-46aa-b505-8be1e61d014a'),
 ('c93c4535-8abc-480d-b11d-0e511a01ac7f', 'CPMK-INF-305-2', 'Mampu mengimplementasikan Kecerdasan Buatan dalam proyek', '1936ca45-b910-4787-a2ce-94e25481930f', 1, '2025-12-01 16:47:19.035', '2025-12-01 16:47:19.035', 'ed42925d-924d-4517-b779-6dbf76cf923f', 'validated', NULL, NULL, NULL, '5bd439af-aec4-4606-9981-caf0441a745c'),
 ('d5fa648d-8d70-464b-880b-a3cd45d10272', 'CPMK-INF-304-2', 'Mampu mengimplementasikan Jaringan Komputer dalam proyek', 'a04d7243-1d02-492a-8deb-3244d8db0e46', 1, '2025-12-01 16:47:18.782', '2025-12-02 02:32:09.264', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', 'validated', NULL, NULL, 'C1,C3', '5bd439af-aec4-4606-9981-caf0441a745c'),
+('e973553e-568b-43ce-a475-d190fd8dd46b', 'CPMK 222', 'asasasdsdqsd', '63b7ab72-9789-4865-b9a1-0e903ef306af', 1, '2025-12-02 04:31:00.806', '2025-12-02 04:51:03.101', '6905fdcb-4e17-4183-95ac-7653529c8cab', 'active', '2025-12-02 04:51:03.099', '6905fdcb-4e17-4183-95ac-7653529c8cab', 'A2,C1', NULL),
 ('eed272d9-74c3-4e34-9057-ee06f9473c04', 'CPMK-INF-303-2', 'Mampu mengimplementasikan Rekayasa Perangkat Lunak dalam proyek', 'cea3583d-77a9-4a8d-ad70-746b25f15065', 1, '2025-12-01 16:47:18.563', '2025-12-01 16:47:18.563', '133d79ea-b30f-4183-94ff-d587c99352e2', 'validated', NULL, NULL, NULL, '5bd439af-aec4-4606-9981-caf0441a745c');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `cpmk_cpl_mapping`
+-- Struktur dari tabel `cpmk_cpl_mapping`
 --
 
 CREATE TABLE `cpmk_cpl_mapping` (
@@ -160,12 +162,13 @@ CREATE TABLE `cpmk_cpl_mapping` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `cpmk_cpl_mapping`
+-- Dumping data untuk tabel `cpmk_cpl_mapping`
 --
 
 INSERT INTO `cpmk_cpl_mapping` (`id`, `cpmk_id`, `cpl_id`, `bobot_persentase`, `created_at`, `updated_at`) VALUES
 ('0549bf99-0b7e-4a6c-87aa-ae64f0aad40d', '389a4bd3-f046-4550-a6bb-7e7781187fb9', 'c659c742-f923-4642-8b45-bba455749ef1', 100.00, '2025-12-01 16:47:19.040', '2025-12-01 16:47:19.040'),
 ('2419e404-0d20-4bd2-8cdb-73e8037ba667', '0cd7ad12-bbc9-4d29-b69f-570c2c6bb2f4', 'fabca593-59ea-4630-bb28-f679ad0e33a7', 100.00, '2025-12-01 16:47:17.943', '2025-12-01 16:47:17.943'),
+('4bfe2dbb-c52a-4c66-9a2b-1de0d27fc1a8', 'e973553e-568b-43ce-a475-d190fd8dd46b', '51d4127f-f85c-4139-a2e4-b502f330461a', 33.00, '2025-12-02 04:47:51.745', '2025-12-02 04:47:51.745'),
 ('524887f7-e566-4274-a4ab-255a3dec2642', 'c93c4535-8abc-480d-b11d-0e511a01ac7f', '5771505b-640f-4348-ae11-a98a2db91cf2', 100.00, '2025-12-01 16:47:19.040', '2025-12-01 16:47:19.040'),
 ('6e67d739-55cd-423a-b039-9350c61e3150', 'eed272d9-74c3-4e34-9057-ee06f9473c04', '5771505b-640f-4348-ae11-a98a2db91cf2', 100.00, '2025-12-01 16:47:18.569', '2025-12-01 16:47:18.569'),
 ('bab0a96e-dd0b-4a1a-bdf4-dcce7e95b1c4', '8d555a09-097a-41e8-89f6-2bc37913b119', 'de358d61-5934-4393-8c97-6eda2abd90bb', 100.00, '2025-12-01 16:47:18.311', '2025-12-01 16:47:18.311'),
@@ -178,7 +181,7 @@ INSERT INTO `cpmk_cpl_mapping` (`id`, `cpmk_id`, `cpl_id`, `bobot_persentase`, `
 -- --------------------------------------------------------
 
 --
--- Table structure for table `evaluasi_mata_kuliah`
+-- Struktur dari tabel `evaluasi_mata_kuliah`
 --
 
 CREATE TABLE `evaluasi_mata_kuliah` (
@@ -196,7 +199,7 @@ CREATE TABLE `evaluasi_mata_kuliah` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `evaluasi_mata_kuliah`
+-- Dumping data untuk tabel `evaluasi_mata_kuliah`
 --
 
 INSERT INTO `evaluasi_mata_kuliah` (`id`, `mata_kuliah_id`, `dosen_id`, `semester`, `tahun_ajaran`, `kendala`, `rencana_perbaikan`, `status`, `feedback_kaprodi`, `created_at`, `updated_at`) VALUES
@@ -205,7 +208,7 @@ INSERT INTO `evaluasi_mata_kuliah` (`id`, `mata_kuliah_id`, `dosen_id`, `semeste
 -- --------------------------------------------------------
 
 --
--- Table structure for table `fakultas`
+-- Struktur dari tabel `fakultas`
 --
 
 CREATE TABLE `fakultas` (
@@ -217,18 +220,20 @@ CREATE TABLE `fakultas` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `fakultas`
+-- Dumping data untuk tabel `fakultas`
 --
 
 INSERT INTO `fakultas` (`id`, `nama`, `kode`, `created_at`, `updated_at`) VALUES
-('21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'Fakultas Matematika dan Komputer', 'FMIKOM', '2025-12-01 16:47:17.743', '2025-12-01 16:47:17.743'),
-('830b1523-915b-4164-9b56-a907c24147a5', 'Fakultas Teknologi Industri', 'FTI', '2025-12-01 16:47:17.756', '2025-12-01 16:47:17.756'),
-('edf3ed60-efbb-4aab-a201-64f5d71e8f66', 'Fakultas Keguruan dan Ilmu Pendidikan', 'FKIP', '2025-12-01 16:47:17.732', '2025-12-01 16:47:17.732');
+('0c5255ac-cfa2-4a86-a14b-665f9d166d62', 'Fakultas Ekonomi', 'FE', '2025-12-02 03:32:35.249', '2025-12-02 03:32:35.249'),
+('21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'Fakultas Matematika dan Komputer', 'FMIKOM', '2025-12-01 16:47:17.743', '2025-12-02 03:32:34.967'),
+('830b1523-915b-4164-9b56-a907c24147a5', 'Fakultas Teknologi Industri', 'FTI', '2025-12-01 16:47:17.756', '2025-12-02 03:32:35.057'),
+('cb88c0fa-b7ba-497e-8e71-140edf841f38', 'Fakultas Keagamaan Islam', 'FKI', '2025-12-02 03:32:35.324', '2025-12-02 03:32:35.324'),
+('edf3ed60-efbb-4aab-a201-64f5d71e8f66', 'Fakultas Keguruan dan Ilmu Pendidikan', 'FKIP', '2025-12-01 16:47:17.732', '2025-12-02 03:32:34.144');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `jenis_mata_kuliah`
+-- Struktur dari tabel `jenis_mata_kuliah`
 --
 
 CREATE TABLE `jenis_mata_kuliah` (
@@ -239,7 +244,7 @@ CREATE TABLE `jenis_mata_kuliah` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `jenis_mata_kuliah`
+-- Dumping data untuk tabel `jenis_mata_kuliah`
 --
 
 INSERT INTO `jenis_mata_kuliah` (`id`, `nama`, `created_at`, `updated_at`) VALUES
@@ -249,7 +254,7 @@ INSERT INTO `jenis_mata_kuliah` (`id`, `nama`, `created_at`, `updated_at`) VALUE
 -- --------------------------------------------------------
 
 --
--- Table structure for table `kaprodi_data`
+-- Struktur dari tabel `kaprodi_data`
 --
 
 CREATE TABLE `kaprodi_data` (
@@ -263,7 +268,7 @@ CREATE TABLE `kaprodi_data` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `kaprodi_data`
+-- Dumping data untuk tabel `kaprodi_data`
 --
 
 INSERT INTO `kaprodi_data` (`id`, `program_studi`, `nama_kaprodi`, `nidn_kaprodi`, `created_at`, `updated_at`, `prodi_id`) VALUES
@@ -272,7 +277,7 @@ INSERT INTO `kaprodi_data` (`id`, `program_studi`, `nama_kaprodi`, `nidn_kaprodi
 -- --------------------------------------------------------
 
 --
--- Table structure for table `kategori_cpl`
+-- Struktur dari tabel `kategori_cpl`
 --
 
 CREATE TABLE `kategori_cpl` (
@@ -283,7 +288,7 @@ CREATE TABLE `kategori_cpl` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `kategori_cpl`
+-- Dumping data untuk tabel `kategori_cpl`
 --
 
 INSERT INTO `kategori_cpl` (`id`, `nama`, `created_at`, `updated_at`) VALUES
@@ -295,7 +300,7 @@ INSERT INTO `kategori_cpl` (`id`, `nama`, `created_at`, `updated_at`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `kelas`
+-- Struktur dari tabel `kelas`
 --
 
 CREATE TABLE `kelas` (
@@ -306,17 +311,18 @@ CREATE TABLE `kelas` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `kelas`
+-- Dumping data untuk tabel `kelas`
 --
 
 INSERT INTO `kelas` (`id`, `nama`, `created_at`, `updated_at`) VALUES
-('068d4565-6b83-4651-bd9c-401fccd54424', 'TI-B', '2025-12-01 16:47:17.872', '2025-12-01 16:47:17.872'),
-('eb620e77-1692-4e63-9370-13b93e63d7ee', 'TI-A', '2025-12-01 16:47:17.868', '2025-12-01 16:47:17.868');
+('45dfe50d-d026-480d-8e13-acabc38ef212', 'B', '2025-12-02 04:20:08.421', '2025-12-02 04:20:08.421'),
+('9213c787-0cce-4c93-9d2a-93034e5c96ec', 'C', '2025-12-02 04:20:09.074', '2025-12-02 04:20:09.074'),
+('e7823f06-e3c8-4328-b138-08e190352f36', 'A', '2025-12-02 04:20:08.134', '2025-12-02 04:20:08.134');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `kurikulum`
+-- Struktur dari tabel `kurikulum`
 --
 
 CREATE TABLE `kurikulum` (
@@ -330,7 +336,7 @@ CREATE TABLE `kurikulum` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `kurikulum`
+-- Dumping data untuk tabel `kurikulum`
 --
 
 INSERT INTO `kurikulum` (`id`, `nama`, `tahun_mulai`, `tahun_selesai`, `is_active`, `created_at`, `updated_at`) VALUES
@@ -339,7 +345,7 @@ INSERT INTO `kurikulum` (`id`, `nama`, `tahun_mulai`, `tahun_selesai`, `is_activ
 -- --------------------------------------------------------
 
 --
--- Table structure for table `level_taksonomi`
+-- Struktur dari tabel `level_taksonomi`
 --
 
 CREATE TABLE `level_taksonomi` (
@@ -352,7 +358,7 @@ CREATE TABLE `level_taksonomi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `level_taksonomi`
+-- Dumping data untuk tabel `level_taksonomi`
 --
 
 INSERT INTO `level_taksonomi` (`id`, `kode`, `deskripsi`, `kategori`, `created_at`, `updated_at`) VALUES
@@ -382,7 +388,7 @@ INSERT INTO `level_taksonomi` (`id`, `kode`, `deskripsi`, `kategori`, `created_a
 -- --------------------------------------------------------
 
 --
--- Table structure for table `mata_kuliah`
+-- Struktur dari tabel `mata_kuliah`
 --
 
 CREATE TABLE `mata_kuliah` (
@@ -404,12 +410,13 @@ CREATE TABLE `mata_kuliah` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `mata_kuliah`
+-- Dumping data untuk tabel `mata_kuliah`
 --
 
 INSERT INTO `mata_kuliah` (`id`, `kode_mk`, `nama_mk`, `sks`, `semester`, `deskripsi`, `is_active`, `created_at`, `updated_at`, `created_by`, `program_studi`, `jenis_mk_id`, `kurikulum_id`, `prodi_id`, `semester_id`) VALUES
 ('1936ca45-b910-4787-a2ce-94e25481930f', 'INF-305', 'Kecerdasan Buatan', 3, 5, NULL, 1, '2025-12-01 16:47:19.020', '2025-12-01 16:47:19.020', '9197693b-0488-4735-96d4-3fcbe6915879', NULL, 'cb13c3ae-f828-4c24-ac48-f379614d4da1', 'dbaa26fa-a272-45f2-aed2-6b7a71cd607d', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e'),
 ('5b36edab-4962-47de-9d27-3d0b379be7dd', 'INF-301', 'Pemrograman Web Lanjut', 3, 5, NULL, 1, '2025-12-01 16:47:17.921', '2025-12-01 16:47:17.921', '9197693b-0488-4735-96d4-3fcbe6915879', NULL, 'cb13c3ae-f828-4c24-ac48-f379614d4da1', 'dbaa26fa-a272-45f2-aed2-6b7a71cd607d', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e'),
+('63b7ab72-9789-4865-b9a1-0e903ef306af', 'ABC111', 'Korupsi', 3, 6, NULL, 1, '2025-12-02 04:29:30.183', '2025-12-02 04:29:51.729', '6905fdcb-4e17-4183-95ac-7653529c8cab', NULL, 'cb13c3ae-f828-4c24-ac48-f379614d4da1', 'dbaa26fa-a272-45f2-aed2-6b7a71cd607d', '261c62ea-4e4f-4a82-ae8a-d20b3b9819e8', '67b9b0a3-199b-44b5-9de3-d1b60cb8d674'),
 ('72c5b829-056e-4359-9f40-33801feed1e0', 'INF-302', 'Basis Data Lanjut', 3, 5, NULL, 1, '2025-12-01 16:47:18.283', '2025-12-01 16:47:18.283', '9197693b-0488-4735-96d4-3fcbe6915879', NULL, 'cb13c3ae-f828-4c24-ac48-f379614d4da1', 'dbaa26fa-a272-45f2-aed2-6b7a71cd607d', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e'),
 ('a04d7243-1d02-492a-8deb-3244d8db0e46', 'INF-304', 'Jaringan Komputer', 3, 5, NULL, 1, '2025-12-01 16:47:18.771', '2025-12-01 16:47:18.771', '9197693b-0488-4735-96d4-3fcbe6915879', NULL, 'cb13c3ae-f828-4c24-ac48-f379614d4da1', 'dbaa26fa-a272-45f2-aed2-6b7a71cd607d', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e'),
 ('cea3583d-77a9-4a8d-ad70-746b25f15065', 'INF-303', 'Rekayasa Perangkat Lunak', 3, 5, NULL, 1, '2025-12-01 16:47:18.549', '2025-12-01 16:47:18.549', '9197693b-0488-4735-96d4-3fcbe6915879', NULL, 'cb13c3ae-f828-4c24-ac48-f379614d4da1', 'dbaa26fa-a272-45f2-aed2-6b7a71cd607d', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e');
@@ -417,7 +424,7 @@ INSERT INTO `mata_kuliah` (`id`, `kode_mk`, `nama_mk`, `sks`, `semester`, `deskr
 -- --------------------------------------------------------
 
 --
--- Table structure for table `mata_kuliah_pengampu`
+-- Struktur dari tabel `mata_kuliah_pengampu`
 --
 
 CREATE TABLE `mata_kuliah_pengampu` (
@@ -431,25 +438,26 @@ CREATE TABLE `mata_kuliah_pengampu` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `mata_kuliah_pengampu`
+-- Dumping data untuk tabel `mata_kuliah_pengampu`
 --
 
 INSERT INTO `mata_kuliah_pengampu` (`id`, `mata_kuliah_id`, `dosen_id`, `kelas_id`, `is_pengampu_utama`, `created_at`, `updated_at`) VALUES
-('0e65e0ec-f8ce-46a8-a21e-a4fd39e66660', '72c5b829-056e-4359-9f40-33801feed1e0', 'ed42925d-924d-4517-b779-6dbf76cf923f', '068d4565-6b83-4651-bd9c-401fccd54424', 1, '2025-12-01 16:47:18.295', '2025-12-01 16:47:18.295'),
-('22707abf-ac4d-490a-8633-6ecb9f8684cb', 'cea3583d-77a9-4a8d-ad70-746b25f15065', '133d79ea-b30f-4183-94ff-d587c99352e2', '068d4565-6b83-4651-bd9c-401fccd54424', 1, '2025-12-01 16:47:18.556', '2025-12-01 16:47:18.556'),
-('293c72d1-81fe-4571-9342-90e6df89ede3', '72c5b829-056e-4359-9f40-33801feed1e0', 'ed42925d-924d-4517-b779-6dbf76cf923f', 'eb620e77-1692-4e63-9370-13b93e63d7ee', 1, '2025-12-01 16:47:18.290', '2025-12-01 16:47:18.290'),
-('2c0fb269-1ef3-45a2-b13f-6ec6d42be861', 'a04d7243-1d02-492a-8deb-3244d8db0e46', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', '068d4565-6b83-4651-bd9c-401fccd54424', 1, '2025-12-01 16:47:18.777', '2025-12-01 16:47:18.777'),
-('6e0b1028-6cdf-407e-a57b-04c0d76193f1', '5b36edab-4962-47de-9d27-3d0b379be7dd', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', '068d4565-6b83-4651-bd9c-401fccd54424', 1, '2025-12-01 16:47:17.929', '2025-12-01 16:47:17.929'),
-('9dc33a4a-fe54-4143-b3d9-8e1b282ca80a', '1936ca45-b910-4787-a2ce-94e25481930f', 'ed42925d-924d-4517-b779-6dbf76cf923f', 'eb620e77-1692-4e63-9370-13b93e63d7ee', 1, '2025-12-01 16:47:19.024', '2025-12-01 16:47:19.024'),
-('a1ad7348-f485-41b9-9655-832eaa404a79', '5b36edab-4962-47de-9d27-3d0b379be7dd', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', 'eb620e77-1692-4e63-9370-13b93e63d7ee', 1, '2025-12-01 16:47:17.925', '2025-12-01 16:47:17.925'),
-('a5830a65-d3c6-4565-91c9-54050a7312c0', 'cea3583d-77a9-4a8d-ad70-746b25f15065', '133d79ea-b30f-4183-94ff-d587c99352e2', 'eb620e77-1692-4e63-9370-13b93e63d7ee', 1, '2025-12-01 16:47:18.553', '2025-12-01 16:47:18.553'),
-('bd868458-6c14-41ba-9e25-a956aad25f86', '1936ca45-b910-4787-a2ce-94e25481930f', 'ed42925d-924d-4517-b779-6dbf76cf923f', '068d4565-6b83-4651-bd9c-401fccd54424', 1, '2025-12-01 16:47:19.028', '2025-12-01 16:47:19.028'),
-('f004252d-7437-4693-b1e6-cc40463fc6f3', 'a04d7243-1d02-492a-8deb-3244d8db0e46', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', 'eb620e77-1692-4e63-9370-13b93e63d7ee', 1, '2025-12-01 16:47:18.774', '2025-12-01 16:47:18.774');
+('0e65e0ec-f8ce-46a8-a21e-a4fd39e66660', '72c5b829-056e-4359-9f40-33801feed1e0', 'ed42925d-924d-4517-b779-6dbf76cf923f', NULL, 1, '2025-12-01 16:47:18.295', '2025-12-01 16:47:18.295'),
+('22707abf-ac4d-490a-8633-6ecb9f8684cb', 'cea3583d-77a9-4a8d-ad70-746b25f15065', '133d79ea-b30f-4183-94ff-d587c99352e2', NULL, 1, '2025-12-01 16:47:18.556', '2025-12-01 16:47:18.556'),
+('293c72d1-81fe-4571-9342-90e6df89ede3', '72c5b829-056e-4359-9f40-33801feed1e0', 'ed42925d-924d-4517-b779-6dbf76cf923f', NULL, 1, '2025-12-01 16:47:18.290', '2025-12-01 16:47:18.290'),
+('2c0fb269-1ef3-45a2-b13f-6ec6d42be861', 'a04d7243-1d02-492a-8deb-3244d8db0e46', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', NULL, 1, '2025-12-01 16:47:18.777', '2025-12-01 16:47:18.777'),
+('6e0b1028-6cdf-407e-a57b-04c0d76193f1', '5b36edab-4962-47de-9d27-3d0b379be7dd', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', NULL, 1, '2025-12-01 16:47:17.929', '2025-12-01 16:47:17.929'),
+('7ff6fd12-5169-48c9-94ac-f70478e6fa1a', '63b7ab72-9789-4865-b9a1-0e903ef306af', '7fce08fd-a465-4401-b277-efb163c57ecd', 'e7823f06-e3c8-4328-b138-08e190352f36', 1, '2025-12-02 04:30:17.426', '2025-12-02 04:30:17.426'),
+('9dc33a4a-fe54-4143-b3d9-8e1b282ca80a', '1936ca45-b910-4787-a2ce-94e25481930f', 'ed42925d-924d-4517-b779-6dbf76cf923f', NULL, 1, '2025-12-01 16:47:19.024', '2025-12-01 16:47:19.024'),
+('a1ad7348-f485-41b9-9655-832eaa404a79', '5b36edab-4962-47de-9d27-3d0b379be7dd', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', NULL, 1, '2025-12-01 16:47:17.925', '2025-12-01 16:47:17.925'),
+('a5830a65-d3c6-4565-91c9-54050a7312c0', 'cea3583d-77a9-4a8d-ad70-746b25f15065', '133d79ea-b30f-4183-94ff-d587c99352e2', NULL, 1, '2025-12-01 16:47:18.553', '2025-12-01 16:47:18.553'),
+('bd868458-6c14-41ba-9e25-a956aad25f86', '1936ca45-b910-4787-a2ce-94e25481930f', 'ed42925d-924d-4517-b779-6dbf76cf923f', NULL, 1, '2025-12-01 16:47:19.028', '2025-12-01 16:47:19.028'),
+('f004252d-7437-4693-b1e6-cc40463fc6f3', 'a04d7243-1d02-492a-8deb-3244d8db0e46', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', NULL, 1, '2025-12-01 16:47:18.774', '2025-12-01 16:47:18.774');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `nilai_cpl`
+-- Struktur dari tabel `nilai_cpl`
 --
 
 CREATE TABLE `nilai_cpl` (
@@ -468,7 +476,7 @@ CREATE TABLE `nilai_cpl` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `nilai_cpl`
+-- Dumping data untuk tabel `nilai_cpl`
 --
 
 INSERT INTO `nilai_cpl` (`id`, `mahasiswa_id`, `cpl_id`, `mata_kuliah_id`, `nilai`, `semester`, `semester_id`, `tahun_ajaran`, `catatan`, `created_at`, `updated_at`, `created_by`) VALUES
@@ -578,7 +586,7 @@ INSERT INTO `nilai_cpl` (`id`, `mahasiswa_id`, `cpl_id`, `mata_kuliah_id`, `nila
 -- --------------------------------------------------------
 
 --
--- Table structure for table `nilai_cpmk`
+-- Struktur dari tabel `nilai_cpmk`
 --
 
 CREATE TABLE `nilai_cpmk` (
@@ -596,7 +604,7 @@ CREATE TABLE `nilai_cpmk` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `nilai_cpmk`
+-- Dumping data untuk tabel `nilai_cpmk`
 --
 
 INSERT INTO `nilai_cpmk` (`id`, `mahasiswa_id`, `cpmk_id`, `mata_kuliah_id`, `nilai_akhir`, `semester`, `semester_id`, `tahun_ajaran`, `is_calculated`, `calculated_at`, `updated_at`) VALUES
@@ -706,7 +714,7 @@ INSERT INTO `nilai_cpmk` (`id`, `mahasiswa_id`, `cpmk_id`, `mata_kuliah_id`, `ni
 -- --------------------------------------------------------
 
 --
--- Table structure for table `nilai_rubrik`
+-- Struktur dari tabel `nilai_rubrik`
 --
 
 CREATE TABLE `nilai_rubrik` (
@@ -718,7 +726,7 @@ CREATE TABLE `nilai_rubrik` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `nilai_rubrik`
+-- Dumping data untuk tabel `nilai_rubrik`
 --
 
 INSERT INTO `nilai_rubrik` (`id`, `nilai_teknik_id`, `rubrik_level_id`, `created_at`, `updated_at`) VALUES
@@ -749,7 +757,7 @@ INSERT INTO `nilai_rubrik` (`id`, `nilai_teknik_id`, `rubrik_level_id`, `created
 -- --------------------------------------------------------
 
 --
--- Table structure for table `nilai_teknik_penilaian`
+-- Struktur dari tabel `nilai_teknik_penilaian`
 --
 
 CREATE TABLE `nilai_teknik_penilaian` (
@@ -768,7 +776,7 @@ CREATE TABLE `nilai_teknik_penilaian` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `nilai_teknik_penilaian`
+-- Dumping data untuk tabel `nilai_teknik_penilaian`
 --
 
 INSERT INTO `nilai_teknik_penilaian` (`id`, `mahasiswa_id`, `teknik_penilaian_id`, `mata_kuliah_id`, `nilai`, `semester`, `semester_id`, `tahun_ajaran`, `catatan`, `created_at`, `updated_at`, `created_by`) VALUES
@@ -878,7 +886,7 @@ INSERT INTO `nilai_teknik_penilaian` (`id`, `mahasiswa_id`, `teknik_penilaian_id
 -- --------------------------------------------------------
 
 --
--- Table structure for table `prodi`
+-- Struktur dari tabel `prodi`
 --
 
 CREATE TABLE `prodi` (
@@ -892,21 +900,31 @@ CREATE TABLE `prodi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `prodi`
+-- Dumping data untuk tabel `prodi`
 --
 
 INSERT INTO `prodi` (`id`, `fakultas_id`, `nama`, `kode`, `jenjang`, `created_at`, `updated_at`) VALUES
-('5ba06ab5-a713-474f-8bc3-15beb585ca79', '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'Matematika', 'MAT', NULL, '2025-12-01 16:47:17.747', '2025-12-01 16:47:17.747'),
-('720da698-c2aa-462b-b3db-93ae2a595dc5', 'edf3ed60-efbb-4aab-a201-64f5d71e8f66', 'Pendidikan Guru SD', 'PGSD', NULL, '2025-12-01 16:47:17.739', '2025-12-01 16:47:17.739'),
-('7cce7915-2743-434d-9c04-d48268cefef0', 'edf3ed60-efbb-4aab-a201-64f5d71e8f66', 'Bimbingan Konseling', 'BK', NULL, '2025-12-01 16:47:17.736', '2025-12-01 16:47:17.736'),
-('a030d74c-45de-4937-ac55-95c0dded211f', '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'Informatika', 'INF', NULL, '2025-12-01 16:47:17.750', '2025-12-01 16:47:17.750'),
-('b47e50a4-2b71-4af3-90b4-87108c328055', '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'Sistem Informasi', 'SI', NULL, '2025-12-01 16:47:17.753', '2025-12-01 16:47:17.753'),
-('df17292a-7498-4c57-a38c-ac7d38b00cdb', '830b1523-915b-4164-9b56-a907c24147a5', 'Teknik Industri', 'TIND', NULL, '2025-12-01 16:47:17.759', '2025-12-01 16:47:17.759');
+('11ff45d9-5ac1-4a09-a530-066eacc108ac', 'cb88c0fa-b7ba-497e-8e71-140edf841f38', 'Komunikasi Penyiaran Islam', 'KPI', 'S1', '2025-12-02 03:32:35.383', '2025-12-02 03:32:35.383'),
+('261c62ea-4e4f-4a82-ae8a-d20b3b9819e8', '0c5255ac-cfa2-4a86-a14b-665f9d166d62', 'Manajemen', 'MAN', 'S1', '2025-12-02 03:32:35.281', '2025-12-02 03:32:35.281'),
+('28bd3f11-9b9a-427b-a963-8a4a27e200f2', '0c5255ac-cfa2-4a86-a14b-665f9d166d62', 'Ekonomi Pembangunan', 'EP', 'S1', '2025-12-02 03:32:35.313', '2025-12-02 03:32:35.313'),
+('5ba06ab5-a713-474f-8bc3-15beb585ca79', '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'Matematika', 'MAT', 'S1', '2025-12-01 16:47:17.747', '2025-12-02 03:32:34.977'),
+('662b9844-00b2-4f89-9a86-e88349a09f72', 'cb88c0fa-b7ba-497e-8e71-140edf841f38', 'Pendidikan Guru Madrasah Ibtidaiyah', 'PGMI', 'S1', '2025-12-02 03:32:35.371', '2025-12-02 03:32:35.371'),
+('720da698-c2aa-462b-b3db-93ae2a595dc5', 'edf3ed60-efbb-4aab-a201-64f5d71e8f66', 'Pendidikan Guru SD', 'PGSD', 'S1', '2025-12-01 16:47:17.739', '2025-12-02 03:32:34.711'),
+('7cce7915-2743-434d-9c04-d48268cefef0', 'edf3ed60-efbb-4aab-a201-64f5d71e8f66', 'Bimbingan Konseling', 'BK', 'S1', '2025-12-01 16:47:17.736', '2025-12-02 03:32:34.610'),
+('7d3a0f19-4e79-4319-adef-1f576d82c789', 'edf3ed60-efbb-4aab-a201-64f5d71e8f66', 'Manajemen Pendidikan Islam', 'MPI', 'S1', '2025-12-02 03:32:34.877', '2025-12-02 03:32:34.877'),
+('a030d74c-45de-4937-ac55-95c0dded211f', '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'Informatika', 'INF', 'S1', '2025-12-01 16:47:17.750', '2025-12-02 03:32:35.015'),
+('b47e50a4-2b71-4af3-90b4-87108c328055', '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'Sistem Informasi', 'SI', 'S1', '2025-12-01 16:47:17.753', '2025-12-02 03:32:35.039'),
+('c1e59d0f-bd3c-4d7f-8d61-845abc7b6c07', '830b1523-915b-4164-9b56-a907c24147a5', 'Teknik Kimia', 'TKIM', 'S1', '2025-12-02 03:32:35.134', '2025-12-02 03:32:35.134'),
+('cff46295-c774-4c00-93d6-ab2e4e2910e7', 'cb88c0fa-b7ba-497e-8e71-140edf841f38', 'Pendidikan Agama Islam', 'PAI', 'S1', '2025-12-02 03:32:35.357', '2025-12-02 03:32:35.357'),
+('df17292a-7498-4c57-a38c-ac7d38b00cdb', '830b1523-915b-4164-9b56-a907c24147a5', 'Teknik Industri', 'TIND', 'S1', '2025-12-01 16:47:17.759', '2025-12-02 03:32:35.103'),
+('edef5cf9-ebb8-48c1-8ac3-2a7637589542', '830b1523-915b-4164-9b56-a907c24147a5', 'Teknik Mesin', 'TM', 'S1', '2025-12-02 03:32:35.167', '2025-12-02 03:32:35.167'),
+('f2474890-53ce-4a83-bccd-1c9eadfd2bbe', 'edf3ed60-efbb-4aab-a201-64f5d71e8f66', 'Pendidikan Islam Anak Usia Dini', 'PIAUD', 'S1', '2025-12-02 03:32:34.777', '2025-12-02 03:32:34.777'),
+('f7ba2215-eea8-48a0-be00-a01f7a622b53', 'cb88c0fa-b7ba-497e-8e71-140edf841f38', 'Ahwal Al Syakhyiyah', 'AS', 'S1', '2025-12-02 03:32:35.393', '2025-12-02 03:32:35.393');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `profiles`
+-- Struktur dari tabel `profiles`
 --
 
 CREATE TABLE `profiles` (
@@ -931,30 +949,31 @@ CREATE TABLE `profiles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `profiles`
+-- Dumping data untuk tabel `profiles`
 --
 
 INSERT INTO `profiles` (`id`, `user_id`, `nama_lengkap`, `nim`, `nip`, `program_studi`, `semester`, `tahun_masuk`, `alamat`, `no_telepon`, `foto_profile`, `created_at`, `updated_at`, `nidn`, `fakultas_id`, `prodi_id`, `semester_id`, `kelas_id`) VALUES
-('08e59957-5b2a-4568-bd5e-d41578ba0740', 'a3493848-185f-46fa-93df-d1f7124fabc1', 'Doni Tata', '210003', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.798', '2025-12-01 16:47:17.886', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', 'eb620e77-1692-4e63-9370-13b93e63d7ee'),
-('1d4fb9a6-205b-4f02-959c-3baa6eeca005', 'dce817fb-29ac-4b9f-a098-54881d30844d', 'Kartika Sari', '210010', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.828', '2025-12-01 16:47:17.916', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', '068d4565-6b83-4651-bd9c-401fccd54424'),
-('1e40b0c2-1131-4e66-8bff-08e49ed21603', '07f726a9-13c2-428a-91a5-dc40670a8b3a', 'Rina Wati', '210002', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.794', '2025-12-01 16:47:17.882', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', 'eb620e77-1692-4e63-9370-13b93e63d7ee'),
+('08e59957-5b2a-4568-bd5e-d41578ba0740', 'a3493848-185f-46fa-93df-d1f7124fabc1', 'Doni Tata', '210003', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.798', '2025-12-01 16:47:17.886', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
+('1d4fb9a6-205b-4f02-959c-3baa6eeca005', 'dce817fb-29ac-4b9f-a098-54881d30844d', 'Kartika Sari', '210010', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.828', '2025-12-01 16:47:17.916', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
+('1e40b0c2-1131-4e66-8bff-08e49ed21603', '07f726a9-13c2-428a-91a5-dc40670a8b3a', 'Rina Wati', '210002', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.794', '2025-12-01 16:47:17.882', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
 ('22d27141-01c2-46d8-9bbd-a7ed77af24da', '133d79ea-b30f-4183-94ff-d587c99352e2', 'Rudi Hermawan, Ph.D', NULL, 'DOS003', NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-01 16:47:17.786', '2025-12-01 16:47:17.786', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', NULL, NULL),
-('2d7984db-4c88-4869-be40-3462df00b54b', '92a0b9b8-6c70-416e-a9d2-21ab93766e38', 'Hadi Sucipto', '210007', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.816', '2025-12-01 16:47:17.903', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', '068d4565-6b83-4651-bd9c-401fccd54424'),
+('2d7984db-4c88-4869-be40-3462df00b54b', '92a0b9b8-6c70-416e-a9d2-21ab93766e38', 'Hadi Sucipto', '210007', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.816', '2025-12-01 16:47:17.903', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
 ('3d7554e4-cd04-49d3-9ff7-edf272c5239a', '6905fdcb-4e17-4183-95ac-7653529c8cab', 'Super Admin', NULL, 'ADM001', NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-01 16:47:17.762', '2025-12-01 16:47:17.762', NULL, NULL, NULL, NULL, NULL),
-('55774fd2-cb25-46de-8781-a3d6d9ea4499', '96be31c2-b496-413e-b3f8-7b5dfd584b0e', 'Eka Putri', '210004', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.804', '2025-12-01 16:47:17.891', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', 'eb620e77-1692-4e63-9370-13b93e63d7ee'),
-('86e8a917-3843-4fc4-85fd-1a1f0f896ab5', '0d82d749-e8d8-453a-ab55-4e4a310b94a5', 'Joko Anwar', '210009', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.824', '2025-12-01 16:47:17.912', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', '068d4565-6b83-4651-bd9c-401fccd54424'),
-('91e8c4c3-b7c8-443d-8616-c0108c235313', 'b8dabe0c-dd26-4958-9f15-1bfedb71f5df', 'Gita Gutawa', '210006', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.812', '2025-12-01 16:47:17.899', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', '068d4565-6b83-4651-bd9c-401fccd54424'),
-('a067955e-ba67-4ca6-bfb3-ae049cf6c5db', '9ae74e2a-1a03-4e75-a546-ad608df4db5f', 'Ahmad Fajrul', '210001', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.790', '2025-12-01 16:47:17.876', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', 'eb620e77-1692-4e63-9370-13b93e63d7ee'),
+('55774fd2-cb25-46de-8781-a3d6d9ea4499', '96be31c2-b496-413e-b3f8-7b5dfd584b0e', 'Eka Putri', '210004', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.804', '2025-12-01 16:47:17.891', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
+('6a1ac079-f981-4c2d-bba2-b5c3b3f962f6', '7fce08fd-a465-4401-b277-efb163c57ecd', 'x', NULL, '22EO10000', 'Fakultas Ekonomi - Manajemen', 6, NULL, NULL, NULL, NULL, '2025-12-02 04:24:29.785', '2025-12-02 04:24:30.143', NULL, '0c5255ac-cfa2-4a86-a14b-665f9d166d62', '261c62ea-4e4f-4a82-ae8a-d20b3b9819e8', '67b9b0a3-199b-44b5-9de3-d1b60cb8d674', 'e7823f06-e3c8-4328-b138-08e190352f36'),
+('86e8a917-3843-4fc4-85fd-1a1f0f896ab5', '0d82d749-e8d8-453a-ab55-4e4a310b94a5', 'Joko Anwar', '210009', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.824', '2025-12-01 16:47:17.912', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
+('91e8c4c3-b7c8-443d-8616-c0108c235313', 'b8dabe0c-dd26-4958-9f15-1bfedb71f5df', 'Gita Gutawa', '210006', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.812', '2025-12-01 16:47:17.899', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
+('a067955e-ba67-4ca6-bfb3-ae049cf6c5db', '9ae74e2a-1a03-4e75-a546-ad608df4db5f', 'Ahmad Fajrul', '210001', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.790', '2025-12-01 16:47:17.876', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
 ('b41e7a67-b343-498f-9088-d81cb0c87069', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', 'Budi Santoso, M.Kom', NULL, 'DOS001', NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-01 16:47:17.778', '2025-12-01 16:47:17.778', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', NULL, NULL),
-('cd823fc2-7774-44bd-913c-657adb90d273', 'c37f443d-c904-433e-b244-1aa9014d7114', 'Indah Permata', '210008', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.820', '2025-12-01 16:47:17.908', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', '068d4565-6b83-4651-bd9c-401fccd54424'),
+('cd823fc2-7774-44bd-913c-657adb90d273', 'c37f443d-c904-433e-b244-1aa9014d7114', 'Indah Permata', '210008', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.820', '2025-12-01 16:47:17.908', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
 ('f6b9523d-01c5-4f5d-8faf-a975d456863b', '9197693b-0488-4735-96d4-3fcbe6915879', 'Dr. Kaprodi Informatika', NULL, 'KAP001', NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-01 16:47:17.767', '2025-12-01 16:47:17.767', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', NULL, NULL),
-('f6cd4ba5-64ef-409d-af96-adcced27d56a', '56a45ba1-b6d8-4f76-8864-839825a973e2', 'Fajar Nugraha', '210005', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.808', '2025-12-01 16:47:17.895', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', 'eb620e77-1692-4e63-9370-13b93e63d7ee'),
+('f6cd4ba5-64ef-409d-af96-adcced27d56a', '56a45ba1-b6d8-4f76-8864-839825a973e2', 'Fajar Nugraha', '210005', NULL, NULL, 5, 2021, NULL, NULL, NULL, '2025-12-01 16:47:17.808', '2025-12-01 16:47:17.895', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', '63da5a92-77f8-43c7-a230-4db67cdbe97e', NULL),
 ('fc971611-95c1-496b-b13c-c5c5c6ba87f6', 'ed42925d-924d-4517-b779-6dbf76cf923f', 'Siti Aminah, M.T', NULL, 'DOS002', NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-01 16:47:17.782', '2025-12-01 16:47:17.782', NULL, '21a9f7cd-cbda-48ac-89ea-56c4e1972729', 'a030d74c-45de-4937-ac55-95c0dded211f', NULL, NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `rubrik`
+-- Struktur dari tabel `rubrik`
 --
 
 CREATE TABLE `rubrik` (
@@ -967,7 +986,7 @@ CREATE TABLE `rubrik` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `rubrik`
+-- Dumping data untuk tabel `rubrik`
 --
 
 INSERT INTO `rubrik` (`id`, `cpmk_id`, `deskripsi`, `is_active`, `created_at`, `updated_at`) VALUES
@@ -977,7 +996,7 @@ INSERT INTO `rubrik` (`id`, `cpmk_id`, `deskripsi`, `is_active`, `created_at`, `
 -- --------------------------------------------------------
 
 --
--- Table structure for table `rubrik_kriteria`
+-- Struktur dari tabel `rubrik_kriteria`
 --
 
 CREATE TABLE `rubrik_kriteria` (
@@ -990,7 +1009,7 @@ CREATE TABLE `rubrik_kriteria` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `rubrik_kriteria`
+-- Dumping data untuk tabel `rubrik_kriteria`
 --
 
 INSERT INTO `rubrik_kriteria` (`id`, `rubrik_id`, `deskripsi`, `bobot`, `created_at`, `updated_at`) VALUES
@@ -1001,7 +1020,7 @@ INSERT INTO `rubrik_kriteria` (`id`, `rubrik_id`, `deskripsi`, `bobot`, `created
 -- --------------------------------------------------------
 
 --
--- Table structure for table `rubrik_level`
+-- Struktur dari tabel `rubrik_level`
 --
 
 CREATE TABLE `rubrik_level` (
@@ -1015,7 +1034,7 @@ CREATE TABLE `rubrik_level` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `rubrik_level`
+-- Dumping data untuk tabel `rubrik_level`
 --
 
 INSERT INTO `rubrik_level` (`id`, `kriteria_id`, `deskripsi`, `nilai`, `label`, `created_at`, `updated_at`) VALUES
@@ -1030,7 +1049,7 @@ INSERT INTO `rubrik_level` (`id`, `kriteria_id`, `deskripsi`, `nilai`, `label`, 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `semester`
+-- Struktur dari tabel `semester`
 --
 
 CREATE TABLE `semester` (
@@ -1043,7 +1062,7 @@ CREATE TABLE `semester` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `semester`
+-- Dumping data untuk tabel `semester`
 --
 
 INSERT INTO `semester` (`id`, `nama`, `angka`, `is_active`, `created_at`, `updated_at`) VALUES
@@ -1059,7 +1078,7 @@ INSERT INTO `semester` (`id`, `nama`, `angka`, `is_active`, `created_at`, `updat
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sessions`
+-- Struktur dari tabel `sessions`
 --
 
 CREATE TABLE `sessions` (
@@ -1073,17 +1092,19 @@ CREATE TABLE `sessions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `sessions`
+-- Dumping data untuk tabel `sessions`
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `token`, `expires_at`, `created_at`, `ip_address`, `user_agent`) VALUES
+('1252ed18-1cf4-4d78-967d-2f042df37201', '133d79ea-b30f-4183-94ff-d587c99352e2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMzNkNzllYS1iMzBmLTQxODMtOTRmZi1kNTg3Yzk5MzUyZTIiLCJlbWFpbCI6ImRvc2VuM0B1bml2LmFjLmlkIiwicm9sZSI6ImRvc2VuIiwiaWF0IjoxNzY0NjQ4NzE3LCJleHAiOj', '2025-12-09 04:11:57.727', '2025-12-02 04:11:57.762', NULL, NULL),
+('c22f173d-7276-4c84-aac0-63c224ce0acf', '6905fdcb-4e17-4183-95ac-7653529c8cab', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTA1ZmRjYi00ZTE3LTQxODMtOTVhYy03NjUzNTI5YzhjYWIiLCJlbWFpbCI6ImFkbWluQHVuaXYuYWMuaWQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjQ2NTEwMTYsImV4cCI6MT', '2025-12-09 04:50:16.970', '2025-12-02 04:50:17.018', NULL, NULL),
 ('cf52c5d0-f514-4965-932a-bf1a3f708325', '9b0c44d1-79e8-4b63-8b43-632f575df3cd', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5YjBjNDRkMS03OWU4LTRiNjMtOGI0My02MzJmNTc1ZGYzY2QiLCJlbWFpbCI6ImRvc2VuMUB1bml2LmFjLmlkIiwicm9sZSI6ImRvc2VuIiwiaWF0IjoxNzY0NjA4MTc0LCJleHAiOj', '2025-12-08 16:56:14.186', '2025-12-01 16:56:14.188', NULL, NULL),
-('e62fddaa-5f44-4e35-9f64-38dec07dffe1', '6905fdcb-4e17-4183-95ac-7653529c8cab', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTA1ZmRjYi00ZTE3LTQxODMtOTVhYy03NjUzNTI5YzhjYWIiLCJlbWFpbCI6ImFkbWluQHVuaXYuYWMuaWQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NjQ2MDgxMDYsImV4cCI6MT', '2025-12-08 16:55:06.312', '2025-12-01 16:55:06.313', NULL, NULL);
+('f8c7fe35-5074-4c30-adf9-1976fdafa839', '7fce08fd-a465-4401-b277-efb163c57ecd', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3ZmNlMDhmZC1hNDY1LTQ0MDEtYjI3Ny1lZmIxNjNjNTdlY2QiLCJlbWFpbCI6InhAZ21haWwuY29tIiwicm9sZSI6ImRvc2VuIiwiaWF0IjoxNzY0NjUxMDc5LCJleHAiOjE3NjUyNT', '2025-12-09 04:51:19.669', '2025-12-02 04:51:19.671', NULL, NULL);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `settings`
+-- Struktur dari tabel `settings`
 --
 
 CREATE TABLE `settings` (
@@ -1095,7 +1116,7 @@ CREATE TABLE `settings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `settings`
+-- Dumping data untuk tabel `settings`
 --
 
 INSERT INTO `settings` (`id`, `key`, `value`, `description`, `updated_at`) VALUES
@@ -1104,7 +1125,7 @@ INSERT INTO `settings` (`id`, `key`, `value`, `description`, `updated_at`) VALUE
 -- --------------------------------------------------------
 
 --
--- Table structure for table `tahun_ajaran`
+-- Struktur dari tabel `tahun_ajaran`
 --
 
 CREATE TABLE `tahun_ajaran` (
@@ -1116,7 +1137,7 @@ CREATE TABLE `tahun_ajaran` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `tahun_ajaran`
+-- Dumping data untuk tabel `tahun_ajaran`
 --
 
 INSERT INTO `tahun_ajaran` (`id`, `nama`, `is_active`, `created_at`, `updated_at`) VALUES
@@ -1126,7 +1147,7 @@ INSERT INTO `tahun_ajaran` (`id`, `nama`, `is_active`, `created_at`, `updated_at
 -- --------------------------------------------------------
 
 --
--- Table structure for table `teknik_penilaian`
+-- Struktur dari tabel `teknik_penilaian`
 --
 
 CREATE TABLE `teknik_penilaian` (
@@ -1141,11 +1162,12 @@ CREATE TABLE `teknik_penilaian` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `teknik_penilaian`
+-- Dumping data untuk tabel `teknik_penilaian`
 --
 
 INSERT INTO `teknik_penilaian` (`id`, `cpmk_id`, `nama_teknik`, `bobot_persentase`, `deskripsi`, `created_at`, `updated_at`, `teknik_ref_id`) VALUES
 ('01037c9b-f021-4ba3-a97b-5e902e758941', '0914010f-46ad-46ca-8276-6b76a6a60eb4', 'UTS', 50.00, NULL, '2025-12-01 16:47:17.945', '2025-12-01 16:47:17.945', '1646f891-b2f7-401e-96b8-eb7fb0d797c2'),
+('0e9555bc-c0e3-4286-a7b7-cc9dd0443a77', 'e973553e-568b-43ce-a475-d190fd8dd46b', 'Observasi', 100.00, '3ee', '2025-12-02 04:48:09.786', '2025-12-02 04:48:09.786', NULL),
 ('1c32e5c7-2c57-45d1-8809-2504b3fc9427', 'beb1f9a5-4beb-41fa-a9d4-67e684045396', 'UTS', 50.00, NULL, '2025-12-01 16:47:18.790', '2025-12-01 16:47:18.790', '1646f891-b2f7-401e-96b8-eb7fb0d797c2'),
 ('2261932e-3bc4-4baa-b7ff-483ad11610b4', 'b2b18a57-1ef1-4473-882f-e1c7ffb19e60', 'Proyek Akhir', 50.00, NULL, '2025-12-01 16:47:18.319', '2025-12-01 16:47:18.319', '04b34852-4abb-442b-866e-9c670a60bad2'),
 ('8d1d30ef-dd4d-4cd8-90e2-2dff71dd480c', 'c93c4535-8abc-480d-b11d-0e511a01ac7f', 'Proyek Akhir', 50.00, NULL, '2025-12-01 16:47:19.047', '2025-12-01 16:47:19.047', '04b34852-4abb-442b-866e-9c670a60bad2'),
@@ -1159,7 +1181,7 @@ INSERT INTO `teknik_penilaian` (`id`, `cpmk_id`, `nama_teknik`, `bobot_persentas
 -- --------------------------------------------------------
 
 --
--- Table structure for table `teknik_penilaian_ref`
+-- Struktur dari tabel `teknik_penilaian_ref`
 --
 
 CREATE TABLE `teknik_penilaian_ref` (
@@ -1171,7 +1193,7 @@ CREATE TABLE `teknik_penilaian_ref` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `teknik_penilaian_ref`
+-- Dumping data untuk tabel `teknik_penilaian_ref`
 --
 
 INSERT INTO `teknik_penilaian_ref` (`id`, `nama`, `deskripsi`, `created_at`, `updated_at`) VALUES
@@ -1185,7 +1207,7 @@ INSERT INTO `teknik_penilaian_ref` (`id`, `nama`, `deskripsi`, `created_at`, `up
 -- --------------------------------------------------------
 
 --
--- Table structure for table `users`
+-- Struktur dari tabel `users`
 --
 
 CREATE TABLE `users` (
@@ -1200,7 +1222,7 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `users`
+-- Dumping data untuk tabel `users`
 --
 
 INSERT INTO `users` (`id`, `email`, `password_hash`, `created_at`, `updated_at`, `last_login`, `is_active`, `email_verified`) VALUES
@@ -1209,6 +1231,7 @@ INSERT INTO `users` (`id`, `email`, `password_hash`, `created_at`, `updated_at`,
 ('133d79ea-b30f-4183-94ff-d587c99352e2', 'dosen3@univ.ac.id', '$2a$10$prpKtJMgPpAyDz3eEkPxMOWmWUbGDBaAInXi6UV53R3ZPIj4yjut6', '2025-12-01 16:47:17.786', '2025-12-01 16:47:17.786', NULL, 1, 1),
 ('56a45ba1-b6d8-4f76-8864-839825a973e2', '210005@mhs.univ.ac.id', '$2a$10$prpKtJMgPpAyDz3eEkPxMOWmWUbGDBaAInXi6UV53R3ZPIj4yjut6', '2025-12-01 16:47:17.808', '2025-12-01 16:47:17.808', NULL, 1, 1),
 ('6905fdcb-4e17-4183-95ac-7653529c8cab', 'admin@univ.ac.id', '$2a$10$prpKtJMgPpAyDz3eEkPxMOWmWUbGDBaAInXi6UV53R3ZPIj4yjut6', '2025-12-01 16:47:17.762', '2025-12-01 16:47:17.762', NULL, 1, 1),
+('7fce08fd-a465-4401-b277-efb163c57ecd', 'x@gmail.com', '$2a$10$v00CGooup0xjBBPxxNbqsOHkA5ByRLV2tPdJnlqHPyB4l8ACWW.3y', '2025-12-02 04:24:29.785', '2025-12-02 04:24:29.785', NULL, 1, 1),
 ('9197693b-0488-4735-96d4-3fcbe6915879', 'kaprodi.inf@univ.ac.id', '$2a$10$prpKtJMgPpAyDz3eEkPxMOWmWUbGDBaAInXi6UV53R3ZPIj4yjut6', '2025-12-01 16:47:17.767', '2025-12-01 16:47:17.767', NULL, 1, 1),
 ('92a0b9b8-6c70-416e-a9d2-21ab93766e38', '210007@mhs.univ.ac.id', '$2a$10$prpKtJMgPpAyDz3eEkPxMOWmWUbGDBaAInXi6UV53R3ZPIj4yjut6', '2025-12-01 16:47:17.816', '2025-12-01 16:47:17.816', NULL, 1, 1),
 ('96be31c2-b496-413e-b3f8-7b5dfd584b0e', '210004@mhs.univ.ac.id', '$2a$10$prpKtJMgPpAyDz3eEkPxMOWmWUbGDBaAInXi6UV53R3ZPIj4yjut6', '2025-12-01 16:47:17.804', '2025-12-01 16:47:17.804', NULL, 1, 1),
@@ -1223,7 +1246,7 @@ INSERT INTO `users` (`id`, `email`, `password_hash`, `created_at`, `updated_at`,
 -- --------------------------------------------------------
 
 --
--- Table structure for table `user_roles`
+-- Struktur dari tabel `user_roles`
 --
 
 CREATE TABLE `user_roles` (
@@ -1235,7 +1258,7 @@ CREATE TABLE `user_roles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `user_roles`
+-- Dumping data untuk tabel `user_roles`
 --
 
 INSERT INTO `user_roles` (`id`, `user_id`, `role`, `created_at`, `updated_at`) VALUES
@@ -1253,14 +1276,15 @@ INSERT INTO `user_roles` (`id`, `user_id`, `role`, `created_at`, `updated_at`) V
 (54, '92a0b9b8-6c70-416e-a9d2-21ab93766e38', 'mahasiswa', '2025-12-01 16:47:17.816', '2025-12-01 16:47:17.816'),
 (55, 'c37f443d-c904-433e-b244-1aa9014d7114', 'mahasiswa', '2025-12-01 16:47:17.820', '2025-12-01 16:47:17.820'),
 (56, '0d82d749-e8d8-453a-ab55-4e4a310b94a5', 'mahasiswa', '2025-12-01 16:47:17.824', '2025-12-01 16:47:17.824'),
-(57, 'dce817fb-29ac-4b9f-a098-54881d30844d', 'mahasiswa', '2025-12-01 16:47:17.828', '2025-12-01 16:47:17.828');
+(57, 'dce817fb-29ac-4b9f-a098-54881d30844d', 'mahasiswa', '2025-12-01 16:47:17.828', '2025-12-01 16:47:17.828'),
+(58, '7fce08fd-a465-4401-b277-efb163c57ecd', 'dosen', '2025-12-02 04:24:29.785', '2025-12-02 04:24:30.285');
 
 --
 -- Indexes for dumped tables
 --
 
 --
--- Indexes for table `audit_logs`
+-- Indeks untuk tabel `audit_logs`
 --
 ALTER TABLE `audit_logs`
   ADD PRIMARY KEY (`id`),
@@ -1270,7 +1294,7 @@ ALTER TABLE `audit_logs`
   ADD KEY `audit_logs_created_at_idx` (`created_at`);
 
 --
--- Indexes for table `cpl`
+-- Indeks untuk tabel `cpl`
 --
 ALTER TABLE `cpl`
   ADD PRIMARY KEY (`id`),
@@ -1283,7 +1307,7 @@ ALTER TABLE `cpl`
   ADD KEY `cpl_created_by_fkey` (`created_by`);
 
 --
--- Indexes for table `cpl_mata_kuliah`
+-- Indeks untuk tabel `cpl_mata_kuliah`
 --
 ALTER TABLE `cpl_mata_kuliah`
   ADD PRIMARY KEY (`id`),
@@ -1292,7 +1316,7 @@ ALTER TABLE `cpl_mata_kuliah`
   ADD KEY `cpl_mata_kuliah_mata_kuliah_id_idx` (`mata_kuliah_id`);
 
 --
--- Indexes for table `cpmk`
+-- Indeks untuk tabel `cpmk`
 --
 ALTER TABLE `cpmk`
   ADD PRIMARY KEY (`id`),
@@ -1304,7 +1328,7 @@ ALTER TABLE `cpmk`
   ADD KEY `cpmk_created_by_fkey` (`created_by`);
 
 --
--- Indexes for table `cpmk_cpl_mapping`
+-- Indeks untuk tabel `cpmk_cpl_mapping`
 --
 ALTER TABLE `cpmk_cpl_mapping`
   ADD PRIMARY KEY (`id`),
@@ -1313,7 +1337,7 @@ ALTER TABLE `cpmk_cpl_mapping`
   ADD KEY `cpmk_cpl_mapping_cpl_id_idx` (`cpl_id`);
 
 --
--- Indexes for table `evaluasi_mata_kuliah`
+-- Indeks untuk tabel `evaluasi_mata_kuliah`
 --
 ALTER TABLE `evaluasi_mata_kuliah`
   ADD PRIMARY KEY (`id`),
@@ -1322,7 +1346,7 @@ ALTER TABLE `evaluasi_mata_kuliah`
   ADD KEY `evaluasi_mata_kuliah_dosen_id_idx` (`dosen_id`);
 
 --
--- Indexes for table `fakultas`
+-- Indeks untuk tabel `fakultas`
 --
 ALTER TABLE `fakultas`
   ADD PRIMARY KEY (`id`),
@@ -1330,14 +1354,14 @@ ALTER TABLE `fakultas`
   ADD UNIQUE KEY `fakultas_kode_key` (`kode`);
 
 --
--- Indexes for table `jenis_mata_kuliah`
+-- Indeks untuk tabel `jenis_mata_kuliah`
 --
 ALTER TABLE `jenis_mata_kuliah`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `jenis_mata_kuliah_nama_key` (`nama`);
 
 --
--- Indexes for table `kaprodi_data`
+-- Indeks untuk tabel `kaprodi_data`
 --
 ALTER TABLE `kaprodi_data`
   ADD PRIMARY KEY (`id`),
@@ -1347,35 +1371,35 @@ ALTER TABLE `kaprodi_data`
   ADD KEY `kaprodi_data_prodi_id_idx` (`prodi_id`);
 
 --
--- Indexes for table `kategori_cpl`
+-- Indeks untuk tabel `kategori_cpl`
 --
 ALTER TABLE `kategori_cpl`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `kategori_cpl_nama_key` (`nama`);
 
 --
--- Indexes for table `kelas`
+-- Indeks untuk tabel `kelas`
 --
 ALTER TABLE `kelas`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `kelas_nama_key` (`nama`);
 
 --
--- Indexes for table `kurikulum`
+-- Indeks untuk tabel `kurikulum`
 --
 ALTER TABLE `kurikulum`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `kurikulum_nama_key` (`nama`);
 
 --
--- Indexes for table `level_taksonomi`
+-- Indeks untuk tabel `level_taksonomi`
 --
 ALTER TABLE `level_taksonomi`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `level_taksonomi_kode_key` (`kode`);
 
 --
--- Indexes for table `mata_kuliah`
+-- Indeks untuk tabel `mata_kuliah`
 --
 ALTER TABLE `mata_kuliah`
   ADD PRIMARY KEY (`id`),
@@ -1391,7 +1415,7 @@ ALTER TABLE `mata_kuliah`
   ADD KEY `mata_kuliah_jenis_mk_id_fkey` (`jenis_mk_id`);
 
 --
--- Indexes for table `mata_kuliah_pengampu`
+-- Indeks untuk tabel `mata_kuliah_pengampu`
 --
 ALTER TABLE `mata_kuliah_pengampu`
   ADD PRIMARY KEY (`id`),
@@ -1401,7 +1425,7 @@ ALTER TABLE `mata_kuliah_pengampu`
   ADD KEY `mata_kuliah_pengampu_kelas_id_idx` (`kelas_id`);
 
 --
--- Indexes for table `nilai_cpl`
+-- Indeks untuk tabel `nilai_cpl`
 --
 ALTER TABLE `nilai_cpl`
   ADD PRIMARY KEY (`id`),
@@ -1415,7 +1439,7 @@ ALTER TABLE `nilai_cpl`
   ADD KEY `nilai_cpl_created_by_fkey` (`created_by`);
 
 --
--- Indexes for table `nilai_cpmk`
+-- Indeks untuk tabel `nilai_cpmk`
 --
 ALTER TABLE `nilai_cpmk`
   ADD PRIMARY KEY (`id`),
@@ -1428,7 +1452,7 @@ ALTER TABLE `nilai_cpmk`
   ADD KEY `nilai_cpmk_tahun_ajaran_idx` (`tahun_ajaran`);
 
 --
--- Indexes for table `nilai_rubrik`
+-- Indeks untuk tabel `nilai_rubrik`
 --
 ALTER TABLE `nilai_rubrik`
   ADD PRIMARY KEY (`id`),
@@ -1437,7 +1461,7 @@ ALTER TABLE `nilai_rubrik`
   ADD KEY `nilai_rubrik_rubrik_level_id_idx` (`rubrik_level_id`);
 
 --
--- Indexes for table `nilai_teknik_penilaian`
+-- Indeks untuk tabel `nilai_teknik_penilaian`
 --
 ALTER TABLE `nilai_teknik_penilaian`
   ADD PRIMARY KEY (`id`),
@@ -1451,7 +1475,7 @@ ALTER TABLE `nilai_teknik_penilaian`
   ADD KEY `nilai_teknik_penilaian_created_by_fkey` (`created_by`);
 
 --
--- Indexes for table `prodi`
+-- Indeks untuk tabel `prodi`
 --
 ALTER TABLE `prodi`
   ADD PRIMARY KEY (`id`),
@@ -1459,7 +1483,7 @@ ALTER TABLE `prodi`
   ADD KEY `prodi_fakultas_id_idx` (`fakultas_id`);
 
 --
--- Indexes for table `profiles`
+-- Indeks untuk tabel `profiles`
 --
 ALTER TABLE `profiles`
   ADD PRIMARY KEY (`id`),
@@ -1478,7 +1502,7 @@ ALTER TABLE `profiles`
   ADD KEY `profiles_kelas_id_idx` (`kelas_id`);
 
 --
--- Indexes for table `rubrik`
+-- Indeks untuk tabel `rubrik`
 --
 ALTER TABLE `rubrik`
   ADD PRIMARY KEY (`id`),
@@ -1486,21 +1510,21 @@ ALTER TABLE `rubrik`
   ADD KEY `rubrik_cpmk_id_idx` (`cpmk_id`);
 
 --
--- Indexes for table `rubrik_kriteria`
+-- Indeks untuk tabel `rubrik_kriteria`
 --
 ALTER TABLE `rubrik_kriteria`
   ADD PRIMARY KEY (`id`),
   ADD KEY `rubrik_kriteria_rubrik_id_idx` (`rubrik_id`);
 
 --
--- Indexes for table `rubrik_level`
+-- Indeks untuk tabel `rubrik_level`
 --
 ALTER TABLE `rubrik_level`
   ADD PRIMARY KEY (`id`),
   ADD KEY `rubrik_level_kriteria_id_idx` (`kriteria_id`);
 
 --
--- Indexes for table `semester`
+-- Indeks untuk tabel `semester`
 --
 ALTER TABLE `semester`
   ADD PRIMARY KEY (`id`),
@@ -1508,7 +1532,7 @@ ALTER TABLE `semester`
   ADD UNIQUE KEY `semester_angka_key` (`angka`);
 
 --
--- Indexes for table `sessions`
+-- Indeks untuk tabel `sessions`
 --
 ALTER TABLE `sessions`
   ADD PRIMARY KEY (`id`),
@@ -1518,21 +1542,21 @@ ALTER TABLE `sessions`
   ADD KEY `sessions_expires_at_idx` (`expires_at`);
 
 --
--- Indexes for table `settings`
+-- Indeks untuk tabel `settings`
 --
 ALTER TABLE `settings`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `settings_key_key` (`key`);
 
 --
--- Indexes for table `tahun_ajaran`
+-- Indeks untuk tabel `tahun_ajaran`
 --
 ALTER TABLE `tahun_ajaran`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `tahun_ajaran_nama_key` (`nama`);
 
 --
--- Indexes for table `teknik_penilaian`
+-- Indeks untuk tabel `teknik_penilaian`
 --
 ALTER TABLE `teknik_penilaian`
   ADD PRIMARY KEY (`id`),
@@ -1540,14 +1564,14 @@ ALTER TABLE `teknik_penilaian`
   ADD KEY `teknik_penilaian_teknik_ref_id_idx` (`teknik_ref_id`);
 
 --
--- Indexes for table `teknik_penilaian_ref`
+-- Indeks untuk tabel `teknik_penilaian_ref`
 --
 ALTER TABLE `teknik_penilaian_ref`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `teknik_penilaian_ref_nama_key` (`nama`);
 
 --
--- Indexes for table `users`
+-- Indeks untuk tabel `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
@@ -1556,7 +1580,7 @@ ALTER TABLE `users`
   ADD KEY `users_is_active_idx` (`is_active`);
 
 --
--- Indexes for table `user_roles`
+-- Indeks untuk tabel `user_roles`
 --
 ALTER TABLE `user_roles`
   ADD PRIMARY KEY (`id`),
@@ -1565,33 +1589,33 @@ ALTER TABLE `user_roles`
   ADD KEY `user_roles_user_id_idx` (`user_id`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- AUTO_INCREMENT untuk tabel yang dibuang
 --
 
 --
--- AUTO_INCREMENT for table `audit_logs`
+-- AUTO_INCREMENT untuk tabel `audit_logs`
 --
 ALTER TABLE `audit_logs`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `user_roles`
+-- AUTO_INCREMENT untuk tabel `user_roles`
 --
 ALTER TABLE `user_roles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59;
 
 --
--- Constraints for dumped tables
+-- Ketidakleluasaan untuk tabel pelimpahan (Dumped Tables)
 --
 
 --
--- Constraints for table `audit_logs`
+-- Ketidakleluasaan untuk tabel `audit_logs`
 --
 ALTER TABLE `audit_logs`
   ADD CONSTRAINT `audit_logs_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Constraints for table `cpl`
+-- Ketidakleluasaan untuk tabel `cpl`
 --
 ALTER TABLE `cpl`
   ADD CONSTRAINT `cpl_created_by_fkey` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
@@ -1599,14 +1623,14 @@ ALTER TABLE `cpl`
   ADD CONSTRAINT `cpl_prodi_id_fkey` FOREIGN KEY (`prodi_id`) REFERENCES `prodi` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Constraints for table `cpl_mata_kuliah`
+-- Ketidakleluasaan untuk tabel `cpl_mata_kuliah`
 --
 ALTER TABLE `cpl_mata_kuliah`
   ADD CONSTRAINT `cpl_mata_kuliah_cpl_id_fkey` FOREIGN KEY (`cpl_id`) REFERENCES `cpl` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `cpl_mata_kuliah_mata_kuliah_id_fkey` FOREIGN KEY (`mata_kuliah_id`) REFERENCES `mata_kuliah` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `cpmk`
+-- Ketidakleluasaan untuk tabel `cpmk`
 --
 ALTER TABLE `cpmk`
   ADD CONSTRAINT `cpmk_created_by_fkey` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
@@ -1614,27 +1638,27 @@ ALTER TABLE `cpmk`
   ADD CONSTRAINT `cpmk_mata_kuliah_id_fkey` FOREIGN KEY (`mata_kuliah_id`) REFERENCES `mata_kuliah` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `cpmk_cpl_mapping`
+-- Ketidakleluasaan untuk tabel `cpmk_cpl_mapping`
 --
 ALTER TABLE `cpmk_cpl_mapping`
   ADD CONSTRAINT `cpmk_cpl_mapping_cpl_id_fkey` FOREIGN KEY (`cpl_id`) REFERENCES `cpl` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `cpmk_cpl_mapping_cpmk_id_fkey` FOREIGN KEY (`cpmk_id`) REFERENCES `cpmk` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `evaluasi_mata_kuliah`
+-- Ketidakleluasaan untuk tabel `evaluasi_mata_kuliah`
 --
 ALTER TABLE `evaluasi_mata_kuliah`
   ADD CONSTRAINT `evaluasi_mata_kuliah_dosen_id_fkey` FOREIGN KEY (`dosen_id`) REFERENCES `users` (`id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `evaluasi_mata_kuliah_mata_kuliah_id_fkey` FOREIGN KEY (`mata_kuliah_id`) REFERENCES `mata_kuliah` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `kaprodi_data`
+-- Ketidakleluasaan untuk tabel `kaprodi_data`
 --
 ALTER TABLE `kaprodi_data`
   ADD CONSTRAINT `kaprodi_data_prodi_id_fkey` FOREIGN KEY (`prodi_id`) REFERENCES `prodi` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Constraints for table `mata_kuliah`
+-- Ketidakleluasaan untuk tabel `mata_kuliah`
 --
 ALTER TABLE `mata_kuliah`
   ADD CONSTRAINT `mata_kuliah_created_by_fkey` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
@@ -1644,7 +1668,7 @@ ALTER TABLE `mata_kuliah`
   ADD CONSTRAINT `mata_kuliah_semester_id_fkey` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Constraints for table `mata_kuliah_pengampu`
+-- Ketidakleluasaan untuk tabel `mata_kuliah_pengampu`
 --
 ALTER TABLE `mata_kuliah_pengampu`
   ADD CONSTRAINT `mata_kuliah_pengampu_dosen_id_fkey` FOREIGN KEY (`dosen_id`) REFERENCES `profiles` (`user_id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -1652,7 +1676,7 @@ ALTER TABLE `mata_kuliah_pengampu`
   ADD CONSTRAINT `mata_kuliah_pengampu_mata_kuliah_id_fkey` FOREIGN KEY (`mata_kuliah_id`) REFERENCES `mata_kuliah` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `nilai_cpl`
+-- Ketidakleluasaan untuk tabel `nilai_cpl`
 --
 ALTER TABLE `nilai_cpl`
   ADD CONSTRAINT `nilai_cpl_cpl_id_fkey` FOREIGN KEY (`cpl_id`) REFERENCES `cpl` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -1662,7 +1686,7 @@ ALTER TABLE `nilai_cpl`
   ADD CONSTRAINT `nilai_cpl_semester_id_fkey` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Constraints for table `nilai_cpmk`
+-- Ketidakleluasaan untuk tabel `nilai_cpmk`
 --
 ALTER TABLE `nilai_cpmk`
   ADD CONSTRAINT `nilai_cpmk_cpmk_id_fkey` FOREIGN KEY (`cpmk_id`) REFERENCES `cpmk` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -1671,14 +1695,14 @@ ALTER TABLE `nilai_cpmk`
   ADD CONSTRAINT `nilai_cpmk_semester_id_fkey` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Constraints for table `nilai_rubrik`
+-- Ketidakleluasaan untuk tabel `nilai_rubrik`
 --
 ALTER TABLE `nilai_rubrik`
   ADD CONSTRAINT `nilai_rubrik_nilai_teknik_id_fkey` FOREIGN KEY (`nilai_teknik_id`) REFERENCES `nilai_teknik_penilaian` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `nilai_rubrik_rubrik_level_id_fkey` FOREIGN KEY (`rubrik_level_id`) REFERENCES `rubrik_level` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `nilai_teknik_penilaian`
+-- Ketidakleluasaan untuk tabel `nilai_teknik_penilaian`
 --
 ALTER TABLE `nilai_teknik_penilaian`
   ADD CONSTRAINT `nilai_teknik_penilaian_created_by_fkey` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
@@ -1688,13 +1712,13 @@ ALTER TABLE `nilai_teknik_penilaian`
   ADD CONSTRAINT `nilai_teknik_penilaian_teknik_penilaian_id_fkey` FOREIGN KEY (`teknik_penilaian_id`) REFERENCES `teknik_penilaian` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `prodi`
+-- Ketidakleluasaan untuk tabel `prodi`
 --
 ALTER TABLE `prodi`
   ADD CONSTRAINT `prodi_fakultas_id_fkey` FOREIGN KEY (`fakultas_id`) REFERENCES `fakultas` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `profiles`
+-- Ketidakleluasaan untuk tabel `profiles`
 --
 ALTER TABLE `profiles`
   ADD CONSTRAINT `profiles_fakultas_id_fkey` FOREIGN KEY (`fakultas_id`) REFERENCES `fakultas` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
@@ -1704,38 +1728,38 @@ ALTER TABLE `profiles`
   ADD CONSTRAINT `profiles_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `rubrik`
+-- Ketidakleluasaan untuk tabel `rubrik`
 --
 ALTER TABLE `rubrik`
   ADD CONSTRAINT `rubrik_cpmk_id_fkey` FOREIGN KEY (`cpmk_id`) REFERENCES `cpmk` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `rubrik_kriteria`
+-- Ketidakleluasaan untuk tabel `rubrik_kriteria`
 --
 ALTER TABLE `rubrik_kriteria`
   ADD CONSTRAINT `rubrik_kriteria_rubrik_id_fkey` FOREIGN KEY (`rubrik_id`) REFERENCES `rubrik` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `rubrik_level`
+-- Ketidakleluasaan untuk tabel `rubrik_level`
 --
 ALTER TABLE `rubrik_level`
   ADD CONSTRAINT `rubrik_level_kriteria_id_fkey` FOREIGN KEY (`kriteria_id`) REFERENCES `rubrik_kriteria` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `sessions`
+-- Ketidakleluasaan untuk tabel `sessions`
 --
 ALTER TABLE `sessions`
   ADD CONSTRAINT `sessions_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `teknik_penilaian`
+-- Ketidakleluasaan untuk tabel `teknik_penilaian`
 --
 ALTER TABLE `teknik_penilaian`
   ADD CONSTRAINT `teknik_penilaian_cpmk_id_fkey` FOREIGN KEY (`cpmk_id`) REFERENCES `cpmk` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `teknik_penilaian_teknik_ref_id_fkey` FOREIGN KEY (`teknik_ref_id`) REFERENCES `teknik_penilaian_ref` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Constraints for table `user_roles`
+-- Ketidakleluasaan untuk tabel `user_roles`
 --
 ALTER TABLE `user_roles`
   ADD CONSTRAINT `user_roles_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;

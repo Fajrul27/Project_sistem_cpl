@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, UserPlus } from "lucide-react";
-import { api, fetchKelas } from "@/lib/api-client";
+import { api, fetchKelas, fetchProdiList, fetchSemesters, fetchFakultasList } from "@/lib/api-client";
 
 interface MataKuliah {
     id: string;
@@ -57,6 +57,12 @@ const DosenPengampuPage = () => {
     const [adding, setAdding] = useState(false);
     const [kelasList, setKelasList] = useState<any[]>([]);
     const [selectedKelas, setSelectedKelas] = useState<string>("");
+    const [fakultasList, setFakultasList] = useState<any[]>([]);
+    const [prodiList, setProdiList] = useState<any[]>([]);
+    const [semesterList, setSemesterList] = useState<any[]>([]);
+    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
+    const [selectedProdi, setSelectedProdi] = useState<string>("all");
+    const [selectedSemester, setSelectedSemester] = useState<string>("all");
 
     useEffect(() => {
         fetchInitialData();
@@ -70,23 +76,74 @@ const DosenPengampuPage = () => {
         }
     }, [selectedMk]);
 
+    useEffect(() => {
+        fetchMataKuliah();
+    }, [selectedProdi, selectedSemester]);
+
+    useEffect(() => {
+        fetchProdi();
+    }, [selectedFakultas]);
+
     const fetchInitialData = async () => {
         try {
             setLoading(true);
-            const [mkRes, dosenRes, kelasRes] = await Promise.all([
-                api.get('/mata-kuliah'),
+            const [dosenRes, kelasRes, semesterRes, fakultasRes] = await Promise.all([
                 api.get('/users?role=dosen&limit=-1'),
-                fetchKelas()
+                fetchKelas(),
+                fetchSemesters(),
+                fetchFakultasList()
             ]);
 
-            setMataKuliahList(mkRes.data || []);
             setDosenList(dosenRes.data || []);
             setKelasList(kelasRes.data || []);
+            setSemesterList(semesterRes.data || []);
+            setFakultasList(fakultasRes.data || []);
+
+            // Initial fetch for Prodi (all)
+            fetchProdi();
+
+            // Initial fetch for MK
+            fetchMataKuliah();
         } catch (error) {
             console.error("Error fetching initial data:", error);
             toast.error("Gagal memuat data");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchProdi = async () => {
+        try {
+            const fakultasId = selectedFakultas !== 'all' ? selectedFakultas : undefined;
+            const res = await fetchProdiList(fakultasId);
+            setProdiList(res.data || []);
+
+            // Reset selected Prodi if not in new list
+            if (selectedProdi !== 'all') {
+                const exists = (res.data || []).find((p: any) => p.id === selectedProdi);
+                if (!exists) setSelectedProdi("all");
+            }
+        } catch (error) {
+            console.error("Error fetching prodi:", error);
+        }
+    };
+
+    const fetchMataKuliah = async () => {
+        try {
+            const params: any = {};
+            if (selectedProdi && selectedProdi !== 'all') params.prodiId = selectedProdi;
+            if (selectedSemester && selectedSemester !== 'all') params.semester = selectedSemester;
+
+            const mkRes = await api.get('/mata-kuliah', { params });
+            setMataKuliahList(mkRes.data || []);
+
+            // Reset selected MK if it's not in the new list
+            if (selectedMk) {
+                const exists = (mkRes.data || []).find((mk: any) => mk.id === selectedMk);
+                if (!exists) setSelectedMk("");
+            }
+        } catch (error) {
+            console.error("Error fetching mata kuliah:", error);
         }
     };
 
@@ -121,7 +178,7 @@ const DosenPengampuPage = () => {
             await api.post('/mata-kuliah-pengampu', {
                 mataKuliahId: selectedMk,
                 dosenId: selectedDosen,
-                kelasId: selectedKelas || null
+                kelasId: selectedKelas === 'none' ? null : selectedKelas
             });
 
             toast.success("Berhasil menambahkan dosen pengampu");
@@ -167,6 +224,62 @@ const DosenPengampuPage = () => {
             <div className="grid gap-6 md:grid-cols-3">
                 {/* Left Column: Selection */}
                 <div className="md:col-span-1 space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Filter Mata Kuliah</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Fakultas</label>
+                                <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Semua Fakultas" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Fakultas</SelectItem>
+                                        {fakultasList.map((fak) => (
+                                            <SelectItem key={fak.id} value={fak.id}>
+                                                {fak.nama}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Program Studi</label>
+                                <Select value={selectedProdi} onValueChange={setSelectedProdi}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Semua Program Studi" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Program Studi</SelectItem>
+                                        {prodiList.map((prodi) => (
+                                            <SelectItem key={prodi.id} value={prodi.id}>
+                                                {prodi.nama}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Semester</label>
+                                <Select value={selectedSemester} onValueChange={setSelectedSemester}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Semua Semester" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Semester</SelectItem>
+                                        {semesterList.map((sem) => (
+                                            <SelectItem key={sem.id} value={String(sem.angka)}>
+                                                Semester {sem.angka}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <Card>
                         <CardHeader>
                             <CardTitle>Pilih Mata Kuliah</CardTitle>
@@ -219,7 +332,7 @@ const DosenPengampuPage = () => {
                                         <SelectContent>
                                             <SelectItem value="none">-- Tanpa Kelas --</SelectItem>
                                             {kelasList.map((k) => (
-                                                <SelectItem key={k.id} value={k.id}>Kelas {k.nama}</SelectItem>
+                                                <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -283,7 +396,7 @@ const DosenPengampuPage = () => {
                                                     {pengampu.dosen.namaLengkap || pengampu.dosen.user.email}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {pengampu.kelas ? `Kelas ${pengampu.kelas.nama}` : "-"}
+                                                    {pengampu.kelas ? pengampu.kelas.nama : "-"}
                                                 </TableCell>
                                                 <TableCell>
                                                     {pengampu.dosen.nidn || pengampu.dosen.nip || "-"}

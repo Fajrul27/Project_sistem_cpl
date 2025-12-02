@@ -257,6 +257,12 @@ export async function fetchFakultasList() {
   return api.get('/references/fakultas');
 }
 
+// Helper: fetch prodi
+export async function fetchProdiList(fakultasId?: string) {
+  const params = fakultasId ? { fakultasId } : {};
+  return api.get('/prodi', { params });
+}
+
 // Helper: Rubric API (CPMK Level)
 export async function fetchRubrik(cpmkId: string) {
   return api.get(`/rubrik/${cpmkId}`);
