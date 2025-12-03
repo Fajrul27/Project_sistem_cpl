@@ -175,7 +175,11 @@ router.get('/:mahasiswaId', authMiddleware, requireProdiScope, async (req, res) 
     // Get mahasiswa info first to filter CPLs by Prodi
     const mahasiswa = await prisma.profile.findUnique({
       where: { userId: mahasiswaId },
-      include: { prodi: true }
+      include: {
+        prodi: true,
+        angkatanRef: true
+      }
+
     });
 
     if (!mahasiswa) {
@@ -283,6 +287,7 @@ router.get('/:mahasiswaId', authMiddleware, requireProdiScope, async (req, res) 
         transkrip,
         summary: {
           totalCpl,
+          totalCurriculumCpl: allCpls.length,
           tercapai,
           belumTercapai,
           proses: 0,

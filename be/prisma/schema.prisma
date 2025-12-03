@@ -73,6 +73,8 @@ model Profile {
   semesterId         String?                @map("semester_id")
   kelasRef           Kelas?                 @relation(fields: [kelasId], references: [id])
   kelasId            String?                @map("kelas_id")
+  angkatanRef        Angkatan?              @relation(fields: [angkatanId], references: [id])
+  angkatanId         String?                @map("angkatan_id")
   user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([nim])
@@ -537,6 +539,18 @@ model Kelas {
   profiles Profile[]
 
   @@map("kelas")
+}
+
+model Angkatan {
+  id        String   @id @default(uuid())
+  tahun     Int      @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profiles  Profile[]
+
+  @@map("angkatan")
 }
 
 // ============================================

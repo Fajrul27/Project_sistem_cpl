@@ -16,7 +16,8 @@ router.get('/:mahasiswaId', async (req, res) => {
         const mahasiswa = await prisma.profile.findUnique({
             where: { userId: mahasiswaId },
             include: {
-                prodi: true
+                prodi: true,
+                angkatanRef: true
             }
         });
 
@@ -73,7 +74,9 @@ router.get('/:mahasiswaId', async (req, res) => {
                     namaLengkap: mahasiswa.namaLengkap,
                     nim: mahasiswa.nim,
                     programStudi: mahasiswa.prodi?.nama || mahasiswa.programStudi,
-                    semester: mahasiswa.semester
+                    semester: mahasiswa.semester,
+                    tahunMasuk: mahasiswa.tahunMasuk,
+                    angkatanRef: mahasiswa.angkatanRef
                 },
                 transkrip
             }

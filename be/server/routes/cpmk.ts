@@ -14,11 +14,11 @@ router.get('/', authMiddleware, async (req, res) => {
     try {
         const userId = (req as any).userId;
         const userRole = (req as any).userRole;
-        const { mataKuliahId } = req.query;
+        const { mataKuliahId, prodiId, fakultasId } = req.query;
 
         const where: any = { isActive: true };
 
-        if (mataKuliahId) {
+        if (mataKuliahId && mataKuliahId !== 'all') {
             // Check access to specific MK
             const hasAccess = await canAccessMataKuliah(userId, userRole, mataKuliahId as string);
             if (!hasAccess) {
@@ -30,6 +30,23 @@ router.get('/', authMiddleware, async (req, res) => {
             const accessibleMkIds = await getAccessibleMataKuliahIds(userId, userRole);
             if (userRole !== 'admin') {
                 where.mataKuliahId = { in: accessibleMkIds };
+            }
+
+            // Apply filters for Admin/Kaprodi
+            if (prodiId && prodiId !== 'all') {
+                where.mataKuliah = {
+                    ...where.mataKuliah,
+                    prodiId: prodiId as string
+                };
+            }
+
+            if (fakultasId && fakultasId !== 'all') {
+                where.mataKuliah = {
+                    ...where.mataKuliah,
+                    prodi: {
+                        fakultasId: fakultasId as string
+                    }
+                };
             }
         }
 

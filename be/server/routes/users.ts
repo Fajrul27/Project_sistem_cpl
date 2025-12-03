@@ -254,7 +254,8 @@ router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async 
                 fakultas: true
               }
             },
-            kelasRef: true
+            kelasRef: true,
+            angkatanRef: true
           }
         }
       },

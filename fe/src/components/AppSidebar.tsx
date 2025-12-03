@@ -36,7 +36,7 @@ const MENU_ITEMS: MenuItem[] = [
   { title: "Pengguna", url: "/dashboard/users", icon: Users, roles: ["admin"] },
   { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", icon: FileText, roles: ["dosen"] },
   { title: "Analisis CPL", url: "/dashboard/analisis", icon: BarChart3, roles: ["admin", "dosen", "kaprodi"] },
-  { title: "Pengaturan", url: "/dashboard/settings", icon: Settings, roles: ["admin", "dosen", "mahasiswa", "kaprodi"] },
+  { title: "Pengaturan", url: "/dashboard/settings", icon: Settings, roles: ["admin", "dosen", "kaprodi"] },
 ];
 
 export function AppSidebar() {

@@ -44,7 +44,9 @@ interface TranskripCpmkItem {
         kodeMk: string;
         namaMk: string;
         sks: number;
+        programStudi: string;
         semester: number;
+        tahunMasuk?: number;
     };
     tahunAjaran: string;
 }
@@ -56,6 +58,7 @@ interface Mahasiswa {
         nim: string;
         programStudi: string;
         semester: number;
+        tahunMasuk?: number;
     };
 }
 
@@ -72,6 +75,8 @@ interface User {
         prodi?: { nama: string };
         programStudi?: string;
         semester: number;
+        tahunMasuk?: number;
+        angkatanRef?: { tahun: number };
     };
 }
 
@@ -87,6 +92,7 @@ const TranskripCPLPage = () => {
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
     const [kaprodiData, setKaprodiData] = useState<KaprodiData | null>(null);
+    const [totalCurriculumCpl, setTotalCurriculumCpl] = useState<number>(0);
 
     const [semester, setSemester] = useState<string>("all");
     const [tahunAjaran, setTahunAjaran] = useState<string>("all");
@@ -128,10 +134,7 @@ const TranskripCPLPage = () => {
         if (!isMahasiswa) fetchMahasiswaOptions(debouncedSearch);
     }, [debouncedSearch, roleLoading, isMahasiswa]);
 
-    useEffect(() => {
-        fetchSettings();
-        fetchMahasiswaOptions();
-    }, []);
+
 
     useEffect(() => {
         if (selectedMahasiswa) {
@@ -172,7 +175,8 @@ const TranskripCPLPage = () => {
                         namaLengkap: u.profile.namaLengkap,
                         nim: u.profile.nim,
                         programStudi: u.profile.prodi?.nama || u.profile.programStudi,
-                        semester: u.profile.semester
+                        semester: u.profile.semester,
+                        tahunMasuk: u.profile.angkatanRef?.tahun || u.profile.tahunMasuk
                     }
                 }));
             setMahasiswaList(mapped);
@@ -206,6 +210,7 @@ const TranskripCPLPage = () => {
 
             const result = await api.get(`/transkrip-cpl/${selectedMahasiswa}`, { params });
             setTranskripList(result.data?.transkrip || []);
+            setTotalCurriculumCpl(result.data?.summary?.totalCurriculumCpl || 0);
             updateStudentInfo(result.data?.mahasiswa);
         } catch (error) {
             console.error("Error fetching transkrip:", error);
@@ -218,8 +223,6 @@ const TranskripCPLPage = () => {
         try {
             const result = await getTranskripCPMK(selectedMahasiswa, semester, tahunAjaran);
             setTranskripCpmkList(result.data?.transkrip || []);
-            // updateStudentInfo is redundant if called in both, but harmless. 
-            // Ideally only one call updates student info, but keeping for safety.
             if (!transkripList.length) updateStudentInfo(result.data?.mahasiswa);
         } catch (error) {
             console.error("Error fetching transkrip CPMK:", error);
@@ -237,7 +240,8 @@ const TranskripCPLPage = () => {
                     namaLengkap: m.namaLengkap,
                     nim: m.nim,
                     programStudi: programStudi,
-                    semester: m.semester
+                    semester: m.semester,
+                    tahunMasuk: m.angkatanRef?.tahun || m.tahunMasuk
                 }
             });
             if (programStudi) fetchKaprodiData(programStudi);
@@ -380,7 +384,7 @@ const TranskripCPLPage = () => {
                                         </Card>
                                         <Card>
                                             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">CPL Tercapai</CardTitle></CardHeader>
-                                            <CardContent><div className="text-2xl font-bold">{completedCPL} / {validTranskripList.length}</div></CardContent>
+                                            <CardContent><div className="text-2xl font-bold">{completedCPL} / {totalCurriculumCpl || validTranskripList.length}</div></CardContent>
                                         </Card>
                                         <Card>
                                             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Persentase Kelulusan</CardTitle></CardHeader>
@@ -529,7 +533,7 @@ const TranskripCPLPage = () => {
                         <style>{`
                         @media print {
                             @page { 
-                                margin: 0;
+                                margin: 2cm;
                                 size: A4;
                             }
                             body, html { 
@@ -556,7 +560,7 @@ const TranskripCPLPage = () => {
                                 top: 0;
                                 width: 100%;
                                 min-height: 100vh;
-                                padding: 2cm;
+                                padding: 0;
                                 background-color: white !important;
                                 z-index: 9999;
                             }
@@ -620,7 +624,7 @@ const TranskripCPLPage = () => {
                                     <div className="grid grid-cols-[100px_5px_1fr]">
                                         <div>Tahun Masuk</div>
                                         <div>:</div>
-                                        <div className="uppercase font-medium">-</div>
+                                        <div className="uppercase font-medium">{selectedStudent.profile?.tahunMasuk || '-'}</div>
                                     </div>
                                     <div className="grid grid-cols-[100px_5px_1fr]">
                                         <div>Semester</div>
@@ -694,7 +698,7 @@ const TranskripCPLPage = () => {
                                         <div>Rata-rata Nilai</div>
                                         <div className="font-bold">: {avgScore.toFixed(2)}</div>
                                         <div>Total {activeTab === 'cpl' ? 'CPL' : 'CPMK'} Tercapai</div>
-                                        <div className="font-bold">: {activeTab === 'cpl' ? completedCPL : transkripCpmkList.filter(i => i.status === 'tercapai').length} / {activeTab === 'cpl' ? validTranskripList.length : transkripCpmkList.length}</div>
+                                        <div className="font-bold">: {activeTab === 'cpl' ? completedCPL : transkripCpmkList.filter(i => i.status === 'tercapai').length} / {activeTab === 'cpl' ? (totalCurriculumCpl || validTranskripList.length) : transkripCpmkList.length}</div>
                                     </div>
                                 </div>
 
@@ -702,7 +706,7 @@ const TranskripCPLPage = () => {
                                     <div className="mb-12">
                                         <div>Cilacap, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
                                         <div className="font-bold">Ketua Program Studi</div>
-                                        <div className="italic">Informatika / Informatika</div>
+                                        <div className="italic">{selectedStudent?.profile?.programStudi || '........................'}</div>
                                     </div>
                                     <div>
                                         <div className="font-bold underline uppercase">

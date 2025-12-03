@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/table";
 import { useUserRole } from "@/hooks/useUserRole";
 
-import { supabase, api, fetchSemesters, fetchKelas } from "@/lib/api-client";
+import { supabase, api, fetchSemesters, fetchKelas, fetchAngkatanList } from "@/lib/api-client";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -48,6 +48,7 @@ const ProfilePage = () => {
   const [prodiList, setProdiList] = useState<any[]>([]);
   const [semesterList, setSemesterList] = useState<any[]>([]);
   const [kelasList, setKelasList] = useState<any[]>([]);
+  const [angkatanList, setAngkatanList] = useState<any[]>([]);
   const [filteredProdiList, setFilteredProdiList] = useState<any[]>([]);
   const [teachingAssignments, setTeachingAssignments] = useState<any[]>([]);
 
@@ -58,17 +59,19 @@ const ProfilePage = () => {
 
   const fetchMasterData = async () => {
     try {
-      const [fakultasRes, prodiRes, semesterRes, kelasRes] = await Promise.all([
+      const [fakultasRes, prodiRes, semesterRes, kelasRes, angkatanRes] = await Promise.all([
         api.get('/fakultas'),
         api.get('/prodi'),
         fetchSemesters(),
-        fetchKelas()
+        fetchKelas(),
+        fetchAngkatanList()
       ]);
 
       if (fakultasRes.data) setFakultasList(fakultasRes.data);
       if (prodiRes.data) setProdiList(prodiRes.data);
       if (semesterRes.data) setSemesterList(semesterRes.data);
       if (kelasRes.data) setKelasList(kelasRes.data);
+      if (angkatanRes.data) setAngkatanList(angkatanRes.data);
     } catch (error) {
       console.error("Error fetching master data:", error);
     }
@@ -95,18 +98,52 @@ const ProfilePage = () => {
       if (userData.user) {
         setUser(userData.user);
         setUser(userData.user);
-        setProfile(userData.user.profile);
-        setEditForm({
-          namaLengkap: userData.user.profile?.namaLengkap || "",
-          nim: userData.user.profile?.nim || "",
-          nip: userData.user.profile?.nip || "",
-          fakultasId: userData.user.profile?.fakultasId || "",
-          prodiId: userData.user.profile?.prodiId || "",
-          semester: userData.user.profile?.semester || "",
-          semesterId: userData.user.profile?.semesterId || "",
-          kelasId: userData.user.profile?.kelasId || "",
-          alamat: userData.user.profile?.alamat || "",
-        });
+
+        // Fetch full profile data from API to get relations like angkatanRef
+        if (userData.user.profile?.id) {
+          try {
+            const profileRes = await api.get(`/profiles/${userData.user.profile.id}`);
+            if (profileRes.data?.data) {
+              const fullProfile = profileRes.data.data;
+              setProfile(fullProfile);
+
+              // Update edit form with fresh data
+              setEditForm({
+                namaLengkap: fullProfile.namaLengkap || "",
+                nim: fullProfile.nim || "",
+                nip: fullProfile.nip || "",
+                fakultasId: fullProfile.fakultasId || "",
+                prodiId: fullProfile.prodiId || "",
+                semester: fullProfile.semester || "",
+                semesterId: fullProfile.semesterId || "",
+                kelasId: fullProfile.kelasId || "",
+                angkatanId: fullProfile.angkatanId || "",
+                alamat: fullProfile.alamat || "",
+                noTelepon: fullProfile.noTelepon || "",
+              });
+            } else {
+              // Fallback to session profile if API fails or returns empty
+              setProfile(userData.user.profile);
+              setEditForm({
+                namaLengkap: userData.user.profile?.namaLengkap || "",
+                nim: userData.user.profile?.nim || "",
+                nip: userData.user.profile?.nip || "",
+                fakultasId: userData.user.profile?.fakultasId || "",
+                prodiId: userData.user.profile?.prodiId || "",
+                semester: userData.user.profile?.semester || "",
+                semesterId: userData.user.profile?.semesterId || "",
+                kelasId: userData.user.profile?.kelasId || "",
+                angkatanId: userData.user.profile?.angkatanId || "",
+                alamat: userData.user.profile?.alamat || "",
+              });
+            }
+          } catch (err) {
+            console.error("Error fetching full profile:", err);
+            setProfile(userData.user.profile);
+          }
+        } else {
+          setProfile(userData.user.profile);
+        }
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -281,6 +318,25 @@ const ProfilePage = () => {
                 </Label>
                 <Input
                   value={profile.kelasRef.nama}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+            )}
+
+            {!isDosen && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Tahun Masuk
+                </Label>
+                <Input
+                  value={
+                    profile?.angkatanRef?.tahun ||
+                    profile?.tahunMasuk ||
+                    angkatanList.find(a => a.id === profile?.angkatanId)?.tahun ||
+                    '-'
+                  }
                   disabled
                   className="bg-muted"
                 />
@@ -544,6 +600,27 @@ const ProfilePage = () => {
                 </div>
               )}
 
+              {role === 'mahasiswa' && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="angkatan" className="text-right">
+                    Tahun Masuk
+                  </Label>
+                  <Select
+                    value={editForm.angkatanId}
+                    onValueChange={(val) => setEditForm({ ...editForm, angkatanId: val })}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Pilih Angkatan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {angkatanList.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>{a.tahun}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="alamat" className="text-right">
                   Alamat
@@ -572,7 +649,7 @@ const ProfilePage = () => {
               <Button type="submit" onClick={async () => {
                 try {
                   setLoading(true);
-                  await api.put(`/profile/${profile.id}`, editForm);
+                  await api.put(`/profiles/${profile.id}`, editForm);
                   toast.success("Profil berhasil diperbarui");
                   setIsEditing(false);
                   fetchUserData();

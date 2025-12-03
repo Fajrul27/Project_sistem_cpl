@@ -80,6 +80,7 @@ import teknikPenilaianRefRoutes from './routes/teknik-penilaian-ref.js';
 import referencesRoutes from './routes/references.js';
 import rubrikRoutes from './routes/rubrik.js';
 import evaluasiRoutes from './routes/evaluasi.js';
+import angkatanRoutes from './routes/angkatan.js';
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -109,6 +110,7 @@ app.use('/api/teknik-penilaian-ref', teknikPenilaianRefRoutes);
 app.use('/api/references', referencesRoutes);
 app.use('/api/rubrik', rubrikRoutes);
 app.use('/api/evaluasi', evaluasiRoutes);
+app.use('/api/angkatan', angkatanRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

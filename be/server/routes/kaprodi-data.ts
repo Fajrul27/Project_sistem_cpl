@@ -91,4 +91,20 @@ router.post('/', authMiddleware, requireRole('admin'), async (req, res) => {
     }
 });
 
+// Delete kaprodi data (Admin only)
+router.delete('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        await prisma.kaprodiData.delete({
+            where: { id }
+        });
+
+        res.json({ message: 'Data Kaprodi berhasil dihapus' });
+    } catch (error) {
+        console.error('Error deleting kaprodi data:', error);
+        res.status(500).json({ error: 'Failed to delete kaprodi data' });
+    }
+});
+
 export default router;

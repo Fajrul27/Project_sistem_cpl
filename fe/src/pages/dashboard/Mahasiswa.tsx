@@ -418,6 +418,7 @@ const MahasiswaPage = () => {
                   className="gap-2"
                   disabled={semesterOptions.length === 0 && prodiOptions.length === 0}
                 >
+                  <SlidersHorizontal className="h-4 w-4" />
                   <span className="hidden sm:inline">Filter</span>
                   <span className="sm:hidden">Filter</span>
                 </Button>
@@ -590,11 +591,7 @@ const MahasiswaPage = () => {
                       <TableCell>{profile.full_name}</TableCell>
                       <TableCell>{profile.fakultasName || "-"}</TableCell>
                       <TableCell>
-                        {profile.prodi ? (
-                          <Badge variant="secondary">{profile.prodi}</Badge>
-                        ) : (
-                          "-"
-                        )}
+                        {profile.prodi || "-"}
                       </TableCell>
                       <TableCell>
                         {profile.semester ? `Semester ${profile.semester}` : "-"}

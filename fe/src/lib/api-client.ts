@@ -122,6 +122,7 @@ export async function updateProfile(
     kelasId?: string | null;
     prodiId?: string | null;
     fakultasId?: string | null;
+    angkatanId?: string | null;
   }
 ) {
   return apiRequest(`/profiles/${profileId}`, {
@@ -136,7 +137,7 @@ export async function createUserWithRole(
   password: string,
   fullName: string,
   role: string,
-  profileData?: { nim?: string; nip?: string; programStudi?: string | null; semester?: number | null; kelasId?: string; prodiId?: string; fakultasId?: string }
+  profileData?: { nim?: string; nip?: string; programStudi?: string | null; semester?: number | null; kelasId?: string; prodiId?: string; fakultasId?: string; angkatanId?: string }
 ) {
   // Register user (default role di backend: mahasiswa)
   const data = await apiRequest('/auth/register', {
@@ -159,6 +160,7 @@ export async function createUserWithRole(
       kelasId: profileData.kelasId ?? null,
       prodiId: profileData.prodiId ?? null,
       fakultasId: profileData.fakultasId ?? null,
+      angkatanId: profileData.angkatanId ?? null,
     });
   }
 
@@ -238,8 +240,19 @@ export async function fetchAnalisisCPL(semester?: string) {
 }
 
 // Helper: fetch dashboard stats
-export async function fetchDashboardStats() {
-  return api.get('/dashboard/stats');
+export async function fetchDashboardStats(filters?: { semester?: string; angkatan?: string; kelasId?: string; mataKuliahId?: string; prodiId?: string }) {
+  return api.get('/dashboard/stats', { params: filters });
+}
+
+// Helper: fetch dosen analysis
+export async function fetchDosenAnalysis(prodiId?: string) {
+  const params = prodiId ? { prodiId } : {};
+  return api.get('/dashboard/dosen', { params });
+}
+
+// Helper: fetch student evaluation
+export async function fetchStudentEvaluation(filters?: { prodiId?: string; angkatan?: string; semester?: string }) {
+  return api.get('/dashboard/students', { params: filters });
 }
 
 // Helper: fetch semesters
@@ -261,6 +274,11 @@ export async function fetchFakultasList() {
 export async function fetchProdiList(fakultasId?: string) {
   const params = fakultasId ? { fakultasId } : {};
   return api.get('/prodi', { params });
+}
+
+// Helper: fetch angkatan
+export async function fetchAngkatanList() {
+  return api.get('/angkatan');
 }
 
 // Helper: Rubric API (CPMK Level)

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
-import { fetchAllUsers, updateUserRole, createUserWithRole, updateUser, deleteUser, updateProfile, fetchKelas, fetchFakultasList } from "@/lib/api-client";
+import { fetchAllUsers, updateUserRole, createUserWithRole, updateUser, deleteUser, updateProfile, fetchKelas, fetchFakultasList, fetchAngkatanList } from "@/lib/api-client";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -26,6 +26,8 @@ interface UserRow {
   semester?: number | null;
   kelasId?: string | null;
   profileId?: string | null;
+  angkatan?: number | null;
+  angkatanId?: string | null;
 }
 
 interface NewUserForm {
@@ -39,6 +41,7 @@ interface NewUserForm {
   identityNumber: string;
   semester: string;
   kelasId?: string;
+  angkatanId?: string;
 }
 
 interface EditUserForm {
@@ -51,6 +54,7 @@ interface EditUserForm {
   identityNumber: string;
   semester: string;
   kelasId?: string;
+  angkatanId?: string;
 }
 
 type ProdiOption = { id: string; nama: string; kode: string };
@@ -70,6 +74,7 @@ const UsersPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [creating, setCreating] = useState(false);
   const [kelasList, setKelasList] = useState<any[]>([]);
+  const [angkatanList, setAngkatanList] = useState<any[]>([]);
   const [newUser, setNewUser] = useState<NewUserForm>({
     fullName: "",
     email: "",
@@ -81,6 +86,7 @@ const UsersPage = () => {
     identityNumber: "",
     semester: "",
     kelasId: "",
+    angkatanId: "",
   });
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [facultyFilter, setFacultyFilter] = useState<string>("all");
@@ -99,6 +105,7 @@ const UsersPage = () => {
     identityNumber: "",
     semester: "",
     kelasId: "",
+    angkatanId: "",
   });
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -108,7 +115,17 @@ const UsersPage = () => {
     loadUsers();
     loadKelas();
     loadFakultas();
+    loadAngkatan();
   }, []);
+
+  const loadAngkatan = async () => {
+    try {
+      const res = await fetchAngkatanList();
+      if (res.data) setAngkatanList(res.data);
+    } catch (error) {
+      console.error("Error fetching angkatan:", error);
+    }
+  };
 
   const loadFakultas = async () => {
     try {
@@ -205,6 +222,8 @@ const UsersPage = () => {
           semester: u.profile?.semester,
           kelasId: u.profile?.kelasId,
           profileId: u.profile?.id,
+          angkatan: u.profile?.angkatanRef?.tahun,
+          angkatanId: u.profile?.angkatanId,
         };
       });
 
@@ -424,6 +443,7 @@ const UsersPage = () => {
           kelasId: editData.kelasId || null,
           prodiId,
           fakultasId,
+          angkatanId: editData.angkatanId || null,
         });
       }
 
@@ -890,6 +910,27 @@ const UsersPage = () => {
                               </SelectContent>
                             </Select>
                           </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="new-angkatan">Angkatan</Label>
+                            <Select
+                              value={newUser.angkatanId}
+                              onValueChange={(value) =>
+                                setNewUser({ ...newUser, angkatanId: value })
+                              }
+                              disabled={creating}
+                            >
+                              <SelectTrigger id="new-angkatan" className="w-full">
+                                <SelectValue placeholder="Pilih angkatan" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {angkatanList.map((a) => (
+                                  <SelectItem key={a.id} value={a.id}>
+                                    {a.tahun}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </>
                       )}
 
@@ -1250,6 +1291,7 @@ const UsersPage = () => {
                       <TableHead>Fakultas</TableHead>
                       <TableHead>Program Studi</TableHead>
                       <TableHead className="text-center">Semester</TableHead>
+                      <TableHead className="text-center">Angkatan</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
@@ -1288,6 +1330,9 @@ const UsersPage = () => {
                           <TableCell className="text-center text-xs md:text-sm">
                             {user.semester || "-"}
                           </TableCell>
+                          <TableCell className="text-center text-xs md:text-sm">
+                            {user.angkatan || "-"}
+                          </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="capitalize">
                               {user.role}
@@ -1324,6 +1369,7 @@ const UsersPage = () => {
                                   identityNumber: user.nim || "",
                                   semester: user.semester ? String(user.semester) : "",
                                   kelasId: user.kelasId || "",
+                                  angkatanId: user.angkatanId || "",
                                 });
                               }}
                             >
@@ -1563,6 +1609,27 @@ const UsersPage = () => {
                           {kelasList.map((k) => (
                             <SelectItem key={k.id} value={k.id}>
                               {k.nama}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-angkatan">Angkatan</Label>
+                      <Select
+                        value={editData.angkatanId}
+                        onValueChange={(value) =>
+                          setEditData((prev) => ({ ...prev, angkatanId: value }))
+                        }
+                        disabled={savingEdit || deletingId === editingUser.id}
+                      >
+                        <SelectTrigger id="edit-angkatan" className="w-full">
+                          <SelectValue placeholder="Pilih angkatan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {angkatanList.map((a) => (
+                            <SelectItem key={a.id} value={a.id}>
+                              {a.tahun}
                             </SelectItem>
                           ))}
                         </SelectContent>

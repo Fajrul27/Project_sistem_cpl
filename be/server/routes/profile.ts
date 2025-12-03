@@ -27,7 +27,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
       prodiId,
       fakultasId,
       semesterId,
-      kelasId
+      kelasId,
+      angkatanId
     } = req.body;
 
     // Check if profile belongs to current user or user is admin
@@ -57,7 +58,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
       prodiId: prodiId || null,
       fakultasId: fakultasId || null,
       semesterId: semesterId || null,
-      kelasId: kelasId || null
+      kelasId: kelasId || null,
+      angkatanId: angkatanId || null
     };
 
     // Handle semester logic
@@ -114,7 +116,8 @@ router.get('/:id', authMiddleware, async (req, res) => {
           }
         },
         semesterRef: true,
-        kelasRef: true
+        kelasRef: true,
+        angkatanRef: true
       }
     });
 
