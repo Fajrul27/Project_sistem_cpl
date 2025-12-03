@@ -74,10 +74,10 @@ const UsersPage = () => {
     fullName: "",
     email: "",
     password: "",
-    role: "mahasiswa",
+    role: "dosen", // Default to dosen since activeTab is staff
     fakultasId: "",
     prodiId: "",
-    identityType: "mahasiswa",
+    identityType: "dosen",
     identityNumber: "",
     semester: "",
     kelasId: "",
@@ -628,11 +628,19 @@ const UsersPage = () => {
         <Tabs value={activeTab} onValueChange={(val) => {
           setActiveTab(val);
           setShowCreate(false);
-          setNewUser(prev => ({
-            ...prev,
+          // Fully reset form state when switching tabs
+          setNewUser({
+            fullName: "",
+            email: "",
+            password: "",
             role: val === "mahasiswa" ? "mahasiswa" : "dosen",
-            identityType: val === "mahasiswa" ? "mahasiswa" : "dosen"
-          }));
+            fakultasId: "",
+            prodiId: "",
+            identityType: val === "mahasiswa" ? "mahasiswa" : "dosen",
+            identityNumber: "",
+            semester: "",
+            kelasId: "",
+          });
         }} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100 dark:bg-muted p-1 rounded-xl gap-2 h-auto">
             <TabsTrigger
@@ -762,8 +770,11 @@ const UsersPage = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="mahasiswa">Mahasiswa (NIM)</SelectItem>
-                            <SelectItem value="dosen">Dosen/Staff (NIP/NIDN)</SelectItem>
+                            {newUser.role === "mahasiswa" ? (
+                              <SelectItem value="mahasiswa">Mahasiswa (NIM)</SelectItem>
+                            ) : (
+                              <SelectItem value="dosen">Dosen/Staff (NIP/NIDN)</SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -1099,8 +1110,11 @@ const UsersPage = () => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="mahasiswa">Mahasiswa (NIM)</SelectItem>
-                            <SelectItem value="dosen">Dosen/Staff (NIP/NIDN)</SelectItem>
+                            {newUser.role === "mahasiswa" ? (
+                              <SelectItem value="mahasiswa">Mahasiswa (NIM)</SelectItem>
+                            ) : (
+                              <SelectItem value="dosen">Dosen/Staff (NIP/NIDN)</SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -1425,8 +1439,11 @@ const UsersPage = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="mahasiswa">Mahasiswa (NIM)</SelectItem>
-                      <SelectItem value="dosen">Dosen/Staff (NIP/NIDN)</SelectItem>
+                      {editData.role === "mahasiswa" ? (
+                        <SelectItem value="mahasiswa">Mahasiswa (NIM)</SelectItem>
+                      ) : (
+                        <SelectItem value="dosen">Dosen/Staff (NIP/NIDN)</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

@@ -133,11 +133,43 @@ const InputNilaiTeknikPage = () => {
 
     const fetchKelasForMK = async (mkId: string) => {
         try {
-            const result = await api.get(`/mata-kuliah/${mkId}/kelas`);
-            setKelasList(result.data || []);
+            // 1. Get MK details to know semester and prodi
+            const mkResponse = await api.get(`/mata-kuliah/${mkId}`);
+            const mk = mkResponse.data;
+
+            if (!mk) return;
+
+            // 2. Fetch students matching MK's semester and prodi
+            // We can use the existing /users endpoint with filters
+            const params: any = {
+                role: 'mahasiswa',
+                limit: -1,
+                semester: mk.semester
+            };
+
+            if (mk.prodiId) {
+                params.prodiId = mk.prodiId;
+            } else if (mk.programStudi) {
+                params.programStudi = mk.programStudi;
+            }
+
+            const studentsResponse = await api.get('/users', { params });
+            const students = studentsResponse.data || [];
+
+            // 3. Extract unique classes from students
+            const uniqueKelasMap = new Map();
+            students.forEach((s: any) => {
+                if (s.profile?.kelasRef) {
+                    uniqueKelasMap.set(s.profile.kelasRef.id, s.profile.kelasRef);
+                }
+            });
+
+            const classes = Array.from(uniqueKelasMap.values()).sort((a: any, b: any) => a.nama.localeCompare(b.nama));
+            setKelasList(classes);
+
             // Auto-select first class if available
-            if (result.data && result.data.length > 0) {
-                setSelectedKelas(result.data[0].id);
+            if (classes.length > 0) {
+                setSelectedKelas(classes[0].id);
             } else {
                 setSelectedKelas("");
             }
@@ -171,7 +203,8 @@ const InputNilaiTeknikPage = () => {
                 params: {
                     role: 'mahasiswa',
                     kelasId: selectedKelas,
-                    mataKuliahId: selectedMK,
+                    // Remove mataKuliahId to avoid old enrollment logic
+                    // mataKuliahId: selectedMK, 
                     limit: -1,
                     sortBy: 'nim',
                     sortOrder: 'asc'

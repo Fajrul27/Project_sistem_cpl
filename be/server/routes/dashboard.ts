@@ -22,14 +22,18 @@ router.get('/stats', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), a
     let prodiId: string | null = null;
 
     // Apply filters for Dosen and Kaprodi
-    if (userRole === 'dosen' || userRole === 'kaprodi') {
+    let customUserCount: number | null = null;
+
+    if (userRole === 'kaprodi') {
       const profile = await getUserProfile(userId);
       if (profile && profile.prodiId) {
         prodiId = profile.prodiId;
 
         // Filter users (mahasiswa) by prodi
         userFilter = {
-          role: 'mahasiswa',
+          role: {
+            role: 'mahasiswa'
+          },
           profile: { prodiId }
         };
 
@@ -52,15 +56,90 @@ router.get('/stats', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), a
           }
         };
       }
+    } else if (userRole === 'dosen') {
+      // Dosen specific logic: Show only assigned MKs and students in those MKs (Logic aligned with Mahasiswa Page / users.ts)
+      const pengampuRecords = await prisma.mataKuliahPengampu.findMany({
+        where: {
+          dosenId: userId,
+          // isPengampu: true // Optional: enforce isPengampu if needed, users.ts does it.
+        },
+        include: {
+          mataKuliah: true
+        }
+      });
+
+      const myMkIds = [...new Set(pengampuRecords.map(p => p.mataKuliahId))];
+
+      // Filter Mata Kuliah: Only assigned MKs
+      mkFilter = {
+        ...mkFilter,
+        id: { in: myMkIds }
+      };
+
+      // Filter Nilai: Only for assigned MKs
+      nilaiFilter = {
+        mataKuliahId: { in: myMkIds }
+      };
+
+      // Calculate User Count based on Prodi + Semester of assigned MKs
+      // This matches the logic in users.ts which shows all students in the semesters taught by the dosen
+      const uniqueFilters = new Set<string>();
+      const orConditions: any[] = [];
+
+      for (const record of pengampuRecords) {
+        const mk = record.mataKuliah;
+        if (mk.prodiId) {
+          const key = `prodiId:${mk.prodiId}:semester:${mk.semester}`;
+          if (!uniqueFilters.has(key)) {
+            uniqueFilters.add(key);
+            orConditions.push({
+              prodiId: mk.prodiId,
+              semester: mk.semester
+            });
+          }
+        } else if (mk.programStudi) {
+          const key = `programStudi:${mk.programStudi}:semester:${mk.semester}`;
+          if (!uniqueFilters.has(key)) {
+            uniqueFilters.add(key);
+            orConditions.push({
+              programStudi: mk.programStudi,
+              semester: mk.semester
+            });
+          }
+        }
+      }
+
+      if (orConditions.length > 0) {
+        customUserCount = await prisma.profile.count({
+          where: {
+            user: { role: { role: 'mahasiswa' } },
+            OR: orConditions
+          }
+        });
+      } else {
+        customUserCount = 0;
+      }
+
+      // For CPL, we can still filter by Prodi if we can get it from the user profile
+      const profile = await getUserProfile(userId);
+      if (profile && profile.prodiId) {
+        prodiId = profile.prodiId;
+        cplFilter = { ...cplFilter, prodiId };
+
+        // Also update distribution query to use prodiId if available
+      }
     }
 
     // 1. Basic Counts
-    const [userCount, cplCount, mataKuliahCount, nilaiCount] = await Promise.all([
+    // 1. Basic Counts
+    const [dbUserCount, cplCount, mataKuliahCount, nilaiCount] = await Promise.all([
       prisma.user.count({ where: userFilter }),
       prisma.cpl.count({ where: cplFilter }),
       prisma.mataKuliah.count({ where: mkFilter }),
       prisma.nilaiCpl.count({ where: nilaiFilter })
     ]);
+
+    const userCount = customUserCount !== null ? customUserCount : dbUserCount;
 
     // 2. CPL Average & Performance (Bar Chart & Top 5)
     // Group by CPL and calculate average

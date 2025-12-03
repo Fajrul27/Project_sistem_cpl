@@ -113,6 +113,29 @@ router.get('/semesters', authMiddleware, async (req, res) => {
   }
 });
 
+// Get single Mata Kuliah details
+router.get('/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if id is 'semesters' to avoid conflict if placed incorrectly (though order handles it)
+    if (id === 'semesters') return res.status(404).json({ error: 'Not found' });
+
+    const mataKuliah = await prisma.mataKuliah.findUnique({
+      where: { id }
+    });
+
+    if (!mataKuliah) {
+      return res.status(404).json({ error: 'Mata Kuliah tidak ditemukan' });
+    }
+
+    res.json({ data: mataKuliah });
+  } catch (error) {
+    console.error('Get Mata Kuliah Detail error:', error);
+    res.status(500).json({ error: 'Gagal mengambil data Mata Kuliah' });
+  }
+});
+
 // Get classes for a specific Mata Kuliah (assigned to user)
 router.get('/:id/kelas', authMiddleware, async (req, res) => {
   try {

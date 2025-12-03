@@ -158,7 +158,7 @@ router.get('/peserta/:mataKuliahId', authMiddleware, requireRole('dosen'), async
 
         // Ambil semua mahasiswa yang mengikuti mata kuliah ini
         // Berdasarkan program studi dan semester yang sesuai
-        let mahasiswaList = [];
+        let mahasiswaList: any[] = [];
 
         if (mataKuliah.prodiId) {
             // Gunakan prodiId yang baru

@@ -349,17 +349,15 @@ const ProfilePage = () => {
                       <TableHead>Kode MK</TableHead>
                       <TableHead>Mata Kuliah</TableHead>
                       <TableHead>Semester</TableHead>
-                      <TableHead>Kelas</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {(() => {
-                      // Deduplicate assignments based on unique combination of mataKuliahId and kelasId
+                      // Deduplicate assignments based on unique mataKuliahId
                       const uniqueAssignments = teachingAssignments.reduce((acc: any[], current) => {
                         const exists = acc.find(
                           (item: any) =>
-                            item.mataKuliah?.id === current.mataKuliah?.id &&
-                            item.kelas?.id === current.kelas?.id
+                            item.mataKuliah?.id === current.mataKuliah?.id
                         );
                         if (!exists) {
                           acc.push(current);
@@ -372,7 +370,6 @@ const ProfilePage = () => {
                           <TableCell>{assignment.mataKuliah?.kodeMk || '-'}</TableCell>
                           <TableCell>{assignment.mataKuliah?.namaMk || '-'}</TableCell>
                           <TableCell>Semester {assignment.mataKuliah?.semester || '-'}</TableCell>
-                          <TableCell>{assignment.kelas?.nama || '-'}</TableCell>
                         </TableRow>
                       ));
                     })()}

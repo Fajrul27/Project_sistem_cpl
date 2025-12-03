@@ -167,9 +167,9 @@ const DosenPengampuPage = () => {
         }
 
         // Check if already assigned
-        // Check if already assigned (with same kelas)
-        if (pengampuList.some(p => p.dosenId === selectedDosen && p.kelas?.id === selectedKelas)) {
-            toast.error("Dosen sudah menjadi pengampu mata kuliah ini di kelas tersebut");
+        // Check if already assigned
+        if (pengampuList.some(p => p.dosenId === selectedDosen)) {
+            toast.error("Dosen sudah menjadi pengampu mata kuliah ini");
             return;
         }
 
@@ -178,7 +178,7 @@ const DosenPengampuPage = () => {
             await api.post('/mata-kuliah-pengampu', {
                 mataKuliahId: selectedMk,
                 dosenId: selectedDosen,
-                kelasId: selectedKelas === 'none' ? null : selectedKelas
+                kelasId: null
             });
 
             toast.success("Berhasil menambahkan dosen pengampu");
@@ -323,20 +323,6 @@ const DosenPengampuPage = () => {
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Pilih Kelas (Opsional)</label>
-                                    <Select value={selectedKelas} onValueChange={setSelectedKelas}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Pilih Kelas" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">-- Tanpa Kelas --</SelectItem>
-                                            {kelasList.map((k) => (
-                                                <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
                                 <Button
                                     className="w-full"
                                     onClick={handleAddPengampu}
@@ -384,7 +370,6 @@ const DosenPengampuPage = () => {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Nama Dosen</TableHead>
-                                            <TableHead>Kelas</TableHead>
                                             <TableHead>NIDN / NIP</TableHead>
                                             <TableHead className="text-right">Aksi</TableHead>
                                         </TableRow>
@@ -394,9 +379,6 @@ const DosenPengampuPage = () => {
                                             <TableRow key={pengampu.id}>
                                                 <TableCell className="font-medium">
                                                     {pengampu.dosen.namaLengkap || pengampu.dosen.user.email}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {pengampu.kelas ? pengampu.kelas.nama : "-"}
                                                 </TableCell>
                                                 <TableCell>
                                                     {pengampu.dosen.nidn || pengampu.dosen.nip || "-"}
