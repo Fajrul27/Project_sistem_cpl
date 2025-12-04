@@ -26,6 +26,7 @@ interface Cpmk {
     mataKuliah: {
         kodeMk: string;
         namaMk: string;
+        prodiId?: string;
     };
     creator?: {
         email: string;
@@ -51,6 +52,13 @@ interface TeknikPenilaian {
     namaTeknik: string;
     bobotPersentase: number;
     deskripsi: string | null;
+    teknikRefId?: string | null;
+}
+
+interface TeknikPenilaianRef {
+    id: string;
+    nama: string;
+    deskripsi: string | null;
 }
 
 interface Cpl {
@@ -68,6 +76,7 @@ const CPMKDetailPage = () => {
     const [cpmk, setCpmk] = useState<Cpmk | null>(null);
     const [cplMappings, setCplMappings] = useState<CplMapping[]>([]);
     const [teknikPenilaian, setTeknikPenilaian] = useState<TeknikPenilaian[]>([]);
+    const [teknikRefs, setTeknikRefs] = useState<TeknikPenilaianRef[]>([]);
     const [availableCpl, setAvailableCpl] = useState<Cpl[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -87,6 +96,7 @@ const CPMKDetailPage = () => {
         namaTeknik: "",
         bobotPersentase: "",
         deskripsi: "",
+        teknikRefId: "",
     });
 
     // Level Taksonomi mapping
@@ -110,6 +120,100 @@ const CPMKDetailPage = () => {
         }
     };
 
+    // Sub-CPMK State
+    const [subCpmkList, setSubCpmkList] = useState<any[]>([]);
+    const [isSubCpmkDialogOpen, setIsSubCpmkDialogOpen] = useState(false);
+    const [currentSubCpmk, setCurrentSubCpmk] = useState<any>(null);
+    const [subCpmkForm, setSubCpmkForm] = useState({ kode: '', deskripsi: '', bobot: '' });
+
+    const fetchSubCpmk = async () => {
+        if (!id) return;
+        try {
+            const res = await api.get(`/sub-cpmk?cpmkId=${id}`);
+            setSubCpmkList(res.data);
+        } catch (error) {
+            console.error("Error fetching sub-cpmk:", error);
+        }
+    };
+
+    const handleSaveSubCpmk = async () => {
+        try {
+            if (currentSubCpmk) {
+                await api.put(`/sub-cpmk/${currentSubCpmk.id}`, {
+                    ...subCpmkForm,
+                    bobot: parseFloat(subCpmkForm.bobot) || 0
+                });
+                toast.success("Sub-CPMK berhasil diperbarui");
+            } else {
+                await api.post(`/sub-cpmk?cpmkId=${id}`, {
+                    ...subCpmkForm,
+                    bobot: parseFloat(subCpmkForm.bobot) || 0
+                });
+                toast.success("Sub-CPMK berhasil ditambahkan");
+            }
+            setIsSubCpmkDialogOpen(false);
+            fetchSubCpmk();
+            setSubCpmkForm({ kode: '', deskripsi: '', bobot: '' });
+            setCurrentSubCpmk(null);
+        } catch (error) {
+            console.error("Error saving sub-cpmk:", error);
+            toast.error("Gagal menyimpan Sub-CPMK");
+        }
+    };
+
+    const handleDeleteSubCpmk = async (subId: string) => {
+        if (!confirm("Yakin ingin menghapus Sub-CPMK ini?")) return;
+        try {
+            await api.delete(`/sub-cpmk/${subId}`);
+            toast.success("Sub-CPMK berhasil dihapus");
+            fetchSubCpmk();
+        } catch (error) {
+            console.error("Error deleting sub-cpmk:", error);
+            toast.error("Gagal menghapus Sub-CPMK");
+        }
+    };
+
+    // Sub-CPMK Mapping State
+    const [isSubCpmkMappingDialogOpen, setIsSubCpmkMappingDialogOpen] = useState(false);
+    const [currentSubCpmkForMapping, setCurrentSubCpmkForMapping] = useState<any>(null);
+    const [subCpmkMappingForm, setSubCpmkMappingForm] = useState({ teknikPenilaianId: "", bobot: "100" });
+
+    const handleSaveSubCpmkMapping = async () => {
+        if (!subCpmkMappingForm.teknikPenilaianId) {
+            toast.error("Pilih teknik penilaian");
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            await api.post('/sub-cpmk/mapping', {
+                subCpmkId: currentSubCpmkForMapping.id,
+                teknikPenilaianId: subCpmkMappingForm.teknikPenilaianId,
+                bobot: subCpmkMappingForm.bobot
+            });
+            toast.success("Mapping berhasil disimpan");
+            setIsSubCpmkMappingDialogOpen(false);
+            fetchSubCpmk();
+        } catch (error) {
+            console.error("Error saving mapping:", error);
+            toast.error("Gagal menyimpan mapping");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDeleteSubCpmkMapping = async (mappingId: string) => {
+        if (!confirm("Hapus mapping ini?")) return;
+        try {
+            await api.delete(`/sub-cpmk/mapping/${mappingId}`);
+            toast.success("Mapping dihapus");
+            fetchSubCpmk();
+        } catch (error) {
+            console.error("Error deleting mapping:", error);
+            toast.error("Gagal menghapus mapping");
+        }
+    };
+
     const getLevelTaksonomiDeskripsi = (level: string | null) => {
         if (!level) return "-";
         return levelTaksonomiMap[level] || level;
@@ -122,7 +226,9 @@ const CPMKDetailPage = () => {
             fetchCpmkDetail();
             fetchCplMappings();
             fetchTeknikPenilaian();
-            fetchAvailableCpl();
+            fetchTeknikRefs();
+            // fetchAvailableCpl will be called after we have the CPMK data
+            fetchSubCpmk();
         }
     }, [id]);
 
@@ -130,6 +236,13 @@ const CPMKDetailPage = () => {
         try {
             const result = await api.get(`/cpmk/${id}`);
             setCpmk(result.data);
+
+            // Fetch CPL available for this Prodi
+            if (result.data?.mataKuliah?.prodiId) {
+                fetchAvailableCpl(result.data.mataKuliah.prodiId);
+            } else {
+                fetchAvailableCpl();
+            }
         } catch (error) {
             console.error('Error fetching CPMK:', error);
             toast.error('Gagal memuat data CPMK');
@@ -158,9 +271,19 @@ const CPMKDetailPage = () => {
         }
     };
 
-    const fetchAvailableCpl = async () => {
+    const fetchTeknikRefs = async () => {
         try {
-            const result = await api.get('/cpl');
+            const result = await api.get('/teknik-penilaian-ref');
+            setTeknikRefs(result.data || []);
+        } catch (error) {
+            console.error('Error fetching teknik refs:', error);
+        }
+    };
+
+    const fetchAvailableCpl = async (prodiId?: string) => {
+        try {
+            const params = prodiId ? { prodiId } : {};
+            const result = await api.get('/cpl', { params });
             setAvailableCpl(result.data || []);
         } catch (error) {
             console.error('Error fetching CPL:', error);
@@ -170,6 +293,7 @@ const CPMKDetailPage = () => {
     // Calculate total bobot
     const totalBobotMapping = cplMappings.reduce((sum, m) => sum + Number(m.bobotPersentase), 0);
     const totalBobotTeknik = teknikPenilaian.reduce((sum, t) => sum + Number(t.bobotPersentase), 0);
+    const totalBobotSubCpmk = subCpmkList.reduce((sum, s) => sum + Number(s.bobot), 0);
 
     // Handle CPL Mapping
     const handleSubmitMapping = async (e: React.FormEvent) => {
@@ -252,6 +376,7 @@ const CPMKDetailPage = () => {
                     namaTeknik: teknikForm.namaTeknik.trim(),
                     bobotPersentase: parseFloat(teknikForm.bobotPersentase),
                     deskripsi: teknikForm.deskripsi.trim() || null,
+                    teknikRefId: teknikForm.teknikRefId || null,
                 });
                 toast.success("Teknik penilaian berhasil diupdate");
             } else {
@@ -260,6 +385,7 @@ const CPMKDetailPage = () => {
                     namaTeknik: teknikForm.namaTeknik.trim(),
                     bobotPersentase: parseFloat(teknikForm.bobotPersentase),
                     deskripsi: teknikForm.deskripsi.trim() || null,
+                    teknikRefId: teknikForm.teknikRefId || null,
                 });
                 toast.success("Teknik penilaian berhasil ditambahkan");
             }
@@ -294,31 +420,19 @@ const CPMKDetailPage = () => {
             namaTeknik: teknik.namaTeknik,
             bobotPersentase: teknik.bobotPersentase.toString(),
             deskripsi: teknik.deskripsi || "",
+            teknikRefId: teknik.teknikRefId || "",
         });
         setTeknikDialogOpen(true);
     };
 
     const resetTeknikForm = () => {
-        setTeknikForm({ namaTeknik: "", bobotPersentase: "", deskripsi: "" });
+        setTeknikForm({ namaTeknik: "", bobotPersentase: "", deskripsi: "", teknikRefId: "" });
         setEditingTeknik(null);
     };
 
     // Filter available CPL (exclude already mapped)
     const mappedCplIds = new Set(cplMappings.map(m => m.cpl.id));
     const unmappedCpl = availableCpl.filter(cpl => !mappedCplIds.has(cpl.id));
-
-    // Suggested teknik penilaian names
-    const suggestedTeknik = [
-        "Tes tertulis",
-        "Observasi",
-        "Angket",
-        "Unjuk kerja",
-        "Praktikum",
-        "Presentasi",
-        "Project",
-        "Tugas",
-        "Kuis"
-    ];
 
     if (loading || !cpmk) {
         return (
@@ -554,6 +668,193 @@ const CPMKDetailPage = () => {
                     </CardContent>
                 </Card>
 
+                {/* Section 1.5: Sub-CPMK */}
+                <Card>
+                    <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="space-y-1">
+                            <CardTitle>Sub-CPMK</CardTitle>
+                            <CardDescription>
+                                Total Bobot: {totalBobotSubCpmk.toFixed(2)}% / 100%
+                            </CardDescription>
+                            <Progress value={totalBobotSubCpmk} className="w-full mt-2" />
+                        </div>
+                        {canEdit && (
+                            <Button onClick={() => {
+                                setCurrentSubCpmk(null);
+                                setSubCpmkForm({ kode: '', deskripsi: '', bobot: '' });
+                                setIsSubCpmkDialogOpen(true);
+                            }}>
+                                <Plus className="w-4 h-4 mr-2" /> Tambah Sub-CPMK
+                            </Button>
+                        )}
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Kode</TableHead>
+                                    <TableHead>Deskripsi</TableHead>
+                                    <TableHead>Bobot (%)</TableHead>
+                                    <TableHead>Mapping Asesmen</TableHead>
+                                    {canEdit && <TableHead className="text-right">Aksi</TableHead>}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {(subCpmkList || []).length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={canEdit ? 5 : 4} className="text-center py-4 text-muted-foreground">Belum ada Sub-CPMK</TableCell>
+                                    </TableRow>
+                                ) : (
+                                    subCpmkList.map((sub) => (
+                                        <TableRow key={sub.id}>
+                                            <TableCell className="font-medium">{sub.kode}</TableCell>
+                                            <TableCell className="max-w-md">{sub.deskripsi}</TableCell>
+                                            <TableCell>{Number(sub.bobot).toFixed(2)}%</TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-1">
+                                                    {sub.asesmenMappings && sub.asesmenMappings.length > 0 ? (
+                                                        sub.asesmenMappings.map((m: any) => (
+                                                            <div key={m.id} className="flex items-center gap-2 text-xs bg-muted px-2 py-1 rounded-md justify-between group">
+                                                                <span>{m.teknikPenilaian?.namaTeknik} ({Number(m.bobot)}%)</span>
+                                                                {canEdit && (
+                                                                    <button
+                                                                        onClick={() => handleDeleteSubCpmkMapping(m.id)}
+                                                                        className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 rounded p-0.5"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <span className="text-muted-foreground text-xs italic">Belum ada mapping</span>
+                                                    )}
+                                                    {canEdit && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-6 text-xs justify-start px-0 text-blue-600 hover:text-blue-700 hover:bg-transparent"
+                                                            onClick={() => {
+                                                                setCurrentSubCpmkForMapping(sub);
+                                                                setSubCpmkMappingForm({ teknikPenilaianId: "", bobot: "100" });
+                                                                setIsSubCpmkMappingDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <Plus className="w-3 h-3 mr-1" /> Tambah Mapping
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            {canEdit && (
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button variant="outline" size="sm" onClick={() => {
+                                                            setCurrentSubCpmk(sub);
+                                                            setSubCpmkForm({ kode: sub.kode, deskripsi: sub.deskripsi, bobot: sub.bobot.toString() });
+                                                            setIsSubCpmkDialogOpen(true);
+                                                        }}>
+                                                            <Edit className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleDeleteSubCpmk(sub.id)}>
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            )}
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+
+                {/* Sub-CPMK Mapping Dialog */}
+                <Dialog open={isSubCpmkMappingDialogOpen} onOpenChange={setIsSubCpmkMappingDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Mapping Sub-CPMK ke Teknik Penilaian</DialogTitle>
+                            <DialogDescription>
+                                Hubungkan {currentSubCpmkForMapping?.kode} dengan teknik penilaian.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Teknik Penilaian</Label>
+                                <Select
+                                    value={subCpmkMappingForm.teknikPenilaianId}
+                                    onValueChange={(val) => setSubCpmkMappingForm({ ...subCpmkMappingForm, teknikPenilaianId: val })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Pilih Teknik Penilaian" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {teknikPenilaian.map((t) => (
+                                            <SelectItem key={t.id} value={t.id}>
+                                                {t.namaTeknik} ({t.bobotPersentase}%)
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Bobot Kontribusi (%)</Label>
+                                <Input
+                                    type="number"
+                                    value={subCpmkMappingForm.bobot}
+                                    onChange={(e) => setSubCpmkMappingForm({ ...subCpmkMappingForm, bobot: e.target.value })}
+                                    placeholder="100"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Berapa persen nilai teknik ini berkontribusi ke Sub-CPMK ini? (Biasanya 100%)
+                                </p>
+                            </div>
+                            <Button onClick={handleSaveSubCpmkMapping} className="w-full" disabled={submitting}>
+                                {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                                Simpan Mapping
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={isSubCpmkDialogOpen} onOpenChange={setIsSubCpmkDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>{currentSubCpmk ? 'Edit Sub-CPMK' : 'Tambah Sub-CPMK'}</DialogTitle>
+                            <DialogDescription>
+                                {currentSubCpmk ? 'Edit detail Sub-CPMK yang sudah ada.' : 'Tambahkan Sub-CPMK baru untuk CPMK ini.'}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Kode Sub-CPMK</Label>
+                                <Input
+                                    placeholder="Contoh: Sub-CPMK-1.1"
+                                    value={subCpmkForm.kode}
+                                    onChange={(e) => setSubCpmkForm({ ...subCpmkForm, kode: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Deskripsi</Label>
+                                <Textarea
+                                    placeholder="Deskripsi kemampuan..."
+                                    value={subCpmkForm.deskripsi}
+                                    onChange={(e) => setSubCpmkForm({ ...subCpmkForm, deskripsi: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Bobot (Opsional)</Label>
+                                <Input
+                                    type="number"
+                                    value={subCpmkForm.bobot}
+                                    onChange={(e) => setSubCpmkForm({ ...subCpmkForm, bobot: e.target.value })}
+                                />
+                            </div>
+                            <Button onClick={handleSaveSubCpmk} className="w-full">Simpan</Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
                 {/* Section 2: Teknik Penilaian */}
                 <Card>
                     <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -583,21 +884,52 @@ const CPMKDetailPage = () => {
                                     </DialogHeader>
                                     <form onSubmit={handleSubmitTeknik} className="space-y-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="namaTeknik">Nama Teknik Penilaian</Label>
-                                            <Input
-                                                id="namaTeknik"
-                                                placeholder="Contoh: Tes tertulis, Observasi"
-                                                value={teknikForm.namaTeknik}
-                                                onChange={(e) => setTeknikForm({ ...teknikForm, namaTeknik: e.target.value })}
-                                                list="suggested-teknik"
-                                                required
-                                            />
-                                            <datalist id="suggested-teknik">
-                                                {suggestedTeknik.map((teknik) => (
-                                                    <option key={teknik} value={teknik} />
-                                                ))}
-                                            </datalist>
+                                            <Label htmlFor="jenisTeknik">Jenis Teknik Penilaian</Label>
+                                            <Select
+                                                value={teknikForm.teknikRefId || (teknikForm.namaTeknik && !teknikRefs.find(r => r.nama === teknikForm.namaTeknik) ? "custom" : "")}
+                                                onValueChange={(val) => {
+                                                    if (val === "custom") {
+                                                        setTeknikForm({ ...teknikForm, teknikRefId: "", namaTeknik: "" });
+                                                    } else {
+                                                        const ref = teknikRefs.find(r => r.id === val);
+                                                        if (ref) {
+                                                            setTeknikForm({
+                                                                ...teknikForm,
+                                                                teknikRefId: ref.id,
+                                                                namaTeknik: ref.nama,
+                                                                deskripsi: ref.deskripsi || teknikForm.deskripsi
+                                                            });
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Pilih jenis teknik..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {teknikRefs.map((ref) => (
+                                                        <SelectItem key={ref.id} value={ref.id}>
+                                                            {ref.nama}
+                                                        </SelectItem>
+                                                    ))}
+                                                    <SelectItem value="custom">Lainnya (Custom)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
+
+                                        {(!teknikForm.teknikRefId) && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor="namaTeknik">Nama Teknik (Custom)</Label>
+                                                <Input
+                                                    id="namaTeknik"
+                                                    placeholder="Contoh: Kuis Dadakan"
+                                                    value={teknikForm.namaTeknik}
+                                                    onChange={(e) => setTeknikForm({ ...teknikForm, namaTeknik: e.target.value })}
+                                                    required={!teknikForm.teknikRefId}
+                                                />
+                                            </div>
+                                        )}
+
                                         <div className="space-y-2">
                                             <Label htmlFor="bobotTeknik">Bobot Persentase (%)</Label>
                                             <Input

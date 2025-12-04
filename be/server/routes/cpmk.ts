@@ -165,7 +165,8 @@ router.get('/:id', authMiddleware, async (req, res) => {
                         id: true,
                         kodeMk: true,
                         namaMk: true,
-                        semester: true
+                        semester: true,
+                        prodiId: true
                     }
                 },
                 cplMappings: {

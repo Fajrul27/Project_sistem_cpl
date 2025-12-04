@@ -1010,8 +1010,8 @@ const UsersPage = () => {
                                     }
                                   }
                                 }
-                                let identityType: "mahasiswa" | "dosen" = "dosen";
-                                let identityNumber = user.nip || user.nim || "";
+                                const identityType: "mahasiswa" | "dosen" = "dosen";
+                                const identityNumber = user.nip || user.nim || "";
 
                                 setEditData({
                                   fullName: user.namaLengkap || "",

@@ -78,12 +78,47 @@ const AnalisisiPage = () => {
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={cplData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="nilai" fill="hsl(var(--primary))" name="Rata-rata Nilai" />
+                  <defs>
+                    <linearGradient id="colorCplAnalisis" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    className="text-xs font-medium"
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    className="text-xs font-medium"
+                    tickLine={false}
+                    axisLine={false}
+                    dx={-10}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      borderColor: 'hsl(var(--border))',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                    itemStyle={{ color: 'hsl(var(--foreground))' }}
+                  />
+                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                  <Bar
+                    dataKey="nilai"
+                    fill="url(#colorCplAnalisis)"
+                    name="Rata-rata Nilai"
+                    radius={[6, 6, 0, 0]}
+                    animationDuration={2000}
+                    animationEasing="ease-out"
+                    barSize={40}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -104,14 +139,24 @@ const AnalisisiPage = () => {
                     labelLine={false}
                     label={({ name, count }) => `${name}: ${count}`}
                     outerRadius={80}
-                    fill="#8884d8"
+                    fill="hsl(var(--primary))"
                     dataKey="count"
+                    animationDuration={2000}
+                    animationEasing="ease-out"
                   >
                     {distributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'][index % 4]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      borderColor: 'hsl(var(--border))',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                    itemStyle={{ color: 'hsl(var(--foreground))' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -135,6 +180,8 @@ const AnalisisiPage = () => {
                       stroke="hsl(var(--primary))"
                       fill="hsl(var(--primary))"
                       fillOpacity={0.6}
+                      animationDuration={2000}
+                      animationEasing="ease-out"
                     />
                     <Tooltip />
                     <Legend />

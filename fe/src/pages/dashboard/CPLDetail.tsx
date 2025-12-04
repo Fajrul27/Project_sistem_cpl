@@ -170,12 +170,42 @@ const CPLDetailPage = () => {
               {stats?.semesterData && stats.semesterData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={stats.semesterData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="semester" />
-                    <YAxis domain={[0, 100]} />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="nilai" stroke="hsl(var(--primary))" strokeWidth={2} name="Nilai" />
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" vertical={false} />
+                    <XAxis
+                      dataKey="semester"
+                      className="text-xs font-medium"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={10}
+                    />
+                    <YAxis
+                      domain={[0, 100]}
+                      className="text-xs font-medium"
+                      tickLine={false}
+                      axisLine={false}
+                      dx={-10}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        borderColor: 'hsl(var(--border))',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }}
+                      itemStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                    <Line
+                      type="monotone"
+                      dataKey="nilai"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      name="Nilai"
+                      dot={{ r: 4, fill: "hsl(var(--primary))" }}
+                      activeDot={{ r: 6 }}
+                      animationDuration={2000}
+                      animationEasing="ease-out"
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
@@ -195,12 +225,46 @@ const CPLDetailPage = () => {
               {stats?.distribution && stats.distribution.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={stats.distribution}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="range" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" name="Jumlah Mahasiswa" />
+                    <defs>
+                      <linearGradient id="colorDistCPL" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" vertical={false} />
+                    <XAxis
+                      dataKey="range"
+                      className="text-xs font-medium"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={10}
+                    />
+                    <YAxis
+                      className="text-xs font-medium"
+                      tickLine={false}
+                      axisLine={false}
+                      dx={-10}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        borderColor: 'hsl(var(--border))',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }}
+                      itemStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                    <Bar
+                      dataKey="count"
+                      fill="url(#colorDistCPL)"
+                      name="Jumlah Mahasiswa"
+                      radius={[6, 6, 0, 0]}
+                      barSize={40}
+                      animationDuration={2000}
+                      animationEasing="ease-out"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -222,12 +286,48 @@ const CPLDetailPage = () => {
             {stats?.mkData && stats.mkData.length > 0 ? (
               <ResponsiveContainer width="100%" height={400}>
                 <BarChart data={stats.mkData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" domain={[0, 100]} />
-                  <YAxis dataKey="name" type="category" width={100} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="nilai" fill="hsl(var(--primary))" name="Rata-rata Nilai" />
+                  <defs>
+                    <linearGradient id="colorMKCPL" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" horizontal={false} />
+                  <XAxis
+                    type="number"
+                    domain={[0, 100]}
+                    className="text-xs font-medium"
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    width={150}
+                    className="text-xs font-medium"
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      borderColor: 'hsl(var(--border))',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                    itemStyle={{ color: 'hsl(var(--foreground))' }}
+                  />
+                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                  <Bar
+                    dataKey="nilai"
+                    fill="url(#colorMKCPL)"
+                    name="Rata-rata Nilai"
+                    radius={[0, 6, 6, 0]}
+                    barSize={20}
+                    animationDuration={2000}
+                    animationEasing="ease-out"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

@@ -1,6 +1,6 @@
 
 import { PrismaClient } from '@prisma/client';
-import { calculateNilaiCpmk } from '../server/lib/calculation';
+import { calculateNilaiCpmk } from '../server/lib/calculation.js';
 
 const prisma = new PrismaClient();
 

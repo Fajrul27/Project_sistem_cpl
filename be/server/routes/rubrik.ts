@@ -28,7 +28,7 @@ router.get('/:cpmkId', authMiddleware, async (req, res) => {
         });
 
         if (!rubrik) {
-            return res.status(404).json({ error: 'Rubrik tidak ditemukan' });
+            return res.json({ data: null });
         }
 
         res.json({ data: rubrik });

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,7 @@ interface MataKuliah {
 }
 
 const MataKuliahPage = () => {
+  const navigate = useNavigate();
   const [mkList, setMkList] = useState<MataKuliah[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -195,7 +197,7 @@ const MataKuliahPage = () => {
     setEditingMK(null);
   };
 
-  const canEdit = role === "admin" || role === "dosen";
+  const canEdit = role === "admin";
 
   // Static semester options 1-8 (fallback if list empty)
   const semesterOptions = semesterList.length > 0 ? semesterList.map(s => s.angka) : [1, 2, 3, 4, 5, 6, 7, 8];
@@ -520,6 +522,9 @@ const MataKuliahPage = () => {
                         <div className="flex justify-end gap-2">
                           <Button size="sm" variant="outline" onClick={() => handleEdit(mk)}>
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/evaluasi/${mk.id}`)} title="Evaluasi / CQI">
+                            <SlidersHorizontal className="h-4 w-4" />
                           </Button>
                           <Button size="sm" variant="destructive" onClick={() => handleDelete(mk.id)}>
                             <Trash2 className="h-4 w-4" />

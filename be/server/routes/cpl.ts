@@ -31,6 +31,19 @@ router.get('/', authMiddleware, async (req, res) => {
       }
     }
 
+    // Mahasiswa hanya bisa lihat CPL dari prodinya
+    if (userRole === 'mahasiswa') {
+      const profile = await prisma.profile.findUnique({
+        where: { userId }
+      });
+
+      if (profile?.prodiId) {
+        where.prodiId = profile.prodiId;
+      } else {
+        return res.json({ data: [] });
+      }
+    }
+
     // Dosen: tampilkan semua CPL (karena matching programStudi tidak reliable)
     // Untuk dosen dengan prodiId di masa depan, bisa ditambahkan filtering
     if (userRole === 'dosen') {

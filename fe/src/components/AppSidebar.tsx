@@ -25,8 +25,12 @@ type MenuItem = {
 
 const MENU_ITEMS: MenuItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: Home, roles: ["admin", "dosen", "mahasiswa", "kaprodi"] },
+  { title: "Visi & Misi", url: "/dashboard/visi-misi", icon: BookOpen, roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
+  { title: "Profil Lulusan", url: "/dashboard/profil-lulusan", icon: Users, roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
+  { title: "Kuesioner CPL", url: "/dashboard/kuesioner", icon: ClipboardList, roles: ["mahasiswa"] },
+  { title: "Rekap Kuesioner", url: "/dashboard/rekap-kuesioner", icon: BarChart3, roles: ["admin", "kaprodi"] },
   { title: "CPL", url: "/dashboard/cpl", icon: GraduationCap, roles: ["admin", "dosen", "kaprodi"] },
-  { title: "Mata Kuliah", url: "/dashboard/mata-kuliah", icon: BookOpen, roles: ["admin", "kaprodi"] },
+  { title: "Mata Kuliah", url: "/dashboard/mata-kuliah", icon: BookOpen, roles: ["admin", "kaprodi", "dosen"] },
   { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", icon: Users, roles: ["admin"] },
   { title: "CPMK", url: "/dashboard/cpmk", icon: ClipboardList, roles: ["admin", "dosen", "kaprodi"] },
   { title: "Validasi CPMK", url: "/dashboard/validasi-cpmk", icon: ClipboardList, roles: ["admin", "kaprodi", "dosen"] },

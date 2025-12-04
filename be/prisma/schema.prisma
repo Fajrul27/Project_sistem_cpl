@@ -66,7 +66,9 @@ model Profile {
   mataKuliahPengampu MataKuliahPengampu[]
   nilaiCpl           NilaiCpl[]             @relation("MahasiswaNilai")
   nilaiCpmk          NilaiCpmk[]            @relation("MahasiswaNilaiCpmk")
+  nilaiSubCpmk       NilaiSubCpmk[]         @relation("MahasiswaNilaiSubCpmk")
   nilaiTeknik        NilaiTeknikPenilaian[] @relation("MahasiswaNilaiTeknik")
+  penilaianTidakLangsung PenilaianTidakLangsung[]
   fakultas           Fakultas?              @relation(fields: [fakultasId], references: [id])
   prodi              Prodi?                 @relation(fields: [prodiId], references: [id])
   semesterRef        Semester?              @relation(fields: [semesterId], references: [id])
@@ -106,6 +108,8 @@ model Cpl {
   mataKuliah   CplMataKuliah[]
   cpmkMappings CpmkCplMapping[]
   nilaiCpl     NilaiCpl[]
+  profilLulusanMappings ProfilLulusanCpl[]
+  penilaianTidakLangsung PenilaianTidakLangsung[]
 
   @@index([kodeCpl])
   @@index([kategori])
@@ -142,6 +146,7 @@ model MataKuliah {
   pengampu     MataKuliahPengampu[]
   nilaiCpl     NilaiCpl[]
   nilaiCpmk    NilaiCpmk[]
+  nilaiSubCpmk NilaiSubCpmk[]
   nilaiTeknik  NilaiTeknikPenilaian[]
   evaluasi     EvaluasiMataKuliah[]
 
@@ -194,6 +199,7 @@ model Cpmk {
   nilaiCpmk         NilaiCpmk[]
   teknikPenilaian   TeknikPenilaian[]
   rubrik            Rubrik?
+  subCpmk           SubCpmk[]
 
   @@index([mataKuliahId])
   @@index([kodeCpmk])
@@ -233,10 +239,44 @@ model TeknikPenilaian {
   // rubrik relation removed - now at CPMK level
   cpmk            Cpmk                   @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
   teknikRef       TeknikPenilaianRef?    @relation(fields: [teknikRefId], references: [id])
+  subCpmkMappings AsesmenSubCpmk[]
 
   @@index([cpmkId])
   @@index([teknikRefId])
   @@map("teknik_penilaian")
+}
+
+model SubCpmk {
+  id        String   @id @default(uuid())
+  cpmkId    String   @map("cpmk_id")
+  kode      String   // e.g. Sub-CPMK-1.1
+  deskripsi String   @db.Text
+  bobot     Decimal  @default(0) @db.Decimal(5, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  cpmk      Cpmk     @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
+  asesmenMappings AsesmenSubCpmk[]
+  nilaiSubCpmk    NilaiSubCpmk[]
+
+  @@index([cpmkId])
+  @@map("sub_cpmk")
+}
+
+model AsesmenSubCpmk {
+  id                String          @id @default(uuid())
+  teknikPenilaianId String          @map("teknik_penilaian_id")
+  subCpmkId         String          @map("sub_cpmk_id")
+  bobot             Decimal         @default(100) @db.Decimal(5, 2)
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  teknikPenilaian   TeknikPenilaian @relation(fields: [teknikPenilaianId], references: [id], onDelete: Cascade)
+  subCpmk           SubCpmk         @relation(fields: [subCpmkId], references: [id], onDelete: Cascade)
+
+  @@unique([teknikPenilaianId, subCpmkId])
+  @@index([teknikPenilaianId])
+  @@index([subCpmkId])
+  @@map("asesmen_sub_cpmk")
 }
 
 model NilaiCpl {
@@ -298,6 +338,34 @@ model NilaiTeknikPenilaian {
   @@index([tahunAjaran])
   @@index([createdBy], map: "nilai_teknik_penilaian_created_by_fkey")
   @@map("nilai_teknik_penilaian")
+
+}
+
+model NilaiSubCpmk {
+  id           String     @id @default(uuid())
+  mahasiswaId  String     @map("mahasiswa_id")
+  subCpmkId    String     @map("sub_cpmk_id")
+  mataKuliahId String     @map("mata_kuliah_id")
+  nilai        Decimal    @db.Decimal(5, 2)
+  semester     Int
+  semesterId   String?    @map("semester_id")
+  tahunAjaran  String     @map("tahun_ajaran")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  
+  subCpmk      SubCpmk    @relation(fields: [subCpmkId], references: [id], onDelete: Cascade)
+  mahasiswa    Profile    @relation("MahasiswaNilaiSubCpmk", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
+  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  semesterRef  Semester?  @relation(fields: [semesterId], references: [id])
+
+  @@unique([mahasiswaId, subCpmkId, semester, tahunAjaran])
+  @@index([mahasiswaId])
+  @@index([subCpmkId])
+  @@index([mataKuliahId])
+  @@index([semester])
+  @@index([semesterId])
+  @@index([tahunAjaran])
+  @@map("nilai_sub_cpmk")
 }
 
 model NilaiCpmk {
@@ -388,6 +456,8 @@ model Prodi {
   mataKuliah  MataKuliah[]
   fakultas    Fakultas     @relation(fields: [fakultasId], references: [id], onDelete: Cascade)
   profiles    Profile[]
+  visiMisi    VisiMisi[]
+  profilLulusan ProfilLulusan[]
 
   @@index([fakultasId])
   @@map("prodi")
@@ -523,6 +593,7 @@ model Semester {
   nilaiCpl    NilaiCpl[]
   nilaiCpmk   NilaiCpmk[]
   nilaiTeknik NilaiTeknikPenilaian[]
+  nilaiSubCpmk NilaiSubCpmk[]
   profiles    Profile[]
 
   @@map("semester")
@@ -646,4 +717,78 @@ model EvaluasiMataKuliah {
   @@index([mataKuliahId])
   @@index([dosenId])
   @@map("evaluasi_mata_kuliah")
+}
+
+// ============================================
+// OBE HIERARCHY (NEW)
+// ============================================
+
+model VisiMisi {
+  id        String   @id @default(uuid())
+  prodiId   String   @map("prodi_id")
+  urutan    Int      @default(1)
+  teks      String   @db.Text
+  tipe      String   // "visi" | "misi"
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  prodi     Prodi    @relation(fields: [prodiId], references: [id], onDelete: Cascade)
+
+  @@index([prodiId])
+  @@map("visi_misi")
+}
+
+model ProfilLulusan {
+  id        String   @id @default(uuid())
+  prodiId   String   @map("prodi_id")
+  kode      String   // e.g., PL-01
+  nama      String   // e.g., Software Engineer
+  deskripsi String?  @db.Text
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  prodi     Prodi    @relation(fields: [prodiId], references: [id], onDelete: Cascade)
+  cplMappings ProfilLulusanCpl[]
+
+  @@unique([prodiId, kode])
+  @@index([prodiId])
+  @@map("profil_lulusan")
+}
+
+model ProfilLulusanCpl {
+  id              String        @id @default(uuid())
+  profilLulusanId String        @map("profil_lulusan_id")
+  cplId           String        @map("cpl_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  profilLulusan   ProfilLulusan @relation(fields: [profilLulusanId], references: [id], onDelete: Cascade)
+  cpl             Cpl           @relation(fields: [cplId], references: [id], onDelete: Cascade)
+
+  @@index([cplId])
+  @@map("profil_lulusan_cpl")
+}
+
+// ============================================
+// INDIRECT ASSESSMENT (NEW)
+// ============================================
+
+model PenilaianTidakLangsung {
+  id           String   @id @default(uuid())
+  mahasiswaId  String   @map("mahasiswa_id")
+  cplId        String   @map("cpl_id")
+  nilai        Int      // Skala 1-4 atau 1-100 (Self Assessment)
+  semester     Int      // Semester mahasiswa saat mengisi
+  tahunAjaran  String   @map("tahun_ajaran")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  mahasiswa    Profile  @relation(fields: [mahasiswaId], references: [userId], onDelete: Cascade)
+  cpl          Cpl      @relation(fields: [cplId], references: [id], onDelete: Cascade)
+
+  @@unique([mahasiswaId, cplId, semester, tahunAjaran])
+  @@index([mahasiswaId])
+  @@index([cplId])
+  @@map("penilaian_tidak_langsung")
 }

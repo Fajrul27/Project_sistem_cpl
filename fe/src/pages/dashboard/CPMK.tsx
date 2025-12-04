@@ -605,6 +605,9 @@ const CPMKPage = () => {
                                                             <Button size="sm" variant="outline" onClick={() => handleEdit(cpmk)}>
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
+                                                            <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/rubrik/${cpmk.id}`)} title="Kelola Rubrik">
+                                                                <SlidersHorizontal className="h-4 w-4" />
+                                                            </Button>
                                                             <Button size="sm" variant="destructive" onClick={() => handleDelete(cpmk.id)}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>

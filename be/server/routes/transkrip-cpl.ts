@@ -306,13 +306,59 @@ router.get('/:mahasiswaId', authMiddleware, requireProdiScope, async (req, res) 
 });
 
 // POST /api/transkrip-cpl/calculate - Trigger calculation (Just returns data now)
-router.post('/calculate', authMiddleware, requireRole('admin', 'dosen'), async (req, res) => {
+// POST /api/transkrip-cpl/calculate - Trigger calculation
+router.post('/calculate', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), async (req, res) => {
   try {
     const { mahasiswaId } = req.body;
-    // Redirect to GET logic
-    res.redirect(307, `/api/transkrip-cpl/${mahasiswaId}`);
+
+    // 1. Get all courses taken by student (from NilaiCpmk or NilaiTeknikPenilaian)
+    // We'll look at NilaiTeknikPenilaian to find all MKs that have some activity
+    const activeMks = await prisma.nilaiTeknikPenilaian.findMany({
+      where: { mahasiswaId },
+      select: { mataKuliahId: true, semester: true, tahunAjaran: true },
+      distinct: ['mataKuliahId', 'semester', 'tahunAjaran']
+    });
+
+    // Also check NilaiCpmk just in case
+    const cpmkMks = await prisma.nilaiCpmk.findMany({
+      where: { mahasiswaId },
+      select: { mataKuliahId: true, semester: true, tahunAjaran: true },
+      distinct: ['mataKuliahId', 'semester', 'tahunAjaran']
+    });
+
+    // Merge lists
+    const targets = [...activeMks, ...cpmkMks].filter((v, i, a) =>
+      a.findIndex(t => t.mataKuliahId === v.mataKuliahId && t.semester === v.semester && t.tahunAjaran === v.tahunAjaran) === i
+    );
+
+    console.log(`Recalculating CPL for student ${mahasiswaId}, found ${targets.length} course contexts.`);
+
+    // Import dynamically to avoid circular dependency issues if any
+    const { calculateNilaiCpmk, calculateNilaiCplFromCpmk } = await import('../lib/calculation.js');
+
+    let processed = 0;
+    for (const target of targets) {
+      // 1. Calculate CPMK first (to ensure NilaiCpmk is up to date)
+      // We need to find a cpmkId for this MK to trigger the function? 
+      // calculateNilaiCpmk takes (mahasiswaId, cpmkId, ...). 
+      // It calculates for THAT cpmk.
+      // So we need to find all CPMKs for this MK.
+
+      const cpmks = await prisma.cpmk.findMany({ where: { mataKuliahId: target.mataKuliahId } });
+
+      for (const cpmk of cpmks) {
+        await calculateNilaiCpmk(mahasiswaId, cpmk.id, target.mataKuliahId, target.semester, target.tahunAjaran);
+      }
+
+      // 2. Calculate CPL from CPMK
+      await calculateNilaiCplFromCpmk(mahasiswaId, target.mataKuliahId, target.semester, target.tahunAjaran);
+      processed++;
+    }
+
+    res.json({ success: true, message: `Berhasil menghitung ulang nilai untuk ${processed} mata kuliah.` });
   } catch (error) {
-    res.status(500).json({ error: 'Calculation error' });
+    console.error('Calculation error:', error);
+    res.status(500).json({ error: 'Gagal melakukan perhitungan ulang' });
   }
 });
 

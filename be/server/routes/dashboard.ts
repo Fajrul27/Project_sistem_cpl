@@ -424,10 +424,13 @@ router.get('/students', authMiddleware, requireRole('admin', 'kaprodi'), async (
       };
     }));
 
-    // Sort by lowest avg score
-    evaluation.sort((a, b) => a.avgCpl - b.avgCpl);
+    // Filter: Only show students with avgCpl < 60 (below C) AND avgCpl > 0 (exclude 0/unscored)
+    const filteredEvaluation = evaluation.filter(e => e.avgCpl > 0 && e.avgCpl < 60);
 
-    res.json({ data: evaluation });
+    // Sort by lowest avg score
+    filteredEvaluation.sort((a, b) => a.avgCpl - b.avgCpl);
+
+    res.json({ data: filteredEvaluation });
   } catch (error) {
     console.error('Get student evaluation error:', error);
     res.status(500).json({ error: 'Gagal mengambil evaluasi mahasiswa' });

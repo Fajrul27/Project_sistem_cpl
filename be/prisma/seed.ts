@@ -65,8 +65,7 @@ async function main() {
         create: {
           namaLengkap: 'Dr. Budi Santoso, M.Kom',
           nip: '198801010001',
-          namaLengkap: 'Dr. Budi Santoso, M.Kom',
-          nip: '198801010001',
+
           programStudi: 'Teknik Informatika',
           prodiId: prodiInformatika?.id
         }
@@ -86,8 +85,7 @@ async function main() {
         create: {
           namaLengkap: 'Dr. Siti Aisyah, M.T',
           nip: '198802020002',
-          namaLengkap: 'Dr. Siti Aisyah, M.T',
-          nip: '198802020002',
+
           programStudi: 'Teknik Informatika',
           prodiId: prodiInformatika?.id
         }
@@ -110,8 +108,7 @@ async function main() {
         create: {
           namaLengkap: 'Ahmad Rizki Wijaya',
           nim: '2101010001',
-          namaLengkap: 'Ahmad Rizki Wijaya',
-          nim: '2101010001',
+
           programStudi: 'Teknik Informatika',
           prodiId: prodiInformatika?.id,
           semester: 5,
@@ -133,8 +130,7 @@ async function main() {
         create: {
           namaLengkap: 'Siti Nurhaliza',
           nim: '2101010002',
-          namaLengkap: 'Siti Nurhaliza',
-          nim: '2101010002',
+
           programStudi: 'Teknik Informatika',
           prodiId: prodiInformatika?.id,
           semester: 5,
@@ -156,8 +152,7 @@ async function main() {
         create: {
           namaLengkap: 'Budi Hartono',
           nim: '2101010003',
-          namaLengkap: 'Budi Hartono',
-          nim: '2101010003',
+
           programStudi: 'Teknik Informatika',
           prodiId: prodiInformatika?.id,
           semester: 5,

@@ -81,6 +81,10 @@ import referencesRoutes from './routes/references.js';
 import rubrikRoutes from './routes/rubrik.js';
 import evaluasiRoutes from './routes/evaluasi.js';
 import angkatanRoutes from './routes/angkatan.js';
+import visiMisiRoutes from './routes/visi-misi.js';
+import profilLulusanRoutes from './routes/profil-lulusan.js';
+import kuesionerRoutes from './routes/kuesioner.js';
+import subCpmkRoutes from './routes/sub-cpmk.js';
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -111,6 +115,10 @@ app.use('/api/references', referencesRoutes);
 app.use('/api/rubrik', rubrikRoutes);
 app.use('/api/evaluasi', evaluasiRoutes);
 app.use('/api/angkatan', angkatanRoutes);
+app.use('/api/visi-misi', visiMisiRoutes);
+app.use('/api/profil-lulusan', profilLulusanRoutes);
+app.use('/api/kuesioner', kuesionerRoutes);
+app.use('/api/sub-cpmk', subCpmkRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -2,7 +2,7 @@
 // Real API Client - Connect to Express Backend
 // ============================================
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = '/api';
 
 // Storage helpers
 // function getToken() {

@@ -682,12 +682,47 @@ const MahasiswaPage = () => {
                     <CardContent>
                       <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={studentProgress.cplDetails}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="kode" />
-                          <YAxis domain={[0, 100]} />
-                          <Tooltip />
-                          <Legend />
-                          <Bar dataKey="nilai" fill="hsl(var(--primary))" name="Nilai" />
+                          <defs>
+                            <linearGradient id="colorCPLMhs" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" vertical={false} />
+                          <XAxis
+                            dataKey="kode"
+                            className="text-xs font-medium"
+                            tickLine={false}
+                            axisLine={false}
+                            dy={10}
+                          />
+                          <YAxis
+                            domain={[0, 100]}
+                            className="text-xs font-medium"
+                            tickLine={false}
+                            axisLine={false}
+                            dx={-10}
+                          />
+                          <Tooltip
+                            cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              borderColor: 'hsl(var(--border))',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                            }}
+                            itemStyle={{ color: 'hsl(var(--foreground))' }}
+                          />
+                          <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                          <Bar
+                            dataKey="nilai"
+                            fill="url(#colorCPLMhs)"
+                            name="Nilai"
+                            radius={[6, 6, 0, 0]}
+                            barSize={40}
+                            animationDuration={2000}
+                            animationEasing="ease-out"
+                          />
                         </BarChart>
                       </ResponsiveContainer>
                     </CardContent>

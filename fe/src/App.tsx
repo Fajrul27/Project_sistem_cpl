@@ -29,6 +29,12 @@ import { RequireRole } from "@/components/RequireRole";
 // New OBE Pages
 import RubrikManager from "./pages/dashboard/RubrikManager";
 import EvaluasiMataKuliah from "./pages/dashboard/EvaluasiMataKuliah";
+import VisiMisiPage from "./pages/dashboard/VisiMisi";
+import ProfilLulusanPage from "./pages/dashboard/ProfilLulusan";
+import KuesionerCplPage from "./pages/dashboard/KuesionerCpl";
+import RekapKuesionerPage from "./pages/dashboard/RekapKuesioner";
+
+
 
 const queryClient = new QueryClient();
 
@@ -71,7 +77,7 @@ const App = () => (
             <Route
               path="mata-kuliah"
               element={
-                <RequireRole roles={["admin", "kaprodi"]}>
+                <RequireRole roles={["admin", "kaprodi", "dosen"]}>
                   <MataKuliahPage />
                 </RequireRole>
               }
@@ -130,6 +136,14 @@ const App = () => (
             <Route path="analisis" element={<AnalisisiPage />} />
 
             {/* New OBE Routes */}
+            <Route path="visi-misi" element={<VisiMisiPage />} />
+            <Route path="profil-lulusan" element={<ProfilLulusanPage />} />
+            <Route path="kuesioner" element={<KuesionerCplPage />} />
+            <Route path="rekap-kuesioner" element={
+              <RequireRole roles={["admin", "kaprodi"]}>
+                <RekapKuesionerPage />
+              </RequireRole>
+            } />
             <Route path="rubrik/:cpmkId" element={<RubrikManager />} />
             <Route path="evaluasi/:mataKuliahId" element={<EvaluasiMataKuliah />} />
 

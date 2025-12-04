@@ -1,205 +1,218 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardPage } from "@/components/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { api, getUser } from "@/lib/api-client";
 import { toast } from "sonner";
-import { fetchEvaluasiMataKuliah, submitEvaluasiMataKuliah, api } from "@/lib/api-client";
-import { Save, ArrowLeft, History } from "lucide-react";
+import { Save, ArrowLeft, CheckCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useUserRole } from "@/hooks/useUserRole";
 
-const EvaluasiMataKuliah = () => {
-    const { mataKuliahId } = useParams();
+interface EvaluasiData {
+    id?: string;
+    mataKuliahId: string;
+    semester: number;
+    tahunAjaran: string;
+    kendala: string;
+    rencanaPerbaikan: string;
+    status: string;
+    feedbackKaprodi?: string;
+    dosen?: {
+        profile?: {
+            namaLengkap: string;
+        }
+    }
+}
+
+export default function EvaluasiMataKuliah() {
+    const { mataKuliahId } = useParams<{ mataKuliahId: string }>();
     const navigate = useNavigate();
     const { role } = useUserRole();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [mkData, setMkData] = useState<any>(null);
 
-    const [mkInfo, setMkInfo] = useState<any>(null);
-    const [semester, setSemester] = useState<string>("1"); // Default semester
-    const [tahunAjaran, setTahunAjaran] = useState<string>("2024/2025"); // Default TA
+    // Default current semester/year (should be dynamic in real app)
+    const currentSemester = 1;
+    const currentTahunAjaran = "2024/2025";
 
-    const [kendala, setKendala] = useState("");
-    const [rencanaPerbaikan, setRencanaPerbaikan] = useState("");
-    const [history, setHistory] = useState<any[]>([]);
+    const [evaluasi, setEvaluasi] = useState<EvaluasiData>({
+        mataKuliahId: mataKuliahId || "",
+        semester: currentSemester,
+        tahunAjaran: currentTahunAjaran,
+        kendala: "",
+        rencanaPerbaikan: "",
+        status: "submitted"
+    });
 
     useEffect(() => {
         if (mataKuliahId) {
-            loadData();
+            fetchData();
         }
-    }, [mataKuliahId, semester, tahunAjaran]);
+    }, [mataKuliahId]);
 
-    const loadData = async () => {
+    const fetchData = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-            // Fetch MK Info
-            const mkRes = await api.get(`/mata-kuliah/${mataKuliahId}`);
-            if (mkRes.data) {
-                setMkInfo(mkRes.data);
+            // Fetch MK info
+            // Since we don't have a direct endpoint for single MK by ID easily accessible without filters, 
+            // we might need to rely on the list or add a specific endpoint. 
+            // For now, let's assume we can get it from the list or a new endpoint.
+            // Actually, let's try to get it from the evaluasi endpoint context if possible, 
+            // or just fetch from /mata-kuliah with ID filter if supported.
+            // A simple workaround is to fetch the evaluation first.
+
+            const res = await api.get(`/evaluasi/mata-kuliah/${mataKuliahId}`, {
+                params: { semester: currentSemester, tahunAjaran: currentTahunAjaran }
+            });
+
+            if (res.data.data && res.data.data.length > 0) {
+                // Use the latest evaluation
+                setEvaluasi(res.data.data[0]);
             }
 
-            // Fetch Evaluasi
-            const evalRes = await fetchEvaluasiMataKuliah(mataKuliahId!, semester, tahunAjaran);
-            if (evalRes.data && evalRes.data.length > 0) {
-                // Load latest evaluation for this semester/TA
-                const latest = evalRes.data[0];
-                setKendala(latest.kendala || "");
-                setRencanaPerbaikan(latest.rencanaPerbaikan || "");
-                setHistory(evalRes.data);
-            } else {
-                setKendala("");
-                setRencanaPerbaikan("");
-                setHistory([]);
-            }
+            // Fetch MK details for title (optional, can be passed via state)
+            // const mkRes = await api.get(`/mata-kuliah/${mataKuliahId}`); // If this existed
         } catch (error) {
-            console.error(error);
-            toast.error("Gagal memuat data evaluasi");
+            console.error("Error fetching evaluasi:", error);
         } finally {
             setLoading(false);
         }
     };
 
     const handleSave = async () => {
+        setSaving(true);
         try {
-            setSaving(true);
-            await submitEvaluasiMataKuliah({
-                mataKuliahId,
-                semester,
-                tahunAjaran,
-                kendala,
-                rencanaPerbaikan
-            });
-            toast.success("Evaluasi berhasil disimpan");
-            loadData(); // Reload to update history
-        } catch (error: any) {
-            toast.error(error.message || "Gagal menyimpan evaluasi");
+            if (!evaluasi.rencanaPerbaikan) {
+                toast.error("Rencana perbaikan wajib diisi");
+                setSaving(false);
+                return;
+            }
+
+            if (role === 'kaprodi' && evaluasi.id) {
+                // Kaprodi Review Mode
+                await api.put(`/evaluasi/${evaluasi.id}/review`, {
+                    feedbackKaprodi: evaluasi.feedbackKaprodi
+                });
+                toast.success("Feedback berhasil dikirim");
+            } else {
+                // Dosen Submit Mode
+                await api.post("/evaluasi", {
+                    mataKuliahId,
+                    semester: currentSemester,
+                    tahunAjaran: currentTahunAjaran,
+                    kendala: evaluasi.kendala,
+                    rencanaPerbaikan: evaluasi.rencanaPerbaikan
+                });
+                toast.success("Evaluasi berhasil disimpan");
+            }
+            navigate(-1);
+        } catch (error) {
+            console.error("Error saving:", error);
+            toast.error("Gagal menyimpan data");
         } finally {
             setSaving(false);
         }
     };
 
-    if (loading && !mkInfo) return <div className="p-8">Loading...</div>;
+    if (loading) return <div className="p-8 text-center">Memuat...</div>;
+
+    const isKaprodi = role === 'kaprodi' || role === 'admin';
+    const isDosen = role === 'dosen';
 
     return (
         <DashboardPage
-            title={`Evaluasi Mata Kuliah (CQI)`}
-            description={`${mkInfo?.kodeMk} - ${mkInfo?.namaMk}`}
-            actions={
-                <Button variant="outline" onClick={() => navigate(-1)}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-                </Button>
-            }
+            title="Evaluasi Mata Kuliah (CQI)"
+            description={`Evaluasi Akhir Semester & Rencana Perbaikan`}
         >
-            <div className="grid gap-6 md:grid-cols-3">
-                <div className="md:col-span-2 space-y-6">
+            <div className="space-y-6 max-w-4xl mx-auto pb-20">
+                <Button variant="outline" onClick={() => navigate(-1)} className="mb-4">
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Kembali
+                </Button>
+
+                <div className="grid gap-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Form Evaluasi & Perbaikan</CardTitle>
+                            <CardTitle>Laporan Evaluasi Dosen</CardTitle>
                             <CardDescription>
-                                Isi evaluasi pelaksanaan perkuliahan dan rencana perbaikan untuk semester depan.
+                                Semester {currentSemester} - {currentTahunAjaran}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Semester</Label>
-                                    <Select value={semester} onValueChange={setSemester}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                                                <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Tahun Ajaran</Label>
-                                    <Select value={tahunAjaran} onValueChange={setTahunAjaran}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="2023/2024">2023/2024</SelectItem>
-                                            <SelectItem value="2024/2025">2024/2025</SelectItem>
-                                            <SelectItem value="2025/2026">2025/2026</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
                             <div className="space-y-2">
-                                <Label>Kendala / Masalah yang Dihadapi</Label>
+                                <Label>Kendala yang dihadapi selama perkuliahan</Label>
                                 <Textarea
-                                    placeholder="Jelaskan kendala selama proses pembelajaran..."
-                                    className="min-h-[100px]"
-                                    value={kendala}
-                                    onChange={(e) => setKendala(e.target.value)}
+                                    placeholder="Jelaskan kendala teknis, materi, atau mahasiswa..."
+                                    value={evaluasi.kendala}
+                                    onChange={e => setEvaluasi({ ...evaluasi, kendala: e.target.value })}
+                                    rows={4}
+                                    disabled={!isDosen && isKaprodi} // Kaprodi read-only here
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Rencana Perbaikan (CQI)</Label>
+                                <Label className="text-primary font-bold">Rencana Perbaikan (Continuous Improvement)</Label>
                                 <Textarea
-                                    placeholder="Jelaskan rencana perbaikan konkret untuk periode berikutnya..."
-                                    className="min-h-[150px]"
-                                    value={rencanaPerbaikan}
-                                    onChange={(e) => setRencanaPerbaikan(e.target.value)}
+                                    placeholder="Apa yang akan diperbaiki untuk semester depan? (Metode, Materi, Asesmen, dll)"
+                                    value={evaluasi.rencanaPerbaikan}
+                                    onChange={e => setEvaluasi({ ...evaluasi, rencanaPerbaikan: e.target.value })}
+                                    rows={5}
+                                    className="border-primary/20 bg-primary/5"
+                                    disabled={!isDosen && isKaprodi}
                                 />
-                                <p className="text-xs text-muted-foreground">
-                                    *Rencana ini akan menjadi acuan untuk perbaikan kualitas pembelajaran (PDCA Cycle).
-                                </p>
                             </div>
 
-                            <div className="flex justify-end">
-                                <Button onClick={handleSave} disabled={saving}>
-                                    <Save className="mr-2 h-4 w-4" /> Simpan Evaluasi
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Riwayat Evaluasi</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {history.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-4">Belum ada riwayat evaluasi.</p>
-                            ) : (
-                                <div className="space-y-4">
-                                    {history.map((item, idx) => (
-                                        <div key={idx} className="border-b pb-4 last:border-0 last:pb-0">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="font-medium text-sm">{item.tahunAjaran} - Sem {item.semester}</span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {new Date(item.updatedAt).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground line-clamp-2">
-                                                {item.rencanaPerbaikan}
-                                            </p>
-                                            {item.feedbackKaprodi && (
-                                                <div className="mt-2 bg-blue-50 p-2 rounded text-xs text-blue-800">
-                                                    <strong>Feedback Kaprodi:</strong> {item.feedbackKaprodi}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                            {evaluasi.dosen && (
+                                <div className="text-sm text-muted-foreground text-right">
+                                    Dibuat oleh: {evaluasi.dosen.profile?.namaLengkap}
                                 </div>
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Kaprodi Feedback Section */}
+                    {(isKaprodi || (isDosen && evaluasi.feedbackKaprodi)) && (
+                        <Card className={isKaprodi ? "border-orange-200 bg-orange-50/30" : ""}>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <CheckCircle className="w-5 h-5 text-orange-500" />
+                                    Review & Feedback Kaprodi
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2">
+                                    <Label>Catatan / Masukan Kaprodi</Label>
+                                    <Textarea
+                                        placeholder="Berikan masukan untuk perbaikan..."
+                                        value={evaluasi.feedbackKaprodi || ""}
+                                        onChange={e => setEvaluasi({ ...evaluasi, feedbackKaprodi: e.target.value })}
+                                        rows={4}
+                                        disabled={!isKaprodi} // Dosen read-only here
+                                    />
+                                </div>
+                                {evaluasi.status === 'reviewed' && (
+                                    <div className="mt-4 flex justify-end">
+                                        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                                            Sudah Direview
+                                        </Badge>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
+            </div>
+
+            {/* Floating Save Button */}
+            <div className="fixed bottom-6 right-6">
+                <Button size="lg" onClick={handleSave} disabled={saving} className="shadow-lg">
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving ? "Menyimpan..." : (isKaprodi ? "Kirim Feedback" : "Simpan Evaluasi")}
+                </Button>
             </div>
         </DashboardPage>
     );
-};
-
-export default EvaluasiMataKuliah;
+}

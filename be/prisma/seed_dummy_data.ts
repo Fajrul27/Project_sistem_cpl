@@ -210,9 +210,11 @@ async function seedDummyData() {
                     const randomDosenId = getRandomItem(dosenIds);
                     await prisma.mataKuliahPengampu.upsert({
                         where: {
-                            mataKuliahId_dosenId: {
+                            mataKuliahId_dosenId_kelasId: {
                                 mataKuliahId: mk.id,
-                                dosenId: randomDosenId
+                                dosenId: randomDosenId,
+                                // @ts-ignore
+                                kelasId: null
                             }
                         },
                         update: {},
