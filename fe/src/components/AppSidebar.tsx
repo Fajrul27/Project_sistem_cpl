@@ -35,7 +35,7 @@ const MENU_ITEMS: MenuItem[] = [
   { title: "CPMK", url: "/dashboard/cpmk", icon: ClipboardList, roles: ["admin", "dosen", "kaprodi"] },
   { title: "Validasi CPMK", url: "/dashboard/validasi-cpmk", icon: ClipboardList, roles: ["admin", "kaprodi", "dosen"] },
   { title: "Mahasiswa", url: "/dashboard/mahasiswa", icon: Users, roles: ["admin", "dosen", "kaprodi"] },
-  { title: "Transkrip CPL", url: "/dashboard/transkrip-cpl", icon: FileText, roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
+  { title: "Transkrip CPL & CPMK", url: "/dashboard/transkrip-cpl", icon: FileText, roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
   { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", icon: Users, roles: ["admin"] },
   { title: "Pengguna", url: "/dashboard/users", icon: Users, roles: ["admin"] },
   { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", icon: FileText, roles: ["dosen"] },

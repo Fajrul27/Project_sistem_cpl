@@ -275,22 +275,7 @@ const TranskripCPLPage = () => {
         }, 1000);
     };
 
-    const [calculating, setCalculating] = useState(false);
 
-    const handleRecalculate = async () => {
-        if (!selectedMahasiswa) return;
-        setCalculating(true);
-        try {
-            await api.post('/transkrip-cpl/calculate', { mahasiswaId: selectedMahasiswa });
-            toast.success("Perhitungan ulang berhasil");
-            fetchAllData(); // Refresh data
-        } catch (error) {
-            console.error("Recalculate error:", error);
-            toast.error("Gagal menghitung ulang nilai");
-        } finally {
-            setCalculating(false);
-        }
-    };
 
     if (loading && !selectedStudent) {
         return (
@@ -421,10 +406,7 @@ const TranskripCPLPage = () => {
                                                 <CardDescription>{selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}</CardDescription>
                                             </div>
                                             <div className="flex gap-2">
-                                                <Button variant="outline" size="sm" onClick={handleRecalculate} disabled={calculating}>
-                                                    {calculating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
-                                                    Hitung Ulang
-                                                </Button>
+
                                                 <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-4 w-4 mr-2" />Print</Button>
                                             </div>
                                         </CardHeader>

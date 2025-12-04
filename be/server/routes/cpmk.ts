@@ -50,6 +50,15 @@ router.get('/', authMiddleware, async (req, res) => {
             }
         }
 
+        // Apply Semester filter (for all roles)
+        const { semester } = req.query;
+        if (semester && semester !== 'all') {
+            where.mataKuliah = {
+                ...where.mataKuliah,
+                semester: parseInt(semester as string)
+            };
+        }
+
         const cpmk = await prisma.cpmk.findMany({
             where,
             include: {
