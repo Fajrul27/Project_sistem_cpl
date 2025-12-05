@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { api } from "@/lib/api-client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
@@ -72,10 +72,10 @@ export default function VisiMisiPage() {
                 const res = await api.get("/prodi");
                 setProdiList(res.data);
                 if (res.data.length > 0) setSelectedProdi(res.data[0].id);
-            } else if ((role === "kaprodi" || role === "dosen") && profile?.prodiId) {
-                // Kaprodi and Dosen automatically selected
+            } else if ((role === "kaprodi" || role === "dosen" || role === "mahasiswa") && profile?.prodiId) {
+                // Kaprodi, Dosen, and Mahasiswa automatically selected
                 setSelectedProdi(profile.prodiId);
-            } else if (role === "kaprodi" || role === "dosen") {
+            } else if (role === "kaprodi" || role === "dosen" || role === "mahasiswa") {
                 // If role is set but profile/prodiId is missing, wait or show error
                 // Do not fallback to fetching all prodis
                 console.warn("User has role but missing prodiId in profile");

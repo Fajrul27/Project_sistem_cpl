@@ -23,7 +23,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../../components/ui/select";
 import {
   Table,
   TableBody,
@@ -103,8 +103,8 @@ const ProfilePage = () => {
         if (userData.user.profile?.id) {
           try {
             const profileRes = await api.get(`/profiles/${userData.user.profile.id}`);
-            if (profileRes.data?.data) {
-              const fullProfile = profileRes.data.data;
+            if (profileRes.data) {
+              const fullProfile = profileRes.data;
               setProfile(fullProfile);
 
               // Update edit form with fresh data

@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
 import { toast } from "sonner";
 import { Search, Eye, TrendingUp, SlidersHorizontal } from "lucide-react";
 import { DashboardPage } from "@/components/DashboardLayout";
@@ -520,40 +520,30 @@ const MahasiswaPage = () => {
                   </Select>
                 </div>
 
-                {/* Reset Button */}
-                <div className="flex justify-between pt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSemesterFilter("all");
-                      setProdiFilter("all");
-                      setSearchTerm("");
-                      setFakultasFilter("all");
-                      setKelasFilter("all");
-                    }}
-                    disabled={!hasActiveFilter}
-                  >
-                    Reset Filter
-                  </Button>
-                </div>
+
               </PopoverContent>
             </Popover>
           )}
 
-          <Button variant="outline" onClick={() => {
-            if (userRole === 'dosen' && selectedMataKuliah) {
-              if (selectedMataKuliah === "all") {
-                fetchProfilesForAllMataKuliah();
-              } else {
-                fetchProfiles(selectedMataKuliah);
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSemesterFilter("all");
+              setProdiFilter("all");
+              setFakultasFilter("all");
+              setKelasFilter("all");
+              setSearchTerm("");
+              if (userRole === 'dosen') {
+                setSelectedMataKuliah("all");
               }
-            } else {
-              fetchProfiles();
+            }}
+            disabled={
+              !hasActiveFilter &&
+              searchTerm === "" &&
+              (userRole !== 'dosen' || selectedMataKuliah === "all")
             }
-          }}>
-            Muat Ulang
+          >
+            Reset Filter
           </Button>
         </div>
 

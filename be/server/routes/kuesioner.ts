@@ -11,7 +11,7 @@ const kuesionerSchema = z.object({
     tahunAjaran: z.string(),
     nilai: z.array(z.object({
         cplId: z.string(),
-        nilai: z.number().min(1).max(100) // Assuming 1-100 scale
+        nilai: z.number().min(0).max(100) // Scale 0-100
     }))
 });
 
@@ -21,6 +21,8 @@ router.get('/me', authMiddleware, requireRole('mahasiswa'), async (req, res) => 
     try {
         const userId = (req as any).userId;
         const { semester, tahunAjaran } = req.query;
+
+        console.log(`[Kuesioner GET] User: ${userId}, Sem: ${semester}, TA: ${tahunAjaran}`);
 
         if (!semester || !tahunAjaran) {
             return res.status(400).json({ error: 'Semester dan Tahun Ajaran wajib diisi' });
@@ -37,6 +39,7 @@ router.get('/me', authMiddleware, requireRole('mahasiswa'), async (req, res) => 
             }
         });
 
+        console.log(`[Kuesioner GET] Found ${data.length} records`);
         res.json(data);
     } catch (error) {
         console.error('Error fetching kuesioner:', error);
@@ -49,10 +52,12 @@ router.get('/me', authMiddleware, requireRole('mahasiswa'), async (req, res) => 
 router.post('/', authMiddleware, requireRole('mahasiswa'), async (req, res) => {
     try {
         const userId = (req as any).userId;
+        console.log(`[Kuesioner POST] User: ${userId}, Body:`, JSON.stringify(req.body, null, 2));
+
         const body = kuesionerSchema.parse(req.body);
 
         // Use transaction to upsert multiple records
-        await prisma.$transaction(
+        const result = await prisma.$transaction(
             body.nilai.map(item =>
                 prisma.penilaianTidakLangsung.upsert({
                     where: {
@@ -77,9 +82,11 @@ router.post('/', authMiddleware, requireRole('mahasiswa'), async (req, res) => {
             )
         );
 
+        console.log(`[Kuesioner POST] Upserted ${result.length} records`);
         res.json({ message: 'Kuesioner berhasil disimpan' });
     } catch (error) {
         if (error instanceof z.ZodError) {
+            console.error('[Kuesioner POST] Validation Error:', error.issues);
             return res.status(400).json({ error: error.issues[0].message });
         }
         console.error('Error submitting kuesioner:', error);
@@ -87,21 +94,57 @@ router.post('/', authMiddleware, requireRole('mahasiswa'), async (req, res) => {
     }
 });
 
-// GET /api/kuesioner/stats?prodiId=...&tahunAjaran=...
-// Get stats for Kaprodi
+// GET /api/kuesioner/stats?prodiId=...&tahunAjaran=...&semester=...&fakultasId=...
+// Get stats for Kaprodi/Admin
 router.get('/stats', authMiddleware, requireRole('admin', 'kaprodi'), async (req, res) => {
     try {
-        const { prodiId, tahunAjaran } = req.query;
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
+        const { prodiId, tahunAjaran, semester, fakultasId } = req.query;
 
         const whereClause: any = {};
+
+        // Filter by Tahun Ajaran
         if (tahunAjaran) whereClause.tahunAjaran = String(tahunAjaran);
-        if (prodiId) {
+
+        // Filter by Semester
+        // Filter by Semester
+        if (semester && semester !== 'all' && semester !== 'undefined') {
+            const semInt = parseInt(String(semester));
+            if (!isNaN(semInt)) {
+                whereClause.semester = semInt;
+            }
+        }
+
+        // Handle Prodi/Fakultas Filters & Security
+        if (userRole === 'kaprodi') {
+            // [SECURITY] Force Kaprodi to only see their own Prodi
+            const profile = await prisma.profile.findUnique({ where: { userId } });
+            if (!profile?.prodiId) {
+                return res.status(403).json({ error: 'Profil Kaprodi tidak valid (tidak memiliki Prodi)' });
+            }
+
             whereClause.mahasiswa = {
-                prodiId: String(prodiId)
+                prodiId: profile.prodiId
             };
+        } else if (userRole === 'admin') {
+            // Admin can filter by Prodi or Fakultas
+            if (prodiId && prodiId !== 'all') {
+                whereClause.mahasiswa = {
+                    prodiId: String(prodiId)
+                };
+            } else if (fakultasId && fakultasId !== 'all') {
+                whereClause.mahasiswa = {
+                    prodi: {
+                        fakultasId: String(fakultasId)
+                    }
+                };
+            }
         }
 
         // Aggregate average score per CPL
+        console.log('[Kuesioner Stats] Where Clause:', JSON.stringify(whereClause, null, 2));
+
         const stats = await prisma.penilaianTidakLangsung.groupBy({
             by: ['cplId'],
             where: whereClause,
@@ -112,6 +155,8 @@ router.get('/stats', authMiddleware, requireRole('admin', 'kaprodi'), async (req
                 nilai: true
             }
         });
+
+        console.log('[Kuesioner Stats] Raw Stats:', JSON.stringify(stats, null, 2));
 
         // Fetch CPL details to attach codes
         const cpls = await prisma.cpl.findMany({

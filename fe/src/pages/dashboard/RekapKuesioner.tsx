@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { DashboardPage } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { api } from "@/lib/api-client";
+import { api, fetchFakultasList, fetchProdiList } from "@/lib/api-client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import {
@@ -12,7 +12,11 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { SlidersHorizontal } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface KuesionerStat {
@@ -27,24 +31,91 @@ export default function RekapKuesionerPage() {
     const { role, profile } = useUserRole();
     const [stats, setStats] = useState<KuesionerStat[]>([]);
     const [loading, setLoading] = useState(true);
-    const [tahunAjaran, setTahunAjaran] = useState("2024/2025 Ganjil"); // Default, should be dynamic
 
+    // Filter States
+    const [tahunAjaran, setTahunAjaran] = useState("2024/2025 Ganjil");
+    const [semester, setSemester] = useState<string>("all");
+    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
+    const [selectedProdi, setSelectedProdi] = useState<string>("all");
+
+    // Data Lists
+    const [fakultasList, setFakultasList] = useState<any[]>([]);
+    const [prodiList, setProdiList] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (role === "kaprodi" || role === "admin") {
+            fetchInitialData();
+            fetchStats();
+        }
+    }, [role]);
+
+    // Fetch Prodi when Fakultas changes (Admin only)
+    useEffect(() => {
+        if (role === 'admin') {
+            fetchProdi();
+        }
+    }, [selectedFakultas]);
+
+    // Re-fetch stats when filters change
     useEffect(() => {
         if (role === "kaprodi" || role === "admin") {
             fetchStats();
         }
-    }, [role, tahunAjaran]);
+    }, [tahunAjaran, semester, selectedFakultas, selectedProdi]);
+
+    const fetchInitialData = async () => {
+        if (role === 'admin') {
+            try {
+                const [fakultasRes, prodiRes] = await Promise.all([
+                    fetchFakultasList(),
+                    fetchProdiList()
+                ]);
+                setFakultasList(fakultasRes.data || []);
+                setProdiList(prodiRes.data || []);
+            } catch (error) {
+                console.error("Error fetching initial data:", error);
+            }
+        }
+    };
+
+    const fetchProdi = async () => {
+        try {
+            const fakultasId = selectedFakultas !== 'all' ? selectedFakultas : undefined;
+            const res = await fetchProdiList(fakultasId);
+            setProdiList(res.data || []);
+
+            // Reset selected Prodi if not in new list
+            if (selectedProdi !== 'all') {
+                const exists = (res.data || []).find((p: any) => p.id === selectedProdi);
+                if (!exists) setSelectedProdi("all");
+            }
+        } catch (error) {
+            console.error("Error fetching prodi:", error);
+        }
+    };
 
     const fetchStats = async () => {
         setLoading(true);
         try {
-            const res = await api.get("/kuesioner/stats", {
-                params: {
-                    tahunAjaran,
-                    prodiId: profile?.prodiId
-                }
-            });
-            setStats(res.data || []);
+            const params: any = {
+                tahunAjaran
+            };
+
+            if (semester !== 'all') {
+                params.semester = semester;
+            }
+
+            if (role === 'admin') {
+                if (selectedProdi !== 'all') params.prodiId = selectedProdi;
+                if (selectedFakultas !== 'all') params.fakultasId = selectedFakultas;
+            }
+            // For Kaprodi, backend handles prodiId enforcement automatically
+
+            const res = await api.get("/kuesioner/stats", { params });
+
+            // Handle response format (direct array or object with data property)
+            const statsData = Array.isArray(res) ? res : (res.data || []);
+            setStats(statsData);
         } catch (error) {
             console.error("Error fetching stats:", error);
             toast.error("Gagal memuat statistik kuesioner");
@@ -69,12 +140,67 @@ export default function RekapKuesionerPage() {
         <DashboardPage title="Rekap Kuesioner CPL" description="Hasil Penilaian Tidak Langsung (Self-Assessment Mahasiswa)">
             <div className="space-y-6">
                 {/* Filters */}
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex gap-4 items-center">
-                            <div className="w-[200px]">
+                <div className="flex gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={
+                                    (role === 'admin' && (selectedFakultas !== 'all' || selectedProdi !== 'all')) ||
+                                        semester !== 'all'
+                                        ? "default"
+                                        : "outline"
+                                }
+                                className="gap-2"
+                            >
+                                <SlidersHorizontal className="h-4 w-4" />
+                                Filter
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-80 space-y-4" onClick={(e) => e.stopPropagation()}>
+                            {/* Admin Filters */}
+                            {role === 'admin' && (
+                                <>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">Fakultas</Label>
+                                        <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
+                                            <SelectTrigger className="w-full h-8 text-xs">
+                                                <SelectValue placeholder="Semua Fakultas" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Semua Fakultas</SelectItem>
+                                                {fakultasList.map((fak) => (
+                                                    <SelectItem key={fak.id} value={fak.id}>
+                                                        {fak.nama}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">Program Studi</Label>
+                                        <Select value={selectedProdi} onValueChange={setSelectedProdi}>
+                                            <SelectTrigger className="w-full h-8 text-xs">
+                                                <SelectValue placeholder="Semua Prodi" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Semua Prodi</SelectItem>
+                                                {prodiList.map((prodi) => (
+                                                    <SelectItem key={prodi.id} value={prodi.id}>
+                                                        {prodi.nama}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Common Filters */}
+                            <div className="space-y-1">
+                                <Label className="text-xs font-medium">Tahun Ajaran</Label>
                                 <Select value={tahunAjaran} onValueChange={setTahunAjaran}>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-full h-8 text-xs">
                                         <SelectValue placeholder="Pilih Tahun Ajaran" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -84,14 +210,62 @@ export default function RekapKuesionerPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
+
+                            <div className="space-y-1">
+                                <Label className="text-xs font-medium">Semester</Label>
+                                <Select value={semester} onValueChange={setSemester}>
+                                    <SelectTrigger className="w-full h-8 text-xs">
+                                        <SelectValue placeholder="Semua Semester" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Semester</SelectItem>
+                                        {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                                            <SelectItem key={sem} value={sem.toString()}>
+                                                Semester {sem}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+
+                        </PopoverContent>
+                    </Popover>
+
+                    {/* Quick Access Tahun Ajaran Display */}
+
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                            setSelectedFakultas("all");
+                            setSelectedProdi("all");
+                            setSemester("all");
+                            setTahunAjaran("2024/2025 Ganjil");
+                        }}
+                        disabled={
+                            selectedFakultas === "all" &&
+                            selectedProdi === "all" &&
+                            semester === "all" &&
+                            tahunAjaran === "2024/2025 Ganjil"
+                        }
+                    >
+                        Reset Filter
+                    </Button>
+                </div>
 
                 {/* Chart */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Grafik Rata-Rata Penilaian per CPL</CardTitle>
+                        <CardDescription>
+                            {role === 'admin'
+                                ? (selectedProdi !== 'all'
+                                    ? `Prodi: ${prodiList.find(p => p.id === selectedProdi)?.nama || 'Unknown'}`
+                                    : 'Semua Program Studi')
+                                : 'Program Studi Anda'
+                            }
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="h-[400px]">
                         {loading ? (

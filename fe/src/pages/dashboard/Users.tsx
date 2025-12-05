@@ -5,7 +5,7 @@ import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
 import { toast } from "sonner";
 import { fetchAllUsers, updateUserRole, createUserWithRole, updateUser, deleteUser, updateProfile, fetchKelas, fetchFakultasList, fetchAngkatanList } from "@/lib/api-client";
 import { Search, SlidersHorizontal } from "lucide-react";
@@ -339,7 +339,7 @@ const UsersPage = () => {
 
       await createUserWithRole(
         newUser.email,
-        newUser.password,
+        newUser.password.trim(),
         newUser.fullName,
         newUser.role,
         profilePayload
@@ -381,11 +381,13 @@ const UsersPage = () => {
       await updateUser(editingUser.id, {
         email: editData.email,
         fullName: editData.fullName,
+        role: editData.role !== editingUser.role ? editData.role : undefined,
       });
 
-      if (editData.role !== editingUser.role) {
-        await updateUserRole(editingUser.id, editData.role);
-      }
+      // Role update is now handled in updateUser
+      // if (editData.role !== editingUser.role) {
+      //   await updateUserRole(editingUser.id, editData.role);
+      // }
 
       let newNim: string | null = null;
       let newNip: string | null = null;
@@ -622,26 +624,22 @@ const UsersPage = () => {
                   </>
                 )}
               </div>
-              <div className="flex justify-between pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setRoleFilter("all");
-                    setFacultyFilter("all");
-                    setProgramFilter("all");
-                    setSemesterFilter("all");
-                    setKelasFilter("all");
-                  }}
-                >
-                  Reset
-                </Button>
-              </div>
+
             </PopoverContent>
           </Popover>
-          <Button variant="outline" onClick={loadUsers}>
-            Muat Ulang
+          <Button
+            variant="outline"
+            onClick={() => {
+              setRoleFilter("all");
+              setFacultyFilter("all");
+              setProgramFilter("all");
+              setSemesterFilter("all");
+              setKelasFilter("all");
+              setSearchTerm("");
+            }}
+            disabled={!hasActiveFilter && searchTerm === ""}
+          >
+            Reset Filter
           </Button>
         </div>
 

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
 import { Plus, Edit, Trash2, Eye, Loader2, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -292,24 +292,18 @@ const CPLPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex justify-between pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setKategoriFilter("all");
-                    setProdiFilter("all");
-                  }}
-                  disabled={!hasActiveFilter}
-                >
-                  Reset
-                </Button>
-              </div>
             </PopoverContent>
           </Popover>
-          <Button variant="outline" onClick={fetchCPL}>
-            Muat Ulang
+          <Button
+            variant="outline"
+            onClick={() => {
+              setKategoriFilter("all");
+              setProdiFilter("all");
+              setSearchTerm("");
+            }}
+            disabled={!hasActiveFilter && searchTerm === ""}
+          >
+            Reset Filter
           </Button>
         </div>
 

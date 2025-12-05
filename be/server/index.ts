@@ -85,6 +85,7 @@ import visiMisiRoutes from './routes/visi-misi.js';
 import profilLulusanRoutes from './routes/profil-lulusan.js';
 import kuesionerRoutes from './routes/kuesioner.js';
 import subCpmkRoutes from './routes/sub-cpmk.js';
+import transkripProfilRoutes from './routes/transkrip-profil.js';
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -119,6 +120,7 @@ app.use('/api/visi-misi', visiMisiRoutes);
 app.use('/api/profil-lulusan', profilLulusanRoutes);
 app.use('/api/kuesioner', kuesionerRoutes);
 app.use('/api/sub-cpmk', subCpmkRoutes);
+app.use('/api/transkrip-profil', transkripProfilRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -1,14 +1,15 @@
-# 🎓 Sistem CPL - Capaian Pembelajaran Lulusan
+# Sistem CPL - Capaian Pembelajaran Lulusan
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://reactjs.org/)
 [![Express](https://img.shields.io/badge/Express-4.18-green.svg)](https://expressjs.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-5.22-2d3748.svg)](https://www.prisma.io/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-orange.svg)](https://www.mysql.com/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-blue.svg)](https://www.docker.com/)
 
-Sistem manajemen Capaian Pembelajaran Lulusan (CPL) berbasis web untuk mendukung implementasi Outcome-Based Education (OBE) di perguruan tinggi.
+Sistem manajemen Capaian Pembelajaran Lulusan (CPL) berbasis web yang komprehensif untuk mendukung implementasi **Outcome-Based Education (OBE)** di perguruan tinggi. Aplikasi ini dirancang untuk memfasilitasi siklus penuh OBE, mulai dari perumusan profil lulusan hingga evaluasi perbaikan berkelanjutan (CQI).
 
-## 📋 Daftar Isi
+## Daftar Isi
 
 - [Tentang Proyek](#tentang-proyek)
 - [Fitur Utama](#fitur-utama)
@@ -17,98 +18,80 @@ Sistem manajemen Capaian Pembelajaran Lulusan (CPL) berbasis web untuk mendukung
 - [Instalasi](#instalasi)
 - [Konfigurasi](#konfigurasi)
 - [Menjalankan Aplikasi](#menjalankan-aplikasi)
+- [Docker Deployment](#docker-deployment)
 - [Struktur Proyek](#struktur-proyek)
 - [API Documentation](#api-documentation)
 - [Database Schema](#database-schema)
 - [User Roles](#user-roles)
 - [Contributing](#contributing)
-- [License](#license)
 
-## 🎯 Tentang Proyek
+## Tentang Proyek
 
-Sistem CPL adalah aplikasi fullstack yang dirancang untuk membantu institusi pendidikan dalam:
-- Mengelola Capaian Pembelajaran Lulusan (CPL)
-- Memetakan CPL dengan mata kuliah
-- Mengelola CPMK (Capaian Pembelajaran Mata Kuliah)
-- Mencatat dan menganalisis nilai mahasiswa
-- Menghasilkan transkrip CPL
-- Monitoring pencapaian learning outcomes
+Sistem CPL bukan sekadar aplikasi pencatatan nilai, melainkan platform yang mengintegrasikan seluruh elemen kurikulum OBE:
 
-## ✨ Fitur Utama
+1.  **Perencanaan (Planning)**: Mendefinisikan Visi Misi, Profil Lulusan, dan menurunkan CPL (Capaian Pembelajaran Lulusan).
+2.  **Pemetaan (Mapping)**: Menghubungkan CPL ke Mata Kuliah dan CPMK (Capaian Pembelajaran Mata Kuliah) dengan bobot yang terukur.
+3.  **Pelaksanaan (Execution)**: Dosen melakukan asesmen menggunakan berbagai teknik (Tes, Non-Tes, Rubrik) yang terhubung langsung ke CPMK.
+4.  **Evaluasi (Evaluation)**: Menghitung ketercapaian CPL mahasiswa secara otomatis berdasarkan nilai asesmen.
+5.  **Perbaikan (CQI)**: Evaluasi mata kuliah oleh dosen dan feedback dari Kaprodi untuk peningkatan kualitas pembelajaran semester berikutnya.
 
-### 🔐 Authentication & Authorization
-- Multi-role access (Admin, Kaprodi, Dosen, Mahasiswa)
-- JWT-based authentication
-- Role-based route protection
+## Fitur Utama
 
-### 📊 CPL Management
-- CRUD operations untuk CPL
-- Mapping CPL ke mata kuliah dengan bobot kontribusi
-- Tracking status pencapaian CPL
+### OBE Hierarchy Management
+- **Visi & Misi**: Manajemen visi misi program studi sebagai landasan kurikulum.
+- **Profil Lulusan**: Definisi profil profesional yang diharapkan (e.g., Software Engineer, Data Scientist).
+- **CPL (Learning Outcomes)**: Manajemen CPL dengan kategori (Sikap, Pengetahuan, Keterampilan Umum/Khusus).
+- **Mapping Matrix**: Visualisasi dan manajemen mapping antara Profil Lulusan ↔ CPL ↔ Mata Kuliah.
 
-### 📚 CPMK Management
-- CRUD operations untuk CPMK
-- **[NEW]** Integrasi Level Taksonomi (Bloom's Taxonomy: Kognitif, Afektif, Psikomotor)
-- Workflow validasi CPMK (draft → validated → active)
-- Mapping CPMK ke CPL dengan persentase bobot
+### CPMK & Assessment Design
+- **Taxonomy Integration**: Integrasi Bloom's Taxonomy (Kognitif C1-C6, Afektif A1-A5, Psikomotor P1-P5) dalam perumusan CPMK.
+- **Validasi Bertingkat**: Workflow validasi CPMK (Draft → Validated → Active) oleh Kaprodi/GKM.
+- **Rubrik Penilaian**: Sistem rubrik dinamis dengan kriteria dan level penilaian (e.g., Sangat Baik, Baik, Cukup) untuk asesmen yang objektif.
+- **Rencana Asesmen**: Pemetaan teknik penilaian (Tugas, Kuis, UTS, UAS) ke Sub-CPMK.
 
-### 📝 Penilaian
-- Input nilai teknik penilaian
-- Kalkulasi otomatis nilai CPMK
-- Kalkulasi nilai CPL berdasarkan mapping
-- Tracking nilai per semester dan tahun ajaran
+### Penilaian & Grading
+- **Input Nilai Fleksibel**: Dukungan untuk input nilai angka langsung atau menggunakan rubrik.
+- **Kalkulasi Otomatis**:
+    - Nilai Sub-CPMK → Nilai CPMK
+    - Nilai CPMK → Nilai CPL (berdasarkan bobot mapping)
+    - Nilai Akhir Mata Kuliah
+- **Indirect Assessment**: Kuesioner penilaian diri (self-assessment) bagi mahasiswa untuk mengukur persepsi ketercapaian CPL.
 
-### 📈 Reporting & Analytics
-- Dashboard statistik
-- Transkrip CPL mahasiswa (View & Print)
-- Filter CPL per Prodi yang dinamis
-- Export ke PDF
-- Analisis pencapaian CPL
+### Continuous Quality Improvement (CQI)
+- **Evaluasi Mata Kuliah**: Form evaluasi diri dosen di akhir semester (kendala, rencana perbaikan).
+- **Feedback Loop**: Kaprodi dapat memberikan feedback atas evaluasi dosen.
+- **Analisis Ketercapaian**: Dashboard grafik pencapaian CPL per angkatan, per mahasiswa, dan per mata kuliah.
 
-### 👥 User Management
-- Manajemen users dan roles (Admin)
-- Profile management
-- Audit logging
+### User Management & Security
+- **Multi-role Access**: Admin, Kaprodi, Dosen, Mahasiswa.
+- **Audit Logging**: Mencatat setiap aktivitas perubahan data penting.
+- **Secure Auth**: JWT-based authentication dengan session management.
 
-## 🛠 Teknologi
+## Teknologi
 
 ### Frontend
-```
-React 18.3         - UI Library
-TypeScript 5.8     - Type Safety
-Vite 5.4           - Build Tool
-TailwindCSS 3.4    - Styling
-Shadcn/ui          - Component Library
-React Router 6.30  - Routing
-TanStack Query 5.8 - Data Fetching
-React Hook Form    - Form Management
-Zod                - Validation
-Recharts           - Charts
-jsPDF              - PDF Export
-```
+- **Core**: React 18.3, TypeScript 5.8, Vite 5.4
+- **UI/UX**: TailwindCSS 3.4, Shadcn/ui, Lucide React
+- **State & Data**: TanStack Query 5.8, React Hook Form, Zod
+- **Visualization**: Recharts (Grafik & Chart)
+- **Reporting**: jsPDF, docx (Export laporan)
 
 ### Backend
-```
-Express.js 4.18    - Web Framework
-TypeScript 5.8     - Type Safety
-Prisma 5.22        - ORM
-MySQL 8.0          - Database
-JWT                - Authentication
-bcryptjs           - Password Hashing
-Multer             - File Upload
-XLSX               - Excel Processing
-```
+- **Runtime**: Node.js, Express.js 4.18
+- **Language**: TypeScript 5.8
+- **Database**: MySQL 8.0
+- **ORM**: Prisma 5.22
+- **Security**: BCrypt, JWT, CORS
+- **Utils**: Multer (Upload), XLSX (Excel processing)
 
-## 📦 Prasyarat
-
-Pastikan sistem Anda sudah terinstal:
+## Prasyarat
 
 - **Node.js** >= 18.0.0
 - **npm** >= 9.0.0
 - **MySQL** >= 8.0
 - **Git**
 
-## 🚀 Instalasi
+## Instalasi
 
 ### 1. Clone Repository
 
@@ -125,23 +108,17 @@ cd be
 # Install dependencies
 npm install
 
-# Copy environment variables
+# Setup Environment Variables
 cp .env.example .env
+# Edit .env sesuaikan dengan konfigurasi database Anda
 
-# Edit .env dan sesuaikan dengan konfigurasi Anda
-# DATABASE_URL, JWT_SECRET, dll
+# Database Setup
+npm run prisma:generate  # Generate Prisma Client
+npm run prisma:push      # Push schema ke database
 
-# Generate Prisma Client
-npm run prisma:generate
-
-# Push database schema
-npm run prisma:push
-
-# (Optional) Seed database
+# Seeding Data Master (PENTING)
+# Perintah ini akan mengisi data: Fakultas, Prodi, User (Admin/Dosen/Mhs), Level Taksonomi, dll.
 npm run prisma:seed
-
-# [PENTING] Seed Level Taksonomi (C1-C6, A1-A5, P1-P5)
-npx tsx prisma/seed_level_taksonomi.ts
 ```
 
 ### 3. Setup Frontend
@@ -152,316 +129,102 @@ cd ../fe
 # Install dependencies
 npm install
 
-# Copy environment variables
+# Setup Environment Variables
 cp .env.example .env
-
-# Edit .env dan sesuaikan API URL
+# Pastikan VITE_API_URL mengarah ke backend (default: http://localhost:3000/api)
 ```
 
-## ⚙️ Konfigurasi
+## Konfigurasi
 
-### Backend Environment Variables
-
-Buat file `.env` di folder `be/`:
-
+### Backend (.env)
 ```env
-# Database
 DATABASE_URL="mysql://user:password@localhost:3306/sistem_cpl"
-
-# JWT
-JWT_SECRET="your-super-secret-key-change-in-production"
-
-# Server
+JWT_SECRET="your-secret-key"
 PORT=3000
-NODE_ENV="development"
-
-# CORS
 CORS_ORIGIN="http://localhost:5173"
 ```
 
-### Frontend Environment Variables
-
-Buat file `.env` di folder `fe/`:
-
+### Frontend (.env)
 ```env
 VITE_API_URL="http://localhost:3000/api"
 ```
 
-## 🎮 Menjalankan Aplikasi
+## Menjalankan Aplikasi
 
 ### Development Mode
 
-**Terminal 1 - Backend:**
+**Terminal 1 (Backend):**
 ```bash
 cd be
-npm run server
+npm run dev
 ```
 
-Server akan berjalan di `http://localhost:3000`
-
-**Terminal 2 - Frontend:**
+**Terminal 2 (Frontend):**
 ```bash
 cd fe
 npm run dev
 ```
 
-Frontend akan berjalan di `http://localhost:5173`
+Akses aplikasi di `http://localhost:5173`.
 
-### Production Build
+## Docker Deployment
 
-**Backend:**
+Project ini sudah mendukung Docker untuk kemudahan deployment.
+
+**Cara Cepat:**
 ```bash
-cd be
-npm run build
-npm start
+docker-compose up -d --build
 ```
 
-**Frontend:**
-```bash
-cd fe
-npm run build
-npm run preview
-```
+Untuk panduan lengkap mengenai perintah Docker, silakan baca [DOCKER_COMMANDS.md](./DOCKER_COMMANDS.md).
 
-## 📁 Struktur Proyek
+## Struktur Proyek
 
 ```
 Project_sistem_cpl/
-├── be/                         # Backend
-│   ├── prisma/
-│   │   ├── schema.prisma      # Database schema
-│   │   └── seed.ts            # Database seeder
+├── be/                         # Backend (Express + Prisma)
+│   ├── prisma/                # Schema & Seeds
 │   ├── server/
-│   │   ├── index.ts           # Main server file
-│   │   ├── routes/            # API routes
-│   │   ├── middleware/        # Middleware (auth, etc)
-│   │   └── lib/               # Utilities
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── fe/                         # Frontend
+│   │   ├── routes/            # API Endpoints
+│   │   ├── middleware/        # Auth & Validation
+│   │   └── lib/               # Helper functions
+│   └── ...
+├── fe/                         # Frontend (React + Vite)
 │   ├── src/
-│   │   ├── components/        # React components
-│   │   │   ├── ui/           # Shadcn UI components
-│   │   │   ├── DashboardLayout.tsx
-│   │   │   └── AppSidebar.tsx
-│   │   ├── pages/            # Page components
-│   │   │   ├── dashboard/    # Dashboard pages
-│   │   │   ├── Auth.tsx
-│   │   │   └── Index.tsx
-│   │   ├── hooks/            # Custom hooks
-│   │   ├── lib/              # Utilities & API client
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── public/
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── tailwind.config.ts
-│   └── vite.config.ts
-│
-└── sistem_cpl.sql             # Database dump
+│   │   ├── components/        # Reusable Components
+│   │   ├── pages/
+│   │   │   ├── dashboard/     # Halaman Utama (CPL, CPMK, Nilai, dll)
+│   │   │   └── ...
+│   │   ├── hooks/             # Custom React Hooks
+│   │   └── lib/               # API Client & Utils
+│   └── ...
+├── DOCKER_COMMANDS.md          # Panduan Docker
+├── docker-compose.yml          # Konfigurasi Docker Compose
+└── sistem_cpl.sql              # Database Dump (Backup)
 ```
 
-## 📡 API Documentation
+## API Documentation
 
-### Authentication
+API tersedia di endpoint `/api`. Beberapa endpoint utama:
 
-```http
-POST   /api/auth/register      # Register new user
-POST   /api/auth/login         # Login
-POST   /api/auth/logout        # Logout
-GET    /api/auth/me            # Get current user
-```
+- **Auth**: `/api/auth/login`, `/api/auth/me`
+- **CPL**: `/api/cpl` (CRUD CPL)
+- **CPMK**: `/api/cpmk` (CRUD & Validasi)
+- **Nilai**: `/api/nilai-cpl`, `/api/nilai-teknik`
+- **Laporan**: `/api/transkrip-cpl`
 
-### CPL
+## Contributing
 
-```http
-GET    /api/cpl                # Get all CPL
-GET    /api/cpl/:id            # Get CPL by ID
-POST   /api/cpl                # Create CPL
-PUT    /api/cpl/:id            # Update CPL
-DELETE /api/cpl/:id            # Delete CPL
-```
+1. Fork repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
 
-### CPMK
-
-```http
-GET    /api/cpmk               # Get all CPMK
-GET    /api/cpmk/:id           # Get CPMK by ID
-POST   /api/cpmk               # Create CPMK
-PUT    /api/cpmk/:id           # Update CPMK
-DELETE /api/cpmk/:id           # Delete CPMK
-PUT    /api/cpmk/:id/validate  # Validate CPMK
-```
-
-### Mata Kuliah
-
-```http
-GET    /api/mata-kuliah        # Get all courses
-GET    /api/mata-kuliah/:id    # Get course by ID
-POST   /api/mata-kuliah        # Create course
-PUT    /api/mata-kuliah/:id    # Update course
-DELETE /api/mata-kuliah/:id    # Delete course
-```
-
-### Users
-
-```http
-GET    /api/users              # Get all users (Admin)
-GET    /api/users/:id          # Get user by ID
-PUT    /api/users/:id          # Update user
-PUT    /api/users/:id/role     # Update user role (Admin)
-DELETE /api/users/:id          # Delete user (Admin)
-```
-
-### Nilai
-
-```http
-POST   /api/nilai-cpl          # Submit CPL score
-POST   /api/nilai-teknik       # Submit technique score
-GET    /api/transkrip-cpl      # Get CPL transcript
-```
-
-## 🗄️ Database Schema
-
-### Core Models
-
-**User & Authentication**
-- `users` - User accounts
-- `user_roles` - User roles (admin, dosen, mahasiswa, kaprodi)
-- `profiles` - User profiles
-- `sessions` - Auth sessions
-
-**Learning Outcomes**
-- `cpl` - Capaian Pembelajaran Lulusan
-- `mata_kuliah` - Courses
-- `cpmk` - Capaian Pembelajaran Mata Kuliah
-- `cpl_mata_kuliah` - CPL to Course mapping
-- `cpmk_cpl_mapping` - CPMK to CPL mapping
-
-**Assessment**
-- `teknik_penilaian` - Assessment techniques
-- `nilai_cpl` - CPL grades
-- `nilai_cpmk` - CPMK grades
-- `nilai_teknik_penilaian` - Technique grades
-
-**System**
-- `audit_logs` - Activity logging
-- `settings` - System settings
-
-### ERD (Entity Relationship Diagram)
-
-```mermaid
-erDiagram
-    USER ||--o{ USER_ROLE : has
-    USER ||--|| PROFILE : has
-    USER ||--o{ SESSION : has
-    USER ||--o{ AUDIT_LOG : creates
-    
-    CPL ||--o{ CPL_MATA_KULIAH : "mapped to"
-    MATA_KULIAH ||--o{ CPL_MATA_KULIAH : "has"
-    
-    MATA_KULIAH ||--o{ CPMK : contains
-    CPMK ||--o{ CPMK_CPL_MAPPING : "mapped to"
-    CPL ||--o{ CPMK_CPL_MAPPING : "has"
-    
-    CPMK ||--o{ TEKNIK_PENILAIAN : has
-    TEKNIK_PENILAIAN ||--o{ NILAI_TEKNIK_PENILAIAN : has
-    
-    PROFILE ||--o{ NILAI_CPL : receives
-    PROFILE ||--o{ NILAI_CPMK : receives
-    PROFILE ||--o{ NILAI_TEKNIK_PENILAIAN : receives
-```
-
-## 👥 User Roles
-
-### Admin
-- Manajemen users & roles
-- Manajemen CPL
-- Manajemen mata kuliah
-- Manajemen settings
-- View semua data
-
-### Kaprodi (Kepala Program Studi)
-- Manajemen CPL
-- Manajemen mata kuliah
-- Validasi CPMK
-- View reports
-
-### Dosen
-- Manajemen CPMK
-- Input nilai teknik penilaian
-- View mahasiswa
-
-### Mahasiswa
-- View transkrip CPL
-- View profile
-- View nilai
-
-## 🧪 Testing
-
-```bash
-# Backend tests
-cd be
-npm test
-
-# Frontend tests
-cd fe
-npm test
-```
-
-## 📝 Development Workflow
-
-1. **Create Branch**: `git checkout -b feature/nama-fitur`
-2. **Development**: Lakukan perubahan
-3. **Test**: Pastikan tidak ada error
-4. **Commit**: `git commit -m "feat: deskripsi"`
-5. **Push**: `git push origin feature/nama-fitur`
-6. **Pull Request**: Buat PR untuk review
-
-### Commit Convention
-
-```
-feat:     Fitur baru
-fix:      Bug fix
-docs:     Dokumentasi
-style:    Formatting, missing semicolons, etc
-refactor: Code refactoring
-test:     Adding tests
-chore:    Maintenance
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read the contributing guidelines first.
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👨‍💻 Team
+## Team
 
 - **Developer**: Fajrul27 & nrmaanrfnd7
 - **Project**: PKL Akademik 2025
 
-## 📞 Support
-
-Jika ada pertanyaan atau masalah:
-- Create an issue
-- Email: ahmadfajrululum927@gmail.com
-
-## 🙏 Acknowledgments
-
-- Shadcn/ui untuk component library
-- Prisma untuk ORM
-- React & Vite teams
-
 ---
-
 **Built with ❤️ for better education management**

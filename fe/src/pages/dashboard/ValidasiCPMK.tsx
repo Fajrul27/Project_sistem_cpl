@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, XCircle, Clock, Loader2, SlidersHorizontal } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { CheckCircle2, XCircle, Clock, Loader2, SlidersHorizontal, Search } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -53,6 +54,7 @@ const ValidasiCPMKPage = () => {
     const [mataKuliahList, setMataKuliahList] = useState<any[]>([]);
     const [selectedMataKuliah, setSelectedMataKuliah] = useState<string>("all");
     const [selectedSemester, setSelectedSemester] = useState<string>("all");
+    const [searchTerm, setSearchTerm] = useState<string>("");
 
     useEffect(() => {
         fetchInitialData();
@@ -155,26 +157,26 @@ const ValidasiCPMKPage = () => {
         return cpmk.statusValidasi === filterStatus;
     });
 
-    if (loading) {
-        return (
-            <DashboardPage title="Validasi CPMK">
-                <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                </div>
-            </DashboardPage>
-        );
-    }
-
     return (
         <DashboardPage
             title="Validasi CPMK"
             description="Kelola validasi CPMK dari dosen"
         >
             <div className="space-y-6">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative flex-1 min-w-[220px] max-w-sm">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Cari kode atau deskripsi CPMK..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9"
+                        />
+                    </div>
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
+                                type="button"
                                 variant={
                                     selectedFakultas !== "all" ||
                                         selectedProdi !== "all" ||
@@ -189,7 +191,7 @@ const ValidasiCPMKPage = () => {
                                 Filter
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent align="start" className="w-80 space-y-4">
+                        <PopoverContent align="start" className="w-80 space-y-4" onClick={(e) => e.stopPropagation()}>
                             {/* Fakultas & Prodi (Admin Only) */}
                             {role === 'admin' && (
                                 <>
@@ -280,43 +282,33 @@ const ValidasiCPMKPage = () => {
                                 </div>
                             )}
 
-                            <div className="flex justify-between pt-1">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        setSelectedFakultas("all");
-                                        setSelectedProdi("all");
-                                        setSelectedSemester("all");
-                                        setSelectedMataKuliah("all");
-                                    }}
-                                    disabled={
-                                        selectedFakultas === "all" &&
-                                        selectedProdi === "all" &&
-                                        selectedSemester === "all" &&
-                                        selectedMataKuliah === "all"
-                                    }
-                                >
-                                    Reset Filter
-                                </Button>
-                            </div>
+
                         </PopoverContent>
                     </Popover>
 
-                    <Select value={filterStatus} onValueChange={setFilterStatus}>
-                        <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Filter Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Semua Status</SelectItem>
-                            <SelectItem value="draft">Draft</SelectItem>
-                            <SelectItem value="validated">Tervalidasi</SelectItem>
-                            <SelectItem value="active">Aktif</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                            setSelectedFakultas("all");
+                            setSelectedProdi("all");
+                            setSelectedSemester("all");
+                            setSelectedMataKuliah("all");
+                            setFilterStatus("all");
+                            setSearchTerm("");
+                        }}
+                        disabled={
+                            selectedFakultas === "all" &&
+                            selectedProdi === "all" &&
+                            selectedSemester === "all" &&
+                            selectedMataKuliah === "all" &&
+                            filterStatus === "all" &&
+                            searchTerm === ""
+                        }
+                    >
+                        Reset Filter
+                    </Button>
                 </div>
-
 
                 <Card>
                     <CardHeader>
@@ -326,25 +318,36 @@ const ValidasiCPMKPage = () => {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {filteredCPMK.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">
-                                Tidak ada CPMK dengan filter yang dipilih
-                            </div>
-                        ) : (
-                            <Table>
-                                <TableHeader>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Kode CPMK</TableHead>
+                                    <TableHead>Level</TableHead>
+                                    <TableHead>Deskripsi</TableHead>
+                                    <TableHead>Mata Kuliah</TableHead>
+                                    <TableHead>Pembuat</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    {canValidate && <TableHead>Aksi</TableHead>}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
                                     <TableRow>
-                                        <TableHead>Kode CPMK</TableHead>
-                                        <TableHead>Level</TableHead>
-                                        <TableHead>Deskripsi</TableHead>
-                                        <TableHead>Mata Kuliah</TableHead>
-                                        <TableHead>Pembuat</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        {canValidate && <TableHead>Aksi</TableHead>}
+                                        <TableCell colSpan={canValidate ? 7 : 6} className="h-24 text-center">
+                                            <div className="flex justify-center items-center">
+                                                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                                                Loading data...
+                                            </div>
+                                        </TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredCPMK.map((cpmk) => (
+                                ) : filteredCPMK.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={canValidate ? 7 : 6} className="text-center py-8 text-muted-foreground">
+                                            Tidak ada CPMK dengan filter yang dipilih
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    filteredCPMK.map((cpmk) => (
                                         <TableRow key={cpmk.id}>
                                             <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
                                             <TableCell>
@@ -416,10 +419,10 @@ const ValidasiCPMKPage = () => {
                                                 </TableCell>
                                             )}
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        )}
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
                     </CardContent>
                 </Card>
             </div>

@@ -349,9 +349,9 @@ router.put('/:id/role', authMiddleware, requireRole('admin'), async (req, res) =
 router.put('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { email, fullName } = req.body as { email?: string; fullName?: string };
+    const { email, fullName, role } = req.body as { email?: string; fullName?: string; role?: string };
 
-    if (!email && !fullName) {
+    if (!email && !fullName && !role) {
       return res.status(400).json({ error: 'Tidak ada data untuk diperbarui' });
     }
 
@@ -374,6 +374,14 @@ router.put('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
       profileUpdate.namaLengkap = fullName;
     }
 
+    // Prepare role update if provided
+    const roleUpdate = role ? {
+      upsert: {
+        create: { role: role as any },
+        update: { role: role as any }
+      }
+    } : undefined;
+
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
@@ -382,7 +390,8 @@ router.put('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
           profile: existingUser.profile
             ? { update: profileUpdate }
             : { create: profileUpdate }
-        })
+        }),
+        ...(roleUpdate && { role: roleUpdate })
       },
       include: {
         role: true,

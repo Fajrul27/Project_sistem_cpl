@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { api } from "@/lib/api-client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit, Save, Briefcase } from "lucide-react";
+import { Plus, Trash2, Edit, Save, Briefcase, TrendingUp } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -26,6 +26,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 
 interface ProfilLulusan {
     id: string;
@@ -34,6 +35,8 @@ interface ProfilLulusan {
     deskripsi: string;
     prodiId: string;
     prodi?: { nama: string };
+    percentage?: number; // Added for analysis
+    status?: string;     // Added for analysis
 }
 
 interface Prodi {
@@ -71,10 +74,14 @@ export default function ProfilLulusanPage() {
 
     useEffect(() => {
         if (selectedProdi) {
-            fetchProfilLulusan(selectedProdi);
+            if (role === "mahasiswa" && profile?.userId) {
+                fetchProfilLulusanAnalysis(profile.userId);
+            } else {
+                fetchProfilLulusan(selectedProdi);
+            }
             fetchCpls(selectedProdi);
         }
-    }, [selectedProdi]);
+    }, [selectedProdi, role, profile]);
 
     const fetchInitialData = async () => {
         try {
@@ -82,9 +89,9 @@ export default function ProfilLulusanPage() {
                 const res = await api.get("/prodi");
                 setProdiList(res.data);
                 if (res.data.length > 0) setSelectedProdi(res.data[0].id);
-            } else if ((role === "kaprodi" || role === "dosen") && profile?.prodiId) {
+            } else if ((role === "kaprodi" || role === "dosen" || role === "mahasiswa") && profile?.prodiId) {
                 setSelectedProdi(profile.prodiId);
-            } else if (role === "kaprodi" || role === "dosen") {
+            } else if (role === "kaprodi" || role === "dosen" || role === "mahasiswa") {
                 // Wait for profile to load, do not fallback
                 console.warn("User has role but missing prodiId in profile");
             } else {
@@ -102,7 +109,7 @@ export default function ProfilLulusanPage() {
         setLoading(true);
         try {
             const res = await api.get(`/profil-lulusan?prodiId=${prodiId}`);
-            setProfilList(res.data);
+            setProfilList(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
             console.error("Error fetching profil lulusan:", error);
             toast.error("Gagal memuat data profil lulusan");
@@ -111,10 +118,24 @@ export default function ProfilLulusanPage() {
         }
     };
 
+    const fetchProfilLulusanAnalysis = async (mahasiswaId: string) => {
+        setLoading(true);
+        try {
+            const res = await api.get(`/transkrip-profil/mahasiswa/${mahasiswaId}`);
+            // API returns array directly for this endpoint
+            setProfilList(Array.isArray(res) ? res : (Array.isArray(res.data) ? res.data : []));
+        } catch (error) {
+            console.error("Error fetching profil lulusan analysis:", error);
+            toast.error("Gagal memuat analisis profil lulusan");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const fetchCpls = async (prodiId: string) => {
         try {
             const res = await api.get(`/cpl?prodiId=${prodiId}`);
-            setCplList(res.data);
+            setCplList(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
             console.error("Error fetching CPLs:", error);
         }
@@ -232,7 +253,7 @@ export default function ProfilLulusanPage() {
                     <CardContent>
                         {loading ? (
                             <div className="text-center py-8">Memuat...</div>
-                        ) : profilList.length > 0 ? (
+                        ) : profilList && profilList.length > 0 ? (
                             <div className="rounded-md border">
                                 <Table>
                                     <TableHeader>
@@ -240,6 +261,7 @@ export default function ProfilLulusanPage() {
                                             <TableHead className="w-[100px]">Kode</TableHead>
                                             <TableHead className="w-[200px]">Nama Profil</TableHead>
                                             <TableHead>Deskripsi</TableHead>
+                                            {role === "mahasiswa" && <TableHead className="w-[200px]">Ketercapaian</TableHead>}
                                             <TableHead>Mapping CPL</TableHead>
                                             {canEdit && <TableHead className="w-[100px] text-right">Aksi</TableHead>}
                                         </TableRow>
@@ -257,6 +279,21 @@ export default function ProfilLulusanPage() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground">{item.deskripsi || "-"}</TableCell>
+                                                {role === "mahasiswa" && (
+                                                    <TableCell>
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center justify-between text-xs">
+                                                                <span className="font-medium">{item.percentage || 0}%</span>
+                                                                <span className={
+                                                                    (item.percentage || 0) >= 70 ? "text-green-600" : "text-yellow-600"
+                                                                }>
+                                                                    {item.status || "Belum Ada Data"}
+                                                                </span>
+                                                            </div>
+                                                            <Progress value={item.percentage || 0} className="h-2" />
+                                                        </div>
+                                                    </TableCell>
+                                                )}
                                                 <TableCell>
                                                     <div className="flex flex-wrap gap-1">
                                                         {(item as any).cplMappings?.map((m: any) => (
@@ -349,7 +386,7 @@ export default function ProfilLulusanPage() {
                                         Pilih CPL yang dibebankan pada profil lulusan ini:
                                     </div>
                                     <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto border rounded p-2">
-                                        {cplList.map(cpl => (
+                                        {cplList && cplList.map(cpl => (
                                             <div key={cpl.id} className="flex items-start space-x-2 p-1 hover:bg-muted/50 rounded">
                                                 <input
                                                     type="checkbox"
@@ -363,7 +400,7 @@ export default function ProfilLulusanPage() {
                                                 </label>
                                             </div>
                                         ))}
-                                        {cplList.length === 0 && (
+                                        {(!cplList || cplList.length === 0) && (
                                             <div className="text-sm text-muted-foreground text-center py-2">
                                                 Tidak ada data CPL untuk prodi ini.
                                             </div>

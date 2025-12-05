@@ -69,9 +69,9 @@ export default function EvaluasiMataKuliah() {
                 params: { semester: currentSemester, tahunAjaran: currentTahunAjaran }
             });
 
-            if (res.data.data && res.data.data.length > 0) {
+            if (res.data && res.data.length > 0) {
                 // Use the latest evaluation
-                setEvaluasi(res.data.data[0]);
+                setEvaluasi(res.data[0]);
             }
 
             // Fetch MK details for title (optional, can be passed via state)

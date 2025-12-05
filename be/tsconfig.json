@@ -19,7 +19,8 @@
   },
   "include": [
     "server/**/*.ts",
-    "prisma/**/*.ts"
+    "prisma/**/*.ts",
+    "seed_teknik_ref.ts"
   ],
   "exclude": [
     "node_modules"

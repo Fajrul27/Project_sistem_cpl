@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
 import { Plus, Edit, Trash2, Loader2, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -197,7 +197,9 @@ const MataKuliahPage = () => {
     setEditingMK(null);
   };
 
-  const canEdit = role === "admin";
+  const canManage = role === "admin";
+  const canEvaluate = role === "admin" || role === "dosen" || role === "kaprodi";
+  const showActions = canManage || canEvaluate;
 
   // Static semester options 1-8 (fallback if list empty)
   const semesterOptions = semesterList.length > 0 ? semesterList.map(s => s.angka) : [1, 2, 3, 4, 5, 6, 7, 8];
@@ -224,16 +226,6 @@ const MataKuliahPage = () => {
     setProdiFilter("all");
   };
 
-  if (loading) {
-    return (
-      <DashboardPage title="Data Mata Kuliah">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      </DashboardPage>
-    );
-  }
-
   return (
     <DashboardPage
       title="Data Mata Kuliah"
@@ -253,6 +245,7 @@ const MataKuliahPage = () => {
           <Popover>
             <PopoverTrigger asChild>
               <Button
+                type="button"
                 variant={hasActiveFilter ? "default" : "outline"}
                 size="sm"
                 className="gap-2"
@@ -263,7 +256,7 @@ const MataKuliahPage = () => {
                 <span className="sm:hidden">Filter</span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-80 space-y-4">
+            <PopoverContent align="end" className="w-80 space-y-4" onClick={(e) => e.stopPropagation()}>
               <div className="space-y-3">
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Fakultas</Label>
@@ -325,21 +318,26 @@ const MataKuliahPage = () => {
                   </Select>
                 </div>
               </div>
-              <div className="flex justify-between pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleResetFilter}
-                  disabled={!hasActiveFilter}
-                >
-                  Reset
-                </Button>
-              </div>
+
             </PopoverContent>
           </Popover >
-          <Button variant="outline" onClick={fetchMataKuliah}>
-            Muat Ulang
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setFakultasFilter("all");
+              setProdiFilter("all");
+              setSemesterFilter("all");
+              setSearchTerm("");
+            }}
+            disabled={
+              fakultasFilter === "all" &&
+              prodiFilter === "all" &&
+              semesterFilter === "all" &&
+              searchTerm === ""
+            }
+          >
+            Reset Filter
           </Button>
         </div >
 
@@ -352,7 +350,7 @@ const MataKuliahPage = () => {
                 <span className="font-medium">{mkList.length}</span> mata kuliah
               </CardDescription>
             </div>
-            {canEdit && (
+            {canManage && (
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
@@ -507,33 +505,56 @@ const MataKuliahPage = () => {
                   <TableHead>Nama Mata Kuliah</TableHead>
                   <TableHead>SKS</TableHead>
                   <TableHead>Semester</TableHead>
-                  {canEdit && <TableHead className="text-right">Aksi</TableHead>}
+                  {showActions && <TableHead className="text-right">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMK.map((mk) => (
-                  <TableRow key={mk.id}>
-                    <TableCell className="font-medium">{mk.kodeMk}</TableCell>
-                    <TableCell>{mk.namaMk}</TableCell>
-                    <TableCell>{mk.sks}</TableCell>
-                    <TableCell>Semester {mk.semester}</TableCell>
-                    {canEdit && (
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEdit(mk)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/evaluasi/${mk.id}`)} title="Evaluasi / CQI">
-                            <SlidersHorizontal className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleDelete(mk.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    )}
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={showActions ? 5 : 4} className="h-24 text-center">
+                      <div className="flex justify-center items-center">
+                        <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                        Loading data...
+                      </div>
+                    </TableCell>
                   </TableRow>
-                ))}
+                ) : filteredMK.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={showActions ? 5 : 4} className="text-center py-8 text-muted-foreground">
+                      Tidak ada data mata kuliah.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredMK.map((mk) => (
+                    <TableRow key={mk.id}>
+                      <TableCell className="font-medium">{mk.kodeMk}</TableCell>
+                      <TableCell>{mk.namaMk}</TableCell>
+                      <TableCell>{mk.sks}</TableCell>
+                      <TableCell>Semester {mk.semester}</TableCell>
+                      {showActions && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {canManage && (
+                              <Button size="sm" variant="outline" onClick={() => handleEdit(mk)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canEvaluate && (
+                              <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/evaluasi/${mk.id}`)} title="Evaluasi / CQI">
+                                <SlidersHorizontal className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canManage && (
+                              <Button size="sm" variant="destructive" onClick={() => handleDelete(mk.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

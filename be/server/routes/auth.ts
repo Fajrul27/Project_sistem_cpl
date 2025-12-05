@@ -33,10 +33,18 @@ router.post('/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     let fakultasId = null;
+    let programStudiName = null;
+
     if (prodiId) {
-      const prodi = await prisma.prodi.findUnique({ where: { id: prodiId } });
+      const prodi = await prisma.prodi.findUnique({
+        where: { id: prodiId },
+        include: { fakultas: true }
+      });
       if (prodi) {
         fakultasId = prodi.fakultasId;
+        // Format: "Fakultas - Prodi" or just "Prodi" depending on convention
+        // Legacy format seems to be just Prodi name or "Fakultas - Prodi"
+        programStudiName = prodi.fakultas ? `${prodi.fakultas.nama} - ${prodi.nama}` : prodi.nama;
       }
     }
 
@@ -55,7 +63,8 @@ router.post('/register', async (req, res) => {
           create: {
             namaLengkap: fullName || 'User Baru',
             prodiId: prodiId || null,
-            fakultasId: fakultasId
+            fakultasId: fakultasId,
+            programStudi: programStudiName
           }
         }
       },
@@ -110,12 +119,14 @@ router.post('/login', async (req, res) => {
     });
 
     if (!user) {
+      console.log(`Login failed: User not found for email ${email}`);
       return res.status(401).json({ error: 'Email atau password salah' });
     }
 
     // Verify password
     const validPassword = await bcrypt.compare(password, user.passwordHash);
     if (!validPassword) {
+      console.log(`Login failed: Invalid password for user ${email}`);
       return res.status(401).json({ error: 'Email atau password salah' });
     }
 

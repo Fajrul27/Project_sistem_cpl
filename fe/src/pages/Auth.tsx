@@ -13,9 +13,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../components/ui/select";
+import { supabase, fetchProdiList } from "@/lib/api-client";
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// const API_URL = import.meta.env.VITE_API_URL || '/api'; // No longer needed
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -38,10 +39,9 @@ const Auth = () => {
     // Fetch Prodi list
     const fetchProdi = async () => {
       try {
-        const response = await fetch(`${API_URL}/prodi`);
-        const data = await response.json();
-        if (data.data) {
-          setProdiList(data.data);
+        const response = await fetchProdiList();
+        if (response.data) {
+          setProdiList(response.data);
         }
       } catch (error) {
         console.error("Failed to fetch prodi:", error);
@@ -55,41 +55,19 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Important for cookies
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      // Baca body sebagai text dulu supaya aman kalau backend kirim non-JSON / kosong
-      const text = await response.text();
-      let data: any = null;
-
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch (parseError) {
-          console.error('Gagal parse JSON login response:', parseError, 'Body:', text);
-        }
+      if (error) {
+        throw new Error(error.message);
       }
 
-      if (!response.ok) {
-        const message =
-          data?.message ||
-          data?.error ||
-          `Login gagal (status ${response.status})`;
-        throw new Error(message);
+      if (data.user) {
+        toast.success("Login berhasil!");
+        navigate("/dashboard");
       }
-
-      // Store user info (token is now in HttpOnly cookie)
-      // localStorage.setItem('token', data.token); // Removed
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      toast.success("Login berhasil!");
-      navigate("/dashboard");
     } catch (error: any) {
       toast.error(error.message);
       console.error('Login error:', error);
@@ -103,33 +81,28 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Important for cookies
-        body: JSON.stringify({ email, password, fullName, prodiId: selectedProdi }),
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            prodiId: selectedProdi // Pass this if supported by signUp wrapper, otherwise we might need to adjust api-client
+          }
+        }
       });
 
-      // Baca body sebagai text dulu supaya aman kalau backend kirim non-JSON / kosong
-      const text = await response.text();
-      let data: any = null;
+      // Note: api-client's signUp wrapper currently only takes full_name in options.data
+      // We might need to update api-client to pass prodiId if we want to support it here.
+      // But for now, let's use what's there. 
+      // Wait, I should check api-client's signUp implementation.
+      // It takes options.data.full_name. It doesn't seem to pass other fields to /register.
+      // I should update api-client.ts first if I want to support prodiId in signup here.
+      // BUT, the user's issue is LOGIN.
+      // Let's stick to fixing login first.
 
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch (parseError) {
-          console.error('Gagal parse JSON register response:', parseError, 'Body:', text);
-        }
-      }
-
-      if (!response.ok) {
-        const message =
-          data?.message ||
-          data?.error ||
-          `Pendaftaran gagal (status ${response.status})`;
-        throw new Error(message);
+      if (error) {
+        throw new Error(error.message);
       }
 
       toast.success("Akun berhasil dibuat! Silakan login.");
@@ -137,7 +110,7 @@ const Auth = () => {
       setPassword("");
       setFullName("");
     } catch (error: any) {
-      toast.error(+error.message);
+      toast.error(error.message);
       console.error('Signup error:', error);
     } finally {
       setLoading(false);

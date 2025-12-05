@@ -142,7 +142,13 @@ export async function createUserWithRole(
   // Register user (default role di backend: mahasiswa)
   const data = await apiRequest('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ email, password, fullName })
+    body: JSON.stringify({
+      email,
+      password,
+      fullName,
+      prodiId: profileData?.prodiId,
+      fakultasId: profileData?.fakultasId
+    })
   });
 
   const user = data.user;
@@ -173,7 +179,7 @@ export async function createUserWithRole(
 }
 
 // Helper: update user basic info (admin only)
-export async function updateUser(userId: string, payload: { email?: string; fullName?: string }) {
+export async function updateUser(userId: string, payload: { email?: string; fullName?: string; role?: string }) {
   return apiRequest(`/users/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
@@ -358,7 +364,8 @@ export const supabase = {
           body: JSON.stringify({
             email,
             password,
-            fullName: options?.data?.full_name
+            fullName: options?.data?.full_name,
+            prodiId: options?.data?.prodiId
           }),
         });
 

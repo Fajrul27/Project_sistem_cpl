@@ -21,7 +21,7 @@ interface KuesionerItem {
 }
 
 export default function KuesionerCplPage() {
-    const { role, profile } = useUserRole();
+    const { role, profile, loading: roleLoading } = useUserRole();
     const [cplList, setCplList] = useState<Cpl[]>([]);
     const [responses, setResponses] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
@@ -33,17 +33,17 @@ export default function KuesionerCplPage() {
     const currentTahunAjaran = "2024/2025 Ganjil";
 
     useEffect(() => {
-        if (role === "mahasiswa") {
+        if (!roleLoading && role === "mahasiswa") {
             fetchData();
         }
-    }, [role]);
+    }, [role, roleLoading, currentSemester]);
 
     const fetchData = async () => {
         setLoading(true);
         try {
             // Fetch CPLs
             const cplRes = await api.get("/cpl");
-            setCplList(cplRes.data);
+            setCplList(cplRes.data || cplRes); // Handle both formats
 
             // Fetch existing responses
             const existingRes = await api.get("/kuesioner/me", {
@@ -53,17 +53,20 @@ export default function KuesionerCplPage() {
                 }
             });
 
-            if (existingRes.data.length > 0) {
+            const existingData = Array.isArray(existingRes) ? existingRes : existingRes.data;
+
+            if (existingData && existingData.length > 0) {
                 setHasSubmitted(true);
                 const initialResponses: Record<string, number> = {};
-                existingRes.data.forEach((item: any) => {
+                existingData.forEach((item: any) => {
                     initialResponses[item.cplId] = item.nilai;
                 });
                 setResponses(initialResponses);
             } else {
-                // Initialize with default values (e.g., 50 or 0)
+                // Initialize with default values (e.g., 50)
                 const initialResponses: Record<string, number> = {};
-                cplRes.data.forEach((cpl: Cpl) => {
+                const cpls = Array.isArray(cplRes) ? cplRes : (cplRes.data || []);
+                cpls.forEach((cpl: Cpl) => {
                     initialResponses[cpl.id] = 50;
                 });
                 setResponses(initialResponses);
@@ -143,8 +146,8 @@ export default function KuesionerCplPage() {
                                             </div>
                                             <div className="text-right min-w-[80px]">
                                                 <span className={`text-2xl font-bold ${responses[cpl.id] >= 80 ? "text-green-600" :
-                                                        responses[cpl.id] >= 60 ? "text-blue-600" :
-                                                            "text-orange-600"
+                                                    responses[cpl.id] >= 60 ? "text-blue-600" :
+                                                        "text-orange-600"
                                                     }`}>
                                                     {responses[cpl.id]}
                                                 </span>

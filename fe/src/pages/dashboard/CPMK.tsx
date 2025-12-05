@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup, SelectLabel } from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup, SelectLabel } from "../../components/ui/select";
 import { Plus, Edit, Trash2, Loader2, Search, Eye, SlidersHorizontal } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -256,16 +256,6 @@ const CPMKPage = () => {
         return matchSearch && matchMataKuliah;
     });
 
-    if (loading) {
-        return (
-            <DashboardPage title="Data CPMK">
-                <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                </div>
-            </DashboardPage>
-        );
-    }
-
     return (
         <DashboardPage
             title="Data CPMK"
@@ -284,158 +274,121 @@ const CPMKPage = () => {
                     </div>
 
 
-                    {role !== 'dosen' && (
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={selectedFakultas !== "all" || selectedProdi !== "all" ? "default" : "outline"}
-                                    className="gap-2"
-                                >
-                                    <SlidersHorizontal className="h-4 w-4" />
-                                    Filter
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent align="start" className="w-80 space-y-4">
-                                <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Fakultas</Label>
-                                    <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
-                                        <SelectTrigger className="w-full h-8 text-xs">
-                                            <SelectValue placeholder="Semua Fakultas" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Semua Fakultas</SelectItem>
-                                            {fakultasList.map((fak) => (
-                                                <SelectItem key={fak.id} value={fak.id}>
-                                                    {fak.nama}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Program Studi</Label>
-                                    <Select value={selectedProdi} onValueChange={setSelectedProdi}>
-                                        <SelectTrigger className="w-full h-8 text-xs">
-                                            <SelectValue placeholder="Semua Prodi" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Semua Prodi</SelectItem>
-                                            {prodiList.map((prodi) => (
-                                                <SelectItem key={prodi.id} value={prodi.id}>
-                                                    {prodi.nama}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="flex justify-between pt-1">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                            setSelectedFakultas("all");
-                                            setSelectedProdi("all");
-                                        }}
-                                        disabled={selectedFakultas === "all" && selectedProdi === "all"}
-                                    >
-                                        Reset Filter
-                                    </Button>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                    )}
-
-                    {role === 'dosen' ? (
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={mataKuliahFilter !== "all" ? "default" : "outline"}
-                                    className="gap-2 w-[200px] justify-between"
-                                >
-                                    <div className="flex items-center gap-2 truncate">
-                                        <SlidersHorizontal className="h-4 w-4 shrink-0" />
-                                        <span className="truncate">
-                                            {mataKuliahFilter === 'all'
-                                                ? "Filter Mata Kuliah"
-                                                : mataKuliahList.find(mk => (mk.mataKuliah?.id || mk.id) === mataKuliahFilter)?.mataKuliah?.namaMk ||
-                                                mataKuliahList.find(mk => (mk.mataKuliah?.id || mk.id) === mataKuliahFilter)?.namaMk ||
-                                                "Filter Mata Kuliah"
-                                            }
-                                        </span>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                type="button"
+                                variant={
+                                    selectedFakultas !== "all" ||
+                                        selectedProdi !== "all" ||
+                                        mataKuliahFilter !== "all"
+                                        ? "default"
+                                        : "outline"
+                                }
+                                className="gap-2"
+                            >
+                                <SlidersHorizontal className="h-4 w-4" />
+                                Filter
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-80 space-y-4" onClick={(e) => e.stopPropagation()}>
+                            {role !== 'dosen' && (
+                                <>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">Fakultas</Label>
+                                        <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
+                                            <SelectTrigger className="w-full h-8 text-xs">
+                                                <SelectValue placeholder="Semua Fakultas" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Semua Fakultas</SelectItem>
+                                                {fakultasList.map((fak) => (
+                                                    <SelectItem key={fak.id} value={fak.id}>
+                                                        {fak.nama}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent align="start" className="w-80 space-y-4">
-                                <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Mata Kuliah</Label>
-                                    <Select
-                                        value={mataKuliahFilter}
-                                        onValueChange={setMataKuliahFilter}
-                                    >
-                                        <SelectTrigger className="w-full h-8 text-xs">
-                                            <SelectValue placeholder="Pilih Mata Kuliah" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Semua Mata Kuliah</SelectItem>
-                                            {(() => {
-                                                // Deduplicate mataKuliahList based on unique ID
-                                                const uniqueMK = mataKuliahList.reduce((acc: any[], current) => {
-                                                    const id = current.mataKuliah?.id || current.id;
-                                                    if (!acc.find(item => (item.mataKuliah?.id || item.id) === id)) {
-                                                        acc.push(current);
-                                                    }
-                                                    return acc;
-                                                }, []);
 
-                                                return uniqueMK.map((mk: any) => {
-                                                    // Handle both structure types (direct MK or MKPengampu)
-                                                    const id = mk.mataKuliah?.id || mk.id;
-                                                    const nama = mk.mataKuliah?.namaMk || mk.namaMk;
-                                                    const semester = mk.mataKuliah?.semester || mk.semester;
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">Program Studi</Label>
+                                        <Select value={selectedProdi} onValueChange={setSelectedProdi}>
+                                            <SelectTrigger className="w-full h-8 text-xs">
+                                                <SelectValue placeholder="Semua Prodi" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Semua Prodi</SelectItem>
+                                                {prodiList.map((prodi) => (
+                                                    <SelectItem key={prodi.id} value={prodi.id}>
+                                                        {prodi.nama}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
+                            )}
 
-                                                    return (
-                                                        <SelectItem key={id} value={id}>
-                                                            {nama} {semester ? `(Semester ${semester})` : ''}
-                                                        </SelectItem>
-                                                    );
-                                                });
-                                            })()}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="flex justify-between pt-1">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setMataKuliahFilter("all")}
-                                        disabled={mataKuliahFilter === "all"}
-                                    >
-                                        Reset Filter
-                                    </Button>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                    ) : (
-                        <Select value={mataKuliahFilter} onValueChange={setMataKuliahFilter}>
-                            <SelectTrigger className="w-[200px]">
-                                <SelectValue placeholder="Filter Mata Kuliah" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Semua Mata Kuliah</SelectItem>
-                                {mataKuliahList.map((mk) => (
-                                    <SelectItem key={mk.id} value={mk.id}>
-                                        {mk.namaMk}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    )}
-                    <Button variant="outline" onClick={fetchCpmk}>
-                        Muat Ulang
+                            <div className="space-y-1">
+                                <Label className="text-xs font-medium">Mata Kuliah</Label>
+                                <Select
+                                    value={mataKuliahFilter}
+                                    onValueChange={setMataKuliahFilter}
+                                >
+                                    <SelectTrigger className="w-full h-8 text-xs">
+                                        <SelectValue placeholder="Semua Mata Kuliah" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Mata Kuliah</SelectItem>
+                                        {(() => {
+                                            // Deduplicate mataKuliahList based on unique ID
+                                            const uniqueMK = mataKuliahList.reduce((acc: any[], current) => {
+                                                const id = current.mataKuliah?.id || current.id;
+                                                if (!acc.find(item => (item.mataKuliah?.id || item.id) === id)) {
+                                                    acc.push(current);
+                                                }
+                                                return acc;
+                                            }, []);
+
+                                            return uniqueMK.map((mk: any) => {
+                                                // Handle both structure types (direct MK or MKPengampu)
+                                                const id = mk.mataKuliah?.id || mk.id;
+                                                const nama = mk.mataKuliah?.namaMk || mk.namaMk;
+                                                const semester = mk.mataKuliah?.semester || mk.semester;
+
+                                                return (
+                                                    <SelectItem key={id} value={id}>
+                                                        {nama} {semester ? `(Semester ${semester})` : ''}
+                                                    </SelectItem>
+                                                );
+                                            });
+                                        })()}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+
+                        </PopoverContent>
+                    </Popover>
+
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                            setSelectedFakultas("all");
+                            setSelectedProdi("all");
+                            setMataKuliahFilter("all");
+                            setSearchTerm("");
+                        }}
+                        disabled={
+                            selectedFakultas === "all" &&
+                            selectedProdi === "all" &&
+                            mataKuliahFilter === "all" &&
+                            searchTerm === ""
+                        }
+                    >
+                        Reset Filter
                     </Button>
                 </div>
 
@@ -550,9 +503,18 @@ const CPMKPage = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredCpmk.length === 0 ? (
+                                {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                        <TableCell colSpan={7} className="h-24 text-center">
+                                            <div className="flex justify-center items-center">
+                                                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                                                Loading data...
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : filteredCpmk.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center text-muted-foreground">
                                             Tidak ada data CPMK
                                         </TableCell>
                                     </TableRow>
