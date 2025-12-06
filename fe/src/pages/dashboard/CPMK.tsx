@@ -176,52 +176,52 @@ const CPMKPage = () => {
                                 </div>
                             )}
 
-                            {role !== 'dosen' && (
-                                <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Program Studi</Label>
-                                    <Select value={filters.selectedProdi} onValueChange={setSelectedProdi}>
-                                        <SelectTrigger className="w-full h-8 text-xs">
-                                            <SelectValue placeholder="Semua Prodi" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Semua Prodi</SelectItem>
-                                            {(() => {
-                                                let accessibleProdis = prodiList;
 
-                                                // 1. Filter by Role
-                                                if (role === 'kaprodi' && profile?.prodiId) {
-                                                    accessibleProdis = prodiList.filter(p => p.id === profile.prodiId);
-                                                } else if (role === 'dosen') {
-                                                    // Get unique Prodis from taught courses in mataKuliahList
-                                                    // Note: mataKuliahList is already filtered by backend for Dosen
-                                                    const taughtProdiIds = new Set(mataKuliahList
-                                                        .map(mk => {
-                                                            // Handle both nested and flat structures just in case
-                                                            const mkData = mk.mataKuliah || mk;
-                                                            return mkData.prodiId;
-                                                        })
-                                                        .filter(Boolean));
+                            <div className="space-y-1">
+                                <Label className="text-xs font-medium">Program Studi</Label>
+                                <Select value={filters.selectedProdi} onValueChange={setSelectedProdi}>
+                                    <SelectTrigger className="w-full h-8 text-xs">
+                                        <SelectValue placeholder="Semua Prodi" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Prodi</SelectItem>
+                                        {(() => {
+                                            let accessibleProdis = prodiList;
 
-                                                    if (taughtProdiIds.size > 0) {
-                                                        accessibleProdis = prodiList.filter(p => taughtProdiIds.has(p.id));
-                                                    }
+                                            // 1. Filter by Role
+                                            if (role === 'kaprodi' && profile?.prodiId) {
+                                                accessibleProdis = prodiList.filter(p => p.id === profile.prodiId);
+                                            } else if (role === 'dosen') {
+                                                // Get unique Prodis from taught courses in mataKuliahList
+                                                // Note: mataKuliahList is already filtered by backend for Dosen
+                                                const taughtProdiIds = new Set(mataKuliahList
+                                                    .map(mk => {
+                                                        // Handle both nested and flat structures just in case
+                                                        const mkData = mk.mataKuliah || mk;
+                                                        return mkData.prodiId;
+                                                    })
+                                                    .filter(Boolean));
+
+                                                if (taughtProdiIds.size > 0) {
+                                                    accessibleProdis = prodiList.filter(p => taughtProdiIds.has(p.id));
                                                 }
+                                            }
 
-                                                // 2. Filter by Selected Fakultas (Admin)
-                                                if (role === 'admin' && filters.selectedFakultas !== 'all') {
-                                                    accessibleProdis = accessibleProdis.filter(p => p.fakultasId === filters.selectedFakultas);
-                                                }
+                                            // 2. Filter by Selected Fakultas (Admin)
+                                            if (role === 'admin' && filters.selectedFakultas !== 'all') {
+                                                accessibleProdis = accessibleProdis.filter(p => p.fakultasId === filters.selectedFakultas);
+                                            }
 
-                                                return accessibleProdis.map((prodi) => (
-                                                    <SelectItem key={prodi.id} value={prodi.id}>
-                                                        {prodi.nama}
-                                                    </SelectItem>
-                                                ));
-                                            })()}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
+                                            return accessibleProdis.map((prodi) => (
+                                                <SelectItem key={prodi.id} value={prodi.id}>
+                                                    {prodi.nama}
+                                                </SelectItem>
+                                            ));
+                                        })()}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
 
                             <div className="space-y-1">
                                 <Label className="text-xs font-medium">Mata Kuliah</Label>
