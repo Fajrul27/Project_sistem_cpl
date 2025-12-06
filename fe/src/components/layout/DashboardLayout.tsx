@@ -8,11 +8,11 @@ import {
   useContext,
 } from "react";
 import { useNavigate, Outlet } from "react-router-dom";
-import { supabase } from "@/lib/api-client";
+import { supabase } from "@/lib/api";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { DashboardNavbar } from "@/components/DashboardNavbar";
-import { LoadingScreen } from "@/components/LoadingScreen";
+import { AppSidebar } from "@/components/layout/AppSidebar";
+import { DashboardNavbar } from "@/components/layout/DashboardNavbar";
+import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { useUserRole } from "@/hooks/useUserRole";
 
 interface DashboardLayoutProps {

@@ -1,75 +1,21 @@
 // ============================================
-// API Client - Temporary Stub
+// Real API Client - Connect to Express Backend
 // ============================================
-// This is a temporary stub to replace Supabase
-// Full implementation will be in Express backend
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
-
-// Mock data for development
-const mockData = {
-  users: [
-    {
-      id: '1',
-      email: 'admin@sistem-cpl.ac.id',
-      role: 'admin',
-      profile: {
-        nama_lengkap: 'Administrator System',
-        nip: '198800000001'
-      }
-    },
-    {
-      id: '2',
-      email: 'dosen1@sistem-cpl.ac.id',
-      role: 'dosen',
-      profile: {
-        nama_lengkap: 'Dr. Budi Santoso, M.Kom',
-        nip: '198801010001'
-      }
-    },
-    {
-      id: '3',
-      email: 'mahasiswa1@student.ac.id',
-      role: 'mahasiswa',
-      profile: {
-        nama_lengkap: 'Ahmad Rizki Wijaya',
-        nim: '2101010001'
-      }
-    }
-  ],
-  cpl: [
-    {
-      id: '1',
-      kode_cpl: 'CPL-01',
-      deskripsi: 'Mampu menerapkan pemikiran logis, kritis, sistematis',
-      kategori: 'Sikap',
-      bobot: 1.0,
-      is_active: true
-    }
-  ],
-  mataKuliah: [
-    {
-      id: '1',
-      kode_mk: 'IF-101',
-      nama_mk: 'Pemrograman Dasar',
-      sks: 3,
-      semester: 1,
-      is_active: true
-    }
-  ]
-};
+const API_URL = '/api';
 
 // Storage helpers
-function getToken() {
-  return localStorage.getItem('token');
-}
+// function getToken() {
+//   return localStorage.getItem('token');
+// }
 
-export function setToken(token: string) {
-  localStorage.setItem('token', token);
-}
+// export function setToken(token: string) {
+//   localStorage.setItem('token', token);
+// }
 
 export function clearToken() {
-  localStorage.removeItem('token');
+  // localStorage.removeItem('token');
+  localStorage.removeItem('user');
 }
 
 export function setUser(user: any) {
@@ -81,23 +27,328 @@ export function getUser() {
   return user ? JSON.parse(user) : null;
 }
 
-// Temporary supabase-like interface for backward compatibility
+// API request helper
+async function apiRequest(endpoint: string, options: RequestInit = {}) {
+  // const token = getToken();
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    // ...(token && { 'Authorization': `Bearer ${token}` }),
+    ...options.headers,
+  };
+
+  const url = `${API_URL}${endpoint}`;
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include', // Send cookies
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Request failed');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export const api = {
+  get: (endpoint: string, options: any = {}) => {
+    let url = endpoint;
+    if (options.params) {
+      const filteredParams = Object.fromEntries(
+        Object.entries(options.params).filter(([_, v]) => v != null && v !== 'undefined' && v !== '')
+      );
+      const params = new URLSearchParams(filteredParams as any);
+      url += `?${params.toString()}`;
+    }
+    return apiRequest(url, { ...options, method: 'GET' });
+  },
+  post: (endpoint: string, body: any, options: RequestInit = {}) => apiRequest(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) }),
+  put: (endpoint: string, body: any, options: RequestInit = {}) => apiRequest(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
+  delete: (endpoint: string, options: RequestInit = {}) => apiRequest(endpoint, { ...options, method: 'DELETE' }),
+};
+
+// Helper: fetch mahasiswa list with optional mataKuliahId filter for dosen
+export async function fetchMahasiswaList(params?: {
+  page?: number;
+  limit?: number;
+  q?: string;
+  mataKuliahId?: string;
+  fakultasId?: string;
+}) {
+  // Backend endpoint: GET /api/users?role=mahasiswa
+  return api.get('/users', {
+    params: {
+      role: 'mahasiswa',
+      ...params
+    }
+  });
+}
+
+// Helper: fetch mata kuliah yang diampu oleh dosen
+export async function fetchMataKuliahPengampu(dosenId: string) {
+  return api.get(`/mata-kuliah-pengampu/dosen/${dosenId}`);
+}
+
+// Helper: fetch all users (admin only)
+export async function fetchAllUsers(params?: {
+  page?: number;
+  limit?: number;
+  q?: string;
+  role?: string;
+  fakultasId?: string;
+  prodiId?: string;
+  semester?: string;
+  kelasId?: string;
+  angkatanId?: string;
+}) {
+  // Backend endpoint: GET /api/users
+  return api.get('/users', { params });
+}
+
+// Helper: update user role (admin only)
+export async function updateUserRole(userId: string, role: string) {
+  // Backend endpoint: PUT /api/users/:id/role
+  return apiRequest(`/users/${userId}/role`, {
+    method: 'PUT',
+    body: JSON.stringify({ role })
+  });
+}
+
+// Helper: update profile data (admin / user)
+// Helper: update profile data (admin / user)
+export async function updateProfile(
+  profileId: string,
+  payload: {
+    namaLengkap?: string;
+    nim?: string | null;
+    nip?: string | null;
+    programStudi?: string | null;
+    semester?: number | null;
+    kelasId?: string | null;
+    prodiId?: string | null;
+    fakultasId?: string | null;
+    angkatanId?: string | null;
+  }
+) {
+  return apiRequest(`/profiles/${profileId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+// Helper: create user with initial role (admin only from UI)
+export async function createUserWithRole(
+  email: string,
+  password: string,
+  fullName: string,
+  role: string,
+  profileData?: { nim?: string; nip?: string; programStudi?: string | null; semester?: number | null; kelasId?: string; prodiId?: string; fakultasId?: string; angkatanId?: string }
+) {
+  // Register user (default role di backend: mahasiswa)
+  const data = await apiRequest('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      email,
+      password,
+      fullName,
+      prodiId: profileData?.prodiId,
+      fakultasId: profileData?.fakultasId
+    })
+  });
+
+  const user = data.user;
+  if (!user || !user.id) {
+    throw new Error('User tidak tersedia pada respons register');
+  }
+
+  // Update profile jika ada data tambahan
+  if (profileData && user.profile?.id) {
+    await updateProfile(user.profile.id, {
+      nim: profileData.nim ?? null,
+      nip: profileData.nip ?? null,
+      programStudi: profileData.programStudi ?? null,
+      semester: profileData.semester ?? null,
+      kelasId: profileData.kelasId ?? null,
+      prodiId: profileData.prodiId ?? null,
+      fakultasId: profileData.fakultasId ?? null,
+      angkatanId: profileData.angkatanId ?? null,
+    });
+  }
+
+  // Jika role yang dipilih bukan mahasiswa, update role-nya
+  if (role && role !== 'mahasiswa') {
+    await updateUserRole(user.id, role);
+  }
+
+  return user;
+}
+
+// Helper: update user basic info (admin only)
+export async function updateUser(userId: string, payload: { email?: string; fullName?: string; role?: string }) {
+  return apiRequest(`/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+// Helper: delete user (admin only)
+export async function deleteUser(userId: string) {
+  return apiRequest(`/users/${userId}`, {
+    method: 'DELETE',
+  });
+}
+
+// Helper: fetch list of CPL from backend
+export async function fetchCplList() {
+  return apiRequest('/cpl');
+}
+
+// Helper: fetch list of Mata Kuliah from backend
+export async function fetchMataKuliahList() {
+  return apiRequest('/mata-kuliah');
+}
+
+// Helper: submit CPL score
+export async function submitNilaiCpl(payload: {
+  userId: string;
+  cplId: string;
+  mataKuliahId: string;
+  nilai: number;
+  semester: number;
+  tahunAjaran: string;
+}) {
+  return apiRequest('/nilai-cpl', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+// Helper: fetch transkrip CPL data
+export async function fetchTranskripCPL(mahasiswaId: string) {
+  return api.get(`/transkrip-cpl/${mahasiswaId}`);
+}
+
+// Helper: fetch transkrip CPL data with semester and tahunAjaran filters
+export async function getTranskrip(mahasiswaId: string, semester?: string, tahunAjaran?: string) {
+  const params = new URLSearchParams();
+  if (semester && semester !== 'all') params.append('semester', semester);
+  if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaran', tahunAjaran);
+  return api.get(`/transkrip-cpl/${mahasiswaId}?${params.toString()}`);
+}
+
+// Helper: fetch transkrip CPMK data
+export async function getTranskripCPMK(mahasiswaId: string, semester?: string, tahunAjaran?: string) {
+  const params = new URLSearchParams();
+  if (semester && semester !== 'all') params.append('semester', semester);
+  if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaran', tahunAjaran);
+  return api.get(`/transkrip-cpmk/${mahasiswaId}?${params.toString()}`);
+}
+
+// Helper: fetch analysis data
+export async function fetchAnalisisCPL(semester?: string) {
+  const params = semester && semester !== "all" ? { semester } : {};
+  return api.get('/transkrip-cpl/analisis', { params });
+}
+
+// Helper: fetch dashboard stats
+export async function fetchDashboardStats(filters?: { semester?: string; angkatan?: string; kelasId?: string; mataKuliahId?: string; prodiId?: string }) {
+  return api.get('/dashboard/stats', { params: filters });
+}
+
+// Helper: fetch dosen analysis
+export async function fetchDosenAnalysis(prodiId?: string) {
+  const params = prodiId ? { prodiId } : {};
+  return api.get('/dashboard/dosen', { params });
+}
+
+// Helper: fetch student evaluation
+export async function fetchStudentEvaluation(filters?: { prodiId?: string; angkatan?: string; semester?: string }) {
+  return api.get('/dashboard/students', { params: filters });
+}
+
+// Helper: fetch semesters
+export async function fetchSemesters() {
+  return api.get('/references/semester');
+}
+
+// Helper: fetch kelas
+export async function fetchKelas() {
+  return api.get('/references/kelas');
+}
+
+// Helper: fetch fakultas
+export async function fetchFakultasList() {
+  return api.get('/references/fakultas');
+}
+
+// Helper: fetch prodi
+export async function fetchProdiList(fakultasId?: string) {
+  const params = fakultasId ? { fakultasId } : {};
+  return api.get('/prodi', { params });
+}
+
+// Helper: fetch angkatan
+export async function fetchAngkatanList() {
+  return api.get('/angkatan');
+}
+
+// Helper: Rubric API (CPMK Level)
+export async function fetchRubrik(cpmkId: string) {
+  return api.get(`/rubrik/${cpmkId}`);
+}
+
+export async function saveRubrik(payload: any) {
+  return api.post('/rubrik', payload);
+}
+
+export async function deleteRubrik(id: string) {
+  return api.delete(`/rubrik/${id}`);
+}
+
+// Helper: CQI / Evaluasi API
+export async function fetchEvaluasiMataKuliah(mataKuliahId: string, semester?: string, tahunAjaran?: string) {
+  const params: any = {};
+  if (semester) params.semester = semester;
+  if (tahunAjaran) params.tahunAjaran = tahunAjaran;
+  return api.get(`/evaluasi/mata-kuliah/${mataKuliahId}`, { params });
+}
+
+export async function submitEvaluasiMataKuliah(payload: any) {
+  return api.post('/evaluasi', payload);
+}
+
+export async function reviewEvaluasiMataKuliah(id: string, feedback: string) {
+  return api.put(`/evaluasi/${id}/review`, { feedbackKaprodi: feedback });
+}
+
 // Auth state change callbacks
 const authCallbacks: Array<(event: string, session: any) => void> = [];
 
+// Real API with Supabase-compatible interface
 export const supabase = {
   auth: {
     signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
-      // Mock authentication
-      const user = mockData.users.find(u => u.email === email);
-      if (user && password === 'admin123') {
-        const token = 'mock-token-' + Date.now();
+      try {
+        const data = await apiRequest('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        });
+
         const session = {
-          access_token: token,
-          user: { id: user.id, email: user.email }
+          access_token: 'cookie', // Dummy token for frontend logic compatibility
+          user: { id: data.user.id, email: data.user.email }
         };
-        setToken(token);
-        setUser(user);
+
+        // setToken(data.token); // No longer needed
+        setUser(data.user);
 
         // Trigger auth state change callbacks
         setTimeout(() => {
@@ -106,63 +357,65 @@ export const supabase = {
 
         return {
           data: {
-            user: { id: user.id, email: user.email },
+            user: { id: data.user.id, email: data.user.email },
             session
           },
           error: null
         };
+      } catch (error: any) {
+        return {
+          data: { user: null, session: null },
+          error: { message: error.message || 'Login gagal' }
+        };
       }
-      return {
-        data: { user: null, session: null },
-        error: { message: 'Email atau password salah' }
-      };
     },
 
     signUp: async ({ email, password, options }: { email: string; password: string; options?: any }) => {
-      // Check if user already exists
-      const existing = mockData.users.find(u => u.email === email);
-      if (existing) {
+      try {
+        const data = await apiRequest('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            email,
+            password,
+            fullName: options?.data?.full_name,
+            prodiId: options?.data?.prodiId
+          }),
+        });
+
+        return {
+          data: {
+            user: { id: data.user.id, email: data.user.email },
+            session: null
+          },
+          error: null
+        };
+      } catch (error: any) {
         return {
           data: { user: null, session: null },
-          error: { message: 'Email sudah terdaftar' }
+          error: { message: error.message || 'Registrasi gagal' }
         };
       }
-
-      const newUser = {
-        id: String(mockData.users.length + 1),
-        email,
-        role: 'mahasiswa',
-        profile: {
-          nama_lengkap: options?.data?.full_name || 'User Baru',
-          nip: ''
-        }
-      };
-      mockData.users.push(newUser);
-
-      // Don't auto-login after signup, just return success
-      return {
-        data: {
-          user: { id: newUser.id, email: newUser.email },
-          session: null // Supabase doesn't auto-login on signup
-        },
-        error: null
-      };
     },
 
     signOut: async () => {
-      clearToken();
-      localStorage.removeItem('user');
-      return { error: null };
+      try {
+        await apiRequest('/auth/logout', { method: 'POST' });
+        clearToken();
+        return { error: null };
+      } catch (error) {
+        clearToken();
+        return { error: null };
+      }
     },
 
     getSession: async () => {
-      const token = getToken();
+      // const token = getToken();
       const user = getUser();
-      if (token && user) {
+      if (user) {
         return {
           data: {
             session: {
-              access_token: token,
+              access_token: 'cookie',
               user: { id: user.id, email: user.email }
             }
           },
@@ -173,21 +426,20 @@ export const supabase = {
     },
 
     getUser: async () => {
-      const user = getUser();
-      if (user) {
+      try {
+        const data = await apiRequest('/auth/me');
         return {
-          data: { user: { id: user.id, email: user.email } },
+          data: { user: data.user },
           error: null
         };
+      } catch (error) {
+        return { data: { user: null }, error: null };
       }
-      return { data: { user: null }, error: null };
     },
 
     onAuthStateChange: (callback: (event: string, session: any) => void) => {
-      // Register callback
       authCallbacks.push(callback);
 
-      // Return subscription object with unsubscribe
       return {
         data: {
           subscription: {
@@ -206,40 +458,56 @@ export const supabase = {
 
   from: (table: string) => ({
     select: (columns = '*') => {
+      // Map table names to API endpoints
+      const tableMap: Record<string, string> = {
+        'profiles': 'auth/me',
+        'cpl': 'cpl',
+        'mata_kuliah': 'mata-kuliah',
+        'mataKuliah': 'mata-kuliah',
+        'users': 'users',
+        'nilai_cpl': 'nilai-cpl'
+      };
+
+      const endpoint = tableMap[table] || table;
+
       const queryBuilder = {
         eq: (column: string, value: any) => ({
           ...queryBuilder,
           single: async () => {
-            const data = (mockData as any)[table];
-            if (!data) return { data: null, error: null };
-            const result = data.find((item: any) => item[column] === value);
-            return { data: result || null, error: null };
-          }
-        }),
-        not: (column: string, op: string, value: any) => ({
-          ...queryBuilder,
-          then: async (resolve: any) => {
-            const data = (mockData as any)[table] || [];
-            const filtered = data.filter((item: any) => item[column] !== value);
-            resolve({ data: filtered, error: null });
+            try {
+              // Special handling for profiles
+              if (table === 'profiles') {
+                const data = await apiRequest('/auth/me');
+                return { data: data.user?.profile || null, error: null };
+              }
+
+              const data = await apiRequest(`/${endpoint}/${value}`);
+              return { data: data.data, error: null };
+            } catch (error: any) {
+              return { data: null, error };
+            }
           }
         }),
         order: (column: string, options?: { ascending?: boolean }) => ({
           ...queryBuilder,
           then: async (resolve: any) => {
-            const data = [...((mockData as any)[table] || [])];
-            data.sort((a, b) => {
-              if (options?.ascending === false) return b[column] > a[column] ? 1 : -1;
-              return a[column] > b[column] ? 1 : -1;
-            });
-            resolve({ data, error: null });
+            try {
+              const data = await apiRequest(`/${endpoint}`);
+              resolve({ data: data.data || [], error: null });
+            } catch (error: any) {
+              resolve({ data: [], error });
+            }
           }
         }),
         data: null,
         error: null,
         then: async (resolve: any) => {
-          const data = (mockData as any)[table] || [];
-          resolve({ data, error: null });
+          try {
+            const data = await apiRequest(`/${endpoint}`);
+            resolve({ data: data.data || [], error: null });
+          } catch (error: any) {
+            resolve({ data: [], error });
+          }
         }
       };
       return queryBuilder;
@@ -249,13 +517,15 @@ export const supabase = {
       const result = {
         select: () => ({
           single: async () => {
-            const data = (mockData as any)[table];
-            if (data) {
-              const newItem = { id: String(data.length + 1), ...values };
-              data.push(newItem);
-              return { data: newItem, error: null };
+            try {
+              const data = await apiRequest(`/${table}`, {
+                method: 'POST',
+                body: JSON.stringify(values),
+              });
+              return { data: data.data, error: null };
+            } catch (error: any) {
+              return { data: null, error };
             }
-            return { data: null, error: null };
           }
         }),
         error: null
@@ -268,15 +538,15 @@ export const supabase = {
         const result = {
           select: () => ({
             single: async () => {
-              const data = (mockData as any)[table];
-              if (data) {
-                const index = data.findIndex((item: any) => item[column] === value);
-                if (index !== -1) {
-                  data[index] = { ...data[index], ...values };
-                  return { data: data[index], error: null };
-                }
+              try {
+                const data = await apiRequest(`/${table}/${value}`, {
+                  method: 'PUT',
+                  body: JSON.stringify(values),
+                });
+                return { data: data.data, error: null };
+              } catch (error: any) {
+                return { data: null, error };
               }
-              return { data: null, error: null };
             }
           }),
           error: null
@@ -288,14 +558,12 @@ export const supabase = {
     delete: () => ({
       eq: (column: string, value: any) => {
         const promise = async () => {
-          const data = (mockData as any)[table];
-          if (data) {
-            const index = data.findIndex((item: any) => item[column] === value);
-            if (index !== -1) {
-              data.splice(index, 1);
-            }
+          try {
+            await apiRequest(`/${table}/${value}`, { method: 'DELETE' });
+            return { error: null };
+          } catch (error: any) {
+            return { error };
           }
-          return { error: null };
         };
         return Object.assign(promise(), {
           then: (resolve: any) => promise().then(resolve)
@@ -305,5 +573,4 @@ export const supabase = {
   })
 };
 
-// Export for compatibility
 export default supabase;

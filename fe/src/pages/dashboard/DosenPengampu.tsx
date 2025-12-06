@@ -1,210 +1,35 @@
-import { useState, useEffect } from "react";
-import { DashboardPage } from "@/components/DashboardLayout";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "sonner";
-import { Loader2, Plus, Trash2, UserPlus } from "lucide-react";
-import { api, fetchKelas, fetchProdiList, fetchSemesters, fetchFakultasList } from "@/lib/api-client";
-
-interface MataKuliah {
-    id: string;
-    kodeMk: string;
-    namaMk: string;
-    sks: number;
-    semester: number;
-    programStudi: string;
-}
-
-interface Dosen {
-    id: string;
-    email: string;
-    profile: {
-        namaLengkap: string;
-        nip: string;
-        nidn: string;
-    };
-}
-
-interface Pengampu {
-    id: string;
-    dosenId: string;
-    mataKuliahId: string;
-    dosen: {
-        userId: string;
-        namaLengkap: string;
-        nip: string;
-        nidn: string;
-        user: {
-            email: string;
-        };
-    };
-    kelas?: {
-        id: string;
-        nama: string;
-    };
-}
+import { Loader2, Trash2, UserPlus } from "lucide-react";
+import { useDosenPengampu } from "@/hooks/useDosenPengampu";
 
 const DosenPengampuPage = () => {
-    const [mataKuliahList, setMataKuliahList] = useState<MataKuliah[]>([]);
-    const [dosenList, setDosenList] = useState<Dosen[]>([]);
-    const [selectedMk, setSelectedMk] = useState<string>("");
-    const [pengampuList, setPengampuList] = useState<Pengampu[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [loadingPengampu, setLoadingPengampu] = useState(false);
-    const [selectedDosen, setSelectedDosen] = useState<string>("");
-    const [adding, setAdding] = useState(false);
-    const [kelasList, setKelasList] = useState<any[]>([]);
-    const [selectedKelas, setSelectedKelas] = useState<string>("");
-    const [fakultasList, setFakultasList] = useState<any[]>([]);
-    const [prodiList, setProdiList] = useState<any[]>([]);
-    const [semesterList, setSemesterList] = useState<any[]>([]);
-    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
-    const [selectedProdi, setSelectedProdi] = useState<string>("all");
-    const [selectedSemester, setSelectedSemester] = useState<string>("all");
-
-    useEffect(() => {
-        fetchInitialData();
-    }, []);
-
-    useEffect(() => {
-        if (selectedMk) {
-            fetchPengampu(selectedMk);
-        } else {
-            setPengampuList([]);
-        }
-    }, [selectedMk]);
-
-    useEffect(() => {
-        fetchMataKuliah();
-    }, [selectedProdi, selectedSemester]);
-
-    useEffect(() => {
-        fetchProdi();
-    }, [selectedFakultas]);
-
-    const fetchInitialData = async () => {
-        try {
-            setLoading(true);
-            const [dosenRes, kelasRes, semesterRes, fakultasRes] = await Promise.all([
-                api.get('/users?role=dosen&limit=-1'),
-                fetchKelas(),
-                fetchSemesters(),
-                fetchFakultasList()
-            ]);
-
-            setDosenList(dosenRes.data || []);
-            setKelasList(kelasRes.data || []);
-            setSemesterList(semesterRes.data || []);
-            setFakultasList(fakultasRes.data || []);
-
-            // Initial fetch for Prodi (all)
-            fetchProdi();
-
-            // Initial fetch for MK
-            fetchMataKuliah();
-        } catch (error) {
-            console.error("Error fetching initial data:", error);
-            toast.error("Gagal memuat data");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchProdi = async () => {
-        try {
-            const fakultasId = selectedFakultas !== 'all' ? selectedFakultas : undefined;
-            const res = await fetchProdiList(fakultasId);
-            setProdiList(res.data || []);
-
-            // Reset selected Prodi if not in new list
-            if (selectedProdi !== 'all') {
-                const exists = (res.data || []).find((p: any) => p.id === selectedProdi);
-                if (!exists) setSelectedProdi("all");
-            }
-        } catch (error) {
-            console.error("Error fetching prodi:", error);
-        }
-    };
-
-    const fetchMataKuliah = async () => {
-        try {
-            const params: any = {};
-            if (selectedProdi && selectedProdi !== 'all') params.prodiId = selectedProdi;
-            if (selectedSemester && selectedSemester !== 'all') params.semester = selectedSemester;
-
-            const mkRes = await api.get('/mata-kuliah', { params });
-            setMataKuliahList(mkRes.data || []);
-
-            // Reset selected MK if it's not in the new list
-            if (selectedMk) {
-                const exists = (mkRes.data || []).find((mk: any) => mk.id === selectedMk);
-                if (!exists) setSelectedMk("");
-            }
-        } catch (error) {
-            console.error("Error fetching mata kuliah:", error);
-        }
-    };
-
-    const fetchPengampu = async (mkId: string) => {
-        try {
-            setLoadingPengampu(true);
-            const response = await api.get(`/mata-kuliah-pengampu/mata-kuliah/${mkId}`);
-            setPengampuList(response.data || []);
-        } catch (error) {
-            console.error("Error fetching pengampu:", error);
-            toast.error("Gagal memuat data pengampu");
-        } finally {
-            setLoadingPengampu(false);
-        }
-    };
-
-    const handleAddPengampu = async () => {
-        if (!selectedMk || !selectedDosen) {
-            toast.error("Pilih mata kuliah dan dosen terlebih dahulu");
-            return;
-        }
-
-        // Check if already assigned
-        // Check if already assigned
-        if (pengampuList.some(p => p.dosenId === selectedDosen)) {
-            toast.error("Dosen sudah menjadi pengampu mata kuliah ini");
-            return;
-        }
-
-        try {
-            setAdding(true);
-            await api.post('/mata-kuliah-pengampu', {
-                mataKuliahId: selectedMk,
-                dosenId: selectedDosen,
-                kelasId: null
-            });
-
-            toast.success("Berhasil menambahkan dosen pengampu");
-            fetchPengampu(selectedMk);
-            setSelectedDosen("");
-            setSelectedKelas("");
-        } catch (error: any) {
-            console.error("Error adding pengampu:", error);
-            toast.error(error.message || "Gagal menambahkan pengampu");
-        } finally {
-            setAdding(false);
-        }
-    };
-
-    const handleDeletePengampu = async (id: string) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus pengampu ini?")) return;
-
-        try {
-            await api.delete(`/mata-kuliah-pengampu/${id}`);
-            toast.success("Pengampu berhasil dihapus");
-            fetchPengampu(selectedMk);
-        } catch (error) {
-            console.error("Error deleting pengampu:", error);
-            toast.error("Gagal menghapus pengampu");
-        }
-    };
+    const {
+        mataKuliahList,
+        dosenList,
+        pengampuList,
+        fakultasList,
+        prodiList,
+        semesterList,
+        loading,
+        loadingPengampu,
+        adding,
+        selectedFakultas,
+        selectedProdi,
+        selectedSemester,
+        selectedMk,
+        selectedDosen,
+        setSelectedFakultas,
+        setSelectedProdi,
+        setSelectedSemester,
+        setSelectedMk,
+        setSelectedDosen,
+        handleAddPengampu,
+        handleDeletePengampu
+    } = useDosenPengampu();
 
     if (loading) {
         return (

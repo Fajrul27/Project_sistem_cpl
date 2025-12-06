@@ -1,4 +1,4 @@
-import { DashboardPage } from "@/components/DashboardLayout";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -22,7 +22,7 @@ export default function TestNavbar() {
             <p className="text-lg">
               ✅ Jika Anda melihat halaman ini dengan navbar yang baru, berarti berhasil!
             </p>
-            
+
             <div className="bg-muted p-4 rounded-lg">
               <h3 className="font-semibold mb-2">Cek Navbar Anda:</h3>
               <ul className="list-disc list-inside space-y-1 text-sm">

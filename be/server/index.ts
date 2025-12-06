@@ -12,7 +12,6 @@ const PORT = process.env.PORT || 3000;
 console.log('Environment:', process.env.NODE_ENV);
 
 // Middleware
-// Middleware
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:8081',
@@ -53,74 +52,10 @@ app.get('/health', (req, res) => {
 });
 
 // Import routes
-import authRoutes from './routes/auth.js';
-import cplRoutes from './routes/cpl.js';
-import cplMappingRoutes from './routes/cpl-mapping.js';
-import mataKuliahRoutes from './routes/mata-kuliah.js';
-import dashboardRoutes from './routes/dashboard.js';
-import usersRoutes from './routes/users.js';
-import nilaiCplRoutes from './routes/nilai-cpl.js';
-import profileRoutes from './routes/profile.js';
-import transkripCplRoutes from './routes/transkrip-cpl.js';
-import transkripCpmkRoutes from './routes/transkrip-cpmk.js';
-import cpmkRoutes from './routes/cpmk.js';
-import cpmkMappingRoutes from './routes/cpmk-mapping.js';
-import teknikPenilaianRoutes from './routes/teknik-penilaian.js';
-import nilaiTeknikRoutes from './routes/nilai-teknik.js';
-import settingsRoutes from './routes/settings.js';
-import mataKuliahPengampuRoutes from './routes/mata-kuliah-pengampu.js';
-import kaprodiDataRoutes from './routes/kaprodi-data.js';
-import fakultasRoutes from './routes/fakultas.js';
-import prodiRoutes from './routes/prodi.js';
-import kurikulumRoutes from './routes/kurikulum.js';
-import jenisMataKuliahRoutes from './routes/jenis-mata-kuliah.js';
-import kategoriCplRoutes from './routes/kategori-cpl.js';
-import levelTaksonomiRoutes from './routes/level-taksonomi.js';
-import teknikPenilaianRefRoutes from './routes/teknik-penilaian-ref.js';
-import referencesRoutes from './routes/references.js';
-import rubrikRoutes from './routes/rubrik.js';
-import evaluasiRoutes from './routes/evaluasi.js';
-import angkatanRoutes from './routes/angkatan.js';
-import visiMisiRoutes from './routes/visi-misi.js';
-import profilLulusanRoutes from './routes/profil-lulusan.js';
-import kuesionerRoutes from './routes/kuesioner.js';
-import subCpmkRoutes from './routes/sub-cpmk.js';
-import transkripProfilRoutes from './routes/transkrip-profil.js';
+import routes from './routes/index.js';
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/cpl', cplRoutes);
-app.use('/api/cpl-mata-kuliah', cplMappingRoutes);
-app.use('/api/mata-kuliah', mataKuliahRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/nilai-cpl', nilaiCplRoutes);
-app.use('/api/profiles', profileRoutes);
-app.use('/api/transkrip-cpl', transkripCplRoutes);
-app.use('/api/transkrip-cpmk', transkripCpmkRoutes);
-app.use('/api/cpmk', cpmkRoutes);
-app.use('/api/cpmk-mapping', cpmkMappingRoutes);
-app.use('/api/teknik-penilaian', teknikPenilaianRoutes);
-app.use('/api/nilai-teknik', nilaiTeknikRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/mata-kuliah-pengampu', mataKuliahPengampuRoutes);
-app.use('/api/kaprodi-data', kaprodiDataRoutes);
-app.use('/api/fakultas', fakultasRoutes);
-app.use('/api/prodi', prodiRoutes);
-app.use('/api/kurikulum', kurikulumRoutes);
-app.use('/api/jenis-mata-kuliah', jenisMataKuliahRoutes);
-app.use('/api/kategori-cpl', kategoriCplRoutes);
-app.use('/api/level-taksonomi', levelTaksonomiRoutes);
-app.use('/api/teknik-penilaian-ref', teknikPenilaianRefRoutes);
-app.use('/api/references', referencesRoutes);
-app.use('/api/rubrik', rubrikRoutes);
-app.use('/api/evaluasi', evaluasiRoutes);
-app.use('/api/angkatan', angkatanRoutes);
-app.use('/api/visi-misi', visiMisiRoutes);
-app.use('/api/profil-lulusan', profilLulusanRoutes);
-app.use('/api/kuesioner', kuesionerRoutes);
-app.use('/api/sub-cpmk', subCpmkRoutes);
-app.use('/api/transkrip-profil', transkripProfilRoutes);
+app.use('/api', routes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -133,6 +68,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // Start server
 app.listen(Number(PORT), '0.0.0.0', () => {
+  console.log('Force Restart 3: Crash Fixed');
   console.log('');
   console.log('🚀 Server running on http://localhost:' + PORT);
   console.log('📊 Database: MySQL + Prisma');

@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { api } from "@/lib/api-client";
+import { api } from "@/lib/api";
 
 interface TaxonomyLevel {
     value: string;
@@ -69,7 +69,7 @@ export function MultiTaxonomySelect({ value, onChange }: MultiTaxonomySelectProp
 
     return (
         <div className="space-y-2">
-            <Popover open={open} onOpenChange={setOpen}>
+            <Popover open={open} onOpenChange={setOpen} modal={true}>
                 <PopoverTrigger asChild>
                     <Button
                         variant="outline"
@@ -83,9 +83,12 @@ export function MultiTaxonomySelect({ value, onChange }: MultiTaxonomySelectProp
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[300px] p-0" align="start">
-                    <Command>
-                        <CommandInput placeholder="Cari level..." />
-                        <CommandList>
+                    <Command className="overflow-visible">
+                        <CommandInput
+                            placeholder="Cari level..."
+                            className="focus:ring-0 focus:border-none focus:outline-none ring-0 border-none"
+                        />
+                        <CommandList className="max-h-[200px] overflow-y-auto pointer-events-auto">
                             {loading ? (
                                 <div className="py-6 text-center text-sm text-muted-foreground flex justify-center items-center">
                                     <Loader2 className="h-4 w-4 animate-spin mr-2" />

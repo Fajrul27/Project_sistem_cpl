@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { fetchRubrik } from "@/lib/api-client";
+import { fetchRubrik } from "@/lib/api";
 import { Calculator, Check, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 

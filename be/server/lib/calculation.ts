@@ -178,6 +178,8 @@ export async function calculateNilaiCplFromCpmk(
     tahunAjaran: string
 ) {
     try {
+        console.log(`[CPL Calc] Starting for mahasiswa=${mahasiswaId}, mk=${mataKuliahId}, sem=${semester}, ta=${tahunAjaran}`);
+
         // Get all CPMK for this mata kuliah
         const cpmkList = await prisma.cpmk.findMany({
             where: { mataKuliahId },
@@ -193,12 +195,19 @@ export async function calculateNilaiCplFromCpmk(
             }
         });
 
+        console.log(`[CPL Calc] Found ${cpmkList.length} CPMK for this MK`);
+
         // Group by CPL
         const cplNilaiMap = new Map<string, Array<{ nilai: number; bobot: number }>>();
 
         for (const cpmk of cpmkList) {
             const nilaiCpmk = cpmk.nilaiCpmk[0];
-            if (!nilaiCpmk) continue; // Skip if no nilai yet
+            console.log(`[CPL Calc] CPMK ${cpmk.kodeCpmk}: nilai=${nilaiCpmk?.nilaiAkhir}, mappings=${cpmk.cplMappings.length}`);
+
+            if (!nilaiCpmk) {
+                console.log(`[CPL Calc] Skipping ${cpmk.kodeCpmk} - no nilai CPMK found`);
+                continue; // Skip if no nilai yet
+            }
 
             for (const mapping of cpmk.cplMappings) {
                 if (!cplNilaiMap.has(mapping.cplId)) {
@@ -209,8 +218,11 @@ export async function calculateNilaiCplFromCpmk(
                     nilai: Number(nilaiCpmk.nilaiAkhir),
                     bobot: Number(mapping.bobotPersentase)
                 });
+                console.log(`[CPL Calc] Mapped to CPL ${mapping.cplId}: nilai=${nilaiCpmk.nilaiAkhir}, bobot=${mapping.bobotPersentase}`);
             }
         }
+
+        console.log(`[CPL Calc] Total CPLs to calculate: ${cplNilaiMap.size}`);
 
         // Calculate and upsert nilai CPL for each CPL
         for (const [cplId, nilaiArray] of cplNilaiMap.entries()) {
@@ -223,7 +235,9 @@ export async function calculateNilaiCplFromCpmk(
                 ? nilaiArray.reduce((sum, n) => sum + (n.nilai * n.bobot), 0) / totalBobot
                 : 0;
 
-            await prisma.nilaiCpl.upsert({
+            console.log(`[CPL Calc] CPL ${cplId}: totalBobot=${totalBobot}, weightedAvg=${totalWeighted}`);
+
+            const result = await prisma.nilaiCpl.upsert({
                 where: {
                     mahasiswaId_cplId_mataKuliahId_semester_tahunAjaran: {
                         mahasiswaId,
@@ -246,9 +260,20 @@ export async function calculateNilaiCplFromCpmk(
                     tahunAjaran
                 }
             });
+            console.log(`[CPL Calc] Successfully saved NilaiCPL id=${result.id}`);
+
+            // Verify data was actually saved
+            const verify = await prisma.nilaiCpl.findUnique({ where: { id: result.id } });
+            if (verify) {
+                console.log(`[CPL Calc] ✓ VERIFIED: Record exists in database`);
+            } else {
+                console.error(`[CPL Calc] ✗ ERROR: Record NOT FOUND after save! This should never happen!`);
+            }
         }
+
+        console.log(`[CPL Calc] Completed successfully`);
     } catch (error) {
-        console.error('Calculate nilai CPL from CPMK error:', error);
+        console.error('[CPL Calc] ERROR:', error);
         // Don't throw, just log
     }
 }

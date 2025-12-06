@@ -6,7 +6,7 @@
   "main": "server/index.ts",
   "scripts": {
     "dev": "tsx watch server/index.ts",
-    "start": "tsx server/index.ts",
+    "start": "node dist/server/index.js",
     "server": "npm run dev",
     "build": "tsc",
     "prisma:generate": "prisma generate",

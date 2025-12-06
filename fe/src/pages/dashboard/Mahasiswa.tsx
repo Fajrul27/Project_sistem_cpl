@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { fetchMahasiswaList, fetchMataKuliahPengampu, fetchFakultasList, api, getUser, fetchTranskripCPL } from "@/lib/api-client";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -10,754 +9,567 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { toast } from "sonner";
-import { Search, Eye, TrendingUp, SlidersHorizontal } from "lucide-react";
-import { DashboardPage } from "@/components/DashboardLayout";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-
-interface Profile {
-  id: string;
-  full_name: string;
-  nim: string | null;
-  prodi: string | null;
-  semester: number | null;
-  fakultasId: string | null;
-  fakultasName: string | null;
-  kelasName: string | null;
-}
-
-interface Fakultas {
-  id: string;
-  nama: string;
-  kode: string;
-}
-
-interface StudentProgress {
-  avgScore: number;
-  totalCPL: number;
-  completedCPL: number;
-  cplDetails: { kode: string; nilai: number; status?: string }[];
-}
-
-interface User {
-  id: string;
-  profile?: {
-    nim: string | null;
-    namaLengkap: string | null;
-    prodi?: { nama: string; fakultasId?: string; fakultas?: { nama: string } };
-    programStudi?: string;
-    semester: number | null;
-    kelasRef?: { nama: string };
-  };
-}
-
-interface TranskripItem {
-  cpl?: { kodeCpl: string };
-  nilaiAkhir: string;
-  status?: string;
-}
-
-interface MataKuliah {
-  id: string;
-  kodeMk: string;
-  namaMk: string;
-  semester: number;
-  prodi?: { nama: string };
-}
-
-interface MataKuliahPengampu {
-  id: string;
-  mataKuliahId: string;
-  dosenId: string;
-  isPengampu: boolean;
-  mataKuliah: MataKuliah;
-}
+import { Search, TrendingUp, SlidersHorizontal, Loader2 } from "lucide-react";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useMahasiswa, Profile } from "@/hooks/useMahasiswa";
 
 const MahasiswaPage = () => {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [semesterFilter, setSemesterFilter] = useState<string>("all");
-  const [prodiFilter, setProdiFilter] = useState<string>("all");
-  const [kelasFilter, setKelasFilter] = useState<string>("all");
-  const [fakultasFilter, setFakultasFilter] = useState<string>("all");
-  const [fakultasList, setFakultasList] = useState<Fakultas[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
-  const [studentProgress, setStudentProgress] = useState<StudentProgress | null>(null);
-  const [progressLoading, setProgressLoading] = useState(false);
+  const {
+    profiles,
+    fakultasList,
+    loading,
+    filters,
+    uniqueOptions,
+    studentProgress,
+    selectedStudent,
+    progressLoading,
+    currentUser,
+    setSearchTerm,
+    setSemesterFilter,
+    setProdiFilter,
+    setKelasFilter,
+    setFakultasFilter,
+    setSelectedStudent,
+    initializeData,
+    loadFakultas,
+    fetchStudentProgressData,
+    pagination
+  } = useMahasiswa();
+
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [mataKuliahList, setMataKuliahList] = useState<MataKuliahPengampu[]>([]);
-  const [selectedMataKuliah, setSelectedMataKuliah] = useState<string>("");
-  const [userRole, setUserRole] = useState<string>("");
-  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Local state for debounced search
+  const [localSearch, setLocalSearch] = useState(filters.searchTerm);
 
   useEffect(() => {
     initializeData();
     loadFakultas();
-  }, []);
+  }, [initializeData, loadFakultas]);
 
-  const loadFakultas = async () => {
-    try {
-      const response = await fetchFakultasList();
-      setFakultasList(response.data || []);
-    } catch (error) {
-      console.error("Failed to load fakultas", error);
+  // Sync local search with debounce
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchTerm(localSearch);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [localSearch, setSearchTerm]);
+
+  // Sync filter change from outside (reset button)
+  useEffect(() => {
+    if (filters.searchTerm !== localSearch && filters.searchTerm === "") {
+      setLocalSearch("");
     }
-  };
+  }, [filters.searchTerm]);
 
-  const initializeData = async () => {
-    const user = getUser();
-    if (user) {
-      setCurrentUser(user);
-      setUserRole(user.role || "");
-
-      // If user is dosen, fetch mata kuliah yang diampu
-      if (user.role === 'dosen') {
-        await fetchMataKuliahForDosen(user.id);
-      } else {
-        // For other roles, fetch all mahasiswa
-        await fetchProfiles();
-      }
-    } else {
-      // Fallback: fetch all mahasiswa
-      await fetchProfiles();
-    }
-  };
-
-  const fetchProfilesForAllMataKuliah = async () => {
-    try {
-      const response = await fetchMahasiswaList({ limit: -1 });
-      const users = response?.data || [];
-
-      const mappedProfiles: Profile[] = users
-        .filter((user: User) => user.profile && user.profile.nim)
-        .map((user: User) => ({
-          id: user.id,
-          full_name: user.profile.namaLengkap || "",
-          nim: user.profile.nim,
-          prodi: user.profile.prodi?.nama || user.profile.programStudi,
-          semester: user.profile.semester,
-          fakultasId: user.profile.prodi?.fakultasId || null,
-          fakultasName: user.profile.prodi?.fakultas?.nama || null,
-          kelasName: user.profile.kelasRef?.nama || null,
-        }));
-
-      setProfiles(mappedProfiles);
-    } catch (error: any) {
-      toast.error("Gagal memuat data mahasiswa");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMataKuliahForDosen = async (dosenId: string) => {
-    try {
-      const response = await fetchMataKuliahPengampu(dosenId);
-      const mataKuliahData = response?.data || [];
-      setMataKuliahList(mataKuliahData);
-
-      // Auto-select "all" if available
-      if (mataKuliahData.length > 0) {
-        setSelectedMataKuliah("all");
-        await fetchProfilesForAllMataKuliah();
-      } else {
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Error fetching mata kuliah:', error);
-      toast.error("Gagal memuat data mata kuliah");
-      setLoading(false);
-    }
-  };
-
-  const fetchProfiles = async (mataKuliahId?: string) => {
-    try {
-      // Ambil daftar mahasiswa dari backend: /api/users?role=mahasiswa
-      const params: any = { limit: -1 };
-      if (mataKuliahId) {
-        params.mataKuliahId = mataKuliahId;
-      }
-
-      const response = await fetchMahasiswaList(params);
-      const users = response?.data || [];
-
-      const mappedProfiles: Profile[] = users
-        .filter((user: User) => user.profile && user.profile.nim)
-        .map((user: User) => ({
-          id: user.id, // Use User ID, not Profile ID
-          full_name: user.profile.namaLengkap || "",
-          nim: user.profile.nim,
-          prodi: user.profile.prodi?.nama || user.profile.programStudi,
-          semester: user.profile.semester,
-          fakultasId: user.profile.prodi?.fakultasId || null,
-          fakultasName: user.profile.prodi?.fakultas?.nama || null,
-          kelasName: user.profile.kelasRef?.nama || null,
-        }));
-
-      setProfiles(mappedProfiles);
-    } catch (error: any) {
-      toast.error("Gagal memuat data mahasiswa");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStudentProgress = async (studentId: string) => {
-    setProgressLoading(true);
-    try {
-      // Fetch student's transkrip CPL from backend
-      const result = await fetchTranskripCPL(studentId);
-      const transkripList = result.data || [];
-
-      // Fetch total CPL count
-      const cplResult = await api.get('/cpl');
-      const totalCPL = cplResult.data?.length || 0;
-
-      if (transkripList.length > 0) {
-        // Map to cplDetails
-        const cplDetails = transkripList.map((item: TranskripItem) => ({
-          kode: item.cpl?.kodeCpl || "Unknown",
-          nilai: parseFloat(item.nilaiAkhir) || 0,
-          status: item.status || 'belum_tercapai'
-        }));
-
-        const avgScore =
-          cplDetails.reduce((sum: number, item: { nilai: number }) => sum + item.nilai, 0) / cplDetails.length;
-        const completedCPL = cplDetails.filter((item: { status?: string }) => item.status === 'tercapai').length;
-
-        setStudentProgress({
-          avgScore: parseFloat(avgScore.toFixed(2)),
-          totalCPL,
-          completedCPL,
-          cplDetails,
-        });
-      } else {
-        setStudentProgress({
-          avgScore: 0,
-          totalCPL,
-          completedCPL: 0,
-          cplDetails: [],
-        });
-      }
-    } catch (error: any) {
-      console.error('Error fetching student progress:', error);
-      toast.error("Gagal memuat progress mahasiswa");
-    } finally {
-      setProgressLoading(false);
-    }
-  };
-
-  const handleMataKuliahChange = (value: string) => {
-    setSelectedMataKuliah(value);
-    if (value === "all") {
-      fetchProfilesForAllMataKuliah();
-    } else {
-      fetchProfiles(value);
-    }
-  };
-
-  const handleViewProgress = (student: Profile) => {
+  const handleShowProgress = async (student: Profile) => {
     setSelectedStudent(student);
     setDialogOpen(true);
-    fetchStudentProgress(student.id);
+    if (student.id) {
+      await fetchStudentProgressData(student.id);
+    }
   };
 
-  const semesterOptions = Array.from(
-    new Set(profiles.map((p) => p.semester).filter((s) => s !== null && s !== undefined))
-  ).sort((a, b) => Number(a) - Number(b));
+  const getSemesterBadgeColor = (semester: number | null) => {
+    if (!semester) return "bg-gray-500";
+    if (semester <= 2) return "bg-green-500";
+    if (semester <= 4) return "bg-blue-500";
+    if (semester <= 6) return "bg-yellow-500";
+    return "bg-red-500";
+  };
 
-  // Filter prodi options based on selected fakultas
-  const prodiOptions = Array.from(
-    new Set(
-      profiles
-        .filter(p => fakultasFilter === "all" || p.fakultasId === fakultasFilter)
-        .map((p) => p.prodi)
-        .filter((p): p is string => !!p && p.trim() !== "")
-    )
-  );
+  const hasActiveFilter =
+    filters.semesterFilter !== "all" ||
+    filters.prodiFilter !== "all" ||
+    filters.kelasFilter !== "all" ||
+    filters.fakultasFilter !== "all";
 
-  const kelasOptions = Array.from(
-    new Set(
-      profiles
-        .filter(p =>
-          (fakultasFilter === "all" || p.fakultasId === fakultasFilter) &&
-          (prodiFilter === "all" || p.prodi === prodiFilter) &&
-          (semesterFilter === "all" || (p.semester !== null && String(p.semester) === semesterFilter))
-        )
-        .map((p) => p.kelasName)
-        .filter((k): k is string => !!k && k.trim() !== "")
-    )
-  ).sort();
-
-  const filteredProfiles = profiles.filter((profile) => {
-    const q = searchTerm.toLowerCase();
-    const matchSearch =
-      profile.full_name.toLowerCase().includes(q) ||
-      (profile.nim || "").toLowerCase().includes(q) ||
-      (profile.prodi || "").toLowerCase().includes(q);
-
-    const matchSemester =
-      semesterFilter === "all" ||
-      (profile.semester !== null && profile.semester !== undefined && String(profile.semester) === semesterFilter);
-
-    const matchProdi =
-      prodiFilter === "all" || profile.prodi === prodiFilter;
-
-    const matchFakultas =
-      fakultasFilter === "all" || profile.fakultasId === fakultasFilter;
-
-    const matchKelas =
-      kelasFilter === "all" || profile.kelasName === kelasFilter;
-
-    return matchSearch && matchSemester && matchProdi && matchFakultas && matchKelas;
-  });
-
-  const hasActiveFilter = semesterFilter !== "all" || prodiFilter !== "all" || fakultasFilter !== "all" || kelasFilter !== "all";
-
-  if (userRole === 'dosen' && mataKuliahList.length === 0 && !loading) {
-    return (
-      <DashboardPage title="Data Mahasiswa">
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                Tidak Ada Mata Kuliah
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Anda belum ditugaskan sebagai pengampu pada mata kuliah manapun.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </DashboardPage>
-    );
-  }
+  // Removed blocking loader
 
   return (
     <DashboardPage
       title="Data Mahasiswa"
-      description={userRole === 'dosen'
-        ? "Daftar mahasiswa yang mengikuti mata kuliah Anda"
-        : "Daftar mahasiswa terdaftar dengan progress CPL"
-      }
+      description="Monitoring data dan progress capaian pembelajaran mahasiswa"
     >
       <div className="space-y-6">
+        {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cari nama, NIM, atau prodi..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
+              placeholder="Cari nama atau NIM..."
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="pl-9 pr-8"
             />
+            {loading && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+              </div>
+            )}
           </div>
 
-          {/* Filter Button - Only Mata Kuliah for Dosen */}
-          {userRole === 'dosen' && mataKuliahList.length > 0 && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={selectedMataKuliah !== "all" ? "default" : "outline"}
-                  className="gap-2 w-[200px] justify-between"
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <SlidersHorizontal className="h-4 w-4 shrink-0" />
-                    <span className="truncate">
-                      {selectedMataKuliah === 'all' || !selectedMataKuliah
-                        ? "Filter Mata Kuliah"
-                        : mataKuliahList.find(mk => mk.mataKuliah.id === selectedMataKuliah)?.mataKuliah.namaMk || "Filter Mata Kuliah"
-                      }
-                    </span>
-                  </div>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-80 space-y-4">
-                {/* Mata Kuliah Filter */}
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium">Mata Kuliah</Label>
-                  <Select
-                    value={selectedMataKuliah}
-                    onValueChange={handleMataKuliahChange}
-                  >
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Pilih Mata Kuliah" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Mata Kuliah</SelectItem>
-                      {(() => {
-                        // Deduplicate mataKuliahList based on unique ID
-                        const uniqueMK = mataKuliahList.reduce((acc: any[], current) => {
-                          const id = current.mataKuliah?.id;
-                          if (!acc.find(item => item.mataKuliah?.id === id)) {
-                            acc.push(current);
-                          }
-                          return acc;
-                        }, []);
-
-                        return uniqueMK.map((mk: any) => (
-                          <SelectItem key={mk.mataKuliah.id} value={mk.mataKuliah.id}>
-                            {mk.mataKuliah.namaMk} (Semester {mk.mataKuliah.semester})
-                          </SelectItem>
-                        ));
-                      })()}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-
-          {/* Filter Button for Non-Dosen Roles */}
-          {userRole !== 'dosen' && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={hasActiveFilter ? "default" : "outline"}
-                  size="sm"
-                  className="gap-2"
-                  disabled={semesterOptions.length === 0 && prodiOptions.length === 0}
-                >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  <span className="hidden sm:inline">Filter</span>
-                  <span className="sm:hidden">Filter</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-72 space-y-4">
-                {/* Fakultas Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={hasActiveFilter ? "default" : "outline"}
+                className="gap-2"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                Filter
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 space-y-4">
+              {/* Fakultas Filter (Admin Only) */}
+              {currentUser?.role === 'admin' && (
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Fakultas</Label>
-                  <Select
-                    value={fakultasFilter}
-                    onValueChange={(value) => {
-                      setFakultasFilter(value);
-                      setProdiFilter("all");
-                      setKelasFilter("all");
-                    }}
-                  >
+                  <Select value={filters.fakultasFilter} onValueChange={setFakultasFilter}>
                     <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Semua fakultas" />
+                      <SelectValue placeholder="Semua Fakultas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Semua fakultas</SelectItem>
+                      <SelectItem value="all">Semua Fakultas</SelectItem>
                       {fakultasList.map((f) => (
-                        <SelectItem key={f.id} value={f.id}>
-                          {f.nama}
-                        </SelectItem>
+                        <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+              )}
 
-                {/* Program Studi Filter */}
+              {/* Prodi Filter */}
+              {currentUser?.role !== 'dosen' && (
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Program Studi</Label>
-                  <Select
-                    value={prodiFilter}
-                    onValueChange={(value) => {
-                      setProdiFilter(value);
-                      setKelasFilter("all");
-                    }}
-                    disabled={prodiOptions.length === 0}
-                  >
+                  <Select value={filters.prodiFilter} onValueChange={setProdiFilter}>
                     <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Semua prodi" />
+                      <SelectValue placeholder="Semua Prodi" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Semua prodi</SelectItem>
-                      {prodiOptions.map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {p}
-                        </SelectItem>
+                      <SelectItem value="all">Semua Prodi</SelectItem>
+                      {uniqueOptions.prodis.map((p) => (
+                        <SelectItem key={String(p)} value={String(p)}>{String(p)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+              )}
 
-                {/* Semester Filter */}
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium">Semester</Label>
-                  <Select
-                    value={semesterFilter}
-                    onValueChange={(value) => {
-                      setSemesterFilter(value);
-                      setKelasFilter("all");
-                    }}
-                  >
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Semua semester" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua semester</SelectItem>
-                      {semesterOptions.map((s) => (
-                        <SelectItem key={String(s)} value={String(s)}>
-                          Semester {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Semester Filter */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium">Semester</Label>
+                <Select value={filters.semesterFilter} onValueChange={setSemesterFilter}>
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue placeholder="Semua Semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Semester</SelectItem>
+                    {uniqueOptions.semesters.map((s) => (
+                      <SelectItem key={String(s)} value={String(s)}>Semester {String(s)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                {/* Kelas Filter */}
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium">Kelas</Label>
-                  <Select
-                    value={kelasFilter}
-                    onValueChange={(value) => setKelasFilter(value)}
-                    disabled={kelasOptions.length === 0}
-                  >
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Semua kelas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua kelas</SelectItem>
-                      {kelasOptions.map((k) => (
-                        <SelectItem key={k} value={k}>
-                          {k}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-
-              </PopoverContent>
-            </Popover>
-          )}
+              {/* Kelas Filter */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium">Kelas</Label>
+                <Select value={filters.kelasFilter} onValueChange={setKelasFilter}>
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue placeholder="Semua Kelas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Kelas</SelectItem>
+                    {uniqueOptions.kelas.map((k) => (
+                      <SelectItem key={String(k)} value={String(k)}>{String(k)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Button
             variant="outline"
             onClick={() => {
+              setLocalSearch("");
               setSemesterFilter("all");
               setProdiFilter("all");
-              setFakultasFilter("all");
               setKelasFilter("all");
-              setSearchTerm("");
-              if (userRole === 'dosen') {
-                setSelectedMataKuliah("all");
-              }
+              setFakultasFilter("all");
             }}
-            disabled={
-              !hasActiveFilter &&
-              searchTerm === "" &&
-              (userRole !== 'dosen' || selectedMataKuliah === "all")
-            }
+            disabled={!hasActiveFilter && localSearch === ""}
           >
-            Reset Filter
+            Reset
           </Button>
         </div>
 
+        {/* List Card */}
         <Card>
           <CardHeader>
             <CardTitle>Daftar Mahasiswa</CardTitle>
             <CardDescription>
-              Menampilkan {filteredProfiles.length} dari {profiles.length} mahasiswa
+              Menampilkan {profiles.length} mahasiswa terdaftar dari total {pagination?.totalItems || 0}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>NIM</TableHead>
-                  <TableHead>Nama Lengkap</TableHead>
-                  <TableHead>Fakultas</TableHead>
-                  <TableHead>Program Studi</TableHead>
-                  <TableHead>Semester</TableHead>
-                  <TableHead>Kelas</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProfiles.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
-                      Tidak ada data mahasiswa
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredProfiles.map((profile) => (
-                    <TableRow key={profile.id}>
-                      <TableCell className="font-medium">{profile.nim || "-"}</TableCell>
-                      <TableCell>{profile.full_name}</TableCell>
-                      <TableCell>{profile.fakultasName || "-"}</TableCell>
-                      <TableCell>
-                        {profile.prodi || "-"}
-                      </TableCell>
-                      <TableCell>
-                        {profile.semester ? `Semester ${profile.semester}` : "-"}
-                      </TableCell>
-                      <TableCell>{profile.kelasName || "-"}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleViewProgress(profile)}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Progress
-                        </Button>
-                      </TableCell>
+            {loading && profiles.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-64 gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">Memuat data mahasiswa...</p>
+              </div>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">No</TableHead>
+                      <TableHead>Nama Lengkap</TableHead>
+                      <TableHead>NIM</TableHead>
+                      <TableHead>Prodi</TableHead>
+                      <TableHead>Kelas</TableHead>
+                      <TableHead>Semester</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
-                  ))
+                  </TableHeader>
+                  <TableBody className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
+                    {profiles.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          Tidak ada data mahasiswa yang cocok dengan filter
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      profiles.map((student, index) => (
+                        <TableRow key={student.id}>
+                          <TableCell>{(pagination.page - 1) * pagination.limit + index + 1}</TableCell>
+                          <TableCell className="font-medium">{student.full_name}</TableCell>
+                          <TableCell>{student.nim || "-"}</TableCell>
+                          <TableCell>{student.prodi || "-"}</TableCell>
+                          <TableCell>{student.kelasName || "-"}</TableCell>
+                          <TableCell>
+                            <Badge className={getSemesterBadgeColor(student.semester)}>
+                              Semester {student.semester || "-"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleShowProgress(student)}
+                            >
+                              <TrendingUp className="h-4 w-4 mr-2" />
+                              Progress
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+
+                {/* Pagination Controls */}
+                {pagination.totalPages > 1 && (
+                  <div className="flex items-center justify-end space-x-2 py-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => pagination.setPage(Math.max(1, pagination.page - 1))}
+                      disabled={pagination.page === 1}
+                    >
+                      Previous
+                    </Button>
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                        let p = i + 1;
+                        if (pagination.totalPages > 5 && pagination.page > 3) {
+                          p = pagination.page - 2 + i;
+                        }
+
+                        let start = Math.max(1, pagination.page - 2);
+                        if (start + 4 > pagination.totalPages) {
+                          start = Math.max(1, pagination.totalPages - 4);
+                        }
+
+                        // Recalculate p based on new logic
+                        // Wait, simpler approach: just render window directly
+                        // But sticking to the loop
+                        p = start + i;
+
+                        if (p > pagination.totalPages) return null;
+
+                        return (
+                          <Button
+                            key={p}
+                            variant={pagination.page === p ? "default" : "outline"}
+                            size="sm"
+                            className="w-8 h-8 p-0"
+                            onClick={() => pagination.setPage(p)}
+                          >
+                            {p}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1))}
+                      disabled={pagination.page === pagination.totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
                 )}
-              </TableBody>
-            </Table>
+              </>
+            )}
           </CardContent>
         </Card>
 
-        {/* Student Progress Modal */}
+        {/* Progress Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                Progress CPL - {selectedStudent?.full_name}
-              </DialogTitle>
+              <DialogTitle>Progress Capaian Pembelajaran</DialogTitle>
               <DialogDescription>
-                {selectedStudent?.nim} | {selectedStudent?.prodi}
+                Detail capaian CPL untuk {selectedStudent?.full_name} ({selectedStudent?.nim})
               </DialogDescription>
             </DialogHeader>
 
             {progressLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                <p className="text-sm text-muted-foreground">Menghitung progress...</p>
               </div>
             ) : studentProgress ? (
-              <div className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Rata-rata Nilai</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{studentProgress.avgScore.toFixed(2)}</div>
-                      <Progress value={studentProgress.avgScore} className="mt-2" />
+              <div className="space-y-6 animate-in fade-in duration-500">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 shadow-sm">
+                    <CardContent className="pt-6 pb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-primary">Rata-rata CPL</span>
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="text-3xl font-bold text-primary">
+                        {studentProgress.avgScore.toFixed(2)}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Skala 0-100</p>
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">CPL Tercapai</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">
-                        {studentProgress.completedCPL} / {studentProgress.totalCPL}
+                  <Card className="bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 shadow-sm dark:from-green-900/10 dark:to-green-900/5 dark:border-green-800">
+                    <CardContent className="pt-6 pb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-green-700 dark:text-green-400">Total CPL</span>
+                        <div className="h-4 w-4 rounded-full bg-green-500/20" />
+                      </div>
+                      <div className="text-3xl font-bold text-green-700 dark:text-green-400">
+                        {studentProgress.completedCPL} <span className="text-lg font-normal text-muted-foreground">/ {studentProgress.totalCPL}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">CPL Terpenuhi (Nilai &ge; 70)</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-sm">
+                    <CardContent className="pt-6 pb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Persentase Kelulusan</span>
+                        <div className="h-4 w-4" />
+                      </div>
+                      <div className="text-3xl font-bold">
+                        {Math.round((studentProgress.completedCPL / (studentProgress.totalCPL || 1)) * 100)}%
                       </div>
                       <Progress
-                        value={(studentProgress.completedCPL / studentProgress.totalCPL) * 100}
-                        className="mt-2"
+                        value={(studentProgress.completedCPL / (studentProgress.totalCPL || 1)) * 100}
+                        className="h-2 mt-3 bg-secondary"
                       />
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Status</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <Badge
-                        variant={studentProgress.avgScore >= 75 ? "default" : "secondary"}
-                        className="text-lg px-3 py-1"
-                      >
-                        {studentProgress.avgScore >= 75 ? "Baik" : "Perlu Peningkatan"}
-                      </Badge>
                     </CardContent>
                   </Card>
                 </div>
 
-                {studentProgress.cplDetails.length > 0 ? (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Detail Nilai per CPL</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={studentProgress.cplDetails}>
+                {/* Chart Section */}
+                <Card className="shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-base font-semibold">Grafik Pencapaian CPL</CardTitle>
+                    <CardDescription>Visualisasi nilai rata-rata per Capaian Pembelajaran Lulusan</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="h-[350px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={studentProgress.cplDetails} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                           <defs>
-                            <linearGradient id="colorCPLMhs" x1="0" y1="0" x2="0" y2="1">
+                            <linearGradient id="colorCplProgress" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" vertical={false} />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted/30" />
                           <XAxis
                             dataKey="kode"
-                            className="text-xs font-medium"
+                            fontSize={11}
                             tickLine={false}
                             axisLine={false}
                             dy={10}
+                            className="font-medium"
                           />
                           <YAxis
                             domain={[0, 100]}
-                            className="text-xs font-medium"
+                            fontSize={11}
                             tickLine={false}
                             axisLine={false}
-                            dx={-10}
+                            tickCount={6}
                           />
                           <Tooltip
-                            cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
-                            contentStyle={{
-                              backgroundColor: 'hsl(var(--card))',
-                              borderColor: 'hsl(var(--border))',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                            cursor={{ fill: 'hsl(var(--muted)/0.1)' }}
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="bg-popover border rounded-lg shadow-lg p-3 max-w-[300px] z-50">
+                                    <div className="flex items-center justify-between gap-4 mb-2">
+                                      <p className="font-bold text-sm text-foreground">{data.kode}</p>
+                                      <Badge variant={data.nilai >= 70 ? "default" : "destructive"} className="text-[10px] px-1.5 h-5">
+                                        {data.nilai >= 70 ? "Tercapai" : "Belum"}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mb-3 leading-relaxed border-b pb-2">
+                                      {data.deskripsi}
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs font-medium text-muted-foreground">Nilai Rata-rata:</span>
+                                      <span className="font-bold text-primary">{Number(data.nilai).toFixed(2)}</span>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
                             }}
-                            itemStyle={{ color: 'hsl(var(--foreground))' }}
                           />
-                          <Legend wrapperStyle={{ paddingTop: '20px' }} />
                           <Bar
                             dataKey="nilai"
-                            fill="url(#colorCPLMhs)"
-                            name="Nilai"
+                            fill="url(#colorCplProgress)"
                             radius={[6, 6, 0, 0]}
-                            barSize={40}
-                            animationDuration={2000}
-                            animationEasing="ease-out"
+                            barSize={32}
+                            animationDuration={1500}
                           />
                         </BarChart>
                       </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card>
-                    <CardContent className="py-12">
-                      <p className="text-center text-muted-foreground">
-                        Belum ada data nilai untuk mahasiswa ini
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
+                    </div>
+                  </CardContent>
+                </Card>
 
-                {studentProgress.cplDetails.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Daftar Nilai CPL</CardTitle>
+                {/* Analysis & Recommendations */}
+                {/* Analysis & Recommendations */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Strengths */}
+                  <Card className="shadow-sm border-l-4 border-l-green-500 bg-card">
+                    <CardHeader className="pb-3 border-b">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                        <div className="p-1.5 rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                          <TrendingUp className="h-4 w-4" />
+                        </div>
+                        Kompetensi Dominan (Highest)
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {studentProgress.cplDetails
-                          .sort((a, b) => b.nilai - a.nilai)
-                          .map((cpl, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-3 border rounded-lg"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Badge variant="outline">{cpl.kode}</Badge>
-                                <span className="font-medium">{cpl.nilai.toFixed(2)}</span>
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        {studentProgress.cplDetails.some(c => c.nilai >= 80) ? (
+                          studentProgress.cplDetails
+                            .filter(c => c.nilai >= 80)
+                            .sort((a, b) => b.nilai - a.nilai)
+                            .slice(0, 3)
+                            .map(c => (
+                              <div key={c.id} className="flex gap-3">
+                                <div className="flex-shrink-0 mt-0.5">
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-bold">
+                                    {c.kode}
+                                  </Badge>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-foreground">
+                                      {c.nilai.toFixed(2)}
+                                    </span>
+                                    <span className="text-[10px] uppercase tracking-wider text-green-600 font-semibold bg-green-100 px-1.5 rounded-sm">
+                                      Tercapai
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground leading-relaxed">
+                                    {c.deskripsi}
+                                  </p>
+                                </div>
                               </div>
-                              <Progress value={cpl.nilai} className="w-48" />
-                            </div>
-                          ))}
+                            ))
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                            <p className="text-sm">Tidak ada CPL dengan nilai &ge; 80.</p>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
-                )}
+
+                  {/* Improvements */}
+                  <Card className="shadow-sm border-l-4 border-l-orange-500 bg-card">
+                    <CardHeader className="pb-3 border-b">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                        <div className="p-1.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
+                          <SlidersHorizontal className="h-4 w-4" />
+                        </div>
+                        Identifikasi Kelemahan (Lowest)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        {studentProgress.cplDetails.some(c => c.nilai < 70) ? (
+                          studentProgress.cplDetails
+                            .filter(c => c.nilai < 70)
+                            .sort((a, b) => a.nilai - b.nilai) // Lowest first
+                            .slice(0, 3)
+                            .map(c => (
+                              <div key={c.id} className="flex gap-3">
+                                <div className="flex-shrink-0 mt-0.5">
+                                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 font-bold">
+                                    {c.kode}
+                                  </Badge>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-destructive">
+                                      {c.nilai.toFixed(2)}
+                                    </span>
+                                    <span className="text-[10px] uppercase tracking-wider text-orange-600 font-semibold bg-orange-100 px-1.5 rounded-sm">
+                                      Di Bawah Standar
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground leading-relaxed">
+                                    {c.deskripsi}
+                                  </p>
+                                </div>
+                              </div>
+                            ))
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground border border-dashed rounded-md bg-muted/5">
+                            <span className="text-green-600 font-medium text-sm mb-1">Status: Aman</span>
+                            <p className="text-xs">Seluruh capaian memenuhi ambang batas minimum (70.00).</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-            ) : null}
+            ) : (
+              <div className="text-center py-16 text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed">
+                <p>Belum ada data nilai CPL yang tersedia.</p>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
-      </div >
-    </DashboardPage >
+      </div>
+    </DashboardPage>
   );
 };
 

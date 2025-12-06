@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchMahasiswaList, fetchCplList, fetchMataKuliahList } from '@/lib/api-client';
+import { fetchMahasiswaList, fetchCplList, fetchMataKuliahList } from '@/lib/api';
 import { toast } from 'sonner';
 
 export function useInputNilaiData() {

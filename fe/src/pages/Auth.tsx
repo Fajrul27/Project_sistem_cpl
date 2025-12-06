@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import { supabase, fetchProdiList } from "@/lib/api-client";
+import { supabase, fetchProdiList } from "@/lib/api";
 
 // const API_URL = import.meta.env.VITE_API_URL || '/api'; // No longer needed
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,150 +7,47 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup, SelectLabel } from "../../components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
 import { Plus, Edit, Trash2, Loader2, Search, Eye, SlidersHorizontal } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
-import { DashboardPage } from "@/components/DashboardLayout";
-import { MultiTaxonomySelect } from "@/components/MultiTaxonomySelect";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
+import { MultiTaxonomySelect } from "@/components/features/MultiTaxonomySelect";
 import { Badge } from "@/components/ui/badge";
-
-import { api, fetchFakultasList, fetchProdiList, fetchMataKuliahPengampu, getUser } from "@/lib/api-client";
-
-interface MataKuliah {
-    id: string;
-    kodeMk: string;
-    namaMk: string;
-    semester: number;
-}
-
-interface Cpmk {
-    id: string;
-    kodeCpmk: string;
-    deskripsi: string | null;
-    levelTaksonomi: string | null;
-    mataKuliahId: string;
-    mataKuliah: MataKuliah;
-    cplMappings: any[];
-    teknikPenilaian: any[];
-}
+import { useCPMK, Cpmk } from "@/hooks/useCPMK";
 
 const CPMKPage = () => {
     const navigate = useNavigate();
-    const [cpmkList, setCpmkList] = useState<Cpmk[]>([]);
-    const [mataKuliahList, setMataKuliahList] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { role, profile } = useUserRole();
+    const {
+        cpmkList,
+        mataKuliahList,
+        fakultasList,
+        prodiList,
+        loading,
+        createCpmk,
+        updateCpmk,
+        deleteCpmk,
+        filters,
+        setSearchTerm,
+        setSelectedFakultas,
+        setSelectedProdi,
+        setMataKuliahFilter,
+        resetFilters,
+        pagination
+    } = useCPMK();
+
     const [submitting, setSubmitting] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingCpmk, setEditingCpmk] = useState<Cpmk | null>(null);
-    const { role } = useUserRole();
 
     const [formData, setFormData] = useState({
         kodeCpmk: "",
         deskripsi: "",
-        levelTaksonomi: [] as string[], // Array for multi-select
+        levelTaksonomi: [] as string[],
         mataKuliahId: "",
     });
-
-    const [searchTerm, setSearchTerm] = useState("");
-    const [mataKuliahFilter, setMataKuliahFilter] = useState<string>("all");
-    const [fakultasList, setFakultasList] = useState<any[]>([]);
-    const [prodiList, setProdiList] = useState<any[]>([]);
-    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
-    const [selectedProdi, setSelectedProdi] = useState<string>("all");
-
-    useEffect(() => {
-        fetchInitialData();
-    }, []);
-
-    useEffect(() => {
-        fetchProdi();
-    }, [selectedFakultas]);
-
-    useEffect(() => {
-        fetchMataKuliah();
-    }, [selectedProdi]);
-
-    useEffect(() => {
-        fetchCpmk();
-    }, [selectedFakultas, selectedProdi, mataKuliahFilter]);
-
-    const fetchInitialData = async () => {
-        try {
-            const [fakultasRes, prodiRes] = await Promise.all([
-                fetchFakultasList(),
-                fetchProdiList()
-            ]);
-            setFakultasList(fakultasRes.data || []);
-            setProdiList(prodiRes.data || []);
-
-            // If user is dosen, fetch taught courses
-            const user = getUser();
-            if (user && user.role === 'dosen') {
-                const mkRes = await fetchMataKuliahPengampu(user.id);
-                setMataKuliahList(mkRes.data || []);
-            } else {
-                fetchMataKuliah();
-            }
-        } catch (error) {
-            console.error("Error fetching initial data:", error);
-        }
-    };
-
-    const fetchProdi = async () => {
-        try {
-            const fakultasId = selectedFakultas !== 'all' ? selectedFakultas : undefined;
-            const res = await fetchProdiList(fakultasId);
-            setProdiList(res.data || []);
-
-            // Reset selected Prodi if not in new list
-            if (selectedProdi !== 'all') {
-                const exists = (res.data || []).find((p: any) => p.id === selectedProdi);
-                if (!exists) setSelectedProdi("all");
-            }
-        } catch (error) {
-            console.error("Error fetching prodi:", error);
-        }
-    };
-
-    const fetchMataKuliah = async () => {
-        // Skip if user is dosen (already fetched in initialData)
-        const user = getUser();
-        if (user && user.role === 'dosen') return;
-
-        try {
-            const params: any = {};
-            if (selectedProdi !== 'all') params.prodiId = selectedProdi;
-
-            const result = await api.get('/mata-kuliah', { params });
-            const data = result.data || result;
-            setMataKuliahList(Array.isArray(data) ? data : []);
-        } catch (error) {
-            console.error('Error fetching mata kuliah:', error);
-            toast.error('Gagal memuat data mata kuliah');
-        }
-    };
-
-    const fetchCpmk = async () => {
-        try {
-            setLoading(true);
-            const params: any = {};
-            if (selectedFakultas !== 'all') params.fakultasId = selectedFakultas;
-            if (selectedProdi !== 'all') params.prodiId = selectedProdi;
-            if (mataKuliahFilter !== 'all') params.mataKuliahId = mataKuliahFilter;
-
-            const result = await api.get('/cpmk', { params });
-            const data = result.data || result;
-            setCpmkList(Array.isArray(data) ? data : []);
-        } catch (error) {
-            console.error('Error fetching CPMK:', error);
-            toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat data');
-            setCpmkList([]);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -163,41 +60,36 @@ const CPMKPage = () => {
         setSubmitting(true);
 
         try {
+            let success = false;
+            // ... (rest of handleSubmit logic unchanged)
             if (editingCpmk) {
-                await api.put(`/cpmk/${editingCpmk.id}`, {
+                success = await updateCpmk(editingCpmk.id, {
                     kodeCpmk: formData.kodeCpmk.trim(),
                     deskripsi: formData.deskripsi.trim() || null,
                     levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi.join(',') : null,
                 });
-                toast.success("CPMK berhasil diupdate");
             } else {
-                await api.post('/cpmk', {
+                success = await createCpmk({
                     kodeCpmk: formData.kodeCpmk.trim(),
                     deskripsi: formData.deskripsi.trim() || null,
                     levelTaksonomi: formData.levelTaksonomi.length > 0 ? formData.levelTaksonomi.join(',') : null,
                     mataKuliahId: formData.mataKuliahId,
                 });
-                toast.success("CPMK berhasil ditambahkan");
             }
 
-            resetForm();
-            await fetchCpmk();
-            setDialogOpen(false);
-        } catch (error) {
-            console.error('Error saving CPMK:', error);
-            toast.error(
-                error instanceof Error
-                    ? `Gagal menyimpan: ${error.message}`
-                    : 'Terjadi kesalahan saat menyimpan data'
-            );
+            if (success) {
+                resetForm();
+                setDialogOpen(false);
+            }
         } finally {
             setSubmitting(false);
         }
     };
 
+    // ... handleEdit, handleDelete, handleViewDetail, resetForm ... 
+    // They don't use hook props directly except deleteCpmk which is already destructured.
     const handleEdit = (cpmk: Cpmk) => {
         setEditingCpmk(cpmk);
-        // Convert comma-separated string to array
         const levels = cpmk.levelTaksonomi
             ? cpmk.levelTaksonomi.split(',').map(l => l.trim()).filter(Boolean)
             : [];
@@ -212,18 +104,7 @@ const CPMKPage = () => {
 
     const handleDelete = async (id: string) => {
         if (!confirm("Yakin ingin menghapus CPMK ini?")) return;
-
-        try {
-            await api.delete(`/cpmk/${id}`);
-
-            // if (!response.ok) throw new Error('Gagal hapus CPMK');
-
-            toast.success("CPMK berhasil dihapus");
-            await fetchCpmk();
-        } catch (error) {
-            console.error('Error deleting CPMK:', error);
-            toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan');
-        }
+        await deleteCpmk(id);
     };
 
     const handleViewDetail = (id: string) => {
@@ -242,19 +123,10 @@ const CPMKPage = () => {
 
     const canEdit = role === "admin" || role === "dosen";
 
-    const filteredCpmk = cpmkList.filter((cpmk) => {
-        const q = searchTerm.toLowerCase();
-        const matchSearch =
-            cpmk.kodeCpmk.toLowerCase().includes(q) ||
-            cpmk.deskripsi?.toLowerCase().includes(q) ||
-            cpmk.mataKuliah.namaMk.toLowerCase().includes(q) ||
-            cpmk.mataKuliah.kodeMk.toLowerCase().includes(q);
-
-        const matchMataKuliah =
-            mataKuliahFilter === "all" || cpmk.mataKuliahId === mataKuliahFilter;
-
-        return matchSearch && matchMataKuliah;
-    });
+    const hasActiveFilter =
+        filters.selectedFakultas !== "all" ||
+        filters.selectedProdi !== "all" ||
+        filters.mataKuliahFilter !== "all";
 
     return (
         <DashboardPage
@@ -267,24 +139,17 @@ const CPMKPage = () => {
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Cari kode atau deskripsi CPMK..."
-                            value={searchTerm}
+                            value={filters.searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-9"
                         />
                     </div>
 
-
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 type="button"
-                                variant={
-                                    selectedFakultas !== "all" ||
-                                        selectedProdi !== "all" ||
-                                        mataKuliahFilter !== "all"
-                                        ? "default"
-                                        : "outline"
-                                }
+                                variant={hasActiveFilter ? "default" : "outline"}
                                 className="gap-2"
                             >
                                 <SlidersHorizontal className="h-4 w-4" />
@@ -292,48 +157,76 @@ const CPMKPage = () => {
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent align="start" className="w-80 space-y-4" onClick={(e) => e.stopPropagation()}>
-                            {role !== 'dosen' && (
-                                <>
-                                    <div className="space-y-1">
-                                        <Label className="text-xs font-medium">Fakultas</Label>
-                                        <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
-                                            <SelectTrigger className="w-full h-8 text-xs">
-                                                <SelectValue placeholder="Semua Fakultas" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Semua Fakultas</SelectItem>
-                                                {fakultasList.map((fak) => (
-                                                    <SelectItem key={fak.id} value={fak.id}>
-                                                        {fak.nama}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                            {role === 'admin' && (
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Fakultas</Label>
+                                    <Select value={filters.selectedFakultas} onValueChange={setSelectedFakultas}>
+                                        <SelectTrigger className="w-full h-8 text-xs">
+                                            <SelectValue placeholder="Semua Fakultas" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Semua Fakultas</SelectItem>
+                                            {fakultasList.map((fak) => (
+                                                <SelectItem key={fak.id} value={fak.id}>
+                                                    {fak.nama}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
 
-                                    <div className="space-y-1">
-                                        <Label className="text-xs font-medium">Program Studi</Label>
-                                        <Select value={selectedProdi} onValueChange={setSelectedProdi}>
-                                            <SelectTrigger className="w-full h-8 text-xs">
-                                                <SelectValue placeholder="Semua Prodi" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Semua Prodi</SelectItem>
-                                                {prodiList.map((prodi) => (
+                            {role !== 'dosen' && (
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Program Studi</Label>
+                                    <Select value={filters.selectedProdi} onValueChange={setSelectedProdi}>
+                                        <SelectTrigger className="w-full h-8 text-xs">
+                                            <SelectValue placeholder="Semua Prodi" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Semua Prodi</SelectItem>
+                                            {(() => {
+                                                let accessibleProdis = prodiList;
+
+                                                // 1. Filter by Role
+                                                if (role === 'kaprodi' && profile?.prodiId) {
+                                                    accessibleProdis = prodiList.filter(p => p.id === profile.prodiId);
+                                                } else if (role === 'dosen') {
+                                                    // Get unique Prodis from taught courses in mataKuliahList
+                                                    // Note: mataKuliahList is already filtered by backend for Dosen
+                                                    const taughtProdiIds = new Set(mataKuliahList
+                                                        .map(mk => {
+                                                            // Handle both nested and flat structures just in case
+                                                            const mkData = mk.mataKuliah || mk;
+                                                            return mkData.prodiId;
+                                                        })
+                                                        .filter(Boolean));
+
+                                                    if (taughtProdiIds.size > 0) {
+                                                        accessibleProdis = prodiList.filter(p => taughtProdiIds.has(p.id));
+                                                    }
+                                                }
+
+                                                // 2. Filter by Selected Fakultas (Admin)
+                                                if (role === 'admin' && filters.selectedFakultas !== 'all') {
+                                                    accessibleProdis = accessibleProdis.filter(p => p.fakultasId === filters.selectedFakultas);
+                                                }
+
+                                                return accessibleProdis.map((prodi) => (
                                                     <SelectItem key={prodi.id} value={prodi.id}>
                                                         {prodi.nama}
                                                     </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </>
+                                                ));
+                                            })()}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             )}
 
                             <div className="space-y-1">
                                 <Label className="text-xs font-medium">Mata Kuliah</Label>
                                 <Select
-                                    value={mataKuliahFilter}
+                                    value={filters.mataKuliahFilter}
                                     onValueChange={setMataKuliahFilter}
                                 >
                                     <SelectTrigger className="w-full h-8 text-xs">
@@ -342,7 +235,6 @@ const CPMKPage = () => {
                                     <SelectContent>
                                         <SelectItem value="all">Semua Mata Kuliah</SelectItem>
                                         {(() => {
-                                            // Deduplicate mataKuliahList based on unique ID
                                             const uniqueMK = mataKuliahList.reduce((acc: any[], current) => {
                                                 const id = current.mataKuliah?.id || current.id;
                                                 if (!acc.find(item => (item.mataKuliah?.id || item.id) === id)) {
@@ -352,7 +244,6 @@ const CPMKPage = () => {
                                             }, []);
 
                                             return uniqueMK.map((mk: any) => {
-                                                // Handle both structure types (direct MK or MKPengampu)
                                                 const id = mk.mataKuliah?.id || mk.id;
                                                 const nama = mk.mataKuliah?.namaMk || mk.namaMk;
                                                 const semester = mk.mataKuliah?.semester || mk.semester;
@@ -367,25 +258,16 @@ const CPMKPage = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
-
-
                         </PopoverContent>
                     </Popover>
 
                     <Button
                         type="button"
                         variant="outline"
-                        onClick={() => {
-                            setSelectedFakultas("all");
-                            setSelectedProdi("all");
-                            setMataKuliahFilter("all");
-                            setSearchTerm("");
-                        }}
+                        onClick={resetFilters}
                         disabled={
-                            selectedFakultas === "all" &&
-                            selectedProdi === "all" &&
-                            mataKuliahFilter === "all" &&
-                            searchTerm === ""
+                            !hasActiveFilter &&
+                            filters.searchTerm === ""
                         }
                     >
                         Reset Filter
@@ -397,8 +279,7 @@ const CPMKPage = () => {
                         <div className="space-y-1">
                             <CardTitle className="text-base md:text-lg">Daftar CPMK</CardTitle>
                             <CardDescription className="text-xs md:text-sm text-muted-foreground">
-                                Menampilkan <span className="font-medium">{filteredCpmk.length}</span> dari{" "}
-                                <span className="font-medium">{cpmkList.length}</span> CPMK
+                                Menampilkan <span className="font-medium">{cpmkList.length}</span> dari {pagination.totalItems} CPMK
                             </CardDescription>
                         </div>
                         {canEdit && (
@@ -493,6 +374,7 @@ const CPMKPage = () => {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[50px]">No</TableHead>
                                     <TableHead>Kode CPMK</TableHead>
                                     <TableHead>Level</TableHead>
                                     <TableHead>Deskripsi</TableHead>
@@ -503,90 +385,122 @@ const CPMKPage = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="h-24 text-center">
-                                            <div className="flex justify-center items-center">
-                                                <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                                                Loading data...
+                                {cpmkList.map((cpmk, index) => (
+                                    <TableRow key={cpmk.id}>
+                                        <TableCell>
+                                            {(pagination.page - 1) * pagination.limit + index + 1}
+                                        </TableCell>
+                                        <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
+                                        <TableCell>
+                                            {cpmk.levelTaksonomi ? (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {cpmk.levelTaksonomi.split(',').map((level) => (
+                                                        <Badge key={level.trim()} variant="secondary" className="text-xs">
+                                                            {level.trim()}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            ) : "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            {cpmk.deskripsi || "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="text-sm">
+                                                <div className="font-medium">{cpmk.mataKuliah.kodeMk}</div>
+                                                <div className="text-muted-foreground">{cpmk.mataKuliah.namaMk}</div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
+                                                {cpmk.cplMappings?.length || 0}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700 text-sm font-medium">
+                                                {cpmk.teknikPenilaian?.length || 0}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => handleViewDetail(cpmk.id)}
+                                                    title="Lihat Detail & Mapping"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                                {canEdit && (
+                                                    <>
+                                                        <Button size="sm" variant="outline" onClick={() => handleEdit(cpmk)}>
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/rubrik/${cpmk.id}`)} title="Kelola Rubrik">
+                                                            <SlidersHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button size="sm" variant="destructive" onClick={() => handleDelete(cpmk.id)}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : filteredCpmk.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center text-muted-foreground">
-                                            Tidak ada data CPMK
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    filteredCpmk.map((cpmk) => (
-                                        <TableRow key={cpmk.id}>
-                                            <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
-                                            <TableCell>
-                                                {cpmk.levelTaksonomi ? (
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {cpmk.levelTaksonomi.split(',').map((level) => (
-                                                            <Badge key={level.trim()} variant="secondary" className="text-xs">
-                                                                {level.trim()}
-                                                            </Badge>
-                                                        ))}
-                                                    </div>
-                                                ) : "-"}
-                                            </TableCell>
-                                            <TableCell>
-                                                {cpmk.deskripsi || "-"}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="text-sm">
-                                                    <div className="font-medium">{cpmk.mataKuliah.kodeMk}</div>
-                                                    <div className="text-muted-foreground">{cpmk.mataKuliah.namaMk}</div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
-                                                    {cpmk.cplMappings?.length || 0}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-                                                    {cpmk.teknikPenilaian?.length || 0}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleViewDetail(cpmk.id)}
-                                                        title="Lihat Detail & Mapping"
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    {canEdit && (
-                                                        <>
-                                                            <Button size="sm" variant="outline" onClick={() => handleEdit(cpmk)}>
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/rubrik/${cpmk.id}`)} title="Kelola Rubrik">
-                                                                <SlidersHorizontal className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button size="sm" variant="destructive" onClick={() => handleDelete(cpmk.id)}>
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
+                                ))}
                             </TableBody>
                         </Table>
                     </CardContent>
+                    {/* Pagination Controls */}
+                    {pagination.totalPages > 1 && (
+                        <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                type="button"
+                                onClick={() => pagination.setPage(Math.max(1, pagination.page - 1))}
+                                disabled={pagination.page === 1}
+                            >
+                                Previous
+                            </Button>
+                            <div className="flex items-center space-x-1">
+                                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                                    let start = Math.max(1, pagination.page - 2);
+                                    if (start + 4 > pagination.totalPages) {
+                                        start = Math.max(1, pagination.totalPages - 4);
+                                    }
+                                    const p = start + i;
+                                    if (p > pagination.totalPages) return null;
+
+                                    return (
+                                        <Button
+                                            key={p}
+                                            variant={pagination.page === p ? "default" : "outline"}
+                                            size="sm"
+                                            type="button"
+                                            className="w-8 h-8 p-0"
+                                            onClick={() => pagination.setPage(p)}
+                                        >
+                                            {p}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                type="button"
+                                onClick={() => pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1))}
+                                disabled={pagination.page === pagination.totalPages}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    )}
                 </Card>
             </div>
         </DashboardPage >
     );
-}
+};
 
 export default CPMKPage;

@@ -1,110 +1,25 @@
-// ============================================
-// Kaprodi Data Routes
-// ============================================
 
 import { Router } from 'express';
-import { prisma } from '../lib/prisma.js';
 import { authMiddleware, requireRole } from '../middleware/auth.js';
+import {
+    getKaprodiByProgramStudi,
+    getAllKaprodiData,
+    createOrUpdateKaprodiData,
+    deleteKaprodiData
+} from '../controllers/kaprodi-data-controller.js';
 
 const router = Router();
 
 // Get kaprodi data by program studi
-router.get('/:programStudi', authMiddleware, async (req, res) => {
-    try {
-        const { programStudi } = req.params;
-
-        const kaprodiData = await prisma.kaprodiData.findFirst({
-            where: {
-                OR: [
-                    { programStudi: programStudi.toUpperCase() },
-                    { prodi: { nama: programStudi } }
-                ]
-            },
-            include: { prodi: true }
-        });
-
-        if (!kaprodiData) {
-            return res.json({
-                data: {
-                    programStudi: programStudi.toUpperCase(),
-                    namaKaprodi: '( ........................................................ )',
-                    nidnKaprodi: ''
-                }
-            });
-        }
-
-        res.json({ data: kaprodiData });
-    } catch (error) {
-        console.error('Error fetching kaprodi data:', error);
-        res.status(500).json({ error: 'Failed to fetch kaprodi data' });
-    }
-});
+router.get('/:programStudi', authMiddleware, getKaprodiByProgramStudi);
 
 // Get all kaprodi data (Admin only)
-router.get('/', authMiddleware, requireRole('admin'), async (req, res) => {
-    try {
-        const kaprodiData = await prisma.kaprodiData.findMany({
-            orderBy: { programStudi: 'asc' },
-            include: { prodi: true }
-        });
-
-        res.json({ data: kaprodiData });
-    } catch (error) {
-        console.error('Error fetching kaprodi data:', error);
-        res.status(500).json({ error: 'Failed to fetch kaprodi data' });
-    }
-});
+router.get('/', authMiddleware, requireRole('admin'), getAllKaprodiData);
 
 // Create or update kaprodi data (Admin only)
-router.post('/', authMiddleware, requireRole('admin'), async (req, res) => {
-    try {
-        const { programStudi, namaKaprodi, nidnKaprodi, prodiId } = req.body;
-
-        let targetProdiId = prodiId;
-        if (!targetProdiId && programStudi) {
-            const prodi = await prisma.prodi.findFirst({ where: { nama: programStudi } });
-            targetProdiId = prodi?.id;
-        }
-
-        const kaprodiData = await prisma.kaprodiData.upsert({
-            where: { programStudi: programStudi.toUpperCase() },
-            create: {
-                programStudi: programStudi.toUpperCase(),
-                prodiId: targetProdiId,
-                namaKaprodi,
-                nidnKaprodi
-            },
-            update: {
-                namaKaprodi,
-                nidnKaprodi,
-                prodiId: targetProdiId
-            }
-        });
-
-        res.json({
-            data: kaprodiData,
-            message: 'Data Kaprodi berhasil disimpan'
-        });
-    } catch (error) {
-        console.error('Error saving kaprodi data:', error);
-        res.status(500).json({ error: 'Failed to save kaprodi data' });
-    }
-});
+router.post('/', authMiddleware, requireRole('admin'), createOrUpdateKaprodiData);
 
 // Delete kaprodi data (Admin only)
-router.delete('/:id', authMiddleware, requireRole('admin'), async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        await prisma.kaprodiData.delete({
-            where: { id }
-        });
-
-        res.json({ message: 'Data Kaprodi berhasil dihapus' });
-    } catch (error) {
-        console.error('Error deleting kaprodi data:', error);
-        res.status(500).json({ error: 'Failed to delete kaprodi data' });
-    }
-});
+router.delete('/:id', authMiddleware, requireRole('admin'), deleteKaprodiData);
 
 export default router;

@@ -1,40 +1,18 @@
-import { useState, useEffect } from "react";
-import { api, fetchAnalisisCPL } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
-import { toast } from "sonner";
-import { DashboardPage } from "@/components/DashboardLayout";
-
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
+import { DashboardPage } from "@/components/layout/DashboardLayout";
+import { useAnalisis } from "@/hooks/useAnalisis";
 
 const AnalisisiPage = () => {
-  const [cplData, setCplData] = useState<any[]>([]);
-  const [radarData, setRadarData] = useState<any[]>([]);
-  const [distributionData, setDistributionData] = useState<any[]>([]);
-  const [semester, setSemester] = useState("all");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchAnalysisData();
-  }, [semester]);
-
-  const fetchAnalysisData = async () => {
-    try {
-      const response = await fetchAnalisisCPL(semester);
-
-      if (response) {
-        setCplData(response.cplData || []);
-        setRadarData(response.radarData || []);
-        setDistributionData(response.distributionData || []);
-      }
-    } catch (error: any) {
-      toast.error("Gagal memuat data analisis");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    cplData,
+    radarData,
+    distributionData,
+    semester,
+    setSemester,
+    loading
+  } = useAnalisis();
 
   if (loading) {
     return (

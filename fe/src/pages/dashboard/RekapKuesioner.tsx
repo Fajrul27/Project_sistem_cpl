@@ -1,9 +1,5 @@
-import { useState, useEffect } from "react";
-import { DashboardPage } from "@/components/DashboardLayout";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { api, fetchFakultasList, fetchProdiList } from "@/lib/api-client";
-import { useUserRole } from "@/hooks/useUserRole";
-import { toast } from "sonner";
 import {
     Table,
     TableBody,
@@ -18,111 +14,26 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Label } from "@/components/ui/label";
 import { SlidersHorizontal } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-interface KuesionerStat {
-    cplId: string;
-    kodeCpl: string;
-    deskripsi: string;
-    rataRata: number;
-    jumlahResponden: number;
-}
+import { useRekapKuesioner } from "@/hooks/useRekapKuesioner";
 
 export default function RekapKuesionerPage() {
-    const { role, profile } = useUserRole();
-    const [stats, setStats] = useState<KuesionerStat[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    // Filter States
-    const [tahunAjaran, setTahunAjaran] = useState("2024/2025 Ganjil");
-    const [semester, setSemester] = useState<string>("all");
-    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
-    const [selectedProdi, setSelectedProdi] = useState<string>("all");
-
-    // Data Lists
-    const [fakultasList, setFakultasList] = useState<any[]>([]);
-    const [prodiList, setProdiList] = useState<any[]>([]);
-
-    useEffect(() => {
-        if (role === "kaprodi" || role === "admin") {
-            fetchInitialData();
-            fetchStats();
-        }
-    }, [role]);
-
-    // Fetch Prodi when Fakultas changes (Admin only)
-    useEffect(() => {
-        if (role === 'admin') {
-            fetchProdi();
-        }
-    }, [selectedFakultas]);
-
-    // Re-fetch stats when filters change
-    useEffect(() => {
-        if (role === "kaprodi" || role === "admin") {
-            fetchStats();
-        }
-    }, [tahunAjaran, semester, selectedFakultas, selectedProdi]);
-
-    const fetchInitialData = async () => {
-        if (role === 'admin') {
-            try {
-                const [fakultasRes, prodiRes] = await Promise.all([
-                    fetchFakultasList(),
-                    fetchProdiList()
-                ]);
-                setFakultasList(fakultasRes.data || []);
-                setProdiList(prodiRes.data || []);
-            } catch (error) {
-                console.error("Error fetching initial data:", error);
-            }
-        }
-    };
-
-    const fetchProdi = async () => {
-        try {
-            const fakultasId = selectedFakultas !== 'all' ? selectedFakultas : undefined;
-            const res = await fetchProdiList(fakultasId);
-            setProdiList(res.data || []);
-
-            // Reset selected Prodi if not in new list
-            if (selectedProdi !== 'all') {
-                const exists = (res.data || []).find((p: any) => p.id === selectedProdi);
-                if (!exists) setSelectedProdi("all");
-            }
-        } catch (error) {
-            console.error("Error fetching prodi:", error);
-        }
-    };
-
-    const fetchStats = async () => {
-        setLoading(true);
-        try {
-            const params: any = {
-                tahunAjaran
-            };
-
-            if (semester !== 'all') {
-                params.semester = semester;
-            }
-
-            if (role === 'admin') {
-                if (selectedProdi !== 'all') params.prodiId = selectedProdi;
-                if (selectedFakultas !== 'all') params.fakultasId = selectedFakultas;
-            }
-            // For Kaprodi, backend handles prodiId enforcement automatically
-
-            const res = await api.get("/kuesioner/stats", { params });
-
-            // Handle response format (direct array or object with data property)
-            const statsData = Array.isArray(res) ? res : (res.data || []);
-            setStats(statsData);
-        } catch (error) {
-            console.error("Error fetching stats:", error);
-            toast.error("Gagal memuat statistik kuesioner");
-        } finally {
-            setLoading(false);
-        }
-    };
+    const {
+        role,
+        stats,
+        loading,
+        tahunAjaran,
+        semester,
+        selectedFakultas,
+        selectedProdi,
+        fakultasList,
+        prodiList,
+        setTahunAjaran,
+        setSemester,
+        setSelectedFakultas,
+        setSelectedProdi,
+        resetFilters,
+        isFiltered
+    } = useRekapKuesioner();
 
     if (role !== "kaprodi" && role !== "admin") {
         return (
@@ -144,12 +55,7 @@ export default function RekapKuesionerPage() {
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
-                                variant={
-                                    (role === 'admin' && (selectedFakultas !== 'all' || selectedProdi !== 'all')) ||
-                                        semester !== 'all'
-                                        ? "default"
-                                        : "outline"
-                                }
+                                variant={isFiltered ? "default" : "outline"}
                                 className="gap-2"
                             >
                                 <SlidersHorizontal className="h-4 w-4" />
@@ -227,28 +133,15 @@ export default function RekapKuesionerPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-
-
                         </PopoverContent>
                     </Popover>
 
-                    {/* Quick Access Tahun Ajaran Display */}
-
+                    {/* Quick Access Reset */}
                     <Button
                         type="button"
                         variant="outline"
-                        onClick={() => {
-                            setSelectedFakultas("all");
-                            setSelectedProdi("all");
-                            setSemester("all");
-                            setTahunAjaran("2024/2025 Ganjil");
-                        }}
-                        disabled={
-                            selectedFakultas === "all" &&
-                            selectedProdi === "all" &&
-                            semester === "all" &&
-                            tahunAjaran === "2024/2025 Ganjil"
-                        }
+                        onClick={resetFilters}
+                        disabled={!isFiltered}
                     >
                         Reset Filter
                     </Button>
@@ -351,7 +244,7 @@ export default function RekapKuesionerPage() {
                                     stats.map((item) => (
                                         <TableRow key={item.cplId}>
                                             <TableCell className="font-medium">{item.kodeCpl}</TableCell>
-                                            <TableCell className="max-w-[400px] truncate" title={item.deskripsi}>
+                                            <TableCell className="min-w-[300px]">
                                                 {item.deskripsi}
                                             </TableCell>
                                             <TableCell className="text-center">{item.jumlahResponden}</TableCell>

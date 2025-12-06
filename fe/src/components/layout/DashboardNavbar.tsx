@@ -12,8 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { supabase } from "@/lib/api-client";
-import { useTheme } from "@/components/ThemeProvider";
+import { supabase } from "@/lib/api";
+import { useTheme } from "@/components/common/ThemeProvider";
 
 interface NavbarProps {
   title?: string;
@@ -31,7 +31,7 @@ export function DashboardNavbar({ title, actions, user, profile, role }: NavbarP
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
+
       toast.success("Logout berhasil");
       navigate("/auth");
     } catch (error) {

@@ -1,23 +1,18 @@
 import { useState, useEffect } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Button } from "@/components/ui/button";
 import { Filter, X } from "lucide-react";
-import { api, fetchAngkatanList, fetchProdiList } from "@/lib/api-client";
+import { fetchAngkatanList, fetchProdiList } from "@/lib/api";
 
 interface DashboardFilterBarProps {
     onFilterChange: (filters: { semester?: string; angkatan?: string; kelasId?: string; prodiId?: string }) => void;
+    filters?: { semester?: string; angkatan?: string; kelasId?: string; prodiId?: string }; // Make optional to avoid initial undefined issues
     role: string;
 }
 
-export const DashboardFilterBar = ({ onFilterChange, role }: DashboardFilterBarProps) => {
-    const [filters, setFilters] = useState({
-        semester: "",
-        angkatan: "",
-        kelasId: "",
-        prodiId: ""
-    });
+export const DashboardFilterBar = ({ onFilterChange, filters = {}, role }: DashboardFilterBarProps) => {
+    // No internal state for filters! We rely on props.filters (Controlled Component)
 
-    const [kelasOptions, setKelasOptions] = useState<any[]>([]);
     const [angkatanOptions, setAngkatanOptions] = useState<string[]>([]);
     const [prodiOptions, setProdiOptions] = useState<any[]>([]);
 
@@ -26,16 +21,23 @@ export const DashboardFilterBar = ({ onFilterChange, role }: DashboardFilterBarP
             try {
                 const res = await fetchAngkatanList();
                 if (res.data) {
-                    // Map to string array of years for the dropdown
                     const years = res.data.map((a: any) => a.tahun.toString());
                     setAngkatanOptions(years);
                 }
             } catch (error) {
                 console.error("Failed to fetch angkatan options", error);
-                // Fallback to generated years
                 const currentYear = new Date().getFullYear();
                 const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
                 setAngkatanOptions(years);
+            }
+        };
+
+        const fetchProdi = async () => {
+            try {
+                const res = await fetchProdiList();
+                if (res.data) setProdiOptions(res.data);
+            } catch (error) {
+                console.error("Failed to fetch prodi options");
             }
         };
 
@@ -44,47 +46,20 @@ export const DashboardFilterBar = ({ onFilterChange, role }: DashboardFilterBarP
         if (role === 'admin') {
             fetchProdi();
         }
-
-        // Fetch kelas options if needed (could be optimized to fetch only relevant kelas)
-        // For now, we can fetch all or rely on parent to pass options. 
-        // Let's keep it simple and just hardcode semester for now, and fetch classes if role is relevant.
-        if (role === 'kaprodi' || role === 'admin') {
-            fetchKelas();
-        }
     }, [role]);
 
-    const fetchProdi = async () => {
-        try {
-            const res = await fetchProdiList();
-            if (res.data) setProdiOptions(res.data);
-        } catch (error) {
-            console.error("Failed to fetch prodi options");
-        }
-    };
-
-    const fetchKelas = async () => {
-        try {
-            // Assuming we have an endpoint for this, or we can reuse existing ones.
-            // For now, let's skip actual API call for Kelas to avoid 404s if endpoint doesn't exist.
-            // We can add it later.
-        } catch (error) {
-            console.error("Failed to fetch kelas options");
-        }
-    };
-
     const handleFilterChange = (key: string, value: string) => {
+        // Merge current filters with new value and notify parent
         const newFilters = { ...filters, [key]: value };
-        setFilters(newFilters);
         onFilterChange(newFilters);
     };
 
     const clearFilters = () => {
         const reset = { semester: "", angkatan: "", kelasId: "", prodiId: "" };
-        setFilters(reset);
         onFilterChange(reset);
     };
 
-    const hasActiveFilters = Object.values(filters).some(Boolean);
+    const hasActiveFilters = Object.values(filters).some(val => val !== "" && val !== undefined && val !== null);
 
     return (
         <div className="flex flex-wrap items-center gap-4 p-4 bg-card rounded-lg border shadow-sm mb-6 animate-in fade-in slide-in-from-top-4">
@@ -94,9 +69,13 @@ export const DashboardFilterBar = ({ onFilterChange, role }: DashboardFilterBarP
             </div>
 
             {role === 'admin' && (
-                <Select value={filters.prodiId} onValueChange={(val) => handleFilterChange("prodiId", val)}>
+                <Select value={filters.prodiId || ""} onValueChange={(val) => handleFilterChange("prodiId", val)}>
                     <SelectTrigger className="w-[200px] h-9">
-                        <SelectValue placeholder="Semua Program Studi" />
+                        <SelectValue placeholder="Semua Program Studi">
+                            {filters.prodiId && filters.prodiId !== "all"
+                                ? prodiOptions.find(p => p.id === filters.prodiId)?.nama
+                                : "Semua Program Studi"}
+                        </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Semua Program Studi</SelectItem>
@@ -107,9 +86,11 @@ export const DashboardFilterBar = ({ onFilterChange, role }: DashboardFilterBarP
                 </Select>
             )}
 
-            <Select value={filters.semester} onValueChange={(val) => handleFilterChange("semester", val)}>
+            <Select value={filters.semester ? filters.semester.toString() : ""} onValueChange={(val) => handleFilterChange("semester", val)}>
                 <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="Semester" />
+                    <SelectValue placeholder="Semester">
+                        {filters.semester ? `Semester ${filters.semester}` : "Semester"}
+                    </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
@@ -118,9 +99,11 @@ export const DashboardFilterBar = ({ onFilterChange, role }: DashboardFilterBarP
                 </SelectContent>
             </Select>
 
-            <Select value={filters.angkatan} onValueChange={(val) => handleFilterChange("angkatan", val)}>
+            <Select value={filters.angkatan ? filters.angkatan.toString() : ""} onValueChange={(val) => handleFilterChange("angkatan", val)}>
                 <SelectTrigger className="w-[140px] h-9">
-                    <SelectValue placeholder="Angkatan" />
+                    <SelectValue placeholder="Angkatan">
+                        {filters.angkatan ? filters.angkatan : "Angkatan"}
+                    </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                     {angkatanOptions.map((year) => (
@@ -131,13 +114,13 @@ export const DashboardFilterBar = ({ onFilterChange, role }: DashboardFilterBarP
 
             {hasActiveFilters && (
                 <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={clearFilters}
-                    className="ml-auto h-9 text-muted-foreground hover:text-foreground"
+                    className="ml-auto h-9 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
                 >
                     <X className="h-4 w-4 mr-2" />
-                    Reset
+                    Reset Filter
                 </Button>
             )}
         </div>

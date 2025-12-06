@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/api-client";
+import { supabase } from "@/lib/api";
 
 export type UserRole = "admin" | "dosen" | "mahasiswa" | "kaprodi" | "dekan" | null;
 

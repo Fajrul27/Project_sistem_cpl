@@ -1,66 +1,14 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { DashboardPage } from "@/components/DashboardLayout";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Loader2, Save } from "lucide-react";
-
-import { api } from "@/lib/api-client";
+import { useSettings } from "@/hooks/useSettings";
 
 const SettingsPage = () => {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState({
-    univName: "UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI CILACAP",
-    univAddress: "Jl. Kemerdekaan Barat No.17 Kesugihan Kidul, Kec. Kesugihan, Kabupaten Cilacap, Jawa Tengah 53274",
-    univContact: "Website : www.unugha.ac.id / e-Mail : kita@unugha.ac.id / Telepon : 0282 695415",
-    kaprodiName: "",
-    kaprodiNip: "",
-    logoUrl: "/logo.png"
-  });
-
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      setLoading(true);
-      const result = await api.get('/settings');
-      if (result.data && Object.keys(result.data).length > 0) {
-        setSettings(prev => ({ ...prev, ...result.data }));
-      }
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-      toast.error("Gagal memuat pengaturan");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setSettings(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-
-    try {
-      await api.put('/settings', settings);
-
-      toast.success("Pengaturan berhasil disimpan");
-    } catch (error) {
-      console.error("Error saving settings:", error);
-      toast.error("Gagal menyimpan pengaturan");
-    } finally {
-      setSaving(false);
-    }
-  };
+  const { settings, loading, saving, handleChange, handleSave } = useSettings();
 
   if (loading) {
     return (

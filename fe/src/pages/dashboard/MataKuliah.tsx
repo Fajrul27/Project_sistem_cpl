@@ -9,149 +9,57 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
 import { Plus, Edit, Trash2, Loader2, Search, SlidersHorizontal } from "lucide-react";
-import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
-import { DashboardPage } from "@/components/DashboardLayout";
-
-import { api, fetchSemesters } from "@/lib/api-client";
-
-interface MataKuliah {
-  id: string;
-  kodeMk: string;
-  namaMk: string;
-  sks: number;
-  semester: number;
-  createdBy: string;
-  prodiId?: string;
-  kurikulumId?: string;
-  jenisMkId?: string;
-  prodi?: { id: string; nama: string };
-  kurikulum?: { id: string; nama: string };
-  jenisMk?: { id: string; nama: string };
-  semesterId?: string;
-  semesterRef?: { id: string; nama: string; angka: number };
-}
+import { DashboardPage } from "@/components/layout/DashboardLayout";
+import { useMataKuliah, MataKuliah, MataKuliahFormData } from "@/hooks/useMataKuliah";
 
 const MataKuliahPage = () => {
   const navigate = useNavigate();
-  const [mkList, setMkList] = useState<MataKuliah[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const { role, profile } = useUserRole();
+  const {
+    mkList,
+    loading,
+    submitting,
+    initialForm,
+    filters,
+    setSemesterFilter,
+    setFakultasFilter,
+    setProdiFilter,
+    resetFilters,
+    prodiList,
+    kurikulumList,
+    jenisMkList,
+    fakultasList,
+    semesterList,
+    createMataKuliah,
+    updateMataKuliah,
+    deleteMataKuliah,
+    pagination,
+    setSearchTerm
+  } = useMataKuliah();
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMK, setEditingMK] = useState<MataKuliah | null>(null);
-  const { role } = useUserRole();
+  const [formData, setFormData] = useState<MataKuliahFormData>(initialForm);
 
-  const [formData, setFormData] = useState({
-    kodeMk: "",
-    namaMk: "",
-    sks: "3",
-    semester: "1",
-    prodiId: "",
-    kurikulumId: "",
-    jenisMkId: "",
-    semesterId: ""
-  });
-
-  const [semesterList, setSemesterList] = useState<any[]>([]);
-
-  const [prodiList, setProdiList] = useState<any[]>([]);
-  const [kurikulumList, setKurikulumList] = useState<any[]>([]);
-  const [jenisMkList, setJenisMkList] = useState<any[]>([]);
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [semesterFilter, setSemesterFilter] = useState<string>("all");
-
-  const [fakultasList, setFakultasList] = useState<any[]>([]);
-  const [fakultasFilter, setFakultasFilter] = useState<string>("all");
-  const [prodiFilter, setProdiFilter] = useState<string>("all");
-
-  useEffect(() => {
-    fetchMataKuliah();
-    fetchMasterData();
-  }, [semesterFilter, fakultasFilter, prodiFilter]);
-
-  const fetchMasterData = async () => {
-    try {
-      const [prodiRes, kurikulumRes, jenisMkRes, fakultasRes, semesterRes] = await Promise.all([
-        api.get('/prodi'),
-        api.get('/kurikulum'),
-        api.get('/jenis-mata-kuliah'),
-        api.get('/fakultas'),
-        fetchSemesters()
-      ]);
-
-      if (prodiRes.data) setProdiList(prodiRes.data);
-      if (kurikulumRes.data) setKurikulumList(kurikulumRes.data);
-      if (jenisMkRes.data) setJenisMkList(jenisMkRes.data);
-      if (fakultasRes.data) setFakultasList(fakultasRes.data);
-      if (semesterRes.data) setSemesterList(semesterRes.data);
-    } catch (error) {
-      console.error("Error fetching master data:", error);
-    }
-  };
-
-  const fetchMataKuliah = async () => {
-    try {
-      setLoading(true);
-      const params: any = {};
-      if (semesterFilter !== 'all') params.semester = semesterFilter;
-      if (fakultasFilter !== 'all') params.fakultasId = fakultasFilter;
-      if (prodiFilter !== 'all') params.prodiId = prodiFilter;
-
-      const result = await api.get('/mata-kuliah', { params });
-      const data = result.data || result;
-      setMkList(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Error fetching mata kuliah:', error);
-      toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat data');
-      setMkList([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // No need for localSearch/debouncing here as hook handles it, 
+  // OR if we want local UI delay, we can keep it but hook setters now reset page.
+  // The Mahasiswa pattern often drives filter directly or waits for input.
+  // We'll trust the input calls hook's setter.
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.kodeMk || !formData.namaMk) {
-      toast.error("Kode MK dan Nama MK harus diisi");
-      return;
+    let success = false;
+    if (editingMK) {
+      success = await updateMataKuliah(editingMK.id, formData);
+    } else {
+      success = await createMataKuliah(formData);
     }
 
-    setSubmitting(true);
-
-    try {
-      const payload = {
-        kodeMk: formData.kodeMk.trim(),
-        namaMk: formData.namaMk.trim(),
-        sks: parseInt(formData.sks),
-        semester: parseInt(formData.semester),
-        prodiId: formData.prodiId || null,
-        kurikulumId: formData.kurikulumId || null,
-        jenisMkId: formData.jenisMkId || null,
-        semesterId: formData.semesterId || null,
-      };
-
-      if (editingMK) {
-        await api.put(`/mata-kuliah/${editingMK.id}`, payload);
-        toast.success("Mata kuliah berhasil diupdate");
-      } else {
-        await api.post('/mata-kuliah', payload);
-        toast.success("Mata kuliah berhasil ditambahkan");
-      }
-
+    if (success) {
       resetForm();
-      await fetchMataKuliah();
       setDialogOpen(false);
-    } catch (error) {
-      console.error('Error saving mata kuliah:', error);
-      toast.error(
-        error instanceof Error
-          ? `Gagal menyimpan: ${error.message}`
-          : 'Terjadi kesalahan saat menyimpan data'
-      );
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -172,28 +80,11 @@ const MataKuliahPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Yakin ingin menghapus mata kuliah ini?")) return;
-
-    try {
-      await api.delete(`/mata-kuliah/${id}`);
-      toast.success("Mata kuliah berhasil dihapus");
-      await fetchMataKuliah();
-    } catch (error) {
-      console.error('Error deleting mata kuliah:', error);
-      toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan');
-    }
+    await deleteMataKuliah(id);
   };
 
   const resetForm = () => {
-    setFormData({
-      kodeMk: "",
-      namaMk: "",
-      sks: "3",
-      semester: "1",
-      prodiId: "",
-      kurikulumId: "",
-      jenisMkId: "",
-      semesterId: ""
-    });
+    setFormData(initialForm);
     setEditingMK(null);
   };
 
@@ -204,27 +95,35 @@ const MataKuliahPage = () => {
   // Static semester options 1-8 (fallback if list empty)
   const semesterOptions = semesterList.length > 0 ? semesterList.map(s => s.angka) : [1, 2, 3, 4, 5, 6, 7, 8];
 
-  const filteredMK = mkList.filter((mk) => {
-    const q = searchTerm.toLowerCase();
-    return (
-      mk.kodeMk.toLowerCase().includes(q) ||
-      mk.namaMk.toLowerCase().includes(q) ||
-      String(mk.semester).includes(q)
-    );
-  });
+  // Filtered prodi options based on role and selected fakultas
+  const filteredProdiOptions = (() => {
+    let prodis = prodiList;
 
-  // Filtered prodi options based on selected fakultas
-  const filteredProdiOptions = fakultasFilter === 'all'
-    ? prodiList
-    : prodiList.filter(p => p.fakultasId === fakultasFilter);
+    // First filter by Role
+    if (role === 'kaprodi' && profile?.prodiId) {
+      prodis = prodiList.filter(p => p.id === profile.prodiId);
+    } else if (role === 'dosen') {
+      // Get unique prodi IDs from taught courses
+      const taughtProdiIds = new Set(mkList
+        .filter(mk => mk.prodiId)
+        .map(mk => mk.prodiId));
 
-  const hasActiveFilter = semesterFilter !== "all" || fakultasFilter !== "all" || prodiFilter !== "all";
+      if (taughtProdiIds.size > 0) {
+        prodis = prodiList.filter(p => taughtProdiIds.has(p.id));
+      }
+      // If no courses found yet or no prodi attached, might show empty or all? 
+      // Sticking to "taught courses" restriction means showing only those.
+    }
 
-  const handleResetFilter = () => {
-    setSemesterFilter("all");
-    setFakultasFilter("all");
-    setProdiFilter("all");
-  };
+    // Then filter by Faculty (Admin only usually, but good to keep logic consistent)
+    if (filters.fakultasFilter !== 'all') {
+      prodis = prodis.filter(p => p.fakultasId === filters.fakultasFilter);
+    }
+
+    return prodis;
+  })();
+
+  const hasActiveFilter = filters.semesterFilter !== "all" || filters.fakultasFilter !== "all" || filters.prodiFilter !== "all";
 
   return (
     <DashboardPage
@@ -237,7 +136,7 @@ const MataKuliahPage = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Cari kode, nama, atau semester mata kuliah..."
-              value={searchTerm}
+              value={filters.searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
             />
@@ -258,50 +157,53 @@ const MataKuliahPage = () => {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-80 space-y-4" onClick={(e) => e.stopPropagation()}>
               <div className="space-y-3">
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium">Fakultas</Label>
-                  <Select
-                    value={fakultasFilter}
-                    onValueChange={(value) => {
-                      setFakultasFilter(value);
-                      setProdiFilter("all"); // Reset prodi when fakultas changes
-                    }}
-                  >
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Semua Fakultas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Fakultas</SelectItem>
-                      {fakultasList.map((f) => (
-                        <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {role === 'admin' && (
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Fakultas</Label>
+                    <Select
+                      value={filters.fakultasFilter}
+                      onValueChange={(value) => {
+                        setFakultasFilter(value);
+                      }}
+                    >
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Semua Fakultas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Fakultas</SelectItem>
+                        {fakultasList.map((f) => (
+                          <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium">Program Studi</Label>
-                  <Select
-                    value={prodiFilter}
-                    onValueChange={(value) => setProdiFilter(value)}
-                    disabled={fakultasFilter === 'all' && false} // Optional: disable if no fakultas selected? No, allow global prodi filter
-                  >
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Semua Program Studi" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Program Studi</SelectItem>
-                      {filteredProdiOptions.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {role !== 'dosen' && (
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Program Studi</Label>
+                    <Select
+                      value={filters.prodiFilter}
+                      onValueChange={(value) => setProdiFilter(value)}
+                      disabled={filters.fakultasFilter === 'all' && false} // Optional: disable if no fakultas selected? No, allow global prodi filter
+                    >
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Semua Program Studi" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Program Studi</SelectItem>
+                        {filteredProdiOptions.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Semester</Label>
                   <Select
-                    value={semesterFilter}
+                    value={filters.semesterFilter}
                     onValueChange={(value) => setSemesterFilter(value)}
                   >
                     <SelectTrigger className="w-full h-8 text-xs">
@@ -324,17 +226,10 @@ const MataKuliahPage = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => {
-              setFakultasFilter("all");
-              setProdiFilter("all");
-              setSemesterFilter("all");
-              setSearchTerm("");
-            }}
+            onClick={resetFilters}
             disabled={
-              fakultasFilter === "all" &&
-              prodiFilter === "all" &&
-              semesterFilter === "all" &&
-              searchTerm === ""
+              !hasActiveFilter &&
+              filters.searchTerm === ""
             }
           >
             Reset Filter
@@ -346,8 +241,8 @@ const MataKuliahPage = () => {
             <div className="space-y-1">
               <CardTitle className="text-base md:text-lg">Daftar Mata Kuliah</CardTitle>
               <CardDescription className="text-xs md:text-sm text-muted-foreground">
-                Menampilkan <span className="font-medium">{filteredMK.length}</span> dari {" "}
-                <span className="font-medium">{mkList.length}</span> mata kuliah
+                Menampilkan <span className="font-medium">{mkList.length}</span> dari {" "}
+                <span className="font-medium">{pagination.totalItems}</span> mata kuliah
               </CardDescription>
             </div>
             {canManage && (
@@ -501,6 +396,7 @@ const MataKuliahPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]">No</TableHead>
                   <TableHead>Kode MK</TableHead>
                   <TableHead>Nama Mata Kuliah</TableHead>
                   <TableHead>SKS</TableHead>
@@ -509,54 +405,120 @@ const MataKuliahPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
+                {mkList.length === 0 && loading ? (
                   <TableRow>
-                    <TableCell colSpan={showActions ? 5 : 4} className="h-24 text-center">
+                    <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
                       <div className="flex justify-center items-center">
                         <Loader2 className="h-6 w-6 animate-spin mr-2" />
                         Loading data...
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : filteredMK.length === 0 ? (
+                ) : mkList.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={showActions ? 5 : 4} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={showActions ? 6 : 5} className="text-center py-8 text-muted-foreground">
                       Tidak ada data mata kuliah.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredMK.map((mk) => (
-                    <TableRow key={mk.id}>
-                      <TableCell className="font-medium">{mk.kodeMk}</TableCell>
-                      <TableCell>{mk.namaMk}</TableCell>
-                      <TableCell>{mk.sks}</TableCell>
-                      <TableCell>Semester {mk.semester}</TableCell>
-                      {showActions && (
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            {canManage && (
-                              <Button size="sm" variant="outline" onClick={() => handleEdit(mk)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {canEvaluate && (
-                              <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/evaluasi/${mk.id}`)} title="Evaluasi / CQI">
-                                <SlidersHorizontal className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {canManage && (
-                              <Button size="sm" variant="destructive" onClick={() => handleDelete(mk.id)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
+                  <>
+                    {loading && (
+                      <TableRow className="absolute w-full h-full bg-background/50 z-10 flex items-center justify-center pointer-events-none inset-0">
+                        {/* Optional: Overlay loader or just use opacity on rows */}
+                      </TableRow>
+                    )}
+                    {mkList.map((mk, index) => (
+                      <TableRow key={mk.id} className={loading ? "opacity-50 pointer-events-none" : ""}>
+                        <TableCell>
+                          {(pagination.page - 1) * pagination.limit + index + 1}
                         </TableCell>
-                      )}
-                    </TableRow>
-                  ))
+                        <TableCell className="font-medium">{mk.kodeMk}</TableCell>
+                        <TableCell>{mk.namaMk}</TableCell>
+                        <TableCell>{mk.sks}</TableCell>
+                        <TableCell>Semester {mk.semester}</TableCell>
+                        {showActions && (
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              {canManage && (
+                                <Button size="sm" variant="outline" onClick={() => handleEdit(mk)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canEvaluate && (
+                                <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/evaluasi/${mk.id}`)} title="Evaluasi / CQI">
+                                  <SlidersHorizontal className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canManage && (
+                                <Button size="sm" variant="destructive" onClick={() => handleDelete(mk.id)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </>
                 )}
               </TableBody>
             </Table>
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-end space-x-2 py-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    pagination.setPage(Math.max(1, pagination.page - 1));
+                  }}
+                  disabled={pagination.page === 1}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    let start = Math.max(1, pagination.page - 2);
+                    if (start + 4 > pagination.totalPages) {
+                      start = Math.max(1, pagination.totalPages - 4);
+                    }
+                    const p = start + i;
+                    if (p > pagination.totalPages) return null;
+
+                    return (
+                      <Button
+                        key={p}
+                        variant={pagination.page === p ? "default" : "outline"}
+                        size="sm"
+                        type="button"
+                        className="w-8 h-8 p-0"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          pagination.setPage(p);
+                        }}
+                      >
+                        {p}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1));
+                  }}
+                  disabled={pagination.page === pagination.totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div >
@@ -565,3 +527,4 @@ const MataKuliahPage = () => {
 }
 
 export default MataKuliahPage;
+

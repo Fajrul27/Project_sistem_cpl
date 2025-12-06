@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 8081,
     proxy: {
       '/api': {
-        target: 'http://localhost:8082',
+        target: 'http://127.0.0.1:8082',
         changeOrigin: true,
       },
     },
@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@schemas": path.resolve(__dirname, "../be/server/schemas"),
     },
   },
 }));

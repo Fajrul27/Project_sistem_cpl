@@ -1,17 +1,16 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "sonner";
-import { DashboardPage } from "@/components/DashboardLayout";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Save, Loader2, Check, ChevronsUpDown, Pencil, Trash2 } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -22,193 +21,38 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-import { api, fetchFakultasList, fetchProdiList, fetchAllUsers } from "@/lib/api-client";
-
-interface Prodi {
-    id: string;
-    nama: string;
-    fakultasId: string;
-}
-
-interface Fakultas {
-    id: string;
-    nama: string;
-}
-
-interface User {
-    id: string;
-    email: string;
-    role: { role: string };
-    profile?: {
-        namaLengkap: string;
-        nidn: string;
-        prodiId?: string;
-        prodi?: {
-            fakultasId: string;
-            nama: string;
-        };
-    };
-}
-
-interface KaprodiData {
-    id: string;
-    programStudi: string;
-    prodiId: string | null;
-    namaKaprodi: string;
-    nidnKaprodi: string;
-    prodi?: Prodi;
-}
+import { useKaprodiSettings } from "@/hooks/useKaprodiSettings";
 
 const KaprodiDataSettings = () => {
-    const [kaprodiList, setKaprodiList] = useState<KaprodiData[]>([]);
-    const [prodiList, setProdiList] = useState<Prodi[]>([]);
-    const [fakultasList, setFakultasList] = useState<Fakultas[]>([]);
-    const [userList, setUserList] = useState<User[]>([]);
+    const {
+        kaprodiList,
+        prodiList,
+        fakultasList,
+        loading,
+        saving,
+        formData,
+        setFormData,
+        filteredUsers,
+        searchQuery,
+        setSearchQuery,
+        saveKaprodi,
+        deleteKaprodi,
+        prepareEdit
+    } = useKaprodiSettings();
 
-    const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState({
-        programStudi: "",
-        prodiId: "",
-        namaKaprodi: "",
-        nidnKaprodi: "",
-        fakultasId: ""
-    });
-    const [saving, setSaving] = useState(false);
     const [openUserCombobox, setOpenUserCombobox] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
-    const [searchQuery, setSearchQuery] = useState("");
-
-    useEffect(() => {
-        fetchInitialData();
-    }, []);
-
-    useEffect(() => {
-        if (formData.fakultasId) {
-            fetchProdiByFakultas(formData.fakultasId);
-        } else {
-            setProdiList([]);
-        }
-    }, [formData.fakultasId]);
-
-    const fetchInitialData = async () => {
-        try {
-            const [fakultasRes, kaprodiRes] = await Promise.all([
-                fetchFakultasList(),
-                api.get('/kaprodi-data')
-            ]);
-
-            setFakultasList(fakultasRes.data || []);
-            setKaprodiList(kaprodiRes.data || []);
-
-            // Fetch only users with role 'kaprodi'
-            const kaprodiUserRes = await fetchAllUsers({ role: 'kaprodi', limit: 100 });
-            setUserList(kaprodiUserRes.data || []);
-
-        } catch (error) {
-            console.error("Error fetching initial data:", error);
-            toast.error("Gagal memuat data awal");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchProdiByFakultas = async (fakultasId: string) => {
-        try {
-            const result = await fetchProdiList(fakultasId);
-            setProdiList(result.data || []);
-        } catch (error) {
-            console.error("Gagal memuat data prodi");
-        }
-    };
-
-    const fetchKaprodiData = async () => {
-        try {
-            const result = await api.get('/kaprodi-data');
-            setKaprodiList(result.data || []);
-        } catch (error) {
-            toast.error("Gagal memuat data kaprodi");
-        }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!formData.programStudi || !formData.namaKaprodi) {
-            toast.error("Lengkapi data program studi dan nama kaprodi");
-            return;
-        }
-
-        setSaving(true);
-        try {
-            await api.post('/kaprodi-data', {
-                programStudi: formData.programStudi,
-                prodiId: formData.prodiId,
-                namaKaprodi: formData.namaKaprodi,
-                nidnKaprodi: formData.nidnKaprodi
-            });
-
-            toast.success("Data kaprodi berhasil disimpan");
-            setFormData({
-                programStudi: "",
-                prodiId: "",
-                namaKaprodi: "",
-                nidnKaprodi: "",
-                fakultasId: ""
-            });
-            fetchKaprodiData();
-        } catch (error) {
-            toast.error("Gagal menyimpan data kaprodi");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleEdit = (item: KaprodiData) => {
-        setFormData({
-            programStudi: item.programStudi,
-            prodiId: item.prodiId || "",
-            namaKaprodi: item.namaKaprodi,
-            nidnKaprodi: item.nidnKaprodi,
-            fakultasId: item.prodi?.fakultasId || ""
-        });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        saveKaprodi();
     };
 
     const handleDelete = async () => {
         if (!deleteId) return;
-
-        try {
-            await api.delete(`/kaprodi-data/${deleteId}`);
-            toast.success("Data kaprodi berhasil dihapus");
-            fetchKaprodiData();
-        } catch (error) {
-            toast.error("Gagal menghapus data kaprodi");
-        } finally {
-            setDeleteId(null);
-        }
+        await deleteKaprodi(deleteId);
+        setDeleteId(null);
     };
-
-    const filteredUsers = userList.filter(user => {
-        // Strict filter: Must have prodiId selected
-        if (!formData.prodiId) return false;
-
-        // Filter by Prodi
-        if (user.profile?.prodiId !== formData.prodiId) return false;
-
-        // Filter by search query
-        // Filter by search query
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            const name = user.profile?.namaLengkap?.toLowerCase() || "";
-            const email = user.email.toLowerCase();
-            const nidn = user.profile?.nidn?.toLowerCase() || "";
-            const nip = user.profile?.nip?.toLowerCase() || "";
-            return name.includes(query) || email.includes(query) || nidn.includes(query) || nip.includes(query);
-        }
-
-        return true;
-    });
 
     return (
         <DashboardPage
@@ -300,8 +144,6 @@ const KaprodiDataSettings = () => {
                                                                 value={user.id}
                                                                 onSelect={() => {
                                                                     const selectedNidn = user.profile?.nidn || user.profile?.nip || "";
-                                                                    console.log("Selected user:", user);
-                                                                    console.log("NIDN/NIP to set:", selectedNidn);
 
                                                                     setFormData(prev => ({
                                                                         ...prev,
@@ -394,7 +236,7 @@ const KaprodiDataSettings = () => {
                                             <TableCell>{item.nidnKaprodi || '-'}</TableCell>
                                             <TableCell>
                                                 <div className="flex gap-2">
-                                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
+                                                    <Button variant="ghost" size="icon" onClick={() => prepareEdit(item)}>
                                                         <Pencil className="h-4 w-4" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setDeleteId(item.id)}>

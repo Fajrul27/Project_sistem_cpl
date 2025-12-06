@@ -1,81 +1,25 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { api } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
 import { ArrowLeft, TrendingUp, TrendingDown, Minus, Loader2 } from "lucide-react";
-import { DashboardPage } from "@/components/DashboardLayout";
-import { toast } from "sonner";
-
-interface CPLData {
-  id: string;
-  kodeCpl: string;
-  deskripsi: string;
-  kategori: string;
-  kategoriRef?: { id: string; nama: string };
-  bobot: number;
-  mataKuliah?: any[];
-}
+import { DashboardPage } from "@/components/layout/DashboardLayout";
+import { useCPLDetail } from "@/hooks/useCPLDetailHook";
 
 const CPLDetailPage = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [cpl, setCpl] = useState<CPLData | null>(null);
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCPL = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/cpl/${id}`);
-        if (response.data) {
-          setCpl(response.data);
-
-          // Fetch real stats from backend
-          try {
-            const statsResponse = await api.get(`/cpl/${id}/stats`);
-            setStats(statsResponse);
-          } catch (statsError) {
-            console.error("Error fetching stats:", statsError);
-            // Fallback to empty stats if fetch fails
-            setStats({
-              avgNilai: 0,
-              trend: "stable",
-              totalMahasiswa: 0,
-              totalMK: response.data.mataKuliah?.length || 0,
-              semesterData: [],
-              distribution: [],
-              mkData: []
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching CPL:", error);
-        toast.error("Gagal memuat detail CPL");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchCPL();
-    }
-  }, [id]);
+  const {
+    cpl,
+    stats,
+    loading,
+    navigate,
+    getTrendColor
+  } = useCPLDetail();
 
   const getTrendIcon = () => {
     if (stats?.trend === "up") return <TrendingUp className="h-4 w-4 text-green-500" />;
     if (stats?.trend === "down") return <TrendingDown className="h-4 w-4 text-red-500" />;
     return <Minus className="h-4 w-4 text-gray-500" />;
-  };
-
-  const getTrendColor = () => {
-    if (stats?.trend === "up") return "success";
-    if (stats?.trend === "down") return "destructive";
-    return "secondary";
   };
 
   if (loading) {

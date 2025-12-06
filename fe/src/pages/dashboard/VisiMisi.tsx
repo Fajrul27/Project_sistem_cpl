@@ -1,15 +1,11 @@
-import { useState, useEffect } from "react";
-import { DashboardPage } from "@/components/DashboardLayout";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { api } from "@/lib/api-client";
-import { useUserRole } from "@/hooks/useUserRole";
-import { toast } from "sonner";
-import { Plus, Trash2, Edit, Save, X } from "lucide-react";
+import { Plus, Trash2, Edit, Save } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -17,148 +13,29 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
-
-interface VisiMisi {
-    id: string;
-    teks: string;
-    tipe: "visi" | "misi";
-    urutan: number;
-    prodiId: string;
-    prodi?: { nama: string };
-}
-
-interface Prodi {
-    id: string;
-    nama: string;
-}
+import { useVisiMisi } from "@/hooks/useVisiMisi";
 
 export default function VisiMisiPage() {
-    const { role, profile, loading: roleLoading } = useUserRole();
-    const [visiMisiList, setVisiMisiList] = useState<VisiMisi[]>([]);
-    const [prodiList, setProdiList] = useState<Prodi[]>([]);
-    const [selectedProdi, setSelectedProdi] = useState<string>("");
-    const [loading, setLoading] = useState(true);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<VisiMisi | null>(null);
-
-    // Form State
-    const [formData, setFormData] = useState({
-        teks: "",
-        tipe: "misi",
-        urutan: 1,
-        prodiId: ""
-    });
-
-    const canEdit = role === "admin" || role === "kaprodi";
-
-    useEffect(() => {
-        if (!roleLoading) {
-            fetchInitialData();
-        }
-    }, [role, profile, roleLoading]);
-
-    useEffect(() => {
-        if (selectedProdi) {
-            fetchVisiMisi(selectedProdi);
-        }
-    }, [selectedProdi]);
-
-    const fetchInitialData = async () => {
-        try {
-            // Fetch Prodi List for Admin
-            if (role === "admin") {
-                const res = await api.get("/prodi");
-                setProdiList(res.data);
-                if (res.data.length > 0) setSelectedProdi(res.data[0].id);
-            } else if ((role === "kaprodi" || role === "dosen" || role === "mahasiswa") && profile?.prodiId) {
-                // Kaprodi, Dosen, and Mahasiswa automatically selected
-                setSelectedProdi(profile.prodiId);
-            } else if (role === "kaprodi" || role === "dosen" || role === "mahasiswa") {
-                // If role is set but profile/prodiId is missing, wait or show error
-                // Do not fallback to fetching all prodis
-                console.warn("User has role but missing prodiId in profile");
-            } else {
-                // Fallback for others
-                const res = await api.get("/prodi");
-                setProdiList(res.data);
-                if (res.data.length > 0) setSelectedProdi(res.data[0].id);
-            }
-        } catch (error) {
-            console.error("Error fetching initial data:", error);
-            toast.error("Gagal memuat data prodi");
-        }
-    };
-
-    const fetchVisiMisi = async (prodiId: string) => {
-        setLoading(true);
-        try {
-            const res = await api.get(`/visi-misi?prodiId=${prodiId}`);
-            setVisiMisiList(res.data);
-        } catch (error) {
-            console.error("Error fetching visi misi:", error);
-            toast.error("Gagal memuat data visi misi");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSave = async () => {
-        try {
-            const payload = {
-                ...formData,
-                prodiId: role === "kaprodi" ? profile?.prodiId : (formData.prodiId || selectedProdi)
-            };
-
-            if (!payload.prodiId) {
-                toast.error("Prodi harus dipilih");
-                return;
-            }
-
-            if (editingItem) {
-                await api.put(`/visi-misi/${editingItem.id}`, payload);
-                toast.success("Berhasil diperbarui");
-            } else {
-                await api.post("/visi-misi", payload);
-                toast.success("Berhasil ditambahkan");
-            }
-
-            setIsDialogOpen(false);
-            setEditingItem(null);
-            setFormData({ teks: "", tipe: "misi", urutan: 1, prodiId: "" });
-            fetchVisiMisi(selectedProdi);
-        } catch (error) {
-            console.error("Error saving:", error);
-            toast.error("Gagal menyimpan data");
-        }
-    };
-
-    const handleDelete = async (id: string) => {
-        if (!confirm("Yakin ingin menghapus?")) return;
-        try {
-            await api.delete(`/visi-misi/${id}`);
-            toast.success("Berhasil dihapus");
-            fetchVisiMisi(selectedProdi);
-        } catch (error) {
-            console.error("Error deleting:", error);
-            toast.error("Gagal menghapus");
-        }
-    };
-
-    const openEdit = (item: VisiMisi) => {
-        setEditingItem(item);
-        setFormData({
-            teks: item.teks,
-            tipe: item.tipe,
-            urutan: item.urutan,
-            prodiId: item.prodiId
-        });
-        setIsDialogOpen(true);
-    };
-
-    const visiList = visiMisiList.filter(v => v.tipe === 'visi');
-    const misiList = visiMisiList.filter(v => v.tipe === 'misi');
+    const {
+        role,
+        visiList,
+        misiList,
+        prodiList,
+        selectedProdi,
+        setSelectedProdi,
+        loading,
+        canEdit,
+        isDialogOpen,
+        setIsDialogOpen,
+        editingItem,
+        formData,
+        setFormData,
+        handleSave,
+        handleDelete,
+        openEdit,
+        openAdd
+    } = useVisiMisi();
 
     return (
         <DashboardPage title="Visi & Misi Program Studi" description="Kelola Visi dan Misi sebagai landasan kurikulum OBE">
@@ -192,11 +69,7 @@ export default function VisiMisiPage() {
                             <CardDescription>Cita-cita luhur program studi di masa depan</CardDescription>
                         </div>
                         {canEdit && visiList.length === 0 && (
-                            <Button size="sm" onClick={() => {
-                                setEditingItem(null);
-                                setFormData({ teks: "", tipe: "visi", urutan: 1, prodiId: selectedProdi });
-                                setIsDialogOpen(true);
-                            }}>
+                            <Button size="sm" onClick={() => openAdd("visi")}>
                                 <Plus className="w-4 h-4 mr-2" /> Tambah Visi
                             </Button>
                         )}
@@ -229,11 +102,7 @@ export default function VisiMisiPage() {
                             <CardDescription>Langkah-langkah strategis untuk mencapai Visi</CardDescription>
                         </div>
                         {canEdit && (
-                            <Button size="sm" onClick={() => {
-                                setEditingItem(null);
-                                setFormData({ teks: "", tipe: "misi", urutan: misiList.length + 1, prodiId: selectedProdi });
-                                setIsDialogOpen(true);
-                            }}>
+                            <Button size="sm" onClick={() => openAdd("misi")}>
                                 <Plus className="w-4 h-4 mr-2" /> Tambah Misi
                             </Button>
                         )}

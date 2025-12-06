@@ -1,19 +1,17 @@
-import { useState, useEffect } from "react";
-import { DashboardPage } from "@/components/DashboardLayout";
+import { useState } from "react";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { api } from "@/lib/api-client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit, Save, Briefcase, TrendingUp } from "lucide-react";
+import { Plus, Trash2, Edit, Save, Briefcase } from "lucide-react";
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -27,33 +25,27 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-
-interface ProfilLulusan {
-    id: string;
-    kode: string;
-    nama: string;
-    deskripsi: string;
-    prodiId: string;
-    prodi?: { nama: string };
-    percentage?: number; // Added for analysis
-    status?: string;     // Added for analysis
-}
-
-interface Prodi {
-    id: string;
-    nama: string;
-}
+import { useProfilLulusan, ProfilLulusan } from "@/hooks/useProfilLulusan";
 
 export default function ProfilLulusanPage() {
-    const { role, profile, loading: roleLoading } = useUserRole();
-    const [profilList, setProfilList] = useState<ProfilLulusan[]>([]);
-    const [prodiList, setProdiList] = useState<Prodi[]>([]);
-    const [selectedProdi, setSelectedProdi] = useState<string>("");
-    const [loading, setLoading] = useState(true);
+    const { role, profile } = useUserRole();
+    const {
+        profilList,
+        prodiList,
+        cplList,
+        selectedProdi,
+        setSelectedProdi,
+        loading,
+        createProfil,
+        updateProfil,
+        deleteProfil,
+        pagination,
+        searchTerm,
+        setSearchTerm
+    } = useProfilLulusan();
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<ProfilLulusan | null>(null);
-
-    const [cplList, setCplList] = useState<any[]>([]);
     const [selectedCpls, setSelectedCpls] = useState<string[]>([]);
 
     // Form State
@@ -66,123 +58,36 @@ export default function ProfilLulusanPage() {
 
     const canEdit = role === "admin" || role === "kaprodi";
 
-    useEffect(() => {
-        if (!roleLoading) {
-            fetchInitialData();
-        }
-    }, [role, profile, roleLoading]);
-
-    useEffect(() => {
-        if (selectedProdi) {
-            if (role === "mahasiswa" && profile?.userId) {
-                fetchProfilLulusanAnalysis(profile.userId);
-            } else {
-                fetchProfilLulusan(selectedProdi);
-            }
-            fetchCpls(selectedProdi);
-        }
-    }, [selectedProdi, role, profile]);
-
-    const fetchInitialData = async () => {
-        try {
-            if (role === "admin") {
-                const res = await api.get("/prodi");
-                setProdiList(res.data);
-                if (res.data.length > 0) setSelectedProdi(res.data[0].id);
-            } else if ((role === "kaprodi" || role === "dosen" || role === "mahasiswa") && profile?.prodiId) {
-                setSelectedProdi(profile.prodiId);
-            } else if (role === "kaprodi" || role === "dosen" || role === "mahasiswa") {
-                // Wait for profile to load, do not fallback
-                console.warn("User has role but missing prodiId in profile");
-            } else {
-                const res = await api.get("/prodi");
-                setProdiList(res.data);
-                if (res.data.length > 0) setSelectedProdi(res.data[0].id);
-            }
-        } catch (error) {
-            console.error("Error fetching initial data:", error);
-            toast.error("Gagal memuat data prodi");
-        }
-    };
-
-    const fetchProfilLulusan = async (prodiId: string) => {
-        setLoading(true);
-        try {
-            const res = await api.get(`/profil-lulusan?prodiId=${prodiId}`);
-            setProfilList(Array.isArray(res.data) ? res.data : []);
-        } catch (error) {
-            console.error("Error fetching profil lulusan:", error);
-            toast.error("Gagal memuat data profil lulusan");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchProfilLulusanAnalysis = async (mahasiswaId: string) => {
-        setLoading(true);
-        try {
-            const res = await api.get(`/transkrip-profil/mahasiswa/${mahasiswaId}`);
-            // API returns array directly for this endpoint
-            setProfilList(Array.isArray(res) ? res : (Array.isArray(res.data) ? res.data : []));
-        } catch (error) {
-            console.error("Error fetching profil lulusan analysis:", error);
-            toast.error("Gagal memuat analisis profil lulusan");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchCpls = async (prodiId: string) => {
-        try {
-            const res = await api.get(`/cpl?prodiId=${prodiId}`);
-            setCplList(Array.isArray(res.data) ? res.data : []);
-        } catch (error) {
-            console.error("Error fetching CPLs:", error);
-        }
-    };
-
     const handleSave = async () => {
-        try {
-            const payload = {
-                ...formData,
-                prodiId: role === "kaprodi" ? profile?.prodiId : (formData.prodiId || selectedProdi),
-                cplIds: selectedCpls
-            };
+        const payload = {
+            ...formData,
+            prodiId: role === "kaprodi" ? profile?.prodiId : (formData.prodiId || selectedProdi),
+            cplIds: selectedCpls
+        };
 
-            if (!payload.prodiId) {
-                toast.error("Prodi harus dipilih");
-                return;
-            }
+        if (!payload.prodiId) {
+            toast.error("Prodi harus dipilih");
+            return;
+        }
 
-            if (editingItem) {
-                await api.put(`/profil-lulusan/${editingItem.id}`, payload);
-                toast.success("Berhasil diperbarui");
-            } else {
-                await api.post("/profil-lulusan", payload);
-                toast.success("Berhasil ditambahkan");
-            }
+        let success = false;
+        if (editingItem) {
+            success = await updateProfil(editingItem.id, payload);
+        } else {
+            success = await createProfil(payload);
+        }
 
+        if (success) {
             setIsDialogOpen(false);
             setEditingItem(null);
             setFormData({ kode: "", nama: "", deskripsi: "", prodiId: "" });
             setSelectedCpls([]);
-            fetchProfilLulusan(selectedProdi);
-        } catch (error: any) {
-            console.error("Error saving:", error);
-            toast.error(error.response?.data?.error || "Gagal menyimpan data");
         }
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm("Yakin ingin menghapus profil ini?")) return;
-        try {
-            await api.delete(`/profil-lulusan/${id}`);
-            toast.success("Berhasil dihapus");
-            fetchProfilLulusan(selectedProdi);
-        } catch (error) {
-            console.error("Error deleting:", error);
-            toast.error("Gagal menghapus");
-        }
+        await deleteProfil(id);
     };
 
     const openEdit = (item: ProfilLulusan) => {
@@ -210,33 +115,38 @@ export default function ProfilLulusanPage() {
     return (
         <DashboardPage title="Profil Lulusan" description="Kelola profil karir yang diharapkan dari lulusan">
             <div className="space-y-6">
-                {/* Filter Prodi (Admin Only) */}
-                {role === "admin" && (
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-4">
-                                <Label>Pilih Program Studi:</Label>
-                                <Select value={selectedProdi} onValueChange={setSelectedProdi}>
-                                    <SelectTrigger className="w-[300px]">
-                                        <SelectValue placeholder="Pilih Prodi" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {prodiList.map(p => (
-                                            <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+                {/* Filter and Search */}
+                <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                    {role === "admin" && (
+                        <div className="w-full md:w-auto flex items-center gap-2">
+                            <Label className="whitespace-nowrap">Prodi:</Label>
+                            <Select value={selectedProdi} onValueChange={setSelectedProdi}>
+                                <SelectTrigger className="w-[200px] md:w-[300px]">
+                                    <SelectValue placeholder="Pilih Prodi" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {prodiList.map(p => (
+                                        <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+                    <div className="w-full md:w-auto relative flex-1 max-w-sm">
+                        <Input
+                            placeholder="Cari profil..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Daftar Profil Lulusan</CardTitle>
                             <CardDescription>
-                                Profil profesional mandiri yang dapat diemban oleh lulusan
+                                Menampilkan {profilList.length} dari {pagination.totalItems} Profil Lulusan
                             </CardDescription>
                         </div>
                         {canEdit && (
@@ -251,13 +161,14 @@ export default function ProfilLulusanPage() {
                         )}
                     </CardHeader>
                     <CardContent>
-                        {loading ? (
+                        {loading && profilList.length === 0 ? (
                             <div className="text-center py-8">Memuat...</div>
                         ) : profilList && profilList.length > 0 ? (
                             <div className="rounded-md border">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
+                                            <TableHead className="w-[50px]">No</TableHead>
                                             <TableHead className="w-[100px]">Kode</TableHead>
                                             <TableHead className="w-[200px]">Nama Profil</TableHead>
                                             <TableHead>Deskripsi</TableHead>
@@ -267,8 +178,11 @@ export default function ProfilLulusanPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {profilList.map((item) => (
+                                        {profilList.map((item, index) => (
                                             <TableRow key={item.id}>
+                                                <TableCell>
+                                                    {(pagination.page - 1) * pagination.limit + index + 1}
+                                                </TableCell>
                                                 <TableCell className="font-medium">{item.kode}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
@@ -338,6 +252,50 @@ export default function ProfilLulusanPage() {
                                         <Plus className="w-4 h-4 mr-2" /> Tambah Profil
                                     </Button>
                                 )}
+                            </div>
+                        )}
+
+                        {/* Pagination Controls */}
+                        {pagination.totalPages > 1 && (
+                            <div className="flex items-center justify-end space-x-2 py-4 border-t mt-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => pagination.setPage(Math.max(1, pagination.page - 1))}
+                                    disabled={pagination.page === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <div className="flex items-center space-x-1">
+                                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                                        let start = Math.max(1, pagination.page - 2);
+                                        if (start + 4 > pagination.totalPages) {
+                                            start = Math.max(1, pagination.totalPages - 4);
+                                        }
+                                        const p = start + i;
+                                        if (p > pagination.totalPages) return null;
+
+                                        return (
+                                            <Button
+                                                key={p}
+                                                variant={pagination.page === p ? "default" : "outline"}
+                                                size="sm"
+                                                className="w-8 h-8 p-0"
+                                                onClick={() => pagination.setPage(p)}
+                                            >
+                                                {p}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1))}
+                                    disabled={pagination.page === pagination.totalPages}
+                                >
+                                    Next
+                                </Button>
                             </div>
                         )}
                     </CardContent>
@@ -419,3 +377,4 @@ export default function ProfilLulusanPage() {
         </DashboardPage>
     );
 }
+

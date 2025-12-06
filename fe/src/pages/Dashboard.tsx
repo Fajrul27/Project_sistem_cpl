@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, fetchDashboardStats, fetchTranskripCPL, fetchDosenAnalysis, fetchStudentEvaluation } from "@/lib/api-client";
+import { supabase } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, BookOpen, Users, BarChart3, TrendingUp, ChevronDown } from "lucide-react";
@@ -16,8 +15,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
-import { DashboardFilterBar } from "@/components/DashboardFilterBar";
+import { DashboardFilterBar } from "@/components/layout/DashboardFilterBar";
 
 import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
 import { CompletenessCard } from "@/components/dashboard/CompletenessCard";
@@ -27,26 +27,6 @@ import { StudentEvaluationTable } from "@/components/dashboard/StudentEvaluation
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Stats State
-  const [cplStats, setCplStats] = useState({ total: 0, avgScore: 0, totalCurriculum: 0, tercapai: 0 });
-  const [mkStats, setMkStats] = useState({ total: 0 });
-  const [studentStats, setStudentStats] = useState({ total: 0 });
-
-  // Chart Data State
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [trendData, setTrendData] = useState<any[]>([]);
-  const [distributionData, setDistributionData] = useState<any[]>([]);
-  const [performanceData, setPerformanceData] = useState<any[]>([]);
-
-  // New Features State
-  const [alerts, setAlerts] = useState<any[]>([]);
-  const [insights, setInsights] = useState<any[]>([]);
-  const [completeness, setCompleteness] = useState<any>(null);
-  const [dosenAnalysis, setDosenAnalysis] = useState<any[]>([]);
-  const [studentEvaluation, setStudentEvaluation] = useState<any[]>([]);
-
   const { role, loading: roleLoading } = useUserRole();
 
   // Filter State
@@ -54,6 +34,22 @@ const Dashboard = () => {
 
   // Sort State
   const [cplSortMode, setCplSortMode] = useState<'default' | 'asc' | 'desc'>('default');
+
+  const {
+    loading,
+    cplStats,
+    mkStats,
+    studentStats,
+    chartData,
+    trendData,
+    distributionData,
+    performanceData,
+    alerts,
+    insights,
+    completeness,
+    dosenAnalysis,
+    studentEvaluation
+  } = useDashboardStats(role, user, activeFilters);
 
   // Derived sorted data
   const sortedChartData = [...chartData].sort((a, b) => {
@@ -76,82 +72,6 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  useEffect(() => {
-    if (!roleLoading && role) {
-      if (role === 'mahasiswa') {
-        fetchStudentDashboardData();
-      } else {
-        fetchDashboardData(activeFilters);
-      }
-    }
-  }, [role, roleLoading, user, activeFilters]);
-
-  const fetchStudentDashboardData = async () => {
-    if (!user?.id) return;
-
-    try {
-      const response = await fetchTranskripCPL(user.id);
-      const data = response.data;
-
-      if (data && data.summary) {
-        setCplStats({
-          total: data.summary.totalCpl || 0,
-          avgScore: data.summary.avgScore || 0,
-          totalCurriculum: data.summary.totalCurriculumCpl || 0,
-          tercapai: data.summary.tercapai || 0
-        });
-        setMkStats({ total: data.transkrip?.length || 0 });
-        setStudentStats({ total: 1 });
-
-        if (data.transkrip) {
-          const cplChartData = data.transkrip.map((t: any) => ({
-            name: t.cpl.kodeCpl,
-            nilai: t.nilaiAkhir
-          }));
-          setChartData(cplChartData);
-
-          const perfData = [...cplChartData]
-            .sort((a: any, b: any) => b.nilai - a.nilai)
-            .slice(0, 5)
-            .map((item: any) => ({
-              ...item,
-              status: item.nilai >= 80 ? "Excellent" : item.nilai >= 70 ? "Good" : "Need Improvement"
-            }));
-          setPerformanceData(perfData);
-
-          // Distribution Logic
-          const dist = [
-            { name: "Sangat Baik (>85)", value: 0 },
-            { name: "Baik (70-85)", value: 0 },
-            { name: "Cukup (60-70)", value: 0 },
-            { name: "Kurang (<60)", value: 0 },
-          ];
-
-          data.transkrip.forEach((t: any) => {
-            const n = t.nilaiAkhir;
-            if (n >= 85) dist[0].value++;
-            else if (n >= 70) dist[1].value++;
-            else if (n >= 60) dist[2].value++;
-            else dist[3].value++;
-          });
-
-          const total = data.transkrip.length;
-          const distData = dist.map(d => ({
-            ...d,
-            percentage: total > 0 ? ((d.value / total) * 100).toFixed(1) : "0.0"
-          })).filter(d => d.value > 0);
-
-          setDistributionData(distData);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching student dashboard:", error);
-      toast.error("Gagal memuat data dashboard mahasiswa");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -159,62 +79,22 @@ const Dashboard = () => {
       return;
     }
     setUser(session.user);
-    if (!role) setLoading(false);
   };
 
-  const fetchDashboardData = async (filters: any = {}) => {
-    try {
-      const [statsRes, dosenRes, studentRes] = await Promise.all([
-        fetchDashboardStats(filters),
-        (role === 'admin' || role === 'kaprodi') ? fetchDosenAnalysis(filters.prodiId) : Promise.resolve({ data: [] }),
-        (role === 'admin' || role === 'kaprodi') ? fetchStudentEvaluation(filters) : Promise.resolve({ data: [] })
-      ]);
-
-      const data = statsRes.data;
-
-      if (data) {
-        if (data.stats) {
-          setCplStats({
-            total: data.stats.cpl || 0,
-            avgScore: data.stats.avgScore || 0,
-            totalCurriculum: 0,
-            tercapai: 0
-          });
-          setMkStats({ total: data.stats.mataKuliah || 0 });
-          setStudentStats({ total: data.stats.users || 0 });
-        }
-
-        setChartData(data.chartData || []);
-        setTrendData(data.trendData || []);
-        setDistributionData(data.distributionData || []);
-        setPerformanceData(data.performanceData || []);
-
-        setAlerts(data.alerts || []);
-        setInsights(data.insights || []);
-        setCompleteness(data.completeness || null);
-      }
-
-      if (dosenRes.data) setDosenAnalysis(dosenRes.data);
-      if (studentRes.data) setStudentEvaluation(studentRes.data);
-
-    } catch (error: any) {
-      console.error("Error fetching dashboard data:", error);
-      toast.error("Gagal memuat data dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (roleLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <p className="mt-4 text-muted-foreground">Memuat akses pengguna...</p>
         </div>
       </div>
     );
   }
+
+  // Initial loading (no data yet) could still be handled, or just show skeleton.
+  // We'll let the UI render and show "0" or empty charts if loading.
+  // Better: Show loading overlay if needed.
 
   const stats = [
     {
@@ -248,14 +128,14 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 relative">
       {role !== 'mahasiswa' && (
         <DashboardFilterBar
           role={role || ''}
+          filters={activeFilters}
           onFilterChange={setActiveFilters}
         />
       )}
-
       {role === 'dosen' && (
         <Card className="mb-6 animate-in fade-in slide-in-from-top-4">
           <CardHeader className="pb-3">
@@ -272,7 +152,8 @@ const Dashboard = () => {
             </Button>
           </CardContent>
         </Card>
-      )}
+      )
+      }
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-in fade-in duration-700">
         {stats.map((stat, index) => (
@@ -296,14 +177,16 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {role !== 'mahasiswa' && (
-        <div className="grid gap-6 animate-in fade-in duration-800">
-          <div className="grid gap-6 md:grid-cols-2">
-            {completeness && <CompletenessCard data={completeness} />}
-            <DashboardInsights insights={insights} />
+      {
+        role !== 'mahasiswa' && (
+          <div className="grid gap-6 animate-in fade-in duration-800">
+            <div className="grid gap-6 md:grid-cols-2">
+              {completeness && <CompletenessCard data={completeness} />}
+              <DashboardInsights insights={insights} />
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       <div className="grid gap-4 md:grid-cols-2 animate-in fade-in duration-1000">
         <Card>
@@ -463,51 +346,55 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {(role === 'admin' || role === 'kaprodi') && (
-        <div className="grid gap-4 md:grid-cols-2 animate-in fade-in duration-1000">
-          <DosenAnalysisTable data={dosenAnalysis} />
-          <StudentEvaluationTable data={studentEvaluation} />
-        </div>
-      )}
+      {
+        (role === 'admin' || role === 'kaprodi') && (
+          <div className="grid gap-4 md:grid-cols-2 animate-in fade-in duration-1000">
+            <DosenAnalysisTable data={dosenAnalysis} />
+            <StudentEvaluationTable data={studentEvaluation} />
+          </div>
+        )
+      }
 
-      {role === 'mahasiswa' && (
-        <div className="grid gap-4 md:grid-cols-1 animate-in fade-in duration-1000">
-          <Card>
-            <CardHeader>
-              <CardTitle>Top 5 CPL Terbaik</CardTitle>
-              <CardDescription>Pencapaian teratas Anda</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {performanceData.length > 0 ? (
-                <div className="space-y-4">
-                  {performanceData.map((item: any, index: number) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-sm font-bold text-primary">
-                          {index + 1}
+      {
+        role === 'mahasiswa' && (
+          <div className="grid gap-4 md:grid-cols-1 animate-in fade-in duration-1000">
+            <Card>
+              <CardHeader>
+                <CardTitle>Top 5 CPL Terbaik</CardTitle>
+                <CardDescription>Pencapaian teratas Anda</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {performanceData.length > 0 ? (
+                  <div className="space-y-4">
+                    {performanceData.map((item: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-sm font-bold text-primary">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{item.name}</p>
+                            <p className="text-xs text-muted-foreground">{item.status}</p>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">{item.status}</p>
+                        <div className="text-right">
+                          <p className="font-bold text-lg text-primary">{item.nilai}</p>
+                          <p className="text-xs text-muted-foreground">nilai</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-lg text-primary">{item.nilai}</p>
-                        <p className="text-xs text-muted-foreground">nilai</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                  <p className="text-muted-foreground">Belum ada data performa</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
+                    <p className="text-muted-foreground">Belum ada data performa</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )
+      }
+    </div >
   );
 };
 

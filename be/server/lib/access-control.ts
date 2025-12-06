@@ -26,7 +26,8 @@ export async function canAccessMataKuliah(userId: string, userRole: string, mata
         const profile = await prisma.profile.findUnique({
             where: { userId }
         });
-        return profile?.programStudi === mataKuliah.programStudi;
+        // Use prodiId for stricter check
+        return !!(profile?.prodiId && mataKuliah.prodiId && profile.prodiId === mataKuliah.prodiId);
     }
 
     return false;
@@ -61,12 +62,14 @@ export async function canAccessCpl(userId: string, userRole: string, cplId: stri
             where: { userId }
         });
 
+        if (!profile?.prodiId) return false;
+
         // Check if CPL is mapped to any mata kuliah in kaprodi's prodi
         const mappings = await prisma.cplMataKuliah.findMany({
             where: {
                 cplId,
                 mataKuliah: {
-                    programStudi: profile?.programStudi
+                    prodiId: profile.prodiId
                 }
             }
         });
@@ -117,8 +120,10 @@ export async function getAccessibleMataKuliahIds(userId: string, userRole: strin
             where: { userId }
         });
 
+        if (!profile?.prodiId) return [];
+
         const mataKuliah = await prisma.mataKuliah.findMany({
-            where: { programStudi: profile?.programStudi },
+            where: { prodiId: profile.prodiId },
             select: { id: true }
         });
         return mataKuliah.map(m => m.id);

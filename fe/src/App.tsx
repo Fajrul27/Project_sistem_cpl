@@ -23,8 +23,8 @@ import KaprodiDataSettings from "./pages/dashboard/KaprodiDataSettings";
 import DosenPengampuPage from "./pages/dashboard/DosenPengampu";
 import TestNavbar from "./pages/TestNavbar";
 import NotFound from "./pages/NotFound";
-import { DashboardLayout } from "@/components/DashboardLayout";
-import { RequireRole } from "@/components/RequireRole";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { RequireRole } from "@/components/common/RequireRole";
 
 // New OBE Pages
 import RubrikManager from "./pages/dashboard/RubrikManager";

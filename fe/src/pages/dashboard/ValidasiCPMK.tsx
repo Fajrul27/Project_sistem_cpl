@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -8,137 +8,46 @@ import { CheckCircle2, XCircle, Clock, Loader2, SlidersHorizontal, Search } from
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
+import { useValidasiCPMK } from "@/hooks/useValidasiCPMK";
 import { useUserRole } from "@/hooks/useUserRole";
-import { DashboardPage } from "@/components/DashboardLayout";
-
-import { api, fetchFakultasList, fetchProdiList, fetchMataKuliahPengampu, getUser } from "@/lib/api-client";
-
-interface CPMK {
-    id: string;
-    kodeCpmk: string;
-    deskripsi: string | null;
-    levelTaksonomi: string | null;
-    levelTaksonomiRef?: {
-        kode: string;
-        deskripsi: string;
-    };
-    statusValidasi: 'draft' | 'validated' | 'active';
-    validatedAt: string | null;
-    createdAt: string;
-    mataKuliah: {
-        id: string;
-        kodeMk: string;
-        namaMk: string;
-        semester: number;
-    };
-    creator?: {
-        profile?: {
-            namaLengkap: string;
-        };
-    };
-}
 
 const ValidasiCPMKPage = () => {
-    const { role } = useUserRole();
-    const canValidate = role === "admin" || role === "kaprodi";
-
-    const [cpmkList, setCpmkList] = useState<CPMK[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [filterStatus, setFilterStatus] = useState<string>("all");
-    const [updating, setUpdating] = useState<string | null>(null);
-    const [fakultasList, setFakultasList] = useState<any[]>([]);
-    const [prodiList, setProdiList] = useState<any[]>([]);
-    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
-    const [selectedProdi, setSelectedProdi] = useState<string>("all");
-    const [mataKuliahList, setMataKuliahList] = useState<any[]>([]);
-    const [selectedMataKuliah, setSelectedMataKuliah] = useState<string>("all");
-    const [selectedSemester, setSelectedSemester] = useState<string>("all");
-    const [searchTerm, setSearchTerm] = useState<string>("");
+    const { role, profile } = useUserRole();
+    const {
+        cpmkList,
+        loading,
+        updating,
+        fakultasList,
+        prodiList,
+        mataKuliahList,
+        canValidate,
+        filters,
+        setFilterStatus,
+        setSelectedFakultas,
+        setSelectedProdi,
+        setSelectedMataKuliah,
+        setSelectedSemester,
+        setSearchTerm,
+        resetFilters,
+        fetchInitialData,
+        fetchProdi,
+        fetchCPMK,
+        handleValidate,
+        pagination
+    } = useValidasiCPMK();
 
     useEffect(() => {
         fetchInitialData();
-        fetchCPMK();
-    }, []);
+    }, [fetchInitialData]);
 
     useEffect(() => {
         fetchProdi();
-    }, [selectedFakultas]);
+    }, [filters.selectedFakultas, fetchProdi]);
 
     useEffect(() => {
         fetchCPMK();
-    }, [selectedFakultas, selectedProdi, selectedMataKuliah, selectedSemester]);
-
-    const fetchInitialData = async () => {
-        try {
-            const [fakultasRes, prodiRes] = await Promise.all([
-                fetchFakultasList(),
-                fetchProdiList()
-            ]);
-            setFakultasList(fakultasRes.data || []);
-            setProdiList(prodiRes.data || []);
-
-            // If user is dosen, fetch taught courses
-            const user = getUser();
-            if (user && user.role === 'dosen') {
-                const mkRes = await fetchMataKuliahPengampu(user.id);
-                setMataKuliahList(mkRes.data || []);
-            }
-        } catch (error) {
-            console.error("Error fetching initial data:", error);
-        }
-    };
-
-    const fetchProdi = async () => {
-        try {
-            const fakultasId = selectedFakultas !== 'all' ? selectedFakultas : undefined;
-            const res = await fetchProdiList(fakultasId);
-            setProdiList(res.data || []);
-
-            // Reset selected Prodi if not in new list
-            if (selectedProdi !== 'all') {
-                const exists = (res.data || []).find((p: any) => p.id === selectedProdi);
-                if (!exists) setSelectedProdi("all");
-            }
-        } catch (error) {
-            console.error("Error fetching prodi:", error);
-        }
-    };
-
-    const fetchCPMK = async () => {
-        try {
-            setLoading(true);
-            const params: any = {};
-            if (selectedFakultas !== 'all') params.fakultasId = selectedFakultas;
-            if (selectedProdi !== 'all') params.prodiId = selectedProdi;
-            if (selectedMataKuliah !== 'all') params.mataKuliahId = selectedMataKuliah;
-            if (selectedSemester !== 'all') params.semester = selectedSemester;
-
-            const result = await api.get('/cpmk', { params });
-            setCpmkList(Array.isArray(result.data) ? result.data : []);
-        } catch (error) {
-            console.error("Error fetching CPMK:", error);
-            toast.error("Gagal memuat data CPMK");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleValidate = async (cpmkId: string, newStatus: 'draft' | 'validated' | 'active') => {
-        try {
-            setUpdating(cpmkId);
-            await api.put(`/cpmk/${cpmkId}/validate`, { statusValidasi: newStatus });
-
-            toast.success(`Status berhasil diubah menjadi ${newStatus}`);
-            await fetchCPMK();
-            await fetchCPMK();
-        } catch (error) {
-            console.error('Error updating validation:', error);
-            toast.error(error instanceof Error ? error.message : 'Gagal mengubah status validasi');
-        } finally {
-            setUpdating(null);
-        }
-    };
+    }, [fetchCPMK]);
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -152,10 +61,12 @@ const ValidasiCPMKPage = () => {
         }
     };
 
-    const filteredCPMK = cpmkList.filter((cpmk) => {
-        if (filterStatus === "all") return true;
-        return cpmk.statusValidasi === filterStatus;
-    });
+    const hasActiveFilter =
+        filters.selectedFakultas !== "all" ||
+        filters.selectedProdi !== "all" ||
+        filters.selectedSemester !== "all" ||
+        filters.selectedMataKuliah !== "all" ||
+        filters.filterStatus !== "all";
 
     return (
         <DashboardPage
@@ -168,7 +79,7 @@ const ValidasiCPMKPage = () => {
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Cari kode atau deskripsi CPMK..."
-                            value={searchTerm}
+                            value={filters.searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-9"
                         />
@@ -177,14 +88,7 @@ const ValidasiCPMKPage = () => {
                         <PopoverTrigger asChild>
                             <Button
                                 type="button"
-                                variant={
-                                    selectedFakultas !== "all" ||
-                                        selectedProdi !== "all" ||
-                                        selectedSemester !== "all" ||
-                                        selectedMataKuliah !== "all"
-                                        ? "default"
-                                        : "outline"
-                                }
+                                variant={hasActiveFilter ? "default" : "outline"}
                                 className="gap-2"
                             >
                                 <SlidersHorizontal className="h-4 w-4" />
@@ -192,39 +96,55 @@ const ValidasiCPMKPage = () => {
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent align="start" className="w-80 space-y-4" onClick={(e) => e.stopPropagation()}>
-                            {/* Fakultas & Prodi (Admin Only) */}
-                            {role === 'admin' && (
+                            {/* Fakultas & Prodi (Admin & Kaprodi) */}
+                            {(role === 'admin' || role === 'kaprodi') && (
                                 <>
-                                    <div className="space-y-1">
-                                        <Label className="text-xs font-medium">Fakultas</Label>
-                                        <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
-                                            <SelectTrigger className="w-full h-8 text-xs">
-                                                <SelectValue placeholder="Semua Fakultas" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Semua Fakultas</SelectItem>
-                                                {fakultasList.map((fak) => (
-                                                    <SelectItem key={fak.id} value={fak.id}>
-                                                        {fak.nama}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                    {role === 'admin' && (
+                                        <div className="space-y-1">
+                                            <Label className="text-xs font-medium">Fakultas</Label>
+                                            <Select value={filters.selectedFakultas} onValueChange={setSelectedFakultas}>
+                                                <SelectTrigger className="w-full h-8 text-xs">
+                                                    <SelectValue placeholder="Semua Fakultas" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">Semua Fakultas</SelectItem>
+                                                    {fakultasList.map((fak) => (
+                                                        <SelectItem key={fak.id} value={fak.id}>
+                                                            {fak.nama}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
 
                                     <div className="space-y-1">
                                         <Label className="text-xs font-medium">Program Studi</Label>
-                                        <Select value={selectedProdi} onValueChange={setSelectedProdi}>
+                                        <Select value={filters.selectedProdi} onValueChange={setSelectedProdi}>
                                             <SelectTrigger className="w-full h-8 text-xs">
                                                 <SelectValue placeholder="Semua Prodi" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">Semua Prodi</SelectItem>
-                                                {prodiList.map((prodi) => (
-                                                    <SelectItem key={prodi.id} value={prodi.id}>
-                                                        {prodi.nama}
-                                                    </SelectItem>
-                                                ))}
+                                                {(() => {
+                                                    let accessibleProdis = prodiList;
+
+                                                    // Kaprodi restriction
+                                                    if (role === 'kaprodi' && profile?.prodiId) {
+                                                        accessibleProdis = prodiList.filter(p => p.id === profile.prodiId);
+                                                    }
+
+                                                    // Admin selected fakultas filter
+                                                    if (role === 'admin' && filters.selectedFakultas !== 'all') {
+                                                        accessibleProdis = accessibleProdis.filter(p => p.fakultasId === filters.selectedFakultas);
+                                                    }
+
+                                                    return accessibleProdis.map((prodi) => (
+                                                        <SelectItem key={prodi.id} value={prodi.id}>
+                                                            {prodi.nama}
+                                                        </SelectItem>
+                                                    ));
+                                                })()}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -234,7 +154,7 @@ const ValidasiCPMKPage = () => {
                             {/* Semester Filter (All Roles) */}
                             <div className="space-y-1">
                                 <Label className="text-xs font-medium">Semester</Label>
-                                <Select value={selectedSemester} onValueChange={setSelectedSemester}>
+                                <Select value={filters.selectedSemester} onValueChange={setSelectedSemester}>
                                     <SelectTrigger className="w-full h-8 text-xs">
                                         <SelectValue placeholder="Semua Semester" />
                                     </SelectTrigger>
@@ -254,7 +174,7 @@ const ValidasiCPMKPage = () => {
                                 <div className="space-y-1">
                                     <Label className="text-xs font-medium">Mata Kuliah</Label>
                                     <Select
-                                        value={selectedMataKuliah}
+                                        value={filters.selectedMataKuliah}
                                         onValueChange={setSelectedMataKuliah}
                                     >
                                         <SelectTrigger className="w-full h-8 text-xs">
@@ -282,6 +202,22 @@ const ValidasiCPMKPage = () => {
                                 </div>
                             )}
 
+                            {/* Status Filter */}
+                            <div className="space-y-1">
+                                <Label className="text-xs font-medium">Status Validasi</Label>
+                                <Select value={filters.filterStatus} onValueChange={setFilterStatus}>
+                                    <SelectTrigger className="w-full h-8 text-xs">
+                                        <SelectValue placeholder="Semua Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Status</SelectItem>
+                                        <SelectItem value="draft">Draft</SelectItem>
+                                        <SelectItem value="validated">Tervalidasi</SelectItem>
+                                        <SelectItem value="active">Aktif</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
 
                         </PopoverContent>
                     </Popover>
@@ -289,21 +225,10 @@ const ValidasiCPMKPage = () => {
                     <Button
                         type="button"
                         variant="outline"
-                        onClick={() => {
-                            setSelectedFakultas("all");
-                            setSelectedProdi("all");
-                            setSelectedSemester("all");
-                            setSelectedMataKuliah("all");
-                            setFilterStatus("all");
-                            setSearchTerm("");
-                        }}
+                        onClick={resetFilters}
                         disabled={
-                            selectedFakultas === "all" &&
-                            selectedProdi === "all" &&
-                            selectedSemester === "all" &&
-                            selectedMataKuliah === "all" &&
-                            filterStatus === "all" &&
-                            searchTerm === ""
+                            !hasActiveFilter &&
+                            filters.searchTerm === ""
                         }
                     >
                         Reset Filter
@@ -314,13 +239,14 @@ const ValidasiCPMKPage = () => {
                     <CardHeader>
                         <CardTitle>Daftar CPMK</CardTitle>
                         <CardDescription>
-                            Klik tombol aksi untuk mengubah status validasi CPMK
+                            Menampilkan {cpmkList.length} dari {pagination.totalItems} data CPMK
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[50px]">No</TableHead>
                                     <TableHead>Kode CPMK</TableHead>
                                     <TableHead>Level</TableHead>
                                     <TableHead>Deskripsi</TableHead>
@@ -333,22 +259,25 @@ const ValidasiCPMKPage = () => {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={canValidate ? 7 : 6} className="h-24 text-center">
+                                        <TableCell colSpan={canValidate ? 8 : 7} className="h-24 text-center">
                                             <div className="flex justify-center items-center">
                                                 <Loader2 className="h-6 w-6 animate-spin mr-2" />
                                                 Loading data...
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : filteredCPMK.length === 0 ? (
+                                ) : cpmkList.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={canValidate ? 7 : 6} className="text-center py-8 text-muted-foreground">
+                                        <TableCell colSpan={canValidate ? 8 : 7} className="text-center py-8 text-muted-foreground">
                                             Tidak ada CPMK dengan filter yang dipilih
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    filteredCPMK.map((cpmk) => (
+                                    cpmkList.map((cpmk, index) => (
                                         <TableRow key={cpmk.id}>
+                                            <TableCell>
+                                                {(pagination.page - 1) * pagination.limit + index + 1}
+                                            </TableCell>
                                             <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
                                             <TableCell>
                                                 {cpmk.levelTaksonomiRef ? (
@@ -423,6 +352,53 @@ const ValidasiCPMKPage = () => {
                                 )}
                             </TableBody>
                         </Table>
+
+                        {/* Pagination Controls */}
+                        {pagination.totalPages > 1 && (
+                            <div className="flex items-center justify-end space-x-2 py-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    type="button"
+                                    onClick={() => pagination.setPage(Math.max(1, pagination.page - 1))}
+                                    disabled={pagination.page === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <div className="flex items-center space-x-1">
+                                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                                        let start = Math.max(1, pagination.page - 2);
+                                        if (start + 4 > pagination.totalPages) {
+                                            start = Math.max(1, pagination.totalPages - 4);
+                                        }
+                                        const p = start + i;
+                                        if (p > pagination.totalPages) return null;
+
+                                        return (
+                                            <Button
+                                                key={p}
+                                                variant={pagination.page === p ? "default" : "outline"}
+                                                size="sm"
+                                                type="button"
+                                                className="w-8 h-8 p-0"
+                                                onClick={() => pagination.setPage(p)}
+                                            >
+                                                {p}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    type="button"
+                                    onClick={() => pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1))}
+                                    disabled={pagination.page === pagination.totalPages}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

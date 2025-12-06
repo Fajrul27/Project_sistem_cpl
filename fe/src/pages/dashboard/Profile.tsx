@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-// import { supabase } from "@/lib/api-client"; // Already imported below
-import { DashboardPage } from "@/components/DashboardLayout";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { User, Mail, Hash, GraduationCap, Calendar, MapPin, Phone, Edit } from "lucide-react";
+import { User, Mail, Hash, GraduationCap, Calendar, MapPin, Phone } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +14,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -32,51 +30,49 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useUserRole } from "@/hooks/useUserRole";
-
-import { supabase, api, fetchSemesters, fetchKelas, fetchAngkatanList } from "@/lib/api-client";
+import { useProfile } from "@/hooks/useProfile";
+import { Loader2 } from "lucide-react";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { role } = useUserRole();
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const {
+    user,
+    profile,
+    loading,
+    role,
+    fakultasList,
+    prodiList,
+    semesterList,
+    kelasList,
+    angkatanList,
+    teachingAssignments,
+    updateProfileData
+  } = useProfile();
+
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
-  const [fakultasList, setFakultasList] = useState<any[]>([]);
-  const [prodiList, setProdiList] = useState<any[]>([]);
-  const [semesterList, setSemesterList] = useState<any[]>([]);
-  const [kelasList, setKelasList] = useState<any[]>([]);
-  const [angkatanList, setAngkatanList] = useState<any[]>([]);
   const [filteredProdiList, setFilteredProdiList] = useState<any[]>([]);
-  const [teachingAssignments, setTeachingAssignments] = useState<any[]>([]);
 
+  // Initialize edit form when opening dialog or profile changes
   useEffect(() => {
-    fetchUserData();
-    fetchMasterData();
-  }, []);
-
-  const fetchMasterData = async () => {
-    try {
-      const [fakultasRes, prodiRes, semesterRes, kelasRes, angkatanRes] = await Promise.all([
-        api.get('/fakultas'),
-        api.get('/prodi'),
-        fetchSemesters(),
-        fetchKelas(),
-        fetchAngkatanList()
-      ]);
-
-      if (fakultasRes.data) setFakultasList(fakultasRes.data);
-      if (prodiRes.data) setProdiList(prodiRes.data);
-      if (semesterRes.data) setSemesterList(semesterRes.data);
-      if (kelasRes.data) setKelasList(kelasRes.data);
-      if (angkatanRes.data) setAngkatanList(angkatanRes.data);
-    } catch (error) {
-      console.error("Error fetching master data:", error);
+    if (isEditing && profile) {
+      setEditForm({
+        namaLengkap: profile.namaLengkap || "",
+        nim: profile.nim || "",
+        nip: profile.nip || "",
+        fakultasId: profile.fakultasId || "",
+        prodiId: profile.prodiId || "",
+        semester: profile.semester || "",
+        semesterId: profile.semesterId || "",
+        kelasId: profile.kelasId || "",
+        angkatanId: profile.angkatanId || "",
+        alamat: profile.alamat || "",
+        noTelepon: profile.noTelepon || "",
+      });
     }
-  };
+  }, [isEditing, profile]);
 
+  // Filter prodi based on selected fakultas in form
   useEffect(() => {
     if (editForm.fakultasId) {
       const filtered = prodiList.filter((p: any) => p.fakultasId === editForm.fakultasId);
@@ -86,96 +82,20 @@ const ProfilePage = () => {
     }
   }, [editForm.fakultasId, prodiList]);
 
-  const fetchUserData = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
-
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        setUser(userData.user);
-        setUser(userData.user);
-
-        // Fetch full profile data from API to get relations like angkatanRef
-        if (userData.user.profile?.id) {
-          try {
-            const profileRes = await api.get(`/profiles/${userData.user.profile.id}`);
-            if (profileRes.data) {
-              const fullProfile = profileRes.data;
-              setProfile(fullProfile);
-
-              // Update edit form with fresh data
-              setEditForm({
-                namaLengkap: fullProfile.namaLengkap || "",
-                nim: fullProfile.nim || "",
-                nip: fullProfile.nip || "",
-                fakultasId: fullProfile.fakultasId || "",
-                prodiId: fullProfile.prodiId || "",
-                semester: fullProfile.semester || "",
-                semesterId: fullProfile.semesterId || "",
-                kelasId: fullProfile.kelasId || "",
-                angkatanId: fullProfile.angkatanId || "",
-                alamat: fullProfile.alamat || "",
-                noTelepon: fullProfile.noTelepon || "",
-              });
-            } else {
-              // Fallback to session profile if API fails or returns empty
-              setProfile(userData.user.profile);
-              setEditForm({
-                namaLengkap: userData.user.profile?.namaLengkap || "",
-                nim: userData.user.profile?.nim || "",
-                nip: userData.user.profile?.nip || "",
-                fakultasId: userData.user.profile?.fakultasId || "",
-                prodiId: userData.user.profile?.prodiId || "",
-                semester: userData.user.profile?.semester || "",
-                semesterId: userData.user.profile?.semesterId || "",
-                kelasId: userData.user.profile?.kelasId || "",
-                angkatanId: userData.user.profile?.angkatanId || "",
-                alamat: userData.user.profile?.alamat || "",
-              });
-            }
-          } catch (err) {
-            console.error("Error fetching full profile:", err);
-            setProfile(userData.user.profile);
-          }
-        } else {
-          setProfile(userData.user.profile);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      toast.error("Gagal memuat data profil");
-    } finally {
-      setLoading(false);
+  const handleSave = async () => {
+    const success = await updateProfileData(editForm);
+    if (success) {
+      setIsEditing(false);
     }
   };
 
-  const isDosen = role === 'dosen' || user?.role === 'dosen' || user?.user_metadata?.role === 'dosen' || profile?.role === 'dosen';
-
-  useEffect(() => {
-    if (isDosen && user?.id) {
-      const fetchAssignments = async () => {
-        try {
-          const assignmentsRes = await api.get(`/mata-kuliah-pengampu/dosen/${user.id}`);
-          if (assignmentsRes.data) {
-            setTeachingAssignments(assignmentsRes.data);
-          }
-        } catch (error) {
-          console.error("Error fetching teaching assignments:", error);
-        }
-      };
-      fetchAssignments();
-    }
-  }, [isDosen, user?.id]);
+  const isDosen = role === 'dosen' || user?.role === 'dosen' || profile?.role === 'dosen';
 
   if (loading) {
     return (
       <DashboardPage title="Profil Saya">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
       </DashboardPage>
     );
@@ -282,7 +202,21 @@ const ProfilePage = () => {
               </div>
             )}
 
-            {profile?.programStudi && (
+            {isDosen && (profile?.prodi?.nama || profile?.programStudi) && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4" />
+                  Program Studi
+                </Label>
+                <Input
+                  value={profile?.prodi?.nama || profile?.programStudi || "-"}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+            )}
+
+            {profile?.programStudi && !isDosen && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <GraduationCap className="h-4 w-4" />
@@ -472,193 +406,93 @@ const ProfilePage = () => {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
+              {/* Form fields here - reusing existing structure logic */}
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="namaLengkap" className="text-right">
-                  Nama
-                </Label>
-                <Input
-                  id="namaLengkap"
-                  value={editForm.namaLengkap}
-                  onChange={(e) => setEditForm({ ...editForm, namaLengkap: e.target.value })}
-                  className="col-span-3"
-                />
+                <Label htmlFor="namaLengkap" className="text-right">Name</Label>
+                <Input id="namaLengkap" value={editForm.namaLengkap} onChange={(e) => setEditForm({ ...editForm, namaLengkap: e.target.value })} className="col-span-3" />
               </div>
 
               {role === 'mahasiswa' && (
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="nim" className="text-right">
-                    NIM
-                  </Label>
-                  <Input
-                    id="nim"
-                    value={editForm.nim}
-                    onChange={(e) => setEditForm({ ...editForm, nim: e.target.value })}
-                    className="col-span-3"
-                  />
+                  <Label htmlFor="nim" className="text-right">NIM</Label>
+                  <Input id="nim" value={editForm.nim} onChange={(e) => setEditForm({ ...editForm, nim: e.target.value })} className="col-span-3" />
                 </div>
               )}
 
               {(role === 'dosen' || role === 'kaprodi' || role === 'dekan') && (
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="nip" className="text-right">
-                    NIP
-                  </Label>
-                  <Input
-                    id="nip"
-                    value={editForm.nip}
-                    onChange={(e) => setEditForm({ ...editForm, nip: e.target.value })}
-                    className="col-span-3"
-                  />
+                  <Label htmlFor="nip" className="text-right">NIP</Label>
+                  <Input id="nip" value={editForm.nip} onChange={(e) => setEditForm({ ...editForm, nip: e.target.value })} className="col-span-3" />
                 </div>
               )}
 
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="fakultas" className="text-right">
-                  Fakultas
-                </Label>
-                <Select
-                  value={editForm.fakultasId}
-                  onValueChange={(val) => setEditForm({ ...editForm, fakultasId: val, prodiId: "" })}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Pilih Fakultas" />
-                  </SelectTrigger>
+                <Label htmlFor="fakultas" className="text-right">Fakultas</Label>
+                <Select value={editForm.fakultasId} onValueChange={(val) => setEditForm({ ...editForm, fakultasId: val, prodiId: "" })}>
+                  <SelectTrigger className="col-span-3"><SelectValue placeholder="Pilih Fakultas" /></SelectTrigger>
                   <SelectContent>
-                    {fakultasList.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
-                    ))}
+                    {fakultasList.map((f) => (<SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="prodi" className="text-right">
-                  Prodi
-                </Label>
-                <Select
-                  value={editForm.prodiId}
-                  onValueChange={(val) => setEditForm({ ...editForm, prodiId: val })}
-                  disabled={!editForm.fakultasId}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Pilih Prodi" />
-                  </SelectTrigger>
+                <Label htmlFor="prodi" className="text-right">Prodi</Label>
+                <Select value={editForm.prodiId} onValueChange={(val) => setEditForm({ ...editForm, prodiId: val })} disabled={!editForm.fakultasId}>
+                  <SelectTrigger className="col-span-3"><SelectValue placeholder="Pilih Prodi" /></SelectTrigger>
                   <SelectContent>
-                    {filteredProdiList.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
-                    ))}
+                    {filteredProdiList.map((p) => (<SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
 
               {role === 'mahasiswa' && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="semester" className="text-right">
-                    Semester
-                  </Label>
-                  <Select
-                    value={editForm.semesterId}
-                    onValueChange={(val) => {
-                      const selected = semesterList.find(s => s.id === val);
-                      setEditForm({
-                        ...editForm,
-                        semesterId: val,
-                        semester: selected?.angka || ""
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Pilih Semester" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {semesterList.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {role === 'mahasiswa' && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="kelas" className="text-right">
-                    Kelas
-                  </Label>
-                  <Select
-                    value={editForm.kelasId}
-                    onValueChange={(val) => setEditForm({ ...editForm, kelasId: val })}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Pilih Kelas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {kelasList.map((k) => (
-                        <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {role === 'mahasiswa' && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="angkatan" className="text-right">
-                    Tahun Masuk
-                  </Label>
-                  <Select
-                    value={editForm.angkatanId}
-                    onValueChange={(val) => setEditForm({ ...editForm, angkatanId: val })}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Pilih Angkatan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {angkatanList.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>{a.tahun}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="semester" className="text-right">Semester</Label>
+                    <Select value={editForm.semesterId} onValueChange={(val) => { const s = semesterList.find(i => i.id === val); setEditForm({ ...editForm, semesterId: val, semester: s?.angka }) }}>
+                      <SelectTrigger className="col-span-3"><SelectValue placeholder="Pilih Semester" /></SelectTrigger>
+                      <SelectContent>
+                        {semesterList.map((s) => (<SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="kelas" className="text-right">Kelas</Label>
+                    <Select value={editForm.kelasId} onValueChange={(val) => setEditForm({ ...editForm, kelasId: val })}>
+                      <SelectTrigger className="col-span-3"><SelectValue placeholder="Pilih Kelas" /></SelectTrigger>
+                      <SelectContent>
+                        {kelasList.map((k) => (<SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="angkatan" className="text-right">Angkatan</Label>
+                    <Select value={editForm.angkatanId} onValueChange={(val) => setEditForm({ ...editForm, angkatanId: val })}>
+                      <SelectTrigger className="col-span-3"><SelectValue placeholder="Pilih Angkatan" /></SelectTrigger>
+                      <SelectContent>
+                        {angkatanList.map((a) => (<SelectItem key={a.id} value={a.id}>{a.tahun}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
               )}
 
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="alamat" className="text-right">
-                  Alamat
-                </Label>
-                <Input
-                  id="alamat"
-                  value={editForm.alamat}
-                  onChange={(e) => setEditForm({ ...editForm, alamat: e.target.value })}
-                  className="col-span-3"
-                />
+                <Label htmlFor="alamat" className="text-right">Alamat</Label>
+                <Input id="alamat" value={editForm.alamat} onChange={(e) => setEditForm({ ...editForm, alamat: e.target.value })} className="col-span-3" />
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="noTelepon" className="text-right">
-                  No. HP
-                </Label>
-                <Input
-                  id="noTelepon"
-                  value={editForm.noTelepon}
-                  onChange={(e) => setEditForm({ ...editForm, noTelepon: e.target.value })}
-                  className="col-span-3"
-                />
+                <Label htmlFor="noTelepon" className="text-right">No. HP</Label>
+                <Input id="noTelepon" value={editForm.noTelepon} onChange={(e) => setEditForm({ ...editForm, noTelepon: e.target.value })} className="col-span-3" />
               </div>
+
             </div>
             <DialogFooter>
-              <Button type="submit" onClick={async () => {
-                try {
-                  setLoading(true);
-                  await api.put(`/profiles/${profile.id}`, editForm);
-                  toast.success("Profil berhasil diperbarui");
-                  setIsEditing(false);
-                  fetchUserData();
-                } catch (e: any) {
-                  toast.error("Gagal memperbarui profil: " + (e.response?.data?.error || e.message));
-                } finally {
-                  setLoading(false);
-                }
-              }}>Simpan Perubahan</Button>
+              <Button type="submit" onClick={handleSave} disabled={loading}>
+                {loading ? "Menyimpan..." : "Simpan Perubahan"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
