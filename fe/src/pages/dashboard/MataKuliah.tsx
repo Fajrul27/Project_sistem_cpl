@@ -13,6 +13,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useMataKuliah, MataKuliah, MataKuliahFormData } from "@/hooks/useMataKuliah";
 import { LoadingSpinner, LoadingScreen } from "@/components/common/LoadingScreen";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 
 const MataKuliahPage = () => {
   const navigate = useNavigate();
@@ -79,9 +80,21 @@ const MataKuliahPage = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Yakin ingin menghapus mata kuliah ini?")) return;
-    await deleteMataKuliah(id);
+  // Delete Dialog State
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [mkToDelete, setMkToDelete] = useState<string | null>(null);
+
+  const handleDelete = (id: string) => {
+    setMkToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (mkToDelete) {
+      await deleteMataKuliah(mkToDelete);
+      setDeleteDialogOpen(false);
+      setMkToDelete(null);
+    }
   };
 
   const resetForm = () => {
@@ -518,6 +531,13 @@ const MataKuliahPage = () => {
           </CardContent>
         </Card>
       </div >
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="Hapus Mata Kuliah"
+        description="Apakah Anda yakin ingin menghapus mata kuliah ini? Data yang dihapus tidak dapat dikembalikan."
+      />
     </DashboardPage >
   );
 }

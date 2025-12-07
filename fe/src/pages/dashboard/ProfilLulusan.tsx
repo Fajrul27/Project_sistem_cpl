@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit, Save, Briefcase } from "lucide-react";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import {
     Dialog,
     DialogContent,
@@ -85,9 +86,21 @@ export default function ProfilLulusanPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Yakin ingin menghapus profil ini?")) return;
-        await deleteProfil(id);
+    // Delete Dialog State
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [profilToDelete, setProfilToDelete] = useState<string | null>(null);
+
+    const handleDelete = (id: string) => {
+        setProfilToDelete(id);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (profilToDelete) {
+            await deleteProfil(profilToDelete);
+            setDeleteDialogOpen(false);
+            setProfilToDelete(null);
+        }
     };
 
     const openEdit = (item: ProfilLulusan) => {
@@ -374,6 +387,13 @@ export default function ProfilLulusanPage() {
                     </DialogContent>
                 </Dialog>
             </div>
+            <DeleteConfirmationDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onConfirm={confirmDelete}
+                title="Hapus Profil Lulusan"
+                description="Apakah Anda yakin ingin menghapus profil ini? Data terkait mungkin akan terpengaruh."
+            />
         </DashboardPage>
     );
 }

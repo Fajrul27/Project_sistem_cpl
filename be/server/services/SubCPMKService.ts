@@ -27,7 +27,7 @@ export class SubCPMKService {
             }
         });
 
-        await recalculateCpmkBulk(cpmkId);
+        recalculateCpmkBulk(cpmkId).catch(err => console.error('Background recalc error:', err));
         return subCpmk;
     }
 
@@ -41,7 +41,7 @@ export class SubCPMKService {
             }
         });
 
-        await recalculateCpmkBulk(subCpmk.cpmkId);
+        recalculateCpmkBulk(subCpmk.cpmkId).catch(err => console.error('Background recalc error:', err));
         return subCpmk;
     }
 
@@ -50,21 +50,30 @@ export class SubCPMKService {
 
         if (subCpmk) {
             await prisma.subCpmk.delete({ where: { id } });
-            await recalculateCpmkBulk(subCpmk.cpmkId);
+            recalculateCpmkBulk(subCpmk.cpmkId).catch(err => console.error('Background recalc error:', err));
         }
     }
 
     static async createSubCpmkMapping(subCpmkId: string, teknikPenilaianId: string, bobot: number) {
-        const mapping = await prisma.asesmenSubCpmk.create({
-            data: {
+        const mapping = await prisma.asesmenSubCpmk.upsert({
+            where: {
+                teknikPenilaianId_subCpmkId: {
+                    subCpmkId,
+                    teknikPenilaianId
+                }
+            },
+            create: {
                 subCpmkId,
                 teknikPenilaianId,
+                bobot
+            },
+            update: {
                 bobot
             },
             include: { subCpmk: true }
         });
 
-        await recalculateCpmkBulk(mapping.subCpmk.cpmkId);
+        recalculateCpmkBulk(mapping.subCpmk.cpmkId).catch(err => console.error('Background recalc error:', err));
         return mapping;
     }
 
@@ -76,7 +85,7 @@ export class SubCPMKService {
 
         if (mapping) {
             await prisma.asesmenSubCpmk.delete({ where: { id } });
-            await recalculateCpmkBulk(mapping.subCpmk.cpmkId);
+            recalculateCpmkBulk(mapping.subCpmk.cpmkId).catch(err => console.error('Background recalc error:', err));
         }
     }
 }

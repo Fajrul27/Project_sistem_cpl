@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,7 +49,6 @@ const CPLPage = () => {
   } = useCPL();
 
   const [submitting, setSubmitting] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingCPL, setEditingCPL] = useState<CPL | null>(null);
@@ -110,12 +110,21 @@ const CPLPage = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = async () => {
-    if (!deletingId) return;
+  // Delete Dialog State
+  const [cplToDelete, setCplToDelete] = useState<string | null>(null);
 
-    await deleteCPL(deletingId);
-    setDeleteDialogOpen(false);
-    setDeletingId(null);
+  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCplToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (cplToDelete) {
+      await deleteCPL(cplToDelete);
+      setDeleteDialogOpen(false);
+      setCplToDelete(null);
+    }
   };
 
   const resetForm = () => {
@@ -126,12 +135,6 @@ const CPLPage = () => {
       prodiId: "",
     });
     setEditingCPL(null);
-  };
-
-  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDeletingId(id);
-    setDeleteDialogOpen(true);
   };
 
   const canEdit = role === "admin" || role === "kaprodi";
@@ -376,13 +379,8 @@ const CPLPage = () => {
                               size="sm"
                               variant="destructive"
                               onClick={(e) => handleDeleteClick(cpl.id, e)}
-                              disabled={deletingId === cpl.id}
                             >
-                              {deletingId === cpl.id ? (
-                                <LoadingSpinner size="sm" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </>
                         )}
@@ -451,22 +449,13 @@ const CPLPage = () => {
         </Card>
       </div>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tindakan ini akan menghapus CPL. Data yang telah dihapus tidak dapat dikembalikan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
-              Hapus
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="Hapus CPL"
+        description="Apakah Anda yakin ingin menghapus CPL ini? Data yang telah dihapus tidak dapat dikembalikan."
+      />
     </DashboardPage>
   );
 }

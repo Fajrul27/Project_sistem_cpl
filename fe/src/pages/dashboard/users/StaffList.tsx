@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { fetchAllUsers, createUserWithRole, updateUser, deleteUser, updateProfile, fetchFakultasList } from "@/lib/api";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { LoadingSpinner } from "@/components/common/LoadingScreen";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -219,16 +220,30 @@ export const StaffList = () => {
         }
     };
 
-    const handleDeleteUser = async () => {
-        if (!editingUser || !window.confirm("Hapus user ini?")) return;
-        setDeletingId(editingUser.id);
-        try {
-            await deleteUser(editingUser.id);
-            toast.success("User dihapus");
-            setUsers(u => u.filter(x => x.id !== editingUser.id));
-            setEditingUser(null);
-        } catch (e) { toast.error("Gagal hapus"); }
-        finally { setDeletingId(null); }
+    // Delete Dialog State
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<UserRow | null>(null);
+
+    const handleDeleteUser = (user: UserRow) => {
+        setUserToDelete(user);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (userToDelete) {
+            setDeletingId(userToDelete.id);
+            try {
+                await deleteUser(userToDelete.id);
+                toast.success("User dihapus");
+                setUsers(u => u.filter(x => x.id !== userToDelete.id));
+                setEditingUser(null);
+            } catch (e) { toast.error("Gagal hapus"); }
+            finally {
+                setDeletingId(null);
+                setDeleteDialogOpen(false);
+                setUserToDelete(null);
+            }
+        }
     };
 
     return (
@@ -406,7 +421,7 @@ export const StaffList = () => {
                                 </Select>
                             </div>
                             <div className="flex justify-between pt-4">
-                                <Button variant="destructive" onClick={handleDeleteUser}>Hapus User</Button>
+                                <Button variant="destructive" onClick={() => editingUser && handleDeleteUser(editingUser)}>Hapus User</Button>
                                 <Button onClick={handleSaveEdit}>{savingEdit ? "..." : "Simpan"}</Button>
                             </div>
                         </div>

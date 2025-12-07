@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, UserPlus } from "lucide-react";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { useDosenPengampu } from "@/hooks/useDosenPengampu";
 
 const DosenPengampuPage = () => {
@@ -31,6 +33,23 @@ const DosenPengampuPage = () => {
         handleAddPengampu,
         handleDeletePengampu
     } = useDosenPengampu();
+
+    // Delete Dialog State
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [idToDelete, setIdToDelete] = useState<string | null>(null);
+
+    const initiateDelete = (id: string) => {
+        setIdToDelete(id);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (idToDelete) {
+            await handleDeletePengampu(idToDelete);
+            setDeleteDialogOpen(false);
+            setIdToDelete(null);
+        }
+    };
 
     if (loading) {
         return (
@@ -210,7 +229,7 @@ const DosenPengampuPage = () => {
                                                         variant="ghost"
                                                         size="sm"
                                                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        onClick={() => handleDeletePengampu(pengampu.id)}
+                                                        onClick={() => initiateDelete(pengampu.id)}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
@@ -224,7 +243,14 @@ const DosenPengampuPage = () => {
                     </Card>
                 </div>
             </div>
-        </DashboardPage>
+            <DeleteConfirmationDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onConfirm={confirmDelete}
+                title="Hapus Pengampu"
+                description="Apakah Anda yakin ingin menghapus dosen pengampu ini dari mata kuliah?"
+            />
+        </DashboardPage >
     );
 };
 

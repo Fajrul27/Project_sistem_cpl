@@ -17,6 +17,7 @@ import { MultiTaxonomySelect } from "@/components/features/MultiTaxonomySelect";
 import { Badge } from "@/components/ui/badge";
 import { useCPMK, Cpmk } from "@/hooks/useCPMK";
 import { LoadingSpinner, LoadingScreen } from "@/components/common/LoadingScreen";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 
 const CPMKPage = () => {
     const navigate = useNavigate();
@@ -103,9 +104,21 @@ const CPMKPage = () => {
         setDialogOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Yakin ingin menghapus CPMK ini?")) return;
-        await deleteCpmk(id);
+    // Delete Dialog State
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [cpmkToDelete, setCpmkToDelete] = useState<string | null>(null);
+
+    const handleDelete = (id: string) => {
+        setCpmkToDelete(id);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (cpmkToDelete) {
+            await deleteCpmk(cpmkToDelete);
+            setDeleteDialogOpen(false);
+            setCpmkToDelete(null);
+        }
     };
 
     const handleViewDetail = (id: string) => {
@@ -513,7 +526,14 @@ const CPMKPage = () => {
                     )}
                 </Card>
             </div>
-        </DashboardPage >
+            <DeleteConfirmationDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onConfirm={confirmDelete}
+                title="Hapus CPMK"
+                description="Apakah Anda yakin ingin menghapus CPMK ini? Tindakan ini tidak dapat dibatalkan."
+            />
+        </DashboardPage>
     );
 };
 
