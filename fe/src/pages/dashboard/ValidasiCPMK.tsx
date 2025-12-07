@@ -4,7 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { CheckCircle2, XCircle, Clock, Loader2, SlidersHorizontal, Search } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, SlidersHorizontal, Search } from "lucide-react";
+import { LoadingSpinner, LoadingScreen } from "@/components/common/LoadingScreen";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -260,10 +261,7 @@ const ValidasiCPMKPage = () => {
                                 {loading ? (
                                     <TableRow>
                                         <TableCell colSpan={canValidate ? 8 : 7} className="h-24 text-center">
-                                            <div className="flex justify-center items-center">
-                                                <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                                                Loading data...
-                                            </div>
+                                            <LoadingScreen fullScreen={false} message="Memuat data..." />
                                         </TableCell>
                                     </TableRow>
                                 ) : cpmkList.length === 0 ? (
@@ -314,7 +312,7 @@ const ValidasiCPMKPage = () => {
                                                                 disabled={updating === cpmk.id}
                                                             >
                                                                 {updating === cpmk.id ? (
-                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                    <LoadingSpinner size="sm" />
                                                                 ) : (
                                                                     <>
                                                                         <CheckCircle2 className="w-4 h-4 mr-1" />

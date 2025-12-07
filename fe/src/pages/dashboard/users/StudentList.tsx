@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
 import { fetchAllUsers, updateUserRole, createUserWithRole, updateUser, deleteUser, updateProfile, fetchKelas, fetchFakultasList, fetchAngkatanList } from "@/lib/api";
-import { Search, SlidersHorizontal, Loader2 } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
+import { LoadingSpinner } from "@/components/common/LoadingScreen";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -495,7 +496,7 @@ export const StudentList = () => {
                     </TableHeader>
                     <TableBody>
                         {loading && users.length === 0 ? (
-                            <TableRow><TableCell colSpan={7} className="text-center py-8"><Loader2 className="animate-spin inline mr-2" /> Loading...</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={7} className="text-center py-8"><LoadingSpinner size="sm" className="inline mr-2" /> Loading...</TableCell></TableRow>
                         ) : users.length === 0 ? (
                             <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Tidak ada data</TableCell></TableRow>
                         ) : (

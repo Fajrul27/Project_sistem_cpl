@@ -31,7 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/hooks/useProfile";
-import { Loader2 } from "lucide-react";
+import { LoadingScreen } from "@/components/common/LoadingScreen";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -94,9 +94,7 @@ const ProfilePage = () => {
   if (loading) {
     return (
       <DashboardPage title="Profil Saya">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
+        <LoadingScreen fullScreen={false} message="Memuat profil..." />
       </DashboardPage>
     );
   }

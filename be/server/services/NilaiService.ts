@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { calculateNilaiCpmk } from '../lib/calculation.js';
 import { gradingSchemas } from '../schemas/grading.schema.js';
+import { UserService } from './UserService.js';
 import * as XLSX from 'xlsx';
 
 export class NilaiService {
@@ -62,7 +63,8 @@ export class NilaiService {
             select: {
                 mahasiswaId: true,
                 teknikPenilaianId: true,
-                nilai: true
+                nilai: true,
+                updatedAt: true
             }
         });
     }
@@ -288,10 +290,24 @@ export class NilaiService {
             orderBy: { kodeCpmk: 'asc' }
         });
 
-        let targetKelasIds: string[] = [];
+        let mahasiswaData: any[] = [];
+
         if (kelasId) {
-            targetKelasIds = [kelasId];
+            // Use UserService to ensure exact parity with UI filters/security
+            const result = await UserService.getAllUsers({
+                role: 'mahasiswa',
+                kelasId,
+                limit: -1,
+                page: 1,
+                userId: userId || '',
+                userRole: userRole || '',
+                sortBy: 'nim',
+                sortOrder: 'asc'
+            });
+            mahasiswaData = result.data;
         } else {
+            // Fallback for non-class specific export (e.g. validasi checks?)
+            let targetKelasIds: string[] = [];
             const pengampuWhere: any = { mataKuliahId };
             if (userRole === 'dosen' && userId) pengampuWhere.dosenId = userId;
 
@@ -300,25 +316,26 @@ export class NilaiService {
                 select: { kelasId: true }
             });
             targetKelasIds = pengampuClasses.map(p => p.kelasId).filter((id): id is string => id !== null);
+
+            const mahasiswaWhere: any = {
+                role: { role: 'mahasiswa' },
+                profile: { kelasId: { in: targetKelasIds } }
+            };
+
+            if (mk.prodiId) mahasiswaWhere.profile.prodiId = mk.prodiId;
+            else if (mk.programStudi) mahasiswaWhere.profile.programStudi = mk.programStudi;
+
+            if (semester) mahasiswaWhere.profile.semester = semester;
+
+            mahasiswaData = await prisma.user.findMany({
+                where: mahasiswaWhere,
+                include: { profile: true },
+                orderBy: { profile: { nim: 'asc' } }
+            });
         }
 
-        const mahasiswaWhere: any = {
-            role: { role: 'mahasiswa' },
-            profile: { kelasId: { in: targetKelasIds } }
-        };
-
-        if (mk.prodiId) mahasiswaWhere.profile.prodiId = mk.prodiId;
-        else if (mk.programStudi) mahasiswaWhere.profile.programStudi = mk.programStudi;
-
-        if (semester) mahasiswaWhere.profile.semester = semester;
-
-        const mahasiswaData = await prisma.user.findMany({
-            where: mahasiswaWhere,
-            include: { profile: true },
-            orderBy: { profile: { nim: 'asc' } }
-        });
-
         const existingGradesMap = new Map<string, Map<string, number>>();
+
         if (semester && tahunAjaran) {
             const grades = await prisma.nilaiTeknikPenilaian.findMany({
                 where: {
@@ -362,7 +379,8 @@ export class NilaiService {
         ws['!cols'] = [{ wch: 5 }, { wch: 15 }, { wch: 30 }, ...teknikIds.map(() => ({ wch: 20 }))];
         XLSX.utils.book_append_sheet(wb, ws, 'Nilai');
 
-        return { buffer: XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }), filename: `Template_Nilai_${mk.kodeMk}.xlsx` };
+        const sanitizedMkName = mk.namaMk.replace(/[^a-zA-Z0-9]/g, '_');
+        return { buffer: XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }), filename: `input_nilai_${sanitizedMkName}.xlsx` };
     }
 
     static async importNilai(fileBuffer: Buffer, mataKuliahId: string, semester: number, tahunAjaran: string, userId: string) {

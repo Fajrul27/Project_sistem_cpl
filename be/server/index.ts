@@ -9,7 +9,7 @@ import cookieParser from 'cookie-parser';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-console.log('Environment:', process.env.NODE_ENV);
+// console.log('Environment:', process.env.NODE_ENV);
 
 // Middleware
 const allowedOrigins = [
@@ -33,7 +33,7 @@ app.use(cors({
     }
 
     // For development, we might want to log blocked origins
-    console.log('Blocked by CORS:', origin);
+    // console.log('Blocked by CORS:', origin);
     callback(null, false);
   },
   credentials: true

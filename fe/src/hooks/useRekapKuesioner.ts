@@ -78,7 +78,7 @@ export function useRekapKuesioner() {
 
             // Handle response format (direct array or object with data property)
             const statsData = Array.isArray(res) ? res : (res.data || []);
-            console.log("Fetched Kuesioner Stats:", statsData.length, "items", statsData);
+            // console.log("Fetched Kuesioner Stats:", statsData.length, "items", statsData);
             setStats(statsData);
         } catch (error) {
             console.error("Error fetching stats:", error);
@@ -106,7 +106,7 @@ export function useRekapKuesioner() {
         if (role === 'admin') {
             api.get("/kuesioner/stats").then(res => {
                 const data = Array.isArray(res) ? res : (res.data || []);
-                console.log("DEBUG: All Stats (No Filter):", data.length, "items");
+                // console.log("DEBUG: All Stats (No Filter):", data.length, "items");
             }).catch(e => console.error("DEBUG FETCH ERROR:", e));
         }
     }, [role]);

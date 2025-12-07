@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, Eye, Loader2, Search, SlidersHorizontal } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
@@ -141,13 +142,14 @@ const CPLPage = () => {
 
   const hasActiveFilter = filters.kategoriFilter !== "all" || filters.prodiFilter !== "all";
 
+
+
+  // ...
+
   if (loading && cplList.length === 0) {
     return (
       <DashboardPage title="Data CPL">
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Memuat data CPL...</p>
-        </div>
+        <LoadingScreen fullScreen={false} message="Memuat data CPL..." />
       </DashboardPage>
     );
   }
@@ -324,7 +326,7 @@ const CPLPage = () => {
                       >
                         {submitting ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <LoadingSpinner size="sm" className="mr-2" />
                             {editingCPL ? "Memperbarui..." : "Menyimpan..."}
                           </>
                         ) : editingCPL ? "Update" : "Simpan"}
@@ -377,7 +379,7 @@ const CPLPage = () => {
                               disabled={deletingId === cpl.id}
                             >
                               {deletingId === cpl.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <LoadingSpinner size="sm" />
                               ) : (
                                 <Trash2 className="h-4 w-4" />
                               )}

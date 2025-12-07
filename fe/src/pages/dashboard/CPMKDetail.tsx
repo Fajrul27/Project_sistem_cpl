@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, Loader2, ArrowLeft, AlertCircle, BookOpen, User, Hash, GraduationCap } from "lucide-react";
+import { Plus, Edit, Trash2, ArrowLeft, AlertCircle, BookOpen, User, Hash, GraduationCap } from "lucide-react";
+import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -123,9 +124,7 @@ const CPMKDetailPage = () => {
     if (loading || !cpmk) {
         return (
             <DashboardPage title="Detail CPMK">
-                <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                </div>
+                <LoadingScreen fullScreen={false} message="Memuat detail CPMK..." />
             </DashboardPage>
         );
     }
@@ -273,7 +272,7 @@ const CPMKDetailPage = () => {
                                             />
                                         </div>
                                         <Button type="submit" disabled={submitting}>
-                                            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                            {submitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
                                             {editingMapping ? "Update" : "Simpan"}
                                         </Button>
                                     </form>
@@ -398,7 +397,7 @@ const CPMKDetailPage = () => {
                                             />
                                         </div>
                                         <Button type="submit" disabled={submitting}>
-                                            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                            {submitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
                                             {editingTeknik ? "Update" : "Simpan"}
                                         </Button>
                                     </form>

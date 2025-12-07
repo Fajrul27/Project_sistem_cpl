@@ -113,21 +113,22 @@ export class TranskripService {
             orderBy: { kodeCpl: 'asc' }
         });
 
-        console.log(`[Transkrip] Mahasiswa prodiId: ${mahasiswa.prodiId}`);
-        console.log(`[Transkrip] Found ${allCpls.length} CPLs in curriculum for this prodi`);
+        // console.log(`[Transkrip] Mahasiswa prodiId: ${mahasiswa.prodiId}`);
+        // console.log(`[Transkrip] Found ${allCpls.length} CPLs in curriculum for this prodi`);
 
         const where: any = { mahasiswaId };
         if (semester) where.semester = semester;
         if (tahunAjaran) where.tahunAjaran = tahunAjaran;
 
-        console.log(`[Transkrip] Fetching for mahasiswa=${mahasiswaId}, semester=${semester}, tahunAjaran=${tahunAjaran}`);
+        // console.log(`[Transkrip] Fetching for mahasiswa=${mahasiswaId}, semester=${semester}, tahunAjaran=${tahunAjaran}`);
 
         const nilaiCplList = await prisma.nilaiCpl.findMany({
             where,
             include: { cpl: true, mataKuliah: true }
         });
 
-        console.log(`[Transkrip] Found ${nilaiCplList.length} nilai_cpl records`);
+        // console.log(`[Transkrip] Found ${nilaiCplList.length} nilai_cpl records`);
+        /*
         if (nilaiCplList.length > 0) {
             console.log(`[Transkrip] Sample record:`, {
                 cplId: nilaiCplList[0].cplId,
@@ -136,6 +137,7 @@ export class TranskripService {
                 tahunAjaran: nilaiCplList[0].tahunAjaran
             });
         }
+        */
 
         // Fetch technical assessment data to show what assessments were input
         const nilaiTeknikList = await prisma.nilaiTeknikPenilaian.findMany({
@@ -177,8 +179,8 @@ export class TranskripService {
         const transkrip: any[] = [];
         const minNilai = 70;
 
-        console.log(`[Transkrip] Processing ${allCpls.length} CPLs from curriculum`);
-        console.log(`[Transkrip] cplMap has ${cplMap.size} entries`);
+        // console.log(`[Transkrip] Processing ${allCpls.length} CPLs from curriculum`);
+        // console.log(`[Transkrip] cplMap has ${cplMap.size} entries`);
 
         // Get unique CPL IDs from nilai_cpl records
         const cplIdsWithNilai = Array.from(cplMap.keys());
@@ -189,7 +191,7 @@ export class TranskripService {
             include: { kategoriRef: true }
         });
 
-        console.log(`[Transkrip] Found ${cplsWithNilai.length} CPLs with nilai records`);
+        // console.log(`[Transkrip] Found ${cplsWithNilai.length} CPLs with nilai records`);
 
         for (const cpl of cplsWithNilai) {
             const nilaiList = cplMap.get(cpl.id) || [];
@@ -256,7 +258,8 @@ export class TranskripService {
         };
         (stats as any).persentaseTercapai = stats.totalCpl > 0 ? Number(((stats.tercapai / stats.totalCpl) * 100).toFixed(2)) : 0;
 
-        console.log(`[Transkrip] Returning ${transkrip.length} items to frontend`);
+        // console.log(`[Transkrip] Returning ${transkrip.length} items to frontend`);
+        /*
         if (transkrip.length > 0) {
             console.log(`[Transkrip] Sample item:`, {
                 cplId: transkrip[0].cplId,
@@ -266,6 +269,7 @@ export class TranskripService {
                 mataKuliahCount: transkrip[0].mataKuliahList?.length
             });
         }
+        */
 
         return {
             mahasiswa,

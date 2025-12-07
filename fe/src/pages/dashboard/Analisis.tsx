@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
@@ -17,9 +18,7 @@ const AnalisisiPage = () => {
   if (loading) {
     return (
       <DashboardPage title="Analisis CPL">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
+        <LoadingScreen fullScreen={false} message="Memuat data analisis..." />
       </DashboardPage>
     );
   }

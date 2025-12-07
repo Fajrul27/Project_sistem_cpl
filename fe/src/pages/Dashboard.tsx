@@ -23,6 +23,7 @@ import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
 import { CompletenessCard } from "@/components/dashboard/CompletenessCard";
 import { DosenAnalysisTable } from "@/components/dashboard/DosenAnalysisTable";
 import { StudentEvaluationTable } from "@/components/dashboard/StudentEvaluationTable";
+import { LoadingScreen } from "@/components/common/LoadingScreen";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -82,14 +83,7 @@ const Dashboard = () => {
   };
 
   if (roleLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Memuat akses pengguna...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Memuat akses pengguna..." fullScreen />;
   }
 
   // Initial loading (no data yet) could still be handled, or just show skeleton.

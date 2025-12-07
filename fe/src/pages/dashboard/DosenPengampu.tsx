@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Trash2, UserPlus } from "lucide-react";
+import { Trash2, UserPlus } from "lucide-react";
+import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { useDosenPengampu } from "@/hooks/useDosenPengampu";
 
 const DosenPengampuPage = () => {
@@ -34,9 +35,7 @@ const DosenPengampuPage = () => {
     if (loading) {
         return (
             <DashboardPage title="Manajemen Dosen Pengampu">
-                <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                </div>
+                <LoadingScreen fullScreen={false} message="Memuat data..." />
             </DashboardPage>
         );
     }
@@ -154,7 +153,7 @@ const DosenPengampuPage = () => {
                                     disabled={adding || !selectedDosen}
                                 >
                                     {adding ? (
-                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        <LoadingSpinner size="sm" className="mr-2" />
                                     ) : (
                                         <UserPlus className="h-4 w-4 mr-2" />
                                     )}
@@ -183,9 +182,7 @@ const DosenPengampuPage = () => {
                                     <p>Silakan pilih mata kuliah di sebelah kiri</p>
                                 </div>
                             ) : loadingPengampu ? (
-                                <div className="flex items-center justify-center h-48">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                </div>
+                                <LoadingScreen fullScreen={false} message="Memuat pengampu..." />
                             ) : pengampuList.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
                                     <p>Belum ada dosen pengampu untuk mata kuliah ini</p>

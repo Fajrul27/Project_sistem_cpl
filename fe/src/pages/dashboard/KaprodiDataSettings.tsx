@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
-import { Save, Loader2, Check, ChevronsUpDown, Pencil, Trash2 } from "lucide-react";
+import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
+import { Save, Check, ChevronsUpDown, Pencil, Trash2 } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -191,7 +192,7 @@ const KaprodiDataSettings = () => {
                             <Button type="submit" disabled={saving}>
                                 {saving ? (
                                     <>
-                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        <LoadingSpinner size="sm" className="mr-2" />
                                         Menyimpan...
                                     </>
                                 ) : (
@@ -211,9 +212,7 @@ const KaprodiDataSettings = () => {
                     </CardHeader>
                     <CardContent>
                         {loading ? (
-                            <div className="flex items-center justify-center py-8">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            </div>
+                            <LoadingScreen fullScreen={false} message="Memuat data kaprodi..." />
                         ) : kaprodiList.length === 0 ? (
                             <p className="text-center text-muted-foreground py-8">
                                 Belum ada data kaprodi

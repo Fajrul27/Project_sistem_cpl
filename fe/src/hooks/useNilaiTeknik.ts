@@ -54,6 +54,7 @@ export const useNilaiTeknik = () => {
     );
 
     const [grades, setGrades] = useState<Record<string, number>>({}); // key: studentId_teknikId
+    const [gradesMetadata, setGradesMetadata] = useState<Record<string, { updatedAt: string }>>({});
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -220,13 +221,15 @@ export const useNilaiTeknik = () => {
                 });
 
                 const existingGrades: Record<string, number> = {};
+                const existingMetadata: Record<string, { updatedAt: string }> = {};
                 let maxDate: Date | null = null;
 
                 if (gradesData.data) {
                     gradesData.data.forEach((g: any) => {
-                        existingGrades[`${g.mahasiswaId}_${g.teknikPenilaianId}`] = g.nilai;
-
+                        const key = `${g.mahasiswaId}_${g.teknikPenilaianId}`;
+                        existingGrades[key] = g.nilai;
                         if (g.updatedAt) {
+                            existingMetadata[key] = { updatedAt: g.updatedAt };
                             const date = new Date(g.updatedAt);
                             if (!maxDate || date > maxDate) {
                                 maxDate = date;
@@ -235,9 +238,10 @@ export const useNilaiTeknik = () => {
                     });
                 }
                 setGrades(existingGrades);
+                setGradesMetadata(existingMetadata);
                 setLastUpdated(maxDate);
             } catch (err) {
-                console.log("No existing grades or error fetching grades", err);
+                // console.log("No existing grades or error fetching grades", err);
             }
 
         } catch (error) {
@@ -365,7 +369,10 @@ export const useNilaiTeknik = () => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Template_Nilai_MK.xlsx`;
+            const selectedMkData = mkList.find(m => m.id === selectedMK);
+            const mkName = selectedMkData ? selectedMkData.namaMk.replace(/[^a-zA-Z0-9]/g, '_') : 'MK';
+
+            a.download = `input_nilai_${mkName}.xlsx`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -430,7 +437,9 @@ export const useNilaiTeknik = () => {
         setSemester,
         tahunAjaran,
         setTahunAjaran,
+
         grades,
+        gradesMetadata,
         loading,
         saving,
         lastUpdated,

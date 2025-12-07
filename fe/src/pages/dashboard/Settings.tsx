@@ -3,8 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
-import { Loader2, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 
 const SettingsPage = () => {
@@ -13,9 +14,7 @@ const SettingsPage = () => {
   if (loading) {
     return (
       <DashboardPage title="Pengaturan Laporan">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
+        <LoadingScreen fullScreen={false} message="Memuat pengaturan..." />
       </DashboardPage>
     );
   }
@@ -114,7 +113,7 @@ const SettingsPage = () => {
               <Button type="submit" disabled={saving}>
                 {saving ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <LoadingSpinner size="sm" className="mr-2" />
                     Menyimpan...
                   </>
                 ) : (

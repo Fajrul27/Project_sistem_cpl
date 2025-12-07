@@ -4,7 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Save, FileText, Upload, CheckCircle2, XCircle, Settings, Gavel } from "lucide-react";
+import { Save, FileText, Upload, CheckCircle2, XCircle, Settings, Gavel } from "lucide-react";
+import { LoadingSpinner } from "@/components/common/LoadingScreen";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -28,6 +29,7 @@ const InputNilaiTeknikPage = () => {
         tahunAjaran,
         setTahunAjaran,
         grades,
+        gradesMetadata,
         loading,
         saving,
         lastUpdated,
@@ -155,7 +157,7 @@ const InputNilaiTeknikPage = () => {
                                     </Button>
                                 </div>
                                 <Button onClick={handleSave} disabled={saving}>
-                                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    {saving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="mr-2 h-4 w-4" />}
                                     Simpan Nilai
                                 </Button>
                             </div>
@@ -163,7 +165,7 @@ const InputNilaiTeknikPage = () => {
                         <CardContent className="overflow-x-auto">
                             {loading ? (
                                 <div className="flex justify-center py-8">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    <LoadingSpinner size="lg" />
                                 </div>
                             ) : cpmkList.length === 0 ? (
                                 <div className="text-center py-8 text-muted-foreground">
@@ -264,6 +266,11 @@ const InputNilaiTeknikPage = () => {
                                                                     disabled={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active'}
                                                                     title={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active' ? "CPMK belum divalidasi" : ""}
                                                                 />
+                                                                {gradesMetadata[`${student.id}_${teknik.id}`]?.updatedAt && (
+                                                                    <div className="text-[10px] text-muted-foreground text-center mt-0.5">
+                                                                        {new Date(gradesMetadata[`${student.id}_${teknik.id}`].updatedAt).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })}
+                                                                    </div>
+                                                                )}
                                                                 {(cpmk.statusValidasi === 'validated' || cpmk.statusValidasi === 'active') && (
                                                                     <Button
                                                                         variant="ghost"

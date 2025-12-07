@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Loader2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useCPLDetail } from "@/hooks/useCPLDetailHook";
 
@@ -25,10 +26,7 @@ const CPLDetailPage = () => {
   if (loading) {
     return (
       <DashboardPage title="Detail CPL">
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Memuat data CPL...</p>
-        </div>
+        <LoadingScreen fullScreen={false} message="Memuat data CPL..." />
       </DashboardPage>
     );
   }

@@ -13,7 +13,7 @@ export function LoadingScreen({ message = "Memuat...", fullScreen = true }: Load
   return (
     <div className={containerClass}>
       <div className="text-center space-y-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
         <p className="text-sm text-muted-foreground font-medium">{message}</p>
       </div>
     </div>
@@ -22,12 +22,12 @@ export function LoadingScreen({ message = "Memuat...", fullScreen = true }: Load
 
 export function LoadingSpinner({ size = "default", className = "" }: { size?: "sm" | "default" | "lg"; className?: string }) {
   const sizeClasses = {
-    sm: "h-4 w-4",
-    default: "h-8 w-8",
-    lg: "h-12 w-12",
+    sm: "h-4 w-4 border-2",
+    default: "h-8 w-8 border-2",
+    lg: "h-12 w-12 border-4",
   };
 
   return (
-    <Loader2 className={`animate-spin text-primary ${sizeClasses[size]} ${className}`} />
+    <div className={`animate-spin rounded-full border-b-primary border-transparent ${sizeClasses[size]} ${className}`}></div>
   );
 }

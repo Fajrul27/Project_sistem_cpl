@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
+import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
+import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Search, TrendingUp, SlidersHorizontal, Loader2 } from "lucide-react";
+import { Search, TrendingUp, SlidersHorizontal } from "lucide-react";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useMahasiswa, Profile } from "@/hooks/useMahasiswa";
@@ -104,7 +105,7 @@ const MahasiswaPage = () => {
             />
             {loading && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                <LoadingSpinner size="sm" className="text-muted-foreground" />
               </div>
             )}
           </div>
@@ -215,10 +216,7 @@ const MahasiswaPage = () => {
           </CardHeader>
           <CardContent>
             {loading && profiles.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 gap-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-muted-foreground">Memuat data mahasiswa...</p>
-              </div>
+              <LoadingScreen fullScreen={false} message="Memuat data mahasiswa..." />
             ) : (
               <>
                 <Table>
@@ -338,10 +336,7 @@ const MahasiswaPage = () => {
             </DialogHeader>
 
             {progressLoading ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-                <p className="text-sm text-muted-foreground">Menghitung progress...</p>
-              </div>
+              <LoadingScreen fullScreen={false} message="Menghitung progress..." />
             ) : studentProgress ? (
               <div className="space-y-6 animate-in fade-in duration-500">
                 {/* Summary Cards */}

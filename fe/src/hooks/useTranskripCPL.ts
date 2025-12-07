@@ -125,11 +125,10 @@ export function useTranskripCPL() {
 
     // Fetch data when student/filters change
     useEffect(() => {
-        console.log("Effect[selectedMahasiswa]:", selectedMahasiswa, "Semester:", semester);
         if (selectedMahasiswa) {
             fetchAllData();
         } else {
-            console.log("No selectedMahasiswa, setLoading false");
+            // console.log("No selectedMahasiswa, setLoading false");
             setLoading(false);
         }
     }, [selectedMahasiswa, semester, tahunAjaran]);
@@ -185,7 +184,7 @@ export function useTranskripCPL() {
             if (tahunAjaran !== 'all') params.tahunAjaran = tahunAjaran;
 
             const result = await api.get(`/transkrip-cpl/${selectedMahasiswa}`, { params });
-            console.log("FetchTranskrip result:", result);
+            // console.log("FetchTranskrip result:", result);
             setTranskripList(result.data?.transkrip || []);
             setTotalCurriculumCpl(result.data?.summary?.totalCurriculumCpl || 0);
             updateStudentInfo(result.data?.mahasiswa);

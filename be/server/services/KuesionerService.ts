@@ -88,13 +88,13 @@ export class KuesionerService {
                 // DEFAULT ADMIN VIEW:
                 // Must force a join on Profile table to ensure data visibility.
                 // Using userId ensuring we hit the FK index.
-                console.log('[KuesionerStats] Applying FORCE JOIN on Profile (userId check)');
+                // console.log('[KuesionerStats] Applying FORCE JOIN on Profile (userId check)');
                 whereClause.mahasiswa = { userId: { not: '' } };
             }
         }
 
-        console.log(`[KuesionerStats] Fetching stats for ${userRole}. TA: ${whereClause.tahunAjaran || 'All'}`);
-        console.log(`[KuesionerStats] Final Where:`, JSON.stringify(whereClause, null, 2));
+        // console.log(`[KuesionerStats] Fetching stats for ${userRole}. TA: ${whereClause.tahunAjaran || 'All'}`);
+        // console.log(`[KuesionerStats] Final Where:`, JSON.stringify(whereClause, null, 2));
 
         const stats = await prisma.penilaianTidakLangsung.groupBy({
             by: ['cplId'],

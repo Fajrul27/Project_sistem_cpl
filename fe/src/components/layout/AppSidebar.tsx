@@ -69,7 +69,7 @@ export function AppSidebar() {
       <SidebarContent className="bg-sidebar">
         {/* Brand / Logo */}
         <div className="flex h-14 items-center border-b border-sidebar-border/40 px-3">
-          <div className="flex items-center gap-2">
+          <div className={cn("flex items-center gap-2", !open && "w-full justify-center")}>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
               SC
             </div>

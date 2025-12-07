@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, Loader2, Search, Eye, SlidersHorizontal } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Eye, SlidersHorizontal } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -16,6 +16,7 @@ import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { MultiTaxonomySelect } from "@/components/features/MultiTaxonomySelect";
 import { Badge } from "@/components/ui/badge";
 import { useCPMK, Cpmk } from "@/hooks/useCPMK";
+import { LoadingSpinner, LoadingScreen } from "@/components/common/LoadingScreen";
 
 const CPMKPage = () => {
     const navigate = useNavigate();
@@ -356,7 +357,7 @@ const CPMKPage = () => {
                                             <Button type="submit" className="flex-1" disabled={submitting}>
                                                 {submitting ? (
                                                     <>
-                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        <LoadingSpinner size="sm" className="mr-2" />
                                                         {editingCpmk ? "Memperbarui..." : "Menyimpan..."}
                                                     </>
                                                 ) : editingCpmk ? "Update" : "Simpan"}
@@ -385,69 +386,82 @@ const CPMKPage = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {cpmkList.map((cpmk, index) => (
-                                    <TableRow key={cpmk.id}>
-                                        <TableCell>
-                                            {(pagination.page - 1) * pagination.limit + index + 1}
-                                        </TableCell>
-                                        <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
-                                        <TableCell>
-                                            {cpmk.levelTaksonomi ? (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {cpmk.levelTaksonomi.split(',').map((level) => (
-                                                        <Badge key={level.trim()} variant="secondary" className="text-xs">
-                                                            {level.trim()}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            ) : "-"}
-                                        </TableCell>
-                                        <TableCell>
-                                            {cpmk.deskripsi || "-"}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="text-sm">
-                                                <div className="font-medium">{cpmk.mataKuliah.kodeMk}</div>
-                                                <div className="text-muted-foreground">{cpmk.mataKuliah.namaMk}</div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
-                                                {cpmk.cplMappings?.length || 0}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-                                                {cpmk.teknikPenilaian?.length || 0}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleViewDetail(cpmk.id)}
-                                                    title="Lihat Detail & Mapping"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                {canEdit && (
-                                                    <>
-                                                        <Button size="sm" variant="outline" onClick={() => handleEdit(cpmk)}>
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/rubrik/${cpmk.id}`)} title="Kelola Rubrik">
-                                                            <SlidersHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button size="sm" variant="destructive" onClick={() => handleDelete(cpmk.id)}>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </div>
+                                {loading && cpmkList.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={8} className="h-24 text-center">
+                                            <LoadingScreen fullScreen={false} message="Memuat data CPMK..." />
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                ) : cpmkList.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                            Tidak ada data CPMK.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    cpmkList.map((cpmk, index) => (
+                                        <TableRow key={cpmk.id}>
+                                            <TableCell>
+                                                {(pagination.page - 1) * pagination.limit + index + 1}
+                                            </TableCell>
+                                            <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
+                                            <TableCell>
+                                                {cpmk.levelTaksonomi ? (
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {cpmk.levelTaksonomi.split(',').map((level) => (
+                                                            <Badge key={level.trim()} variant="secondary" className="text-xs">
+                                                                {level.trim()}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                ) : "-"}
+                                            </TableCell>
+                                            <TableCell>
+                                                {cpmk.deskripsi || "-"}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="text-sm">
+                                                    <div className="font-medium">{cpmk.mataKuliah.kodeMk}</div>
+                                                    <div className="text-muted-foreground">{cpmk.mataKuliah.namaMk}</div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
+                                                    {cpmk.cplMappings?.length || 0}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700 text-sm font-medium">
+                                                    {cpmk.teknikPenilaian?.length || 0}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleViewDetail(cpmk.id)}
+                                                        title="Lihat Detail & Mapping"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    {canEdit && (
+                                                        <>
+                                                            <Button size="sm" variant="outline" onClick={() => handleEdit(cpmk)}>
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/rubrik/${cpmk.id}`)} title="Kelola Rubrik">
+                                                                <SlidersHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button size="sm" variant="destructive" onClick={() => handleDelete(cpmk.id)}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )))}
                             </TableBody>
                         </Table>
                     </CardContent>

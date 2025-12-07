@@ -8,10 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, Loader2, Search, SlidersHorizontal } from "lucide-react";
+import { Plus, Edit, Trash2, Search, SlidersHorizontal } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useMataKuliah, MataKuliah, MataKuliahFormData } from "@/hooks/useMataKuliah";
+import { LoadingSpinner, LoadingScreen } from "@/components/common/LoadingScreen";
 
 const MataKuliahPage = () => {
   const navigate = useNavigate();
@@ -378,7 +379,7 @@ const MataKuliahPage = () => {
                       <Button type="submit" className="flex-1" disabled={submitting}>
                         {submitting ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <LoadingSpinner size="sm" className="mr-2" />
                             {editingMK ? "Memperbarui..." : "Menyimpan..."}
                           </>
                         ) : editingMK ? "Update" : "Simpan"}
@@ -398,20 +399,15 @@ const MataKuliahPage = () => {
                 <TableRow>
                   <TableHead className="w-[50px]">No</TableHead>
                   <TableHead>Kode MK</TableHead>
-                  <TableHead>Nama Mata Kuliah</TableHead>
-                  <TableHead>SKS</TableHead>
                   <TableHead>Semester</TableHead>
                   {showActions && <TableHead className="text-right">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mkList.length === 0 && loading ? (
+                {loading && mkList.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
-                      <div className="flex justify-center items-center">
-                        <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                        Loading data...
-                      </div>
+                      <LoadingScreen fullScreen={false} message="Memuat data mata kuliah..." />
                     </TableCell>
                   </TableRow>
                 ) : mkList.length === 0 ? (
