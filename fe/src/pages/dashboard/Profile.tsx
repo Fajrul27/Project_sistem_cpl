@@ -405,39 +405,39 @@ const ProfilePage = () => {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               {/* Form fields here - reusing existing structure logic */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="namaLengkap" className="text-right">Name</Label>
-                <Input id="namaLengkap" value={editForm.namaLengkap} onChange={(e) => setEditForm({ ...editForm, namaLengkap: e.target.value })} className="col-span-3" />
+              <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                <Label htmlFor="namaLengkap" className="text-left md:text-right">Name</Label>
+                <Input id="namaLengkap" value={editForm.namaLengkap} onChange={(e) => setEditForm({ ...editForm, namaLengkap: e.target.value })} className="md:col-span-3" />
               </div>
 
               {role === 'mahasiswa' && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="nim" className="text-right">NIM</Label>
-                  <Input id="nim" value={editForm.nim} onChange={(e) => setEditForm({ ...editForm, nim: e.target.value })} className="col-span-3" />
+                <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                  <Label htmlFor="nim" className="text-left md:text-right">NIM</Label>
+                  <Input id="nim" value={editForm.nim} onChange={(e) => setEditForm({ ...editForm, nim: e.target.value })} className="md:col-span-3" />
                 </div>
               )}
 
               {(role === 'dosen' || role === 'kaprodi' || role === 'dekan') && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="nip" className="text-right">NIP</Label>
-                  <Input id="nip" value={editForm.nip} onChange={(e) => setEditForm({ ...editForm, nip: e.target.value })} className="col-span-3" />
+                <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                  <Label htmlFor="nip" className="text-left md:text-right">NIP</Label>
+                  <Input id="nip" value={editForm.nip} onChange={(e) => setEditForm({ ...editForm, nip: e.target.value })} className="md:col-span-3" />
                 </div>
               )}
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="fakultas" className="text-right">Fakultas</Label>
+              <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                <Label htmlFor="fakultas" className="text-left md:text-right">Fakultas</Label>
                 <Select value={editForm.fakultasId} onValueChange={(val) => setEditForm({ ...editForm, fakultasId: val, prodiId: "" })}>
-                  <SelectTrigger className="col-span-3"><SelectValue placeholder="Pilih Fakultas" /></SelectTrigger>
+                  <SelectTrigger className="md:col-span-3"><SelectValue placeholder="Pilih Fakultas" /></SelectTrigger>
                   <SelectContent>
                     {fakultasList.map((f) => (<SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="prodi" className="text-right">Prodi</Label>
+              <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                <Label htmlFor="prodi" className="text-left md:text-right">Prodi</Label>
                 <Select value={editForm.prodiId} onValueChange={(val) => setEditForm({ ...editForm, prodiId: val })} disabled={!editForm.fakultasId}>
-                  <SelectTrigger className="col-span-3"><SelectValue placeholder="Pilih Prodi" /></SelectTrigger>
+                  <SelectTrigger className="md:col-span-3"><SelectValue placeholder="Pilih Prodi" /></SelectTrigger>
                   <SelectContent>
                     {filteredProdiList.map((p) => (<SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>))}
                   </SelectContent>
@@ -446,28 +446,28 @@ const ProfilePage = () => {
 
               {role === 'mahasiswa' && (
                 <>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="semester" className="text-right">Semester</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                    <Label htmlFor="semester" className="text-left md:text-right">Semester</Label>
                     <Select value={editForm.semesterId} onValueChange={(val) => { const s = semesterList.find(i => i.id === val); setEditForm({ ...editForm, semesterId: val, semester: s?.angka }) }}>
-                      <SelectTrigger className="col-span-3"><SelectValue placeholder="Pilih Semester" /></SelectTrigger>
+                      <SelectTrigger className="md:col-span-3"><SelectValue placeholder="Pilih Semester" /></SelectTrigger>
                       <SelectContent>
                         {semesterList.map((s) => (<SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="kelas" className="text-right">Kelas</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                    <Label htmlFor="kelas" className="text-left md:text-right">Kelas</Label>
                     <Select value={editForm.kelasId} onValueChange={(val) => setEditForm({ ...editForm, kelasId: val })}>
-                      <SelectTrigger className="col-span-3"><SelectValue placeholder="Pilih Kelas" /></SelectTrigger>
+                      <SelectTrigger className="md:col-span-3"><SelectValue placeholder="Pilih Kelas" /></SelectTrigger>
                       <SelectContent>
                         {kelasList.map((k) => (<SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="angkatan" className="text-right">Angkatan</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                    <Label htmlFor="angkatan" className="text-left md:text-right">Angkatan</Label>
                     <Select value={editForm.angkatanId} onValueChange={(val) => setEditForm({ ...editForm, angkatanId: val })}>
-                      <SelectTrigger className="col-span-3"><SelectValue placeholder="Pilih Angkatan" /></SelectTrigger>
+                      <SelectTrigger className="md:col-span-3"><SelectValue placeholder="Pilih Angkatan" /></SelectTrigger>
                       <SelectContent>
                         {angkatanList.map((a) => (<SelectItem key={a.id} value={a.id}>{a.tahun}</SelectItem>))}
                       </SelectContent>
@@ -476,14 +476,14 @@ const ProfilePage = () => {
                 </>
               )}
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="alamat" className="text-right">Alamat</Label>
-                <Input id="alamat" value={editForm.alamat} onChange={(e) => setEditForm({ ...editForm, alamat: e.target.value })} className="col-span-3" />
+              <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                <Label htmlFor="alamat" className="text-left md:text-right">Alamat</Label>
+                <Input id="alamat" value={editForm.alamat} onChange={(e) => setEditForm({ ...editForm, alamat: e.target.value })} className="md:col-span-3" />
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="noTelepon" className="text-right">No. HP</Label>
-                <Input id="noTelepon" value={editForm.noTelepon} onChange={(e) => setEditForm({ ...editForm, noTelepon: e.target.value })} className="col-span-3" />
+              <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                <Label htmlFor="noTelepon" className="text-left md:text-right">No. HP</Label>
+                <Input id="noTelepon" value={editForm.noTelepon} onChange={(e) => setEditForm({ ...editForm, noTelepon: e.target.value })} className="md:col-span-3" />
               </div>
 
             </div>

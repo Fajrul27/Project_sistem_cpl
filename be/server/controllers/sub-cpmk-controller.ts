@@ -35,8 +35,14 @@ export const createSubCpmk = async (req: Request, res: Response) => {
 
         const subCpmk = await SubCPMKService.createSubCpmk(String(cpmkId), validation.data);
         res.status(201).json({ data: subCpmk });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating sub-cpmk:', error);
+        if (error.message.startsWith('TOTAL_WEIGHT_EXCEEDED')) {
+            const currentTotal = Number(error.message.split(':')[1]);
+            return res.status(400).json({
+                error: `Total bobot akan melebihi 100% (saat ini: ${currentTotal.toFixed(2)}%)`
+            });
+        }
         res.status(500).json({ error: 'Gagal membuat Sub-CPMK' });
     }
 };
@@ -50,8 +56,14 @@ export const updateSubCpmk = async (req: Request, res: Response) => {
 
         const subCpmk = await SubCPMKService.updateSubCpmk(id, validation.data);
         res.json({ data: subCpmk });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error updating sub-cpmk:', error);
+        if (error.message.startsWith('TOTAL_WEIGHT_EXCEEDED')) {
+            const currentTotal = Number(error.message.split(':')[1]);
+            return res.status(400).json({
+                error: `Total bobot akan melebihi 100% (saat ini: ${currentTotal.toFixed(2)}%)`
+            });
+        }
         res.status(500).json({ error: 'Gagal mengupdate Sub-CPMK' });
     }
 };

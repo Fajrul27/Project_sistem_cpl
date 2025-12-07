@@ -17,7 +17,29 @@ export class SubCPMKService {
         });
     }
 
+    private static async validateTotalBobot(cpmkId: string, newBobot: number, excludeId?: string, existingBobot?: number) {
+        const where: any = { cpmkId };
+        if (excludeId) {
+            where.id = { not: excludeId };
+        }
+
+        const aggregate = await prisma.subCpmk.aggregate({
+            where,
+            _sum: { bobot: true }
+        });
+
+        const sumOfOthers = Number(aggregate._sum.bobot || 0);
+        if (sumOfOthers + newBobot > 100) {
+            // If excludeId is present (update), 'current' total in DB includes existingBobot.
+            // If add, current total is just sumOfOthers.
+            const displayTotal = excludeId && existingBobot !== undefined ? sumOfOthers + existingBobot : sumOfOthers;
+            throw new Error(`TOTAL_WEIGHT_EXCEEDED:${displayTotal}`);
+        }
+    }
+
     static async createSubCpmk(cpmkId: string, data: { kode: string, deskripsi: string, bobot?: number }) {
+        await this.validateTotalBobot(cpmkId, data.bobot || 0);
+
         const subCpmk = await prisma.subCpmk.create({
             data: {
                 cpmkId,
@@ -32,6 +54,13 @@ export class SubCPMKService {
     }
 
     static async updateSubCpmk(id: string, data: { kode: string, deskripsi: string, bobot?: number }) {
+        const existing = await prisma.subCpmk.findUnique({ where: { id } });
+        if (!existing) throw new Error('Sub-CPMK tidak ditemukan');
+
+        if (data.bobot !== undefined) {
+            await this.validateTotalBobot(existing.cpmkId, data.bobot, id, Number(existing.bobot));
+        }
+
         const subCpmk = await prisma.subCpmk.update({
             where: { id },
             data: {

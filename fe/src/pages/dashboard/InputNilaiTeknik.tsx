@@ -162,7 +162,7 @@ const InputNilaiTeknikPage = () => {
                                 </Button>
                             </div>
                         </CardHeader>
-                        <CardContent className="overflow-x-auto">
+                        <CardContent>
                             {loading ? (
                                 <div className="flex justify-center py-8">
                                     <LoadingSpinner size="lg" />
@@ -176,122 +176,124 @@ const InputNilaiTeknikPage = () => {
                                     Tidak ada mahasiswa di kelas ini.
                                 </div>
                             ) : (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead rowSpan={2} className="w-[200px]">Mahasiswa</TableHead>
-                                            {cpmkList.map(cpmk => (
-                                                <TableHead
-                                                    key={cpmk.id}
-                                                    colSpan={cpmk.teknikPenilaian.length}
-                                                    className="text-center border-l border-r bg-muted/50"
-                                                >
-                                                    <div className="flex flex-col items-center gap-2 py-2">
-                                                        <span className="font-semibold">{cpmk.kodeCpmk}</span>
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead rowSpan={2} className="w-[200px]">Mahasiswa</TableHead>
+                                                {cpmkList.map(cpmk => (
+                                                    <TableHead
+                                                        key={cpmk.id}
+                                                        colSpan={cpmk.teknikPenilaian.length}
+                                                        className="text-center border-l border-r bg-muted/50"
+                                                    >
+                                                        <div className="flex flex-col items-center gap-2 py-2">
+                                                            <span className="font-semibold">{cpmk.kodeCpmk}</span>
 
-                                                        {/* Rubrik Button - CPMK Level */}
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="h-7 text-[10px] px-2 border-primary/40 hover:bg-primary/10"
-                                                            onClick={() => {
-                                                                setSelectedCpmkForRubrik(cpmk);
-                                                                setRubrikDialogOpen(true);
-                                                            }}
-                                                        >
-                                                            <Settings className="h-3 w-3 mr-1" />
-                                                            Rubrik
-                                                        </Button>
+                                                            {/* Rubrik Button - CPMK Level */}
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-7 text-[10px] px-2 border-primary/40 hover:bg-primary/10"
+                                                                onClick={() => {
+                                                                    setSelectedCpmkForRubrik(cpmk);
+                                                                    setRubrikDialogOpen(true);
+                                                                }}
+                                                            >
+                                                                <Settings className="h-3 w-3 mr-1" />
+                                                                Rubrik
+                                                            </Button>
 
-                                                        {cpmk.statusValidasi === 'validated' || cpmk.statusValidasi === 'active' ? (
-                                                            <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-[10px] h-5 px-1">
-                                                                <CheckCircle2 className="w-3 h-3 mr-1" /> Valid
-                                                            </Badge>
-                                                        ) : (
-                                                            <TooltipProvider>
-                                                                <Tooltip>
-                                                                    <TooltipTrigger>
-                                                                        <Badge variant="destructive" className="text-[10px] h-5 px-1">
-                                                                            <XCircle className="w-3 h-3 mr-1" /> Draft
-                                                                        </Badge>
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent>
-                                                                        <p>CPMK belum divalidasi Kaprodi</p>
-                                                                    </TooltipContent>
-                                                                </Tooltip>
-                                                            </TooltipProvider>
-                                                        )}
-                                                    </div>
-                                                </TableHead>
-                                            ))}
-                                        </TableRow>
-                                        <TableRow>
-                                            {cpmkList.map(cpmk =>
-                                                cpmk.teknikPenilaian.length > 0 ? (
-                                                    cpmk.teknikPenilaian.map(teknik => (
-                                                        <TableHead key={teknik.id} className="text-center min-w-[100px] border-l border-r text-xs">
-                                                            <div className="flex flex-col items-center gap-0.5 py-1">
-                                                                <div className="font-medium">{teknik.namaTeknik}</div>
-                                                                <div className="text-[10px] text-muted-foreground">({teknik.bobotPersentase}%)</div>
-                                                            </div>
-                                                        </TableHead>
-                                                    ))
-                                                ) : (
-                                                    <TableHead key={`empty-${cpmk.id}`} className="text-center text-xs italic text-muted-foreground">
-                                                        No Teknik
+                                                            {cpmk.statusValidasi === 'validated' || cpmk.statusValidasi === 'active' ? (
+                                                                <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-[10px] h-5 px-1">
+                                                                    <CheckCircle2 className="w-3 h-3 mr-1" /> Valid
+                                                                </Badge>
+                                                            ) : (
+                                                                <TooltipProvider>
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger>
+                                                                            <Badge variant="destructive" className="text-[10px] h-5 px-1">
+                                                                                <XCircle className="w-3 h-3 mr-1" /> Draft
+                                                                            </Badge>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent>
+                                                                            <p>CPMK belum divalidasi Kaprodi</p>
+                                                                        </TooltipContent>
+                                                                    </Tooltip>
+                                                                </TooltipProvider>
+                                                            )}
+                                                        </div>
                                                     </TableHead>
-                                                )
-                                            )}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {students.map(student => (
-                                            <TableRow key={student.id}>
-                                                <TableCell className="font-medium">
-                                                    <div className="text-sm">{student.profile?.namaLengkap || student.email}</div>
-                                                    <div className="text-xs text-muted-foreground">{student.profile?.nim}</div>
-                                                </TableCell>
+                                                ))}
+                                            </TableRow>
+                                            <TableRow>
                                                 {cpmkList.map(cpmk =>
                                                     cpmk.teknikPenilaian.length > 0 ? (
                                                         cpmk.teknikPenilaian.map(teknik => (
-                                                            <TableCell key={`${student.id}-${teknik.id}`} className="border-l border-r p-2">
-                                                                <Input
-                                                                    type="number"
-                                                                    min="0"
-                                                                    max="100"
-                                                                    className="h-8 text-center"
-                                                                    placeholder="0"
-                                                                    value={grades[`${student.id}_${teknik.id}`] ?? ""}
-                                                                    onChange={e => handleGradeChange(student.id, teknik.id, e.target.value)}
-                                                                    disabled={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active'}
-                                                                    title={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active' ? "CPMK belum divalidasi" : ""}
-                                                                />
-                                                                {gradesMetadata[`${student.id}_${teknik.id}`]?.updatedAt && (
-                                                                    <div className="text-[10px] text-muted-foreground text-center mt-0.5">
-                                                                        {new Date(gradesMetadata[`${student.id}_${teknik.id}`].updatedAt).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })}
-                                                                    </div>
-                                                                )}
-                                                                {(cpmk.statusValidasi === 'validated' || cpmk.statusValidasi === 'active') && (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="h-8 w-8 ml-1 text-muted-foreground hover:text-primary"
-                                                                        title="Nilai dengan Rubrik"
-                                                                        onClick={() => handleOpenGrading(student, cpmk, teknik)}
-                                                                    >
-                                                                        <Gavel className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
-                                                            </TableCell>
+                                                            <TableHead key={teknik.id} className="text-center min-w-[100px] border-l border-r text-xs">
+                                                                <div className="flex flex-col items-center gap-0.5 py-1">
+                                                                    <div className="font-medium">{teknik.namaTeknik}</div>
+                                                                    <div className="text-[10px] text-muted-foreground">({teknik.bobotPersentase}%)</div>
+                                                                </div>
+                                                            </TableHead>
                                                         ))
                                                     ) : (
-                                                        <TableCell key={`empty-cell-${cpmk.id}`} className="bg-muted/20" />
+                                                        <TableHead key={`empty-${cpmk.id}`} className="text-center text-xs italic text-muted-foreground">
+                                                            No Teknik
+                                                        </TableHead>
                                                     )
                                                 )}
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {students.map(student => (
+                                                <TableRow key={student.id}>
+                                                    <TableCell className="font-medium">
+                                                        <div className="text-sm">{student.profile?.namaLengkap || student.email}</div>
+                                                        <div className="text-xs text-muted-foreground">{student.profile?.nim}</div>
+                                                    </TableCell>
+                                                    {cpmkList.map(cpmk =>
+                                                        cpmk.teknikPenilaian.length > 0 ? (
+                                                            cpmk.teknikPenilaian.map(teknik => (
+                                                                <TableCell key={`${student.id}-${teknik.id}`} className="border-l border-r p-2">
+                                                                    <Input
+                                                                        type="number"
+                                                                        min="0"
+                                                                        max="100"
+                                                                        className="h-8 text-center"
+                                                                        placeholder="0"
+                                                                        value={grades[`${student.id}_${teknik.id}`] ?? ""}
+                                                                        onChange={e => handleGradeChange(student.id, teknik.id, e.target.value)}
+                                                                        disabled={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active'}
+                                                                        title={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active' ? "CPMK belum divalidasi" : ""}
+                                                                    />
+                                                                    {gradesMetadata[`${student.id}_${teknik.id}`]?.updatedAt && (
+                                                                        <div className="text-[10px] text-muted-foreground text-center mt-0.5">
+                                                                            {new Date(gradesMetadata[`${student.id}_${teknik.id}`].updatedAt).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })}
+                                                                        </div>
+                                                                    )}
+                                                                    {(cpmk.statusValidasi === 'validated' || cpmk.statusValidasi === 'active') && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-8 w-8 ml-1 text-muted-foreground hover:text-primary"
+                                                                            title="Nilai dengan Rubrik"
+                                                                            onClick={() => handleOpenGrading(student, cpmk, teknik)}
+                                                                        >
+                                                                            <Gavel className="h-4 w-4" />
+                                                                        </Button>
+                                                                    )}
+                                                                </TableCell>
+                                                            ))
+                                                        ) : (
+                                                            <TableCell key={`empty-cell-${cpmk.id}`} className="bg-muted/20" />
+                                                        )
+                                                    )}
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             )}
                         </CardContent>
                     </Card>

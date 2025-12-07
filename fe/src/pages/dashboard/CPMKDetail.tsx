@@ -87,6 +87,23 @@ const CPMKDetailPage = () => {
     };
 
     const handleSaveSubCpmk = async () => {
+        // Validation: Total weight max 100
+        const newBobot = Number(subCpmkForm.bobot);
+        const currentTotal = subCpmkList.reduce((sum, item) => {
+            if (currentSubCpmk && item.id === currentSubCpmk.id) return sum;
+            return sum + Number(item.bobot);
+        }, 0);
+
+        if (currentTotal + newBobot > 100) {
+            // "saat ini" should reflect the total weight BEFORE the edit (existing state).
+            // currentTotal is "Sum of Others".
+            // If editing, existing state total = currentTotal + (currentSubCpmk.bobot).
+            // If adding, existing state total = currentTotal.
+            const displayTotal = currentSubCpmk ? (currentTotal + Number(currentSubCpmk.bobot)) : currentTotal;
+            toast.error(`Total bobot akan melebihi 100% (saat ini: ${displayTotal.toFixed(2)}%)`);
+            return;
+        }
+
         const success = await saveSubCpmk(subCpmkForm, currentSubCpmk?.id);
         if (success) {
             setIsSubCpmkDialogOpen(false);
@@ -281,43 +298,45 @@ const CPMKDetailPage = () => {
                         )}
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Kode CPL</TableHead>
-                                    <TableHead>Deskripsi</TableHead>
-                                    <TableHead className="text-right">Bobot (%)</TableHead>
-                                    {canEdit && <TableHead className="text-right">Aksi</TableHead>}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {cplMappings.length === 0 ? (
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={canEdit ? 4 : 3} className="text-center text-muted-foreground">Belum ada mapping</TableCell>
+                                        <TableHead>Kode CPL</TableHead>
+                                        <TableHead>Deskripsi</TableHead>
+                                        <TableHead className="text-right">Bobot (%)</TableHead>
+                                        {canEdit && <TableHead className="text-right">Aksi</TableHead>}
                                     </TableRow>
-                                ) : (
-                                    cplMappings.map((m) => (
-                                        <TableRow key={m.id}>
-                                            <TableCell>{m.cpl.kodeCpl}</TableCell>
-                                            <TableCell>{m.cpl.deskripsi}</TableCell>
-                                            <TableCell className="text-right">{Number(m.bobotPersentase).toFixed(2)}%</TableCell>
-                                            {canEdit && (
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button size="sm" variant="outline" onClick={() => { setEditingMapping(m); setMappingForm({ cplId: m.cpl.id, bobotPersentase: m.bobotPersentase.toString() }); setMappingDialogOpen(true); }}>
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button size="sm" variant="destructive" onClick={() => deleteMapping(m.id)}>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            )}
+                                </TableHeader>
+                                <TableBody>
+                                    {cplMappings.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={canEdit ? 4 : 3} className="text-center text-muted-foreground">Belum ada mapping</TableCell>
                                         </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                                    ) : (
+                                        cplMappings.map((m) => (
+                                            <TableRow key={m.id}>
+                                                <TableCell>{m.cpl.kodeCpl}</TableCell>
+                                                <TableCell>{m.cpl.deskripsi}</TableCell>
+                                                <TableCell className="text-right">{Number(m.bobotPersentase).toFixed(2)}%</TableCell>
+                                                {canEdit && (
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button size="sm" variant="outline" onClick={() => { setEditingMapping(m); setMappingForm({ cplId: m.cpl.id, bobotPersentase: m.bobotPersentase.toString() }); setMappingDialogOpen(true); }}>
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button size="sm" variant="destructive" onClick={() => deleteMapping(m.id)}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                )}
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -406,50 +425,52 @@ const CPMKDetailPage = () => {
                         )}
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nama Teknik</TableHead>
-                                    <TableHead>Deskripsi</TableHead>
-                                    <TableHead className="text-right">Bobot (%)</TableHead>
-                                    {canEdit && <TableHead className="text-right">Aksi</TableHead>}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {teknikPenilaian.length === 0 ? (
-                                    <TableRow><TableCell colSpan={canEdit ? 4 : 3} className="text-center text-muted-foreground">Belum ada teknik penilaian</TableCell></TableRow>
-                                ) : (
-                                    teknikPenilaian.map((t) => (
-                                        <TableRow key={t.id}>
-                                            <TableCell>{t.namaTeknik}</TableCell>
-                                            <TableCell>{t.deskripsi || "-"}</TableCell>
-                                            <TableCell className="text-right">{Number(t.bobotPersentase).toFixed(2)}%</TableCell>
-                                            {canEdit && (
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button size="sm" variant="outline" onClick={() => {
-                                                            setEditingTeknik(t);
-                                                            setTeknikForm({
-                                                                namaTeknik: t.namaTeknik,
-                                                                bobotPersentase: t.bobotPersentase.toString(),
-                                                                deskripsi: t.deskripsi || "",
-                                                                teknikRefId: t.teknikRefId || ""
-                                                            });
-                                                            setTeknikDialogOpen(true);
-                                                        }}>
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button size="sm" variant="destructive" onClick={() => deleteTeknik(t.id)}>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            )}
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Nama Teknik</TableHead>
+                                        <TableHead>Deskripsi</TableHead>
+                                        <TableHead className="text-right">Bobot (%)</TableHead>
+                                        {canEdit && <TableHead className="text-right">Aksi</TableHead>}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {teknikPenilaian.length === 0 ? (
+                                        <TableRow><TableCell colSpan={canEdit ? 4 : 3} className="text-center text-muted-foreground">Belum ada teknik penilaian</TableCell></TableRow>
+                                    ) : (
+                                        teknikPenilaian.map((t) => (
+                                            <TableRow key={t.id}>
+                                                <TableCell>{t.namaTeknik}</TableCell>
+                                                <TableCell>{t.deskripsi || "-"}</TableCell>
+                                                <TableCell className="text-right">{Number(t.bobotPersentase).toFixed(2)}%</TableCell>
+                                                {canEdit && (
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button size="sm" variant="outline" onClick={() => {
+                                                                setEditingTeknik(t);
+                                                                setTeknikForm({
+                                                                    namaTeknik: t.namaTeknik,
+                                                                    bobotPersentase: t.bobotPersentase.toString(),
+                                                                    deskripsi: t.deskripsi || "",
+                                                                    teknikRefId: t.teknikRefId || ""
+                                                                });
+                                                                setTeknikDialogOpen(true);
+                                                            }}>
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button size="sm" variant="destructive" onClick={() => deleteTeknik(t.id)}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                )}
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -474,78 +495,80 @@ const CPMKDetailPage = () => {
                         )}
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Kode</TableHead>
-                                    <TableHead>Deskripsi</TableHead>
-                                    <TableHead>Bobot (%)</TableHead>
-                                    <TableHead>Mapping Asesmen</TableHead>
-                                    {canEdit && <TableHead className="text-right">Aksi</TableHead>}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {subCpmkList.length === 0 ? (
-                                    <TableRow><TableCell colSpan={canEdit ? 5 : 4} className="text-center text-muted-foreground">Belum ada Sub-CPMK</TableCell></TableRow>
-                                ) : (
-                                    subCpmkList.map((sub) => (
-                                        <TableRow key={sub.id}>
-                                            <TableCell>{sub.kode}</TableCell>
-                                            <TableCell>{sub.deskripsi}</TableCell>
-                                            <TableCell>{Number(sub.bobot).toFixed(2)}%</TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col gap-1">
-                                                    {sub.asesmenMappings && sub.asesmenMappings.length > 0 ? (
-                                                        sub.asesmenMappings.map((m: any) => (
-                                                            <div key={m.id} className="flex items-center gap-2 text-xs bg-muted px-2 py-1 rounded-md justify-between group">
-                                                                <span>{m.teknikPenilaian?.namaTeknik} ({Number(m.bobot)}%)</span>
-                                                                {canEdit && (
-                                                                    <button onClick={() => deleteSubCpmkMapping(m.id)} className="text-red-500 hover:text-red-700">
-                                                                        <Trash2 className="w-3 h-3" />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <span className="text-muted-foreground text-xs italic">Belum ada mapping</span>
-                                                    )}
-                                                    {canEdit && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-6 text-xs justify-start px-0 text-blue-600"
-                                                            onClick={() => {
-                                                                setCurrentSubCpmkForMapping(sub);
-                                                                setSubCpmkMappingForm({ teknikPenilaianId: "", bobot: "100" });
-                                                                setIsSubCpmkMappingDialogOpen(true);
-                                                            }}
-                                                        >
-                                                            <Plus className="w-3 h-3 mr-1" /> Tambah Mapping
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            {canEdit && (
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button variant="outline" size="sm" onClick={() => {
-                                                            setCurrentSubCpmk(sub);
-                                                            setSubCpmkForm({ kode: sub.kode, deskripsi: sub.deskripsi, bobot: sub.bobot.toString() });
-                                                            setIsSubCpmkDialogOpen(true);
-                                                        }}>
-                                                            <Edit className="w-4 h-4" />
-                                                        </Button>
-                                                        <Button variant="destructive" size="sm" onClick={() => deleteSubCpmk(sub.id)}>
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </Button>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Kode</TableHead>
+                                        <TableHead>Deskripsi</TableHead>
+                                        <TableHead>Bobot (%)</TableHead>
+                                        <TableHead>Mapping Asesmen</TableHead>
+                                        {canEdit && <TableHead className="text-right">Aksi</TableHead>}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {subCpmkList.length === 0 ? (
+                                        <TableRow><TableCell colSpan={canEdit ? 5 : 4} className="text-center text-muted-foreground">Belum ada Sub-CPMK</TableCell></TableRow>
+                                    ) : (
+                                        subCpmkList.map((sub) => (
+                                            <TableRow key={sub.id}>
+                                                <TableCell>{sub.kode}</TableCell>
+                                                <TableCell>{sub.deskripsi}</TableCell>
+                                                <TableCell>{Number(sub.bobot).toFixed(2)}%</TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col gap-1">
+                                                        {sub.asesmenMappings && sub.asesmenMappings.length > 0 ? (
+                                                            sub.asesmenMappings.map((m: any) => (
+                                                                <div key={m.id} className="flex items-center gap-2 text-xs bg-muted px-2 py-1 rounded-md justify-between group">
+                                                                    <span>{m.teknikPenilaian?.namaTeknik} ({Number(m.bobot)}%)</span>
+                                                                    {canEdit && (
+                                                                        <button onClick={() => deleteSubCpmkMapping(m.id)} className="text-red-500 hover:text-red-700">
+                                                                            <Trash2 className="w-3 h-3" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <span className="text-muted-foreground text-xs italic">Belum ada mapping</span>
+                                                        )}
+                                                        {canEdit && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-6 text-xs justify-start px-0 text-blue-600"
+                                                                onClick={() => {
+                                                                    setCurrentSubCpmkForMapping(sub);
+                                                                    setSubCpmkMappingForm({ teknikPenilaianId: "", bobot: "100" });
+                                                                    setIsSubCpmkMappingDialogOpen(true);
+                                                                }}
+                                                            >
+                                                                <Plus className="w-3 h-3 mr-1" /> Tambah Mapping
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 </TableCell>
-                                            )}
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                                                {canEdit && (
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button variant="outline" size="sm" onClick={() => {
+                                                                setCurrentSubCpmk(sub);
+                                                                setSubCpmkForm({ kode: sub.kode, deskripsi: sub.deskripsi, bobot: sub.bobot.toString() });
+                                                                setIsSubCpmkDialogOpen(true);
+                                                            }}>
+                                                                <Edit className="w-4 h-4" />
+                                                            </Button>
+                                                            <Button variant="destructive" size="sm" onClick={() => deleteSubCpmk(sub.id)}>
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                )}
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -555,21 +578,40 @@ const CPMKDetailPage = () => {
                         <DialogHeader>
                             <DialogTitle>{currentSubCpmk ? "Edit Sub-CPMK" : "Tambah Sub-CPMK"}</DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-4">
+                        <form onSubmit={(e) => { e.preventDefault(); handleSaveSubCpmk(); }} className="space-y-4">
                             <div className="space-y-2">
                                 <Label>Kode Sub-CPMK</Label>
-                                <Input value={subCpmkForm.kode} onChange={(e) => setSubCpmkForm({ ...subCpmkForm, kode: e.target.value })} placeholder="Contoh: Sub-CPMK-1" />
+                                <Input
+                                    value={subCpmkForm.kode}
+                                    onChange={(e) => setSubCpmkForm({ ...subCpmkForm, kode: e.target.value })}
+                                    placeholder="Contoh: Sub-CPMK-1"
+                                    required
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>Deskripsi</Label>
-                                <Input value={subCpmkForm.deskripsi} onChange={(e) => setSubCpmkForm({ ...subCpmkForm, deskripsi: e.target.value })} />
+                                <Input
+                                    value={subCpmkForm.deskripsi}
+                                    onChange={(e) => setSubCpmkForm({ ...subCpmkForm, deskripsi: e.target.value })}
+                                    required
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>Bobot (%)</Label>
-                                <Input type="number" value={subCpmkForm.bobot} onChange={(e) => setSubCpmkForm({ ...subCpmkForm, bobot: e.target.value })} />
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={subCpmkForm.bobot}
+                                    onChange={(e) => setSubCpmkForm({ ...subCpmkForm, bobot: e.target.value })}
+                                    required
+                                />
                             </div>
-                            <Button onClick={handleSaveSubCpmk}>Simpan</Button>
-                        </div>
+                            <Button type="submit" disabled={submitting}>
+                                {submitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+                                {currentSubCpmk ? "Update" : "Simpan"}
+                            </Button>
+                        </form>
                     </DialogContent>
                 </Dialog>
 

@@ -193,32 +193,34 @@ const TranskripCPLPage = () => {
                                             ) : validTranskripList.length === 0 ? (
                                                 <div className="text-center py-12 text-muted-foreground"><FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>Belum ada data transkrip CPL</p></div>
                                             ) : (
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Kode CPL</TableHead>
-                                                            <TableHead>Deskripsi</TableHead>
-                                                            <TableHead>Kategori</TableHead>
-                                                            <TableHead className="text-right">Nilai</TableHead>
-                                                            <TableHead className="text-center">Huruf</TableHead>
-                                                            <TableHead className="text-center">Status</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {validTranskripList.map((item, index) => (
-                                                            <TableRow key={index}>
-                                                                <TableCell className="font-medium">{item.cpl.kodeCpl}</TableCell>
-                                                                <TableCell className="max-w-md">{item.cpl.deskripsi}</TableCell>
-                                                                <TableCell><Badge variant="outline">{item.cpl.kategori}</Badge></TableCell>
-                                                                <TableCell className="text-right font-medium">{item.nilaiAkhir.toFixed(2)}</TableCell>
-                                                                <TableCell className="text-center font-bold">{getGradeLetter(item.nilaiAkhir)}</TableCell>
-                                                                <TableCell className="text-center">
-                                                                    {item.status === 'tercapai' ? <Badge className="bg-green-500">Tercapai</Badge> : <Badge variant="destructive">Belum Tercapai</Badge>}
-                                                                </TableCell>
+                                                <div className="overflow-x-auto">
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>Kode CPL</TableHead>
+                                                                <TableHead>Deskripsi</TableHead>
+                                                                <TableHead>Kategori</TableHead>
+                                                                <TableHead className="text-right">Nilai</TableHead>
+                                                                <TableHead className="text-center">Huruf</TableHead>
+                                                                <TableHead className="text-center">Status</TableHead>
                                                             </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {validTranskripList.map((item, index) => (
+                                                                <TableRow key={index}>
+                                                                    <TableCell className="font-medium">{item.cpl.kodeCpl}</TableCell>
+                                                                    <TableCell className="max-w-md">{item.cpl.deskripsi}</TableCell>
+                                                                    <TableCell><Badge variant="outline">{item.cpl.kategori}</Badge></TableCell>
+                                                                    <TableCell className="text-right font-medium">{item.nilaiAkhir.toFixed(2)}</TableCell>
+                                                                    <TableCell className="text-center font-bold">{getGradeLetter(item.nilaiAkhir)}</TableCell>
+                                                                    <TableCell className="text-center">
+                                                                        {item.status === 'tercapai' ? <Badge className="bg-green-500">Tercapai</Badge> : <Badge variant="destructive">Belum Tercapai</Badge>}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
                                             )}
                                         </CardContent>
                                     </Card>
@@ -272,35 +274,37 @@ const TranskripCPLPage = () => {
                                             ) : transkripCpmkList.length === 0 ? (
                                                 <div className="text-center py-12 text-muted-foreground"><FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>Belum ada data transkrip CPMK</p></div>
                                             ) : (
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Kode CPMK</TableHead>
-                                                            <TableHead>Mata Kuliah</TableHead>
-                                                            <TableHead>Deskripsi</TableHead>
-                                                            <TableHead className="text-right">Nilai</TableHead>
-                                                            <TableHead className="text-center">Huruf</TableHead>
-                                                            <TableHead className="text-center">Status</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {transkripCpmkList.map((item, index) => (
-                                                            <TableRow key={index}>
-                                                                <TableCell className="font-medium">{item.kodeCpmk}</TableCell>
-                                                                <TableCell>
-                                                                    <div className="font-medium">{item.mataKuliah.namaMk}</div>
-                                                                    <div className="text-xs text-muted-foreground">{item.mataKuliah.kodeMk}</div>
-                                                                </TableCell>
-                                                                <TableCell className="max-w-md">{item.deskripsi}</TableCell>
-                                                                <TableCell className="text-right font-medium">{item.nilai.toFixed(2)}</TableCell>
-                                                                <TableCell className="text-center font-bold">{getGradeLetter(item.nilai)}</TableCell>
-                                                                <TableCell className="text-center">
-                                                                    {item.status === 'tercapai' ? <Badge className="bg-green-500">Tercapai</Badge> : <Badge variant="destructive">Belum Tercapai</Badge>}
-                                                                </TableCell>
+                                                <div className="overflow-x-auto">
+                                                    <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead>Kode CPMK</TableHead>
+                                                                <TableHead>Mata Kuliah</TableHead>
+                                                                <TableHead>Deskripsi</TableHead>
+                                                                <TableHead className="text-right">Nilai</TableHead>
+                                                                <TableHead className="text-center">Huruf</TableHead>
+                                                                <TableHead className="text-center">Status</TableHead>
                                                             </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {transkripCpmkList.map((item, index) => (
+                                                                <TableRow key={index}>
+                                                                    <TableCell className="font-medium">{item.kodeCpmk}</TableCell>
+                                                                    <TableCell>
+                                                                        <div className="font-medium">{item.mataKuliah.namaMk}</div>
+                                                                        <div className="text-xs text-muted-foreground">{item.mataKuliah.kodeMk}</div>
+                                                                    </TableCell>
+                                                                    <TableCell className="max-w-md">{item.deskripsi}</TableCell>
+                                                                    <TableCell className="text-right font-medium">{item.nilai.toFixed(2)}</TableCell>
+                                                                    <TableCell className="text-center font-bold">{getGradeLetter(item.nilai)}</TableCell>
+                                                                    <TableCell className="text-center">
+                                                                        {item.status === 'tercapai' ? <Badge className="bg-green-500">Tercapai</Badge> : <Badge variant="destructive">Belum Tercapai</Badge>}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
                                             )}
                                         </CardContent>
                                     </Card>

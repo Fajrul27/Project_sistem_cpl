@@ -178,77 +178,79 @@ export default function ProfilLulusanPage() {
                             <div className="text-center py-8">Memuat...</div>
                         ) : profilList && profilList.length > 0 ? (
                             <div className="rounded-md border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-[50px]">No</TableHead>
-                                            <TableHead className="w-[100px]">Kode</TableHead>
-                                            <TableHead className="w-[200px]">Nama Profil</TableHead>
-                                            <TableHead>Deskripsi</TableHead>
-                                            {role === "mahasiswa" && <TableHead className="w-[200px]">Ketercapaian</TableHead>}
-                                            <TableHead>Mapping CPL</TableHead>
-                                            {canEdit && <TableHead className="w-[100px] text-right">Aksi</TableHead>}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {profilList.map((item, index) => (
-                                            <TableRow key={item.id}>
-                                                <TableCell>
-                                                    {(pagination.page - 1) * pagination.limit + index + 1}
-                                                </TableCell>
-                                                <TableCell className="font-medium">{item.kode}</TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="p-1.5 rounded-full bg-primary/10 text-primary">
-                                                            <Briefcase className="w-4 h-4" />
-                                                        </div>
-                                                        {item.nama}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-muted-foreground">{item.deskripsi || "-"}</TableCell>
-                                                {role === "mahasiswa" && (
-                                                    <TableCell>
-                                                        <div className="space-y-1">
-                                                            <div className="flex items-center justify-between text-xs">
-                                                                <span className="font-medium">{item.percentage || 0}%</span>
-                                                                <span className={
-                                                                    (item.percentage || 0) >= 70 ? "text-green-600" : "text-yellow-600"
-                                                                }>
-                                                                    {item.status || "Belum Ada Data"}
-                                                                </span>
-                                                            </div>
-                                                            <Progress value={item.percentage || 0} className="h-2" />
-                                                        </div>
-                                                    </TableCell>
-                                                )}
-                                                <TableCell>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {(item as any).cplMappings?.map((m: any) => (
-                                                            <span key={m.cplId} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                                {m.cpl?.kode}
-                                                            </span>
-                                                        ))}
-                                                        {(!(item as any).cplMappings || (item as any).cplMappings.length === 0) && (
-                                                            <span className="text-muted-foreground text-xs italic">Belum ada mapping</span>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                                {canEdit && (
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
-                                                                <Edit className="w-4 h-4" />
-                                                            </Button>
-                                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(item.id)}>
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                )}
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="w-[50px]">No</TableHead>
+                                                <TableHead className="w-[100px]">Kode</TableHead>
+                                                <TableHead className="w-[200px]">Nama Profil</TableHead>
+                                                <TableHead>Deskripsi</TableHead>
+                                                {role === "mahasiswa" && <TableHead className="w-[200px]">Ketercapaian</TableHead>}
+                                                <TableHead>Mapping CPL</TableHead>
+                                                {canEdit && <TableHead className="w-[100px] text-right">Aksi</TableHead>}
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {profilList.map((item, index) => (
+                                                <TableRow key={item.id}>
+                                                    <TableCell>
+                                                        {(pagination.page - 1) * pagination.limit + index + 1}
+                                                    </TableCell>
+                                                    <TableCell className="font-medium">{item.kode}</TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="p-1.5 rounded-full bg-primary/10 text-primary">
+                                                                <Briefcase className="w-4 h-4" />
+                                                            </div>
+                                                            {item.nama}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-muted-foreground">{item.deskripsi || "-"}</TableCell>
+                                                    {role === "mahasiswa" && (
+                                                        <TableCell>
+                                                            <div className="space-y-1">
+                                                                <div className="flex items-center justify-between text-xs">
+                                                                    <span className="font-medium">{item.percentage || 0}%</span>
+                                                                    <span className={
+                                                                        (item.percentage || 0) >= 70 ? "text-green-600" : "text-yellow-600"
+                                                                    }>
+                                                                        {item.status || "Belum Ada Data"}
+                                                                    </span>
+                                                                </div>
+                                                                <Progress value={item.percentage || 0} className="h-2" />
+                                                            </div>
+                                                        </TableCell>
+                                                    )}
+                                                    <TableCell>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {(item as any).cplMappings?.map((m: any) => (
+                                                                <span key={m.cplId} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                                    {m.cpl?.kode}
+                                                                </span>
+                                                            ))}
+                                                            {(!(item as any).cplMappings || (item as any).cplMappings.length === 0) && (
+                                                                <span className="text-muted-foreground text-xs italic">Belum ada mapping</span>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    {canEdit && (
+                                                        <TableCell className="text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
+                                                                    <Edit className="w-4 h-4" />
+                                                                </Button>
+                                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(item.id)}>
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    )}
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             </div>
                         ) : (
                             <div className="text-center py-12 border rounded-lg border-dashed">

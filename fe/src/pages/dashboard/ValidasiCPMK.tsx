@@ -244,112 +244,114 @@ const ValidasiCPMKPage = () => {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[50px]">No</TableHead>
-                                    <TableHead>Kode CPMK</TableHead>
-                                    <TableHead>Level</TableHead>
-                                    <TableHead>Deskripsi</TableHead>
-                                    <TableHead>Mata Kuliah</TableHead>
-                                    <TableHead>Pembuat</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    {canValidate && <TableHead>Aksi</TableHead>}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={canValidate ? 8 : 7} className="h-24 text-center">
-                                            <LoadingScreen fullScreen={false} message="Memuat data..." />
-                                        </TableCell>
+                                        <TableHead className="w-[50px]">No</TableHead>
+                                        <TableHead>Kode CPMK</TableHead>
+                                        <TableHead>Level</TableHead>
+                                        <TableHead>Deskripsi</TableHead>
+                                        <TableHead>Mata Kuliah</TableHead>
+                                        <TableHead>Pembuat</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        {canValidate && <TableHead>Aksi</TableHead>}
                                     </TableRow>
-                                ) : cpmkList.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={canValidate ? 8 : 7} className="text-center py-8 text-muted-foreground">
-                                            Tidak ada CPMK dengan filter yang dipilih
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    cpmkList.map((cpmk, index) => (
-                                        <TableRow key={cpmk.id}>
-                                            <TableCell>
-                                                {(pagination.page - 1) * pagination.limit + index + 1}
+                                </TableHeader>
+                                <TableBody>
+                                    {loading ? (
+                                        <TableRow>
+                                            <TableCell colSpan={canValidate ? 8 : 7} className="h-24 text-center">
+                                                <LoadingScreen fullScreen={false} message="Memuat data..." />
                                             </TableCell>
-                                            <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
-                                            <TableCell>
-                                                {cpmk.levelTaksonomiRef ? (
-                                                    <Badge variant="secondary" className="text-xs">
-                                                        {cpmk.levelTaksonomiRef.kode}
-                                                    </Badge>
-                                                ) : cpmk.levelTaksonomi ? (
-                                                    <Badge variant="secondary" className="text-xs">
-                                                        {cpmk.levelTaksonomi}
-                                                    </Badge>
-                                                ) : "-"}
+                                        </TableRow>
+                                    ) : cpmkList.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={canValidate ? 8 : 7} className="text-center py-8 text-muted-foreground">
+                                                Tidak ada CPMK dengan filter yang dipilih
                                             </TableCell>
-                                            <TableCell className="max-w-md truncate">
-                                                {cpmk.deskripsi || '-'}
-                                            </TableCell>
-                                            <TableCell>
-                                                {cpmk.mataKuliah.kodeMk} - {cpmk.mataKuliah.namaMk}
-                                                <div className="text-xs text-muted-foreground">
-                                                    Semester {cpmk.mataKuliah.semester}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                {cpmk.creator?.profile?.namaLengkap || '-'}
-                                            </TableCell>
-                                            <TableCell>{getStatusBadge(cpmk.statusValidasi)}</TableCell>
-                                            {canValidate && (
+                                        </TableRow>
+                                    ) : (
+                                        cpmkList.map((cpmk, index) => (
+                                            <TableRow key={cpmk.id}>
                                                 <TableCell>
-                                                    <div className="flex gap-2">
-                                                        {cpmk.statusValidasi !== 'validated' && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="default"
-                                                                onClick={() => handleValidate(cpmk.id, 'validated')}
-                                                                disabled={updating === cpmk.id}
-                                                            >
-                                                                {updating === cpmk.id ? (
-                                                                    <LoadingSpinner size="sm" />
-                                                                ) : (
-                                                                    <>
-                                                                        <CheckCircle2 className="w-4 h-4 mr-1" />
-                                                                        Validasi
-                                                                    </>
-                                                                )}
-                                                            </Button>
-                                                        )}
-                                                        {cpmk.statusValidasi === 'validated' && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() => handleValidate(cpmk.id, 'active')}
-                                                                disabled={updating === cpmk.id}
-                                                            >
-                                                                Aktifkan
-                                                            </Button>
-                                                        )}
-                                                        {cpmk.statusValidasi !== 'draft' && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="destructive"
-                                                                onClick={() => handleValidate(cpmk.id, 'draft')}
-                                                                disabled={updating === cpmk.id}
-                                                            >
-                                                                <XCircle className="w-4 h-4 mr-1" />
-                                                                Batalkan
-                                                            </Button>
-                                                        )}
+                                                    {(pagination.page - 1) * pagination.limit + index + 1}
+                                                </TableCell>
+                                                <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
+                                                <TableCell>
+                                                    {cpmk.levelTaksonomiRef ? (
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            {cpmk.levelTaksonomiRef.kode}
+                                                        </Badge>
+                                                    ) : cpmk.levelTaksonomi ? (
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            {cpmk.levelTaksonomi}
+                                                        </Badge>
+                                                    ) : "-"}
+                                                </TableCell>
+                                                <TableCell className="max-w-md truncate">
+                                                    {cpmk.deskripsi || '-'}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {cpmk.mataKuliah.kodeMk} - {cpmk.mataKuliah.namaMk}
+                                                    <div className="text-xs text-muted-foreground">
+                                                        Semester {cpmk.mataKuliah.semester}
                                                     </div>
                                                 </TableCell>
-                                            )}
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                                                <TableCell>
+                                                    {cpmk.creator?.profile?.namaLengkap || '-'}
+                                                </TableCell>
+                                                <TableCell>{getStatusBadge(cpmk.statusValidasi)}</TableCell>
+                                                {canValidate && (
+                                                    <TableCell>
+                                                        <div className="flex gap-2">
+                                                            {cpmk.statusValidasi !== 'validated' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="default"
+                                                                    onClick={() => handleValidate(cpmk.id, 'validated')}
+                                                                    disabled={updating === cpmk.id}
+                                                                >
+                                                                    {updating === cpmk.id ? (
+                                                                        <LoadingSpinner size="sm" />
+                                                                    ) : (
+                                                                        <>
+                                                                            <CheckCircle2 className="w-4 h-4 mr-1" />
+                                                                            Validasi
+                                                                        </>
+                                                                    )}
+                                                                </Button>
+                                                            )}
+                                                            {cpmk.statusValidasi === 'validated' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => handleValidate(cpmk.id, 'active')}
+                                                                    disabled={updating === cpmk.id}
+                                                                >
+                                                                    Aktifkan
+                                                                </Button>
+                                                            )}
+                                                            {cpmk.statusValidasi !== 'draft' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="destructive"
+                                                                    onClick={() => handleValidate(cpmk.id, 'draft')}
+                                                                    disabled={updating === cpmk.id}
+                                                                >
+                                                                    <XCircle className="w-4 h-4 mr-1" />
+                                                                    Batalkan
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                )}
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
 
                         {/* Pagination Controls */}
                         {pagination.totalPages > 1 && (

@@ -385,98 +385,100 @@ const CPMKPage = () => {
                         )}
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[50px]">No</TableHead>
-                                    <TableHead>Kode CPMK</TableHead>
-                                    <TableHead>Level</TableHead>
-                                    <TableHead>Deskripsi</TableHead>
-                                    <TableHead>Mata Kuliah</TableHead>
-                                    <TableHead className="text-center">Mapping CPL</TableHead>
-                                    <TableHead className="text-center">Teknik Penilaian</TableHead>
-                                    <TableHead className="text-right">Aksi</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading && cpmkList.length === 0 ? (
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={8} className="h-24 text-center">
-                                            <LoadingScreen fullScreen={false} message="Memuat data CPMK..." />
-                                        </TableCell>
+                                        <TableHead className="w-[50px]">No</TableHead>
+                                        <TableHead>Kode CPMK</TableHead>
+                                        <TableHead>Level</TableHead>
+                                        <TableHead>Deskripsi</TableHead>
+                                        <TableHead>Mata Kuliah</TableHead>
+                                        <TableHead className="text-center">Mapping CPL</TableHead>
+                                        <TableHead className="text-center">Teknik Penilaian</TableHead>
+                                        <TableHead className="text-right">Aksi</TableHead>
                                     </TableRow>
-                                ) : cpmkList.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                            Tidak ada data CPMK.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    cpmkList.map((cpmk, index) => (
-                                        <TableRow key={cpmk.id}>
-                                            <TableCell>
-                                                {(pagination.page - 1) * pagination.limit + index + 1}
-                                            </TableCell>
-                                            <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
-                                            <TableCell>
-                                                {cpmk.levelTaksonomi ? (
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {cpmk.levelTaksonomi.split(',').map((level) => (
-                                                            <Badge key={level.trim()} variant="secondary" className="text-xs">
-                                                                {level.trim()}
-                                                            </Badge>
-                                                        ))}
-                                                    </div>
-                                                ) : "-"}
-                                            </TableCell>
-                                            <TableCell>
-                                                {cpmk.deskripsi || "-"}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="text-sm">
-                                                    <div className="font-medium">{cpmk.mataKuliah.kodeMk}</div>
-                                                    <div className="text-muted-foreground">{cpmk.mataKuliah.namaMk}</div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
-                                                    {cpmk.cplMappings?.length || 0}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-                                                    {cpmk.teknikPenilaian?.length || 0}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleViewDetail(cpmk.id)}
-                                                        title="Lihat Detail & Mapping"
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    {canEdit && (
-                                                        <>
-                                                            <Button size="sm" variant="outline" onClick={() => handleEdit(cpmk)}>
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/rubrik/${cpmk.id}`)} title="Kelola Rubrik">
-                                                                <SlidersHorizontal className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button size="sm" variant="destructive" onClick={() => handleDelete(cpmk.id)}>
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </>
-                                                    )}
-                                                </div>
+                                </TableHeader>
+                                <TableBody>
+                                    {loading && cpmkList.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={8} className="h-24 text-center">
+                                                <LoadingScreen fullScreen={false} message="Memuat data CPMK..." />
                                             </TableCell>
                                         </TableRow>
-                                    )))}
-                            </TableBody>
-                        </Table>
+                                    ) : cpmkList.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                                Tidak ada data CPMK.
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        cpmkList.map((cpmk, index) => (
+                                            <TableRow key={cpmk.id}>
+                                                <TableCell>
+                                                    {(pagination.page - 1) * pagination.limit + index + 1}
+                                                </TableCell>
+                                                <TableCell className="font-medium">{cpmk.kodeCpmk}</TableCell>
+                                                <TableCell>
+                                                    {cpmk.levelTaksonomi ? (
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {cpmk.levelTaksonomi.split(',').map((level) => (
+                                                                <Badge key={level.trim()} variant="secondary" className="text-xs">
+                                                                    {level.trim()}
+                                                                </Badge>
+                                                            ))}
+                                                        </div>
+                                                    ) : "-"}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {cpmk.deskripsi || "-"}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="text-sm">
+                                                        <div className="font-medium">{cpmk.mataKuliah.kodeMk}</div>
+                                                        <div className="text-muted-foreground">{cpmk.mataKuliah.namaMk}</div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
+                                                        {cpmk.cplMappings?.length || 0}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-700 text-sm font-medium">
+                                                        {cpmk.teknikPenilaian?.length || 0}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleViewDetail(cpmk.id)}
+                                                            title="Lihat Detail & Mapping"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        {canEdit && (
+                                                            <>
+                                                                <Button size="sm" variant="outline" onClick={() => handleEdit(cpmk)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/rubrik/${cpmk.id}`)} title="Kelola Rubrik">
+                                                                    <SlidersHorizontal className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button size="sm" variant="destructive" onClick={() => handleDelete(cpmk.id)}>
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                     {/* Pagination Controls */}
                     {pagination.totalPages > 1 && (

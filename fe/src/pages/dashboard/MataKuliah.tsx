@@ -316,7 +316,7 @@ const MataKuliahPage = () => {
                       </Select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="kurikulum">Kurikulum</Label>
                         <Select
@@ -351,7 +351,7 @@ const MataKuliahPage = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="sks">SKS</Label>
                         <Input
@@ -407,71 +407,75 @@ const MataKuliahPage = () => {
             )}
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">No</TableHead>
-                  <TableHead>Kode MK</TableHead>
-                  <TableHead>Semester</TableHead>
-                  {showActions && <TableHead className="text-right">Aksi</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading && mkList.length === 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
-                      <LoadingScreen fullScreen={false} message="Memuat data mata kuliah..." />
-                    </TableCell>
+                    <TableHead className="w-[50px]">No</TableHead>
+                    <TableHead>Kode MK</TableHead>
+                    <TableHead>Nama MK</TableHead>
+                    <TableHead>SKS</TableHead>
+                    <TableHead>Semester</TableHead>
+                    {showActions && <TableHead className="text-right">Aksi</TableHead>}
                   </TableRow>
-                ) : mkList.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={showActions ? 6 : 5} className="text-center py-8 text-muted-foreground">
-                      Tidak ada data mata kuliah.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  <>
-                    {loading && (
-                      <TableRow className="absolute w-full h-full bg-background/50 z-10 flex items-center justify-center pointer-events-none inset-0">
-                        {/* Optional: Overlay loader or just use opacity on rows */}
-                      </TableRow>
-                    )}
-                    {mkList.map((mk, index) => (
-                      <TableRow key={mk.id} className={loading ? "opacity-50 pointer-events-none" : ""}>
-                        <TableCell>
-                          {(pagination.page - 1) * pagination.limit + index + 1}
-                        </TableCell>
-                        <TableCell className="font-medium">{mk.kodeMk}</TableCell>
-                        <TableCell>{mk.namaMk}</TableCell>
-                        <TableCell>{mk.sks}</TableCell>
-                        <TableCell>Semester {mk.semester}</TableCell>
-                        {showActions && (
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              {canManage && (
-                                <Button size="sm" variant="outline" onClick={() => handleEdit(mk)}>
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {canEvaluate && (
-                                <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/evaluasi/${mk.id}`)} title="Evaluasi / CQI">
-                                  <SlidersHorizontal className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {canManage && (
-                                <Button size="sm" variant="destructive" onClick={() => handleDelete(mk.id)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
+                </TableHeader>
+                <TableBody>
+                  {loading && mkList.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
+                        <LoadingScreen fullScreen={false} message="Memuat data mata kuliah..." />
+                      </TableCell>
+                    </TableRow>
+                  ) : mkList.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={showActions ? 6 : 5} className="text-center py-8 text-muted-foreground">
+                        Tidak ada data mata kuliah.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <>
+                      {loading && (
+                        <TableRow className="absolute w-full h-full bg-background/50 z-10 flex items-center justify-center pointer-events-none inset-0">
+                          {/* Optional: Overlay loader or just use opacity on rows */}
+                        </TableRow>
+                      )}
+                      {mkList.map((mk, index) => (
+                        <TableRow key={mk.id} className={loading ? "opacity-50 pointer-events-none" : ""}>
+                          <TableCell>
+                            {(pagination.page - 1) * pagination.limit + index + 1}
                           </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </>
-                )}
-              </TableBody>
-            </Table>
+                          <TableCell className="font-medium">{mk.kodeMk}</TableCell>
+                          <TableCell className="min-w-[200px]">{mk.namaMk}</TableCell>
+                          <TableCell>{mk.sks}</TableCell>
+                          <TableCell>Semester {mk.semester}</TableCell>
+                          {showActions && (
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                {canManage && (
+                                  <Button size="sm" variant="outline" onClick={() => handleEdit(mk)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {canEvaluate && (
+                                  <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/evaluasi/${mk.id}`)} title="Evaluasi / CQI">
+                                    <SlidersHorizontal className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {canManage && (
+                                  <Button size="sm" variant="destructive" onClick={() => handleDelete(mk.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+                    </>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
             {/* Pagination Controls */}
             {pagination.totalPages > 1 && (

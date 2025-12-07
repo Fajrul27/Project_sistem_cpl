@@ -9,7 +9,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { toast } from "sonner";
 import { fetchAllUsers, createUserWithRole, updateUser, deleteUser, updateProfile, fetchFakultasList } from "@/lib/api";
 import { Search, SlidersHorizontal } from "lucide-react";
-import { LoadingSpinner } from "@/components/common/LoadingScreen";
+import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -341,53 +341,62 @@ export const StaffList = () => {
                     </div>
                 )}
 
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Nama</TableHead>
-                            <TableHead>NIP</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Unit</TableHead>
-                            <TableHead className="text-right">Aksi</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading && users.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-8"><LoadingSpinner size="sm" className="inline mr-2" /> Loading...</TableCell></TableRow> :
-                            users.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center py-8">Tidak ada data</TableCell></TableRow> :
-                                users.map(user => (
-                                    <TableRow key={user.id}>
-                                        <TableCell className="font-mono text-xs">{user.email}</TableCell>
-                                        <TableCell>{user.namaLengkap}</TableCell>
-                                        <TableCell>{user.nip || "-"}</TableCell>
-                                        <TableCell><Badge variant="outline" className="capitalize">{user.role}</Badge></TableCell>
-                                        <TableCell className="text-xs">
-                                            {(user as any).taughtProdis && (user as any).taughtProdis.length > 0
-                                                ? (user as any).taughtProdis.join(", ")
-                                                : user.programStudi ? user.programStudi : user.fakultas ? user.fakultas : "-"}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button size="sm" variant="outline" onClick={() => {
-                                                setEditingUser(user);
-                                                let fakId = "", prodiId = "";
-                                                if (user.fakultas) {
-                                                    const f = fakultasList.find(x => x.nama === user.fakultas);
-                                                    if (f) { fakId = f.id; const p = f.prodi.find(x => x.nama === user.programStudi); if (p) prodiId = p.id; }
-                                                }
-                                                setEditData({
-                                                    fullName: user.namaLengkap || "",
-                                                    email: user.email,
-                                                    role: user.role,
-                                                    fakultas: fakId,
-                                                    prodi: prodiId,
-                                                    identityNumber: user.nip || ""
-                                                });
-                                            }}>Kelola</Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                    </TableBody>
-                </Table>
+                {loading && users.length === 0 ? (
+                    <LoadingScreen fullScreen={false} message="Memuat data staff..." />
+                ) : (
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[50px]">No</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Nama</TableHead>
+                                    <TableHead>NIP</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead>Unit</TableHead>
+                                    <TableHead className="text-right">Aksi</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
+                                {users.length === 0 ? (
+                                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Tidak ada data</TableCell></TableRow>
+                                ) : (
+                                    users.map((user, index) => (
+                                        <TableRow key={user.id}>
+                                            <TableCell>{(page - 1) * limit + index + 1}</TableCell>
+                                            <TableCell className="font-mono text-xs">{user.email}</TableCell>
+                                            <TableCell>{user.namaLengkap}</TableCell>
+                                            <TableCell>{user.nip || "-"}</TableCell>
+                                            <TableCell><Badge variant="outline" className="capitalize">{user.role}</Badge></TableCell>
+                                            <TableCell className="text-xs">
+                                                {(user as any).taughtProdis && (user as any).taughtProdis.length > 0
+                                                    ? (user as any).taughtProdis.join(", ")
+                                                    : user.programStudi ? user.programStudi : user.fakultas ? user.fakultas : "-"}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button size="sm" variant="outline" onClick={() => {
+                                                    setEditingUser(user);
+                                                    let fakId = "", prodiId = "";
+                                                    if (user.fakultas) {
+                                                        const f = fakultasList.find(x => x.nama === user.fakultas);
+                                                        if (f) { fakId = f.id; const p = f.prodi.find(x => x.nama === user.programStudi); if (p) prodiId = p.id; }
+                                                    }
+                                                    setEditData({
+                                                        fullName: user.namaLengkap || "",
+                                                        email: user.email,
+                                                        role: user.role,
+                                                        fakultas: fakId,
+                                                        prodi: prodiId,
+                                                        identityNumber: user.nip || ""
+                                                    });
+                                                }}>Kelola</Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
 
                 <div className="flex justify-end gap-2 mt-4">
                     <Button size="sm" variant="outline" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</Button>

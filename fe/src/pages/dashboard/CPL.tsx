@@ -344,52 +344,54 @@ const CPLPage = () => {
             )}
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">No</TableHead>
-                  <TableHead>Kode CPL</TableHead>
-                  <TableHead>Deskripsi</TableHead>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead>Program Studi</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {cplList.map((cpl, index) => (
-                  <TableRow key={cpl.id}>
-                    <TableCell>
-                      {(pagination.page - 1) * pagination.limit + index + 1}
-                    </TableCell>
-                    <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
-                    <TableCell className="max-w-md">{cpl.deskripsi}</TableCell>
-                    <TableCell>{cpl.kategoriRef?.nama || cpl.kategori}</TableCell>
-                    <TableCell>{cpl.prodi?.nama || '-'}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="ghost" onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {canEdit && (
-                          <>
-                            <Button size="sm" variant="outline" onClick={() => handleEdit(cpl)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={(e) => handleDeleteClick(cpl.id, e)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]">No</TableHead>
+                    <TableHead>Kode CPL</TableHead>
+                    <TableHead>Deskripsi</TableHead>
+                    <TableHead>Kategori</TableHead>
+                    <TableHead>Program Studi</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {cplList.map((cpl, index) => (
+                    <TableRow key={cpl.id}>
+                      <TableCell>
+                        {(pagination.page - 1) * pagination.limit + index + 1}
+                      </TableCell>
+                      <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
+                      <TableCell className="max-w-md">{cpl.deskripsi}</TableCell>
+                      <TableCell>{cpl.kategoriRef?.nama || cpl.kategori}</TableCell>
+                      <TableCell>{cpl.prodi?.nama || '-'}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" variant="ghost" onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {canEdit && (
+                            <>
+                              <Button size="sm" variant="outline" onClick={() => handleEdit(cpl)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={(e) => handleDeleteClick(cpl.id, e)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
           {/* Pagination Controls */}
           {pagination.totalPages > 1 && (

@@ -273,30 +273,30 @@ export function useMahasiswa() {
     }, [profiles]);
 
     // Wrappers to reset page on filter change
-    const handleSetSearchTerm = (term: string) => {
+    const handleSetSearchTerm = useCallback((term: string) => {
         setSearchTerm(term);
         setPage(1);
-    };
+    }, []);
 
-    const handleSetSemesterFilter = (val: string) => {
+    const handleSetSemesterFilter = useCallback((val: string) => {
         setSemesterFilter(val);
         setPage(1);
-    };
+    }, []);
 
-    const handleSetProdiFilter = (val: string) => {
+    const handleSetProdiFilter = useCallback((val: string) => {
         setProdiFilter(val);
         setPage(1);
-    };
+    }, []);
 
-    const handleSetKelasFilter = (val: string) => {
+    const handleSetKelasFilter = useCallback((val: string) => {
         setKelasFilter(val);
         setPage(1);
-    };
+    }, []);
 
-    const handleSetFakultasFilter = (val: string) => {
+    const handleSetFakultasFilter = useCallback((val: string) => {
         setFakultasFilter(val);
         setPage(1);
-    };
+    }, []);
 
     return {
         // Data

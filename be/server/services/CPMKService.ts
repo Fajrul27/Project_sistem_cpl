@@ -168,6 +168,8 @@ export class CPMKService {
         if (!existing) throw new Error('CPMK tidak ditemukan');
 
         // Validation: Used in grades?
+        // Relaxing this restriction to allow editing deskripsi/kode/taxonomy.
+        /*
         if (existing.statusValidasi === 'active') {
             const existingGrades = await prisma.nilaiTeknikPenilaian.count({
                 where: { teknikPenilaian: { cpmkId: id } }
@@ -177,6 +179,7 @@ export class CPMKService {
                 throw new Error(`USED_IN_GRADES:${existingGrades}`);
             }
         }
+        */
 
         return prisma.cpmk.update({
             where: { id },

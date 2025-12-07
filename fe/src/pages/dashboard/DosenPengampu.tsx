@@ -207,37 +207,39 @@ const DosenPengampuPage = () => {
                                     <p>Belum ada dosen pengampu untuk mata kuliah ini</p>
                                 </div>
                             ) : (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Nama Dosen</TableHead>
-                                            <TableHead>NIDN / NIP</TableHead>
-                                            <TableHead className="text-right">Aksi</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {pengampuList.map((pengampu) => (
-                                            <TableRow key={pengampu.id}>
-                                                <TableCell className="font-medium">
-                                                    {pengampu.dosen.namaLengkap || pengampu.dosen.user.email}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {pengampu.dosen.nidn || pengampu.dosen.nip || "-"}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        onClick={() => initiateDelete(pengampu.id)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </TableCell>
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Nama Dosen</TableHead>
+                                                <TableHead>NIDN / NIP</TableHead>
+                                                <TableHead className="text-right">Aksi</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {pengampuList.map((pengampu) => (
+                                                <TableRow key={pengampu.id}>
+                                                    <TableCell className="font-medium">
+                                                        {pengampu.dosen.namaLengkap || pengampu.dosen.user.email}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {pengampu.dosen.nidn || pengampu.dosen.nip || "-"}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                            onClick={() => initiateDelete(pengampu.id)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             )}
                         </CardContent>
                     </Card>

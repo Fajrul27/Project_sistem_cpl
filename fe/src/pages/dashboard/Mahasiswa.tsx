@@ -219,53 +219,55 @@ const MahasiswaPage = () => {
               <LoadingScreen fullScreen={false} message="Memuat data mahasiswa..." />
             ) : (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">No</TableHead>
-                      <TableHead>Nama Lengkap</TableHead>
-                      <TableHead>NIM</TableHead>
-                      <TableHead>Prodi</TableHead>
-                      <TableHead>Kelas</TableHead>
-                      <TableHead>Semester</TableHead>
-                      <TableHead className="text-right">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
-                    {profiles.length === 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                          Tidak ada data mahasiswa yang cocok dengan filter
-                        </TableCell>
+                        <TableHead className="w-[50px]">No</TableHead>
+                        <TableHead>Nama Lengkap</TableHead>
+                        <TableHead>NIM</TableHead>
+                        <TableHead>Prodi</TableHead>
+                        <TableHead>Kelas</TableHead>
+                        <TableHead>Semester</TableHead>
+                        <TableHead className="text-right">Aksi</TableHead>
                       </TableRow>
-                    ) : (
-                      profiles.map((student, index) => (
-                        <TableRow key={student.id}>
-                          <TableCell>{(pagination.page - 1) * pagination.limit + index + 1}</TableCell>
-                          <TableCell className="font-medium">{student.full_name}</TableCell>
-                          <TableCell>{student.nim || "-"}</TableCell>
-                          <TableCell>{student.prodi || "-"}</TableCell>
-                          <TableCell>{student.kelasName || "-"}</TableCell>
-                          <TableCell>
-                            <Badge className={getSemesterBadgeColor(student.semester)}>
-                              Semester {student.semester || "-"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleShowProgress(student)}
-                            >
-                              <TrendingUp className="h-4 w-4 mr-2" />
-                              Progress
-                            </Button>
+                    </TableHeader>
+                    <TableBody className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
+                      {profiles.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                            Tidak ada data mahasiswa yang cocok dengan filter
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        profiles.map((student, index) => (
+                          <TableRow key={student.id}>
+                            <TableCell>{(pagination.page - 1) * pagination.limit + index + 1}</TableCell>
+                            <TableCell className="font-medium">{student.full_name}</TableCell>
+                            <TableCell>{student.nim || "-"}</TableCell>
+                            <TableCell>{student.prodi || "-"}</TableCell>
+                            <TableCell>{student.kelasName || "-"}</TableCell>
+                            <TableCell>
+                              <Badge className={getSemesterBadgeColor(student.semester)}>
+                                Semester {student.semester || "-"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleShowProgress(student)}
+                              >
+                                <TrendingUp className="h-4 w-4 mr-2" />
+                                Progress
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
 
                 {/* Pagination Controls */}
                 {pagination.totalPages > 1 && (

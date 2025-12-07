@@ -57,8 +57,8 @@ export default function RubrikManager() {
                 {rubrik.kriteria.map((kriteria, kIndex) => (
                     <Card key={kIndex} className="border-l-4 border-l-primary">
                         <CardContent className="pt-6 space-y-4">
-                            <div className="flex gap-4 items-start">
-                                <div className="flex-1 space-y-2">
+                            <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                <div className="w-full sm:flex-1 space-y-2">
                                     <Label>Deskripsi Kriteria</Label>
                                     <Textarea
                                         value={kriteria.deskripsi}
@@ -66,7 +66,7 @@ export default function RubrikManager() {
                                         placeholder="Contoh: Kelengkapan analisis..."
                                     />
                                 </div>
-                                <div className="w-32 space-y-2">
+                                <div className="w-full sm:w-32 space-y-2">
                                     <Label>Bobot (%)</Label>
                                     <Input
                                         type="number"
@@ -74,14 +74,16 @@ export default function RubrikManager() {
                                         onChange={e => updateKriteria(kIndex, 'bobot', parseFloat(e.target.value))}
                                     />
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-destructive mt-8"
-                                    onClick={() => handleRemoveKriteria(kIndex)}
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
+                                <div className="self-end sm:self-start pt-0 sm:pt-8">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-destructive"
+                                        onClick={() => handleRemoveKriteria(kIndex)}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </div>
 
                             <div className="bg-muted/30 p-4 rounded-lg">
