@@ -21,8 +21,6 @@ Sistem manajemen Capaian Pembelajaran Lulusan (CPL) berbasis web yang komprehens
 - [Docker Deployment](#docker-deployment)
 - [Struktur Proyek](#struktur-proyek)
 - [API Documentation](#api-documentation)
-- [Database Schema](#database-schema)
-- [User Roles](#user-roles)
 - [Contributing](#contributing)
 
 ## Tentang Proyek
@@ -45,36 +43,33 @@ Sistem CPL bukan sekadar aplikasi pencatatan nilai, melainkan platform yang meng
 
 ### CPMK & Assessment Design
 - **Taxonomy Integration**: Integrasi Bloom's Taxonomy (Kognitif C1-C6, Afektif A1-A5, Psikomotor P1-P5) dalam perumusan CPMK.
-- **Validasi Bertingkat**: Workflow validasi CPMK (Draft → Validated → Active) oleh Kaprodi/GKM.
+- **Validasi Bobot Ketat**: Sistem validasi real-time memastikan total bobot Sub-CPMK untuk satu CPMK adalah **tepat 100%**.
 - **Rubrik Penilaian**: Sistem rubrik dinamis dengan kriteria dan level penilaian (e.g., Sangat Baik, Baik, Cukup) untuk asesmen yang objektif.
-- **Rencana Asesmen**: Pemetaan teknik penilaian (Tugas, Kuis, UTS, UAS) ke Sub-CPMK.
+- **Fleksibilitas Edit**: Memungkinkan perbaikan metadata CPMK (kode, deskripsi) tanpa merusak integritas data nilai yang sudah masuk.
 
 ### Penilaian & Grading
 - **Input Nilai Fleksibel**: Dukungan untuk input nilai angka langsung atau menggunakan rubrik.
-- **Kalkulasi Otomatis**:
-    - Nilai Sub-CPMK → Nilai CPMK
-    - Nilai CPMK → Nilai CPL (berdasarkan bobot mapping)
-    - Nilai Akhir Mata Kuliah
-- **Indirect Assessment**: Kuesioner penilaian diri (self-assessment) bagi mahasiswa untuk mengukur persepsi ketercapaian CPL.
+- **Evaluasi CPL Otomatis**: Kalkulasi nilai CPL mahasiswa secara otomatis berdasarkan bobot dari level Sub-CPMK ke atas.
+- **Export Laporan**: Fitur export nilai dan transkrip CPL ke format Excel yang rapi per kelas.
+- **Indirect Assessment**: Kuesioner penilaian diri (self-assessment) bagi mahasiswa.
+
+### User Experience (UX)
+- **Standardized UI**: Antarmuka konsisten menggunakan Shadcn UI (Dialogs, Loading States, Toasts).
+- **Responsive Design**: Tabel dan layout yang responsif untuk berbagai ukuran layar.
+- **Role-Based Views**: Dashboard yang disesuaikan untuk Admin, Dosen, dan Mahasiswa.
 
 ### Continuous Quality Improvement (CQI)
 - **Evaluasi Mata Kuliah**: Form evaluasi diri dosen di akhir semester (kendala, rencana perbaikan).
 - **Feedback Loop**: Kaprodi dapat memberikan feedback atas evaluasi dosen.
-- **Analisis Ketercapaian**: Dashboard grafik pencapaian CPL per angkatan, per mahasiswa, dan per mata kuliah.
-
-### User Management & Security
-- **Multi-role Access**: Admin, Kaprodi, Dosen, Mahasiswa.
-- **Audit Logging**: Mencatat setiap aktivitas perubahan data penting.
-- **Secure Auth**: JWT-based authentication dengan session management.
 
 ## Teknologi
 
 ### Frontend
 - **Core**: React 18.3, TypeScript 5.8, Vite 5.4
 - **UI/UX**: TailwindCSS 3.4, Shadcn/ui, Lucide React
-- **State & Data**: TanStack Query 5.8, React Hook Form, Zod
+- **State & Data**: TanStack Query 5.x, React Hook Form, Zod
 - **Visualization**: Recharts (Grafik & Chart)
-- **Reporting**: jsPDF, docx (Export laporan)
+- **Reporting**: jsPDF, docx, XLSX (Export laporan)
 
 ### Backend
 - **Runtime**: Node.js, Express.js 4.18
@@ -186,21 +181,16 @@ Project_sistem_cpl/
 │   ├── prisma/                # Schema & Seeds
 │   ├── server/
 │   │   ├── routes/            # API Endpoints
-│   │   ├── middleware/        # Auth & Validation
-│   │   └── lib/               # Helper functions
-│   └── ...
+│   │   ├── controller/        # Logic Handler
+│   │   ├── services/          # Business Logic Layer
+│   │   └── ...
 ├── fe/                         # Frontend (React + Vite)
 │   ├── src/
 │   │   ├── components/        # Reusable Components
-│   │   ├── pages/
-│   │   │   ├── dashboard/     # Halaman Utama (CPL, CPMK, Nilai, dll)
-│   │   │   └── ...
+│   │   ├── pages/             # Page Views
 │   │   ├── hooks/             # Custom React Hooks
 │   │   └── lib/               # API Client & Utils
-│   └── ...
-├── DOCKER_COMMANDS.md          # Panduan Docker
-├── docker-compose.yml          # Konfigurasi Docker Compose
-└── sistem_cpl.sql              # Database Dump (Backup)
+└── ...
 ```
 
 ## API Documentation
@@ -221,10 +211,6 @@ API tersedia di endpoint `/api`. Beberapa endpoint utama:
 4. Push to branch (`git push origin feature/AmazingFeature`)
 5. Open Pull Request
 
-## Team
-
-- **Developer**: Fajrul27 & nrmaanrfnd7
-- **Project**: PKL Akademik 2025
-
 ---
-**Built with ❤️ for better education management**
+**Developers**: Fajrul27 & nrmaanrfnd7
+**Project**: PKL Akademik 2025
