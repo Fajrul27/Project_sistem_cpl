@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { fetchAllUsers, createUserWithRole, updateUser, deleteUser, updateProfile, fetchFakultasList } from "@/lib/api";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
+import { Pagination } from "@/components/common/Pagination";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -398,11 +399,11 @@ export const StaffList = () => {
                     </div>
                 )}
 
-                <div className="flex justify-end gap-2 mt-4">
-                    <Button size="sm" variant="outline" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</Button>
-                    <span className="text-sm py-1">Page {page} of {totalPages}</span>
-                    <Button size="sm" variant="outline" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next</Button>
-                </div>
+                <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                />
 
                 <Dialog open={!!editingUser} onOpenChange={open => !open && setEditingUser(null)}>
                     <DialogContent>
@@ -436,7 +437,17 @@ export const StaffList = () => {
                         </div>
                     </DialogContent>
                 </Dialog>
+
+
+                <DeleteConfirmationDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                    onConfirm={confirmDelete}
+                    title="Hapus Staff"
+                    description={`Yakin ingin menghapus ${userToDelete?.namaLengkap || userToDelete?.email}?`}
+                    loading={!!deletingId}
+                />
             </CardContent>
-        </Card>
+        </Card >
     );
 };

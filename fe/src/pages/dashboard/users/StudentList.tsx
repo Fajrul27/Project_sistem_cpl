@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { fetchAllUsers, updateUserRole, createUserWithRole, updateUser, deleteUser, updateProfile, fetchKelas, fetchFakultasList, fetchAngkatanList } from "@/lib/api";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
+import { Pagination } from "@/components/common/Pagination";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -599,6 +600,11 @@ export const StudentList = () => {
                         </div>
                     </DialogContent>
                 </Dialog>
+                <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                />
             </CardContent>
             <DeleteConfirmationDialog
                 open={deleteDialogOpen}
