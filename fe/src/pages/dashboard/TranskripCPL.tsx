@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -315,217 +316,217 @@ const TranskripCPLPage = () => {
                 }
             </div >
 
-            {/* PRINT LAYOUT */}
-            {
-                selectedStudent && (
-                    <div id="print-root" className="hidden print:block bg-white text-black">
-                        <style>{`
-                        @media print {
-                            @page { 
-                                margin: 25mm 20mm; /* Standard margins: Top/Bottom 2.5cm, Left/Right 2cm */
-                                size: A4;
-                            }
-                            body, html { 
-                                margin: 0; 
-                                padding: 0;
-                                background-color: white !important;
-                                -webkit-print-color-adjust: exact;
-                            }
-                            
-                            /* Use visibility to hide everything but keep the print root visible */
-                            body * {
-                                visibility: hidden;
-                            }
-                            
-                            /* Make print root and all its children visible */
-                            #print-root, #print-root * {
-                                visibility: visible;
-                            }
-                            
-                            /* Position the print root to cover the page */
-                            #print-root {
-                                position: absolute;
-                                left: 0;
-                                top: 0;
-                                width: 100%; /* Fit within @page margins */
-                                min-height: 100%;
-                                padding: 0; /* Margin handled by @page */
-                                background-color: white !important;
-                                z-index: 9999;
-                            }
-
-                            /* Table Printing Improvements */
-                            table {
-                                page-break-inside: auto;
-                            }
-                            tr {
-                                page-break-inside: avoid;
-                                break-inside: avoid;
-                            }
-                            thead {
-                                display: table-header-group;
-                            }
-                            tfoot {
-                                display: table-footer-group;
-                            }
+            {/* PRINT LAYOUT PORTAL */}
+            {selectedStudent && createPortal(
+                <div id="print-root" className="bg-white text-black">
+                    <style>{`
+                    @media print {
+                        @page { 
+                            size: A4;
+                            margin: 20mm;
                         }
-                    `}</style>
-                        <div className="">
-                            {/* Header */}
-                            <div className="flex items-center justify-between mb-2 relative border-b-2 border-black pb-2">
-                                <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                    <img src={settings.logoUrl || "/logo.png"} alt="Logo" className="w-full h-full object-contain" />
+                        
+                        body, html { 
+                            margin: 0; 
+                            padding: 0;
+                            background-color: white !important;
+                            height: 100% !important;
+                            overflow: visible !important;
+                        }
+
+                        /* HIDE EVERYTHING ELSE */
+                        body > *:not(#print-root) {
+                            display: none !important;
+                        }
+
+                        /* SHOW PRINT ROOT */
+                        #print-root {
+                            display: block !important;
+                            width: 100%;
+                            height: auto;
+                            margin: 0;
+                            padding: 0;
+                            background-color: white !important;
+                            /* Reset positioning */
+                            position: static !important;
+                            overflow: visible !important;
+                        }
+
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                        }
+                        
+                        * {
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                            color: black !important;
+                        }
+                    }
+                    
+                    /* Hide print root on screen */
+                    @media screen {
+                        #print-root {
+                            display: none !important;
+                        }
+                    }
+                `}</style>
+                    <div className="">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-2 relative border-b-2 border-black pb-2">
+                            <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                <img src={settings.logoUrl || "/logo.png"} alt="Logo" className="w-full h-full object-contain" />
+                            </div>
+                            <div className="flex-1 text-center px-2">
+                                <h1 className="text-base font-bold uppercase tracking-wide leading-tight">{settings.univName}</h1>
+                                <p className="text-[10px] mt-1 leading-tight">{settings.univAddress}</p>
+                                <p className="text-[10px] mt-1 leading-tight">{settings.univContact}</p>
+                            </div>
+                            <div className="w-20 h-20 flex-shrink-0"></div> {/* Spacer for centering */}
+                        </div>
+
+                        <div className="border-b border-black mb-4"></div>
+
+                        <h2 className="text-center text-base font-bold mb-4 uppercase">
+                            {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CPMK SEMENTARA'}
+                        </h2>
+
+                        {/* Student Info */}
+                        <div className="grid grid-cols-2 gap-x-8 mb-4 text-[11px]">
+                            <div className="space-y-1">
+                                <div className="grid grid-cols-[100px_5px_1fr]">
+                                    <div>Program Studi</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">{selectedStudent.profile?.programStudi || '-'}</div>
                                 </div>
-                                <div className="flex-1 text-center px-2">
-                                    <h1 className="text-base font-bold uppercase tracking-wide leading-tight">{settings.univName}</h1>
-                                    <p className="text-[10px] mt-1 leading-tight">{settings.univAddress}</p>
-                                    <p className="text-[10px] mt-1 leading-tight">{settings.univContact}</p>
+                                <div className="grid grid-cols-[100px_5px_1fr]">
+                                    <div>NIM</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">{selectedStudent.profile?.nim || '-'}</div>
                                 </div>
-                                <div className="w-20 h-20 flex-shrink-0"></div> {/* Spacer for centering */}
+                                <div className="grid grid-cols-[100px_5px_1fr]">
+                                    <div>Tempat Lahir</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">-</div>
+                                </div>
+                                <div className="grid grid-cols-[100px_5px_1fr]">
+                                    <div>Tanggal Lahir</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">-</div>
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <div className="grid grid-cols-[100px_5px_1fr]">
+                                    <div>Jenjang Pendidikan</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">SARJANA</div>
+                                </div>
+                                <div className="grid grid-cols-[100px_5px_1fr]">
+                                    <div>Nama</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">{selectedStudent.profile?.namaLengkap || '-'}</div>
+                                </div>
+                                <div className="grid grid-cols-[100px_5px_1fr]">
+                                    <div>Tahun Masuk</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">{selectedStudent.profile?.tahunMasuk || '-'}</div>
+                                </div>
+                                <div className="grid grid-cols-[100px_5px_1fr]">
+                                    <div>Semester</div>
+                                    <div>:</div>
+                                    <div className="uppercase font-medium">{selectedStudent.profile?.semester || '-'}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Table */}
+                        <div className="mb-4">
+                            <table className="w-full border-collapse border border-black text-[10px]">
+                                <thead>
+                                    <tr className="bg-gray-100">
+                                        <th className="border border-black p-1 w-8 text-center">NO</th>
+                                        <th className="border border-black p-1 w-20 text-center">KODE</th>
+                                        <th className="border border-black p-1 text-left">{activeTab === 'cpl' ? 'CAPAIAN PEMBELAJARAN / MATA KULIAH' : 'CPMK / MATA KULIAH'}</th>
+                                        <th className="border border-black p-1 w-12 text-center">NILAI</th>
+                                        <th className="border border-black p-1 w-10 text-center">HURUF</th>
+                                        <th className="border border-black p-1 w-16 text-center">STATUS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {activeTab === 'cpl' ? (
+                                        validTranskripList.map((item, index) => (
+                                            <tr key={index}>
+                                                <td className="border border-black p-1 text-center">{index + 1}</td>
+                                                <td className="border border-black p-1 text-center">{item.cpl.kodeCpl}</td>
+                                                <td className="border border-black p-1">
+                                                    <div className="font-bold mb-0.5">{item.cpl.deskripsi}</div>
+                                                    <div className="text-[9px] text-gray-600">
+                                                        MK: {item.mataKuliahList && item.mataKuliahList.length > 0
+                                                            ? item.mataKuliahList.map((mk) => mk.namaMk).join(', ')
+                                                            : (item.mataKuliah?.namaMk || '-')}
+                                                    </div>
+                                                </td>
+                                                <td className="border border-black p-1 text-center font-bold">{item.nilaiAkhir.toFixed(2)}</td>
+                                                <td className="border border-black p-1 text-center font-bold">{getGradeLetter(item.nilaiAkhir)}</td>
+                                                <td className="border border-black p-1 text-center">
+                                                    {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        transkripCpmkList.map((item, index) => (
+                                            <tr key={index}>
+                                                <td className="border border-black p-1 text-center">{index + 1}</td>
+                                                <td className="border border-black p-1 text-center">{item.kodeCpmk}</td>
+                                                <td className="border border-black p-1">
+                                                    <div className="font-bold">{item.mataKuliah.namaMk}</div>
+                                                    <div className="text-[9px] mb-0.5">Kode MK: {item.mataKuliah.kodeMk}</div>
+                                                    <div className="text-[9px] italic">{item.deskripsi}</div>
+                                                </td>
+                                                <td className="border border-black p-1 text-center font-bold">{item.nilai.toFixed(2)}</td>
+                                                <td className="border border-black p-1 text-center font-bold">{getGradeLetter(item.nilai)}</td>
+                                                <td className="border border-black p-1 text-center">
+                                                    {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Summary & Footer */}
+                        <div className="flex justify-between items-end break-inside-avoid mt-8 page-break-inside-avoid">
+                            <div className="border border-black p-2 w-56">
+                                <div className="font-bold mb-1 text-[10px]">KETERANGAN</div>
+                                <div className="grid grid-cols-[1fr_auto] gap-2 text-[10px]">
+                                    <div>Rata-rata Nilai</div>
+                                    <div className="font-bold">: {avgScore.toFixed(2)}</div>
+                                    <div>Total {activeTab === 'cpl' ? 'CPL' : 'CPMK'} Tercapai</div>
+                                    <div className="font-bold">: {activeTab === 'cpl' ? completedCPL : transkripCpmkList.filter(i => i.status === 'tercapai').length} / {activeTab === 'cpl' ? (totalCurriculumCpl || validTranskripList.length) : transkripCpmkList.length}</div>
+                                </div>
                             </div>
 
-                            <div className="border-b border-black mb-4"></div>
-
-                            <h2 className="text-center text-base font-bold mb-4 uppercase">
-                                {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CPMK SEMENTARA'}
-                            </h2>
-
-                            {/* Student Info */}
-                            <div className="grid grid-cols-2 gap-x-8 mb-4 text-[11px]">
-                                <div className="space-y-1">
-                                    <div className="grid grid-cols-[100px_5px_1fr]">
-                                        <div>Program Studi</div>
-                                        <div>:</div>
-                                        <div className="uppercase font-medium">{selectedStudent.profile?.programStudi || '-'}</div>
-                                    </div>
-                                    <div className="grid grid-cols-[100px_5px_1fr]">
-                                        <div>NIM</div>
-                                        <div>:</div>
-                                        <div className="uppercase font-medium">{selectedStudent.profile?.nim || '-'}</div>
-                                    </div>
-                                    <div className="grid grid-cols-[100px_5px_1fr]">
-                                        <div>Tempat Lahir</div>
-                                        <div>:</div>
-                                        <div className="uppercase font-medium">-</div>
-                                    </div>
-                                    <div className="grid grid-cols-[100px_5px_1fr]">
-                                        <div>Tanggal Lahir</div>
-                                        <div>:</div>
-                                        <div className="uppercase font-medium">-</div>
-                                    </div>
+                            <div className="text-center text-[10px]">
+                                <div className="mb-12">
+                                    <div>Cilacap, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                                    <div className="font-bold">Ketua Program Studi</div>
+                                    <div className="italic">{selectedStudent?.profile?.programStudi || '........................'}</div>
                                 </div>
-                                <div className="space-y-1">
-                                    <div className="grid grid-cols-[100px_5px_1fr]">
-                                        <div>Jenjang Pendidikan</div>
-                                        <div>:</div>
-                                        <div className="uppercase font-medium">SARJANA</div>
-                                    </div>
-                                    <div className="grid grid-cols-[100px_5px_1fr]">
-                                        <div>Nama</div>
-                                        <div>:</div>
-                                        <div className="uppercase font-medium">{selectedStudent.profile?.namaLengkap || '-'}</div>
-                                    </div>
-                                    <div className="grid grid-cols-[100px_5px_1fr]">
-                                        <div>Tahun Masuk</div>
-                                        <div>:</div>
-                                        <div className="uppercase font-medium">{selectedStudent.profile?.tahunMasuk || '-'}</div>
-                                    </div>
-                                    <div className="grid grid-cols-[100px_5px_1fr]">
-                                        <div>Semester</div>
-                                        <div>:</div>
-                                        <div className="uppercase font-medium">{selectedStudent.profile?.semester || '-'}</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Table */}
-                            <div className="mb-4">
-                                <table className="w-full border-collapse border border-black text-[10px]">
-                                    <thead>
-                                        <tr className="bg-gray-100">
-                                            <th className="border border-black p-1 w-8 text-center">NO</th>
-                                            <th className="border border-black p-1 w-20 text-center">KODE</th>
-                                            <th className="border border-black p-1 text-left">{activeTab === 'cpl' ? 'CAPAIAN PEMBELAJARAN / MATA KULIAH' : 'CPMK / MATA KULIAH'}</th>
-                                            <th className="border border-black p-1 w-12 text-center">NILAI</th>
-                                            <th className="border border-black p-1 w-10 text-center">HURUF</th>
-                                            <th className="border border-black p-1 w-16 text-center">STATUS</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {activeTab === 'cpl' ? (
-                                            validTranskripList.map((item, index) => (
-                                                <tr key={index}>
-                                                    <td className="border border-black p-1 text-center">{index + 1}</td>
-                                                    <td className="border border-black p-1 text-center">{item.cpl.kodeCpl}</td>
-                                                    <td className="border border-black p-1">
-                                                        <div className="font-bold mb-0.5">{item.cpl.deskripsi}</div>
-                                                        <div className="text-[9px] text-gray-600">
-                                                            MK: {item.mataKuliahList && item.mataKuliahList.length > 0
-                                                                ? item.mataKuliahList.map((mk) => mk.namaMk).join(', ')
-                                                                : (item.mataKuliah?.namaMk || '-')}
-                                                        </div>
-                                                    </td>
-                                                    <td className="border border-black p-1 text-center font-bold">{item.nilaiAkhir.toFixed(2)}</td>
-                                                    <td className="border border-black p-1 text-center font-bold">{getGradeLetter(item.nilaiAkhir)}</td>
-                                                    <td className="border border-black p-1 text-center">
-                                                        {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            transkripCpmkList.map((item, index) => (
-                                                <tr key={index}>
-                                                    <td className="border border-black p-1 text-center">{index + 1}</td>
-                                                    <td className="border border-black p-1 text-center">{item.kodeCpmk}</td>
-                                                    <td className="border border-black p-1">
-                                                        <div className="font-bold">{item.mataKuliah.namaMk}</div>
-                                                        <div className="text-[9px] mb-0.5">Kode MK: {item.mataKuliah.kodeMk}</div>
-                                                        <div className="text-[9px] italic">{item.deskripsi}</div>
-                                                    </td>
-                                                    <td className="border border-black p-1 text-center font-bold">{item.nilai.toFixed(2)}</td>
-                                                    <td className="border border-black p-1 text-center font-bold">{getGradeLetter(item.nilai)}</td>
-                                                    <td className="border border-black p-1 text-center">
-                                                        {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Summary & Footer */}
-                            <div className="flex justify-between items-end break-inside-avoid mt-8 page-break-inside-avoid">
-                                <div className="border border-black p-2 w-56">
-                                    <div className="font-bold mb-1 text-[10px]">KETERANGAN</div>
-                                    <div className="grid grid-cols-[1fr_auto] gap-2 text-[10px]">
-                                        <div>Rata-rata Nilai</div>
-                                        <div className="font-bold">: {avgScore.toFixed(2)}</div>
-                                        <div>Total {activeTab === 'cpl' ? 'CPL' : 'CPMK'} Tercapai</div>
-                                        <div className="font-bold">: {activeTab === 'cpl' ? completedCPL : transkripCpmkList.filter(i => i.status === 'tercapai').length} / {activeTab === 'cpl' ? (totalCurriculumCpl || validTranskripList.length) : transkripCpmkList.length}</div>
-                                    </div>
-                                </div>
-
-                                <div className="text-center text-[10px]">
-                                    <div className="mb-12">
-                                        <div>Cilacap, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-                                        <div className="font-bold">Ketua Program Studi</div>
-                                        <div className="italic">{selectedStudent?.profile?.programStudi || '........................'}</div>
+                                <div>
+                                    <div className="font-bold underline uppercase">
+                                        {kaprodiData?.namaKaprodi || settings.kaprodiName || "( ........................................................ )"}
                                     </div>
                                     <div>
-                                        <div className="font-bold underline uppercase">
-                                            {kaprodiData?.namaKaprodi || settings.kaprodiName || "( ........................................................ )"}
-                                        </div>
-                                        <div>
-                                            NIDN. {kaprodiData?.nidnKaprodi || settings.kaprodiNip || "........................"}
-                                        </div>
+                                        NIDN. {kaprodiData?.nidnKaprodi || settings.kaprodiNip || "........................"}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                )
-            }
+                </div>,
+                document.body
+            )}
         </DashboardPage >
     );
 };

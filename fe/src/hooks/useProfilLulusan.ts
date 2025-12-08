@@ -26,6 +26,9 @@ export interface CPL {
     deskripsi: string;
 }
 
+// Simple Cache
+const profilCache: Record<string, any> = {};
+
 export const useProfilLulusan = () => {
     const { role, profile, loading: roleLoading } = useUserRole();
 
@@ -73,7 +76,19 @@ export const useProfilLulusan = () => {
 
     const fetchProfilLulusan = useCallback(async (prodiId: string) => {
         if (!prodiId) return;
-        setLoading(true);
+
+        const cacheKey = `${prodiId}-${page}-${limit}-${searchTerm}`;
+        if (profilCache[cacheKey]) {
+            // Restore from cache immediately
+            const cached = profilCache[cacheKey];
+            setProfilList(cached.data);
+            setTotalItems(cached.totalItems);
+            setTotalPages(cached.totalPages);
+            setLoading(false);
+        } else {
+            setLoading(true);
+        }
+
         try {
             const params = {
                 prodiId,
@@ -83,22 +98,36 @@ export const useProfilLulusan = () => {
             };
             const res = await api.get('/profil-lulusan', { params });
 
+            let newData: any[] = [];
+            let newTotal = 0;
+            let newPages = 1;
+
             if (res.data && res.meta) {
-                setProfilList(res.data);
-                setTotalItems(res.meta.total);
-                setTotalPages(res.meta.totalPages);
+                newData = res.data;
+                newTotal = res.meta.total;
+                newPages = res.meta.totalPages;
             } else if (res.data && res.data.data && res.data.meta) { // Wrapper case
-                setProfilList(res.data.data);
-                setTotalItems(res.data.meta.total);
-                setTotalPages(res.data.meta.totalPages);
+                newData = res.data.data;
+                newTotal = res.data.meta.total;
+                newPages = res.data.meta.totalPages;
             } else if (Array.isArray(res.data)) {
-                // Fallback legacy
-                setProfilList(res.data);
-                setTotalItems(res.data.length);
-                setTotalPages(1);
+                newData = res.data;
+                newTotal = res.data.length;
+                newPages = 1;
             } else {
-                setProfilList([]);
+                newData = [];
             }
+
+            setProfilList(newData);
+            setTotalItems(newTotal);
+            setTotalPages(newPages);
+
+            // Save to cache
+            profilCache[cacheKey] = {
+                data: newData,
+                totalItems: newTotal,
+                totalPages: newPages
+            };
 
         } catch (error) {
             console.error("Error fetching profil lulusan:", error);

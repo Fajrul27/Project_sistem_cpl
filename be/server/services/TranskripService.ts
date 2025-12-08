@@ -122,40 +122,29 @@ export class TranskripService {
 
         // console.log(`[Transkrip] Fetching for mahasiswa=${mahasiswaId}, semester=${semester}, tahunAjaran=${tahunAjaran}`);
 
-        const nilaiCplList = await prisma.nilaiCpl.findMany({
-            where,
-            include: { cpl: true, mataKuliah: true }
-        });
-
-        // console.log(`[Transkrip] Found ${nilaiCplList.length} nilai_cpl records`);
-        /*
-        if (nilaiCplList.length > 0) {
-            console.log(`[Transkrip] Sample record:`, {
-                cplId: nilaiCplList[0].cplId,
-                nilai: nilaiCplList[0].nilai,
-                semester: nilaiCplList[0].semester,
-                tahunAjaran: nilaiCplList[0].tahunAjaran
-            });
-        }
-        */
-
-        // Fetch technical assessment data to show what assessments were input
-        const nilaiTeknikList = await prisma.nilaiTeknikPenilaian.findMany({
-            where,
-            include: {
-                teknikPenilaian: {
-                    include: {
-                        cpmk: {
-                            include: {
-                                cplMappings: { include: { cpl: true } }
+        // PARALLEL FETCHING: Fetch unrelated data concurrently
+        const [nilaiCplList, nilaiTeknikList] = await Promise.all([
+            prisma.nilaiCpl.findMany({
+                where,
+                include: { cpl: true, mataKuliah: true }
+            }),
+            prisma.nilaiTeknikPenilaian.findMany({
+                where,
+                include: {
+                    teknikPenilaian: {
+                        include: {
+                            cpmk: {
+                                include: {
+                                    cplMappings: { include: { cpl: true } }
+                                }
                             }
                         }
-                    }
+                    },
+                    mataKuliah: true
                 },
-                mataKuliah: true
-            },
-            orderBy: [{ tahunAjaran: 'desc' }, { semester: 'desc' }]
-        });
+                orderBy: [{ tahunAjaran: 'desc' }, { semester: 'desc' }]
+            })
+        ]);
 
         const cplIds = [...new Set(nilaiCplList.map(n => n.cplId))];
         const mkIds = [...new Set(nilaiCplList.map(n => n.mataKuliahId))];
@@ -308,13 +297,21 @@ export class TranskripService {
         );
 
         let processed = 0;
-        for (const target of targets) {
-            const cpmks = await prisma.cpmk.findMany({ where: { mataKuliahId: target.mataKuliahId } });
-            for (const cpmk of cpmks) {
-                await calculateNilaiCpmk(mahasiswaId, cpmk.id, target.mataKuliahId, target.semester, target.tahunAjaran);
-            }
-            await calculateNilaiCplFromCpmk(mahasiswaId, target.mataKuliahId, target.semester, target.tahunAjaran);
-            processed++;
+
+        // BATCH PROCESSING: Process 5 targets at a time to avoid connection pool exhaustion
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+            const batch = targets.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(async (target) => {
+                const cpmks = await prisma.cpmk.findMany({ where: { mataKuliahId: target.mataKuliahId } });
+
+                // Keep sub-tasks sequential per target to maintain logic dependency (CPL depends on CPMK)
+                for (const cpmk of cpmks) {
+                    await calculateNilaiCpmk(mahasiswaId, cpmk.id, target.mataKuliahId, target.semester, target.tahunAjaran);
+                }
+                await calculateNilaiCplFromCpmk(mahasiswaId, target.mataKuliahId, target.semester, target.tahunAjaran);
+            }));
+            processed += batch.length;
         }
         return processed;
     }

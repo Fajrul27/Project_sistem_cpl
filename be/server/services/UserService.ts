@@ -113,39 +113,36 @@ export class UserService {
                     include: { mataKuliah: true }
                 });
 
-                for (const mkPengampu of mataKuliahPengampuList) {
-                    const mk = mkPengampu.mataKuliah;
-                    let mahasiswaList: { userId: string }[] = [];
+                const criteria: any[] = [];
 
+                mataKuliahPengampuList.forEach(mkPengampu => {
+                    const mk = mkPengampu.mataKuliah;
                     if (mkPengampu.kelasId) {
-                        // PRIMARY FILTER: Students in the assigned Class
-                        mahasiswaList = await prisma.profile.findMany({
-                            where: {
-                                kelasId: mkPengampu.kelasId,
-                                user: { role: { role: 'mahasiswa' } }
-                            },
-                            select: { userId: true }
+                        criteria.push({
+                            kelasId: mkPengampu.kelasId,
+                            user: { role: { role: 'mahasiswa' } }
                         });
                     } else if (mk.prodiId) {
-                        mahasiswaList = await prisma.profile.findMany({
-                            where: {
-                                prodiId: mk.prodiId,
-                                semester: mk.semester,
-                                user: { role: { role: 'mahasiswa' } }
-                            },
-                            select: { userId: true }
+                        criteria.push({
+                            prodiId: mk.prodiId,
+                            semester: mk.semester,
+                            user: { role: { role: 'mahasiswa' } }
                         });
                     } else if (mk.programStudi) {
-                        mahasiswaList = await prisma.profile.findMany({
-                            where: {
-                                programStudi: mk.programStudi,
-                                semester: mk.semester,
-                                user: { role: { role: 'mahasiswa' } }
-                            },
-                            select: { userId: true }
+                        criteria.push({
+                            programStudi: mk.programStudi,
+                            semester: mk.semester,
+                            user: { role: { role: 'mahasiswa' } }
                         });
                     }
-                    mahasiswaList.forEach(m => allowedStudentIds.add(m.userId));
+                });
+
+                if (criteria.length > 0) {
+                    const relatedStudents = await prisma.profile.findMany({
+                        where: { OR: criteria },
+                        select: { userId: true }
+                    });
+                    relatedStudents.forEach(m => allowedStudentIds.add(m.userId));
                 }
             }
 

@@ -309,8 +309,13 @@ export async function recalculateCpmkBulk(cpmkId: string) {
         // console.log(`Triggering bulk recalculation for CPMK ${cpmk.kodeCpmk}. Affected students: ${grades.length}`);
 
         // 3. Trigger calculation for each
-        for (const g of grades) {
-            await calculateNilaiCpmk(g.mahasiswaId, cpmkId, g.mataKuliahId, g.semester, g.tahunAjaran);
+        // 3. Trigger calculation for each in BATCHES
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < grades.length; i += BATCH_SIZE) {
+            const batch = grades.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map(g =>
+                calculateNilaiCpmk(g.mahasiswaId, cpmkId, g.mataKuliahId, g.semester, g.tahunAjaran)
+            ));
         }
 
     } catch (error) {

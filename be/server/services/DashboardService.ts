@@ -314,63 +314,171 @@ export class DashboardService {
 
         const dosenList = await prisma.user.findMany({
             where,
-            include: {
+            select: {
+                id: true,
+                email: true,
                 profile: {
-                    include: {
+                    select: {
+                        namaLengkap: true,
                         mataKuliahPengampu: {
-                            include: { mataKuliah: true, kelas: true }
+                            select: {
+                                mataKuliahId: true,
+                                kelasId: true,
+                                mataKuliah: {
+                                    select: {
+                                        id: true,
+                                        prodiId: true,
+                                        semester: true
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         });
 
-        return Promise.all(dosenList.map(async (dosen) => {
-            const pengampu = dosen.profile?.mataKuliahPengampu || [];
-            const mkIds = pengampu.map(p => p.mataKuliahId);
-
-            // Avg Score given by this dosen
-            const grades = await prisma.nilaiCpl.aggregate({
-                where: { mataKuliahId: { in: mkIds } },
-                _avg: { nilai: true },
-                _count: { nilai: true }
+        // Collect all related Mata Kuliah IDs
+        const allMkIds = new Set<string>();
+        dosenList.forEach(d => {
+            d.profile?.mataKuliahPengampu?.forEach(p => {
+                if (p.mataKuliahId) allMkIds.add(p.mataKuliahId);
             });
+        });
+        const mkIdArray = Array.from(allMkIds);
+
+        if (mkIdArray.length === 0) {
+            return dosenList.map(d => ({
+                id: d.id,
+                nama: d.profile?.namaLengkap || d.email,
+                totalKelas: 0,
+                avgNilai: 0,
+                progressInput: 0
+            }));
+        }
+
+        // [OPTIMIZED] Bulk Fetch Aggregates
+        // 1. Average Grades per Mata Kuliah
+        const gradeAggregates = await prisma.nilaiCpl.groupBy({
+            by: ['mataKuliahId'],
+            where: { mataKuliahId: { in: mkIdArray } },
+            _avg: { nilai: true },
+        });
+        // Map: mkId -> avgScore
+        const gradeMap = new Map<string, number>();
+        gradeAggregates.forEach(g => {
+            if (g.mataKuliahId && g._avg?.nilai) gradeMap.set(g.mataKuliahId, Number(g._avg.nilai));
+        });
+
+
+        // 2. Count Graded Students per Mata Kuliah (Distinct Mahasiswa)
+        // GroupBy mataKuliahId, mahasiswaId to get unique pairs
+        const gradedStudentsRaw = await prisma.nilaiCpl.groupBy({
+            by: ['mataKuliahId', 'mahasiswaId'],
+            where: { mataKuliahId: { in: mkIdArray } }
+        });
+        // Reduce to Map: mkId -> count of unique students
+        const gradedCountMap = new Map<string, number>();
+        gradedStudentsRaw.forEach(item => {
+            if (item.mataKuliahId) {
+                gradedCountMap.set(item.mataKuliahId, (gradedCountMap.get(item.mataKuliahId) || 0) + 1);
+            }
+        });
+
+        // 3. Count Expected Students (Complex because of filters)
+        // We can't easily query this in one simple groupBy because conditions vary (prodi, semester, kelas).
+        // However, we can fetch the count of students for each relevant (ProdiId + Semester) combo and (KelasId) combo.
+        // Or simpler: Just perform the count queries in parallel.
+        // Given that `getDosenAnalysis` might return many lecturers, we still want to avoid 100 queries.
+        // Strategy: Pre-fetch student counts grouped by (prodiId, semester) and (kelasId).
+
+        // Fetch all active students basic info to count in memory?
+        // Maybe too heavy if 1000s of students.
+        // Let's stick to parallel calls but limited? no.
+
+        // Alternative: Group mataKuliahs by logic.
+        // Most MKs are by Prodi + Semester.
+
+        // 3a. Count by KelasId
+        const kelasIds = new Set<string>();
+        dosenList.forEach(d => d.profile?.mataKuliahPengampu?.forEach(p => { if (p.kelasId) kelasIds.add(p.kelasId); }));
+        const classCounts = await prisma.profile.groupBy({
+            by: ['kelasId'],
+            where: {
+                kelasId: { in: Array.from(kelasIds) },
+                user: { role: { role: 'mahasiswa' } }
+            },
+            _count: { userId: true }
+        });
+        const classCountMap = new Map<string, number>();
+        classCounts.forEach(c => { if (c.kelasId) classCountMap.set(c.kelasId, c._count.userId); });
+
+        // 3b. Count by Prodi + Semester (for MKs without kelas specific assignment)
+        // We need a list of (prodiId, semester) pairs.
+        const prodiSemKeys = new Set<string>();
+        dosenList.forEach(d => d.profile?.mataKuliahPengampu?.forEach(p => {
+            if (!p.kelasId && p.mataKuliah?.prodiId) {
+                prodiSemKeys.add(`${p.mataKuliah.prodiId}-${p.mataKuliah.semester}`);
+            }
+        }));
+
+        // Fetch counts for these pairs. Prisma groupBy support multiple columns.
+        const prodiSemCounts = await prisma.profile.groupBy({
+            by: ['prodiId', 'semester'],
+            where: {
+                user: { role: { role: 'mahasiswa' } },
+                // Ideally we filter by the needed prodiIds and semesters to optimize
+            },
+            _count: { userId: true }
+        });
+        // Map: "prodiId-sem" -> count
+        const prodiSemCountMap = new Map<string, number>();
+        prodiSemCounts.forEach(c => {
+            if (c.prodiId && c.semester) {
+                prodiSemCountMap.set(`${c.prodiId}-${c.semester}`, c._count.userId);
+            }
+        });
+
+
+        // Construct Result
+        return dosenList.map((dosen) => {
+            const pengampu = dosen.profile?.mataKuliahPengampu || [];
+
+            let totalAvgScore = 0;
+            let mkWithScores = 0;
 
             let totalStudentsExpected = 0;
             let totalStudentsGraded = 0;
 
             for (const p of pengampu) {
                 const mkId = p.mataKuliahId;
-                const kelasId = p.kelasId;
                 const mk = p.mataKuliah;
+                const kelasId = p.kelasId;
 
-                // Count students expected for this mata kuliah
-                // Match by: same prodi, same semester (from MK), and same kelas if specified
-                const studentFilter: any = {
-                    role: { role: 'mahasiswa' }
-                };
-
-                if (mk?.prodiId) studentFilter.profile = { prodiId: mk.prodiId };
-                if (kelasId) {
-                    studentFilter.profile = { ...studentFilter.profile, kelasId };
+                // Score
+                const score = gradeMap.get(mkId);
+                if (score !== undefined) {
+                    totalAvgScore += score;
+                    mkWithScores++;
                 }
 
-                const expectedStudents = await prisma.user.count({ where: studentFilter });
+                // Graded Count
+                const graded = gradedCountMap.get(mkId) || 0;
+                totalStudentsGraded += graded;
 
-                // Count distinct students who have been graded for this mata kuliah
-                const gradedStudents = await prisma.nilaiCpl.groupBy({
-                    by: ['mahasiswaId'],
-                    where: { mataKuliahId: mkId }
-                });
-
-                totalStudentsExpected += expectedStudents;
-                totalStudentsGraded += gradedStudents.length;
+                // Expected Count
+                let expected = 0;
+                if (kelasId) {
+                    expected = classCountMap.get(kelasId) || 0;
+                } else if (mk?.prodiId) {
+                    const key = `${mk.prodiId}-${mk.semester}`;
+                    expected = prodiSemCountMap.get(key) || 0;
+                }
+                totalStudentsExpected += expected;
             }
 
-            const avgVal = (grades._avg.nilai as any);
-            const avgNum = avgVal ? Number(avgVal) : 0;
+            const finalAvg = mkWithScores > 0 ? totalAvgScore / mkWithScores : 0;
 
-            // Calculate overall progress as percentage of students graded vs expected
             const progressInput = totalStudentsExpected > 0
                 ? parseFloat(((totalStudentsGraded / totalStudentsExpected) * 100).toFixed(1))
                 : 0;
@@ -378,11 +486,11 @@ export class DashboardService {
             return {
                 id: dosen.id,
                 nama: dosen.profile?.namaLengkap || dosen.email,
-                totalKelas: mkIds.length,
-                avgNilai: parseFloat(avgNum.toFixed(2)),
+                totalKelas: pengampu.length,
+                avgNilai: parseFloat(finalAvg.toFixed(2)),
                 progressInput
             };
-        }));
+        });
     }
 
     static async getStudentEvaluation(params: { prodiId?: string, angkatan?: string, semester?: string }) {
@@ -398,28 +506,46 @@ export class DashboardService {
 
         const students = await prisma.user.findMany({
             where,
-            include: { profile: true },
+            select: {
+                id: true,
+                email: true,
+                profile: {
+                    select: {
+                        namaLengkap: true,
+                        nim: true
+                    }
+                }
+            },
             take: 100
         });
 
-        const evaluation = await Promise.all(students.map(async (mhs) => {
-            const scores = await prisma.nilaiCpl.groupBy({
-                by: ['cplId'],
-                where: { mahasiswaId: mhs.id },
-                _avg: { nilai: true }
-            });
+        const studentIds = students.map(s => s.id);
+        if (studentIds.length === 0) return [];
+
+        const allScores = await prisma.nilaiCpl.groupBy({
+            by: ['mahasiswaId', 'cplId'],
+            where: { mahasiswaId: { in: studentIds } },
+            _avg: { nilai: true }
+        });
+
+        const studentScoreMap = new Map<string, Array<{ cplId: string, avg: number }>>();
+
+        allScores.forEach(s => {
+            if (!s.mahasiswaId) return;
+            const entry = studentScoreMap.get(s.mahasiswaId) || [];
+            const val = s._avg.nilai ? Number(s._avg.nilai) : 0;
+            entry.push({ cplId: s.cplId, avg: val });
+            studentScoreMap.set(s.mahasiswaId, entry);
+        });
+
+        const evaluation = students.map((mhs) => {
+            const scores = studentScoreMap.get(mhs.id) || [];
 
             const avgScore = scores.length > 0
-                ? scores.reduce((acc, curr) => {
-                    const val = (curr._avg.nilai as any);
-                    return acc + (val ? Number(val) : 0);
-                }, 0) / scores.length
+                ? scores.reduce((acc, curr) => acc + curr.avg, 0) / scores.length
                 : 0;
 
-            const lowCplCount = scores.filter(s => {
-                const val = (s._avg.nilai as any);
-                return (val ? Number(val) : 0) < 55;
-            }).length;
+            const lowCplCount = scores.filter(s => s.avg < 55).length;
 
             return {
                 id: mhs.id,
@@ -428,7 +554,7 @@ export class DashboardService {
                 avgCpl: parseFloat(avgScore.toFixed(2)),
                 lowCplCount
             };
-        }));
+        });
 
         // Filter: Only show students with average CPL below 55 (at-risk students)
         const filteredEvaluation = evaluation.filter(e => e.avgCpl > 0 && e.avgCpl < 55);

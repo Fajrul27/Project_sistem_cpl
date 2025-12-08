@@ -17,6 +17,9 @@ export interface Prodi {
     nama: string;
 }
 
+// Simple Module-Level Cache
+const visiMisiCache: Record<string, VisiMisi[]> = {};
+
 export function useVisiMisi() {
     const { role, profile, loading: roleLoading } = useUserRole();
     const [visiMisiList, setVisiMisiList] = useState<VisiMisi[]>([]);
@@ -74,10 +77,18 @@ export function useVisiMisi() {
     };
 
     const fetchVisiMisi = async (prodiId: string) => {
-        setLoading(true);
+        // Optimistic Load from Cache
+        if (visiMisiCache[prodiId]) {
+            setVisiMisiList(visiMisiCache[prodiId]);
+            setLoading(false);
+        } else {
+            setLoading(true);
+        }
+
         try {
             const res = await api.get(`/visi-misi?prodiId=${prodiId}`);
             setVisiMisiList(res.data);
+            visiMisiCache[prodiId] = res.data;
         } catch (error) {
             console.error("Error fetching visi misi:", error);
             toast.error("Gagal memuat data visi misi");
