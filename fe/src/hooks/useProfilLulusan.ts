@@ -74,20 +74,22 @@ export const useProfilLulusan = () => {
         }
     }, [role, profile, selectedProdi]);
 
-    const fetchProfilLulusan = useCallback(async (prodiId: string) => {
+    const fetchProfilLulusan = useCallback(async (prodiId: string, force = false) => {
         if (!prodiId) return;
 
         const cacheKey = `${prodiId}-${page}-${limit}-${searchTerm}`;
-        if (profilCache[cacheKey]) {
+
+        if (!force && profilCache[cacheKey]) {
             // Restore from cache immediately
             const cached = profilCache[cacheKey];
             setProfilList(cached.data);
             setTotalItems(cached.totalItems);
             setTotalPages(cached.totalPages);
             setLoading(false);
-        } else {
-            setLoading(true);
+            return;
         }
+
+        setLoading(true);
 
         try {
             const params = {
@@ -207,7 +209,14 @@ export const useProfilLulusan = () => {
         try {
             await api.post("/profil-lulusan", data);
             toast.success("Berhasil ditambahkan");
-            await fetchProfilLulusan(selectedProdi);
+            toast.success("Berhasil ditambahkan");
+            // Invalidate cache by clearing relevant keys or simple force fetch
+            // Ideally clear keys starting with prodiId... but simple force works for current view
+            // Better: clear all cache for this prodi to be safe or intelligent key filtering
+            const cacheKeyPrefix = `${selectedProdi}-`;
+            Object.keys(profilCache).forEach(k => { if (k.startsWith(cacheKeyPrefix)) delete profilCache[k]; });
+
+            await fetchProfilLulusan(selectedProdi, true);
             return true;
         } catch (error: any) {
             console.error("Error creating profil:", error);
@@ -220,7 +229,10 @@ export const useProfilLulusan = () => {
         try {
             await api.put(`/profil-lulusan/${id}`, data);
             toast.success("Berhasil diperbarui");
-            await fetchProfilLulusan(selectedProdi);
+            toast.success("Berhasil diperbarui");
+            const cacheKeyPrefix = `${selectedProdi}-`;
+            Object.keys(profilCache).forEach(k => { if (k.startsWith(cacheKeyPrefix)) delete profilCache[k]; });
+            await fetchProfilLulusan(selectedProdi, true);
             return true;
         } catch (error: any) {
             console.error("Error updating profil:", error);
@@ -233,7 +245,10 @@ export const useProfilLulusan = () => {
         try {
             await api.delete(`/profil-lulusan/${id}`);
             toast.success("Berhasil dihapus");
-            await fetchProfilLulusan(selectedProdi);
+            toast.success("Berhasil dihapus");
+            const cacheKeyPrefix = `${selectedProdi}-`;
+            Object.keys(profilCache).forEach(k => { if (k.startsWith(cacheKeyPrefix)) delete profilCache[k]; });
+            await fetchProfilLulusan(selectedProdi, true);
             return true;
         } catch (error) {
             console.error("Error deleting profil:", error);

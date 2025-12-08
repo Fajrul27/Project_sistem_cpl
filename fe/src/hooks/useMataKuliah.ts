@@ -47,6 +47,9 @@ const initialForm: MataKuliahFormData = {
     semesterId: ""
 };
 
+// Module-level cache
+const mkCache: Record<string, { data: any[], meta: any }> = {};
+
 export const useMataKuliah = () => {
     const [mkList, setMkList] = useState<MataKuliah[]>([]);
     const [loading, setLoading] = useState(true);
@@ -102,7 +105,18 @@ export const useMataKuliah = () => {
         }
     };
 
-    const fetchMataKuliah = async () => {
+    const fetchMataKuliah = async (force = false) => {
+        const cacheKey = `${page}-${limit}-${searchTerm}-${semesterFilter}-${fakultasFilter}-${prodiFilter}`;
+
+        if (!force && mkCache[cacheKey]) {
+            const cached = mkCache[cacheKey];
+            setMkList(cached.data);
+            setTotalPages(cached.meta.totalPages);
+            setTotalItems(cached.meta.total);
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             const params: any = {
@@ -117,6 +131,9 @@ export const useMataKuliah = () => {
             const result = await api.get('/mata-kuliah', { params });
             const data = result.data || [];
             const meta = result.meta || { totalPages: 1, total: 0 };
+
+            // Save to cache
+            mkCache[cacheKey] = { data: Array.isArray(data) ? data : [], meta };
 
             setMkList(Array.isArray(data) ? data : []);
             setTotalPages(meta.totalPages);
@@ -151,7 +168,10 @@ export const useMataKuliah = () => {
 
             await api.post('/mata-kuliah', payload);
             toast.success("Mata kuliah berhasil ditambahkan");
-            await fetchMataKuliah();
+            toast.success("Mata kuliah berhasil ditambahkan");
+            // Invalidate cache
+            Object.keys(mkCache).forEach(k => delete mkCache[k]);
+            await fetchMataKuliah(true);
             return true;
         } catch (error) {
             console.error('Error saving mata kuliah:', error);
@@ -183,7 +203,9 @@ export const useMataKuliah = () => {
 
             await api.put(`/mata-kuliah/${id}`, payload);
             toast.success("Mata kuliah berhasil diupdate");
-            await fetchMataKuliah();
+            toast.success("Mata kuliah berhasil diupdate");
+            Object.keys(mkCache).forEach(k => delete mkCache[k]);
+            await fetchMataKuliah(true);
             return true;
         } catch (error) {
             console.error('Error updating mata kuliah:', error);
@@ -199,7 +221,8 @@ export const useMataKuliah = () => {
             await api.delete(`/mata-kuliah/${id}`);
             toast.success("Mata kuliah berhasil dihapus");
             // Reload to ensure pagination consistency
-            await fetchMataKuliah();
+            await fetchMataKuliah(true);
+            Object.keys(mkCache).forEach(k => delete mkCache[k]);
             return true;
         } catch (error) {
             console.error('Error deleting mata kuliah:', error);

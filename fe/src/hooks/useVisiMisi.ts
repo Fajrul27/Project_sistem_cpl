@@ -76,15 +76,15 @@ export function useVisiMisi() {
         }
     };
 
-    const fetchVisiMisi = async (prodiId: string) => {
+    const fetchVisiMisi = async (prodiId: string, force = false) => {
         // Optimistic Load from Cache
-        if (visiMisiCache[prodiId]) {
+        if (!force && visiMisiCache[prodiId]) {
             setVisiMisiList(visiMisiCache[prodiId]);
             setLoading(false);
-        } else {
-            setLoading(true);
+            return;
         }
 
+        setLoading(true);
         try {
             const res = await api.get(`/visi-misi?prodiId=${prodiId}`);
             setVisiMisiList(res.data);
@@ -120,7 +120,10 @@ export function useVisiMisi() {
             setIsDialogOpen(false);
             setEditingItem(null);
             setFormData({ teks: "", tipe: "misi", urutan: 1, prodiId: "" });
-            fetchVisiMisi(selectedProdi);
+            setFormData({ teks: "", tipe: "misi", urutan: 1, prodiId: "" });
+            // Invalidate cache for this prodi
+            if (payload.prodiId) delete visiMisiCache[payload.prodiId];
+            fetchVisiMisi(selectedProdi, true);
         } catch (error) {
             console.error("Error saving:", error);
             toast.error("Gagal menyimpan data");
@@ -132,7 +135,10 @@ export function useVisiMisi() {
         try {
             await api.delete(`/visi-misi/${id}`);
             toast.success("Berhasil dihapus");
-            fetchVisiMisi(selectedProdi);
+            toast.success("Berhasil dihapus");
+            // Invalidate cache
+            if (selectedProdi) delete visiMisiCache[selectedProdi];
+            fetchVisiMisi(selectedProdi, true);
         } catch (error) {
             console.error("Error deleting:", error);
             toast.error("Gagal menghapus");

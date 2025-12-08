@@ -23,6 +23,9 @@ export interface Cpmk {
     teknikPenilaian: any[];
 }
 
+// Module-level cache
+const cpmkCache: Record<string, { data: any[], meta: any }> = {};
+
 export function useCPMK() {
     // Pagination State
     const [page, setPage] = useState(1);
@@ -95,11 +98,21 @@ export function useCPMK() {
     const hasLoadedRef = useRef(false);
 
     // Simplified fetchCpmk relying on state
-    // We remove overrideFilters to ensure single source of truth (state)
-    const fetchCpmk = useCallback(async () => {
+    const fetchCpmk = useCallback(async (force = false) => {
+        const cacheKey = `${page}-${limit}-${searchTerm}-${selectedFakultas}-${selectedProdi}-${mataKuliahFilter}`;
+
+        if (!force && cpmkCache[cacheKey]) {
+            const cached = cpmkCache[cacheKey];
+            setCpmkList(cached.data);
+            setTotalItems(cached.meta.total);
+            setTotalPages(cached.meta.totalPages);
+            setLoading(false);
+            return;
+        }
+
         try {
-            // Only show full loading on very first load
-            if (!hasLoadedRef.current) setLoading(true);
+            // Only show full loading if we are actually fetching
+            setLoading(true);
 
             const params: any = {
                 page,
@@ -113,26 +126,31 @@ export function useCPMK() {
 
             const result = await api.get('/cpmk', { params });
 
+            let newData: any[] = [];
+            let newTotal = 0;
+            let newPages = 1;
+
             // Handle { data, meta } response first
             if (result.data && result.meta) {
-                setCpmkList(result.data);
-                setTotalItems(result.meta.total);
-                setTotalPages(result.meta.totalPages);
+                newData = result.data;
+                newTotal = result.meta.total;
+                newPages = result.meta.totalPages;
             } else if (Array.isArray(result.data)) {
-                // Fallback for legacy
-                setCpmkList(result.data);
-                setTotalItems(result.data.length);
-                setTotalPages(1);
+                newData = result.data;
+                newTotal = result.data.length;
             } else if (result.data?.data) {
-                // Handle nested structure
-                setCpmkList(result.data.data);
+                newData = result.data.data;
                 if (result.data.meta) {
-                    setTotalItems(result.data.meta.total);
-                    setTotalPages(result.data.meta.totalPages);
+                    newTotal = result.data.meta.total;
+                    newPages = result.data.meta.totalPages;
                 }
-            } else {
-                setCpmkList([]);
             }
+
+            setCpmkList(newData);
+            setTotalItems(newTotal);
+            setTotalPages(newPages);
+
+            cpmkCache[cacheKey] = { data: newData, meta: { total: newTotal, totalPages: newPages } };
 
         } catch (error) {
             console.error('Error fetching CPMK:', error);
@@ -192,7 +210,9 @@ export function useCPMK() {
         try {
             await api.post('/cpmk', payload);
             toast.success("CPMK berhasil ditambahkan");
-            await fetchCpmk();
+            toast.success("CPMK berhasil ditambahkan");
+            Object.keys(cpmkCache).forEach(k => delete cpmkCache[k]);
+            await fetchCpmk(true);
             return true;
         } catch (error) {
             console.error('Error saving CPMK:', error);
@@ -205,7 +225,9 @@ export function useCPMK() {
         try {
             await api.put(`/cpmk/${id}`, payload);
             toast.success("CPMK berhasil diupdate");
-            await fetchCpmk();
+            toast.success("CPMK berhasil diupdate");
+            Object.keys(cpmkCache).forEach(k => delete cpmkCache[k]);
+            await fetchCpmk(true);
             return true;
         } catch (error) {
             console.error('Error saving CPMK:', error);
@@ -218,7 +240,9 @@ export function useCPMK() {
         try {
             await api.delete(`/cpmk/${id}`);
             toast.success("CPMK berhasil dihapus");
-            await fetchCpmk();
+            toast.success("CPMK berhasil dihapus");
+            Object.keys(cpmkCache).forEach(k => delete cpmkCache[k]);
+            await fetchCpmk(true);
             return true;
         } catch (error) {
             console.error('Error deleting CPMK:', error);
