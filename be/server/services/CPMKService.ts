@@ -9,7 +9,6 @@ interface GetCpmkParams {
     prodiId?: string;
     fakultasId?: string;
     semester?: string;
-    statusValidasi?: string;
     page?: number;
     limit?: number;
     q?: string;
@@ -17,12 +16,8 @@ interface GetCpmkParams {
 
 export class CPMKService {
     static async getAllCpmk(params: GetCpmkParams) {
-        const { userId, userRole, mataKuliahId, prodiId, fakultasId, semester, statusValidasi, page = 1, limit = 10, q } = params;
+        const { userId, userRole, mataKuliahId, prodiId, fakultasId, semester, page = 1, limit = 10, q } = params;
         const where: any = { isActive: true };
-
-        if (statusValidasi && statusValidasi !== 'all') {
-            where.statusValidasi = statusValidasi;
-        }
 
         if (q) {
             where.OR = [
@@ -36,18 +31,10 @@ export class CPMKService {
         if (mataKuliahId && mataKuliahId !== 'all') {
             const hasAccess = await canAccessMataKuliah(userId, userRole, mataKuliahId);
             if (!hasAccess) throw new Error('FORBIDDEN_MK');
-            // If search (OR) exists, we must wrap AND conditions carefully or merge them.
-            // But here mataKuliahId is a specific filter.
-            // If we have OR for search, AND we have mataKuliahId, Prisma handles implicit AND if fields differ.
-            // But q searches mataKuliah too.
-            // To be safe with top-level OR, we should wrap q in AND or use precedence.
-            // Actually, implicit top level keys are ANDed.
             where.mataKuliahId = mataKuliahId;
         } else {
             const accessibleMkIds = await getAccessibleMataKuliahIds(userId, userRole);
             if (userRole !== 'admin') {
-                // Check if mataKuliahId constraint already set by search? No, search uses relation filter.
-                // We need to enforce access control.
                 where.mataKuliahId = { in: accessibleMkIds };
             }
 
@@ -149,7 +136,10 @@ export class CPMKService {
                 levelTaksonomi: levelTaksonomi?.trim() || null,
                 levelTaksonomiId: levelTaksonomiId || null,
                 mataKuliahId,
-                createdBy: userId
+                createdBy: userId,
+                statusValidasi: 'active', // Default to active without validation
+                validatedAt: new Date(),
+                validatedBy: userId
             },
             include: {
                 mataKuliah: { select: { id: true, kodeMk: true, namaMk: true } }
@@ -166,20 +156,6 @@ export class CPMKService {
 
         const existing = await prisma.cpmk.findUnique({ where: { id } });
         if (!existing) throw new Error('CPMK tidak ditemukan');
-
-        // Validation: Used in grades?
-        // Relaxing this restriction to allow editing deskripsi/kode/taxonomy.
-        /*
-        if (existing.statusValidasi === 'active') {
-            const existingGrades = await prisma.nilaiTeknikPenilaian.count({
-                where: { teknikPenilaian: { cpmkId: id } }
-            });
-
-            if (existingGrades > 0) {
-                throw new Error(`USED_IN_GRADES:${existingGrades}`);
-            }
-        }
-        */
 
         return prisma.cpmk.update({
             where: { id },
@@ -214,28 +190,6 @@ export class CPMKService {
         return prisma.cpmk.update({
             where: { id },
             data: { isActive: false }
-        });
-    }
-
-    static async validateCpmk(id: string, statusValidasi: string, userId: string) {
-        const validStatuses = ['draft', 'validated', 'active'];
-        if (!validStatuses.includes(statusValidasi)) throw new Error('INVALID_STATUS');
-
-        const existing = await prisma.cpmk.findUnique({ where: { id } });
-        if (!existing) throw new Error('CPMK tidak ditemukan');
-
-        return prisma.cpmk.update({
-            where: { id },
-            data: {
-                statusValidasi,
-                validatedAt: statusValidasi === 'validated' || statusValidasi === 'active' ? new Date() : null,
-                validatedBy: statusValidasi === 'validated' || statusValidasi === 'active' ? userId : null
-            },
-            include: {
-                mataKuliah: { select: { id: true, kodeMk: true, namaMk: true } },
-                cplMappings: { include: { cpl: true } },
-                teknikPenilaian: true
-            }
         });
     }
 }

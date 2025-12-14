@@ -6,7 +6,7 @@ export const getAllCpmk = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).userId;
         const userRole = (req as any).userRole;
-        const { mataKuliahId, prodiId, fakultasId, semester, statusValidasi, page, limit, q } = req.query;
+        const { mataKuliahId, prodiId, fakultasId, semester, page, limit, q } = req.query;
 
         const result = await CPMKService.getAllCpmk({
             userId,
@@ -15,7 +15,6 @@ export const getAllCpmk = async (req: Request, res: Response) => {
             prodiId: prodiId as string,
             fakultasId: fakultasId as string,
             semester: semester as string,
-            statusValidasi: statusValidasi as string,
             page: page ? Number(page) : 1,
             limit: limit ? Number(limit) : 10,
             q: q as string
@@ -147,25 +146,4 @@ export const deleteCpmk = async (req: Request, res: Response) => {
     }
 };
 
-// Validate CPMK (Kaprodi only)
-export const validateCpmk = async (req: Request, res: Response) => {
-    try {
-        const userId = (req as any).userId;
-        const { id } = req.params;
-        const { statusValidasi } = req.body;
 
-        const cpmk = await CPMKService.validateCpmk(id, statusValidasi, userId);
-
-        res.json({
-            data: cpmk,
-            message: `CPMK berhasil diubah statusnya menjadi ${statusValidasi}`
-        });
-    } catch (error: any) {
-        console.error('Validate CPMK error:', error);
-        if (error.message === 'INVALID_STATUS') {
-            return res.status(400).json({ error: 'Status validasi tidak valid. Pilih: draft, validated, atau active' });
-        }
-        if (error.message === 'CPMK tidak ditemukan') return res.status(404).json({ error: error.message });
-        res.status(500).json({ error: 'Gagal memvalidasi CPMK' });
-    }
-};

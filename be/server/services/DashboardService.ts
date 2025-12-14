@@ -153,18 +153,20 @@ export class DashboardService {
         };
 
         if (userRole !== 'mahasiswa') {
-            const [cplEmpty, mkUnmapped] = await Promise.all([
-                prisma.cpl.count({
+            const [cplEmptyList, mkUnmappedList] = await Promise.all([
+                prisma.cpl.findMany({
                     where: {
                         ...cplFilter,
                         nilaiCpl: { none: {} }
-                    }
+                    },
+                    select: { id: true, kodeCpl: true, deskripsi: true }
                 }),
-                prisma.mataKuliah.count({
+                prisma.mataKuliah.findMany({
                     where: {
                         ...mkFilter,
                         cpmk: { none: {} }
-                    }
+                    },
+                    select: { id: true, kodeMk: true, namaMk: true }
                 })
             ]);
 
@@ -175,8 +177,12 @@ export class DashboardService {
             const progressPengisian = userCount > 0 ? (studentsWithGrades.length / userCount) * 100 : 0;
 
             completeness = {
-                cplEmpty,
-                mkUnmapped,
+                cplEmpty: cplEmptyList.length,
+                mkUnmapped: mkUnmappedList.length,
+                // @ts-ignore - Extending the return type implicitly
+                cplEmptyList,
+                // @ts-ignore
+                mkUnmappedList,
                 dosenNoInput: 0,
                 progressPengisian: parseFloat(progressPengisian.toFixed(1))
             };
@@ -357,33 +363,65 @@ export class DashboardService {
             }));
         }
 
-        // [OPTIMIZED] Bulk Fetch Aggregates
-        // 1. Average Grades per Mata Kuliah
-        const gradeAggregates = await prisma.nilaiCpl.groupBy({
-            by: ['mataKuliahId'],
-            where: { mataKuliahId: { in: mkIdArray } },
-            _avg: { nilai: true },
-        });
-        // Map: mkId -> avgScore
-        const gradeMap = new Map<string, number>();
-        gradeAggregates.forEach(g => {
-            if (g.mataKuliahId && g._avg?.nilai) gradeMap.set(g.mataKuliahId, Number(g._avg.nilai));
-        });
-
-
-        // 2. Count Graded Students per Mata Kuliah (Distinct Mahasiswa)
-        // GroupBy mataKuliahId, mahasiswaId to get unique pairs
-        const gradedStudentsRaw = await prisma.nilaiCpl.groupBy({
-            by: ['mataKuliahId', 'mahasiswaId'],
-            where: { mataKuliahId: { in: mkIdArray } }
-        });
-        // Reduce to Map: mkId -> count of unique students
-        const gradedCountMap = new Map<string, number>();
-        gradedStudentsRaw.forEach(item => {
-            if (item.mataKuliahId) {
-                gradedCountMap.set(item.mataKuliahId, (gradedCountMap.get(item.mataKuliahId) || 0) + 1);
+        // Fetch all grades for these subjects, including student class/prodi/semester info
+        const allGrades = await prisma.nilaiCpl.findMany({
+            where: {
+                mataKuliahId: { in: mkIdArray }
+            },
+            select: {
+                mataKuliahId: true,
+                nilai: true,
+                mahasiswaId: true,
+                mahasiswa: {
+                    select: {
+                        kelasId: true,
+                        prodiId: true,
+                        semester: true
+                    }
+                }
             }
         });
+
+        // structure: Map<mataKuliahId, { totalNilai, countNilai, students: Set, details: Map<mhsId, {prodi, sem}>, byClass: ... }>
+        const gradeMap = new Map<string, any>();
+
+        allGrades.forEach(grad => {
+            const mkId = grad.mataKuliahId;
+            const nilai = Number(grad.nilai);
+            const mhsId = grad.mahasiswaId;
+            const profile = grad.mahasiswa;
+            const kelasId = profile?.kelasId || 'unknown';
+
+            if (!gradeMap.has(mkId)) {
+                gradeMap.set(mkId, {
+                    totalNilai: 0,
+                    countNilai: 0,
+                    students: new Set<string>(),
+                    details: new Map<string, any>(), // Store student details for cohort checking
+                    byClass: new Map<string, any>()
+                });
+            }
+
+            const mkEntry = gradeMap.get(mkId);
+            mkEntry.totalNilai += nilai;
+            mkEntry.countNilai++;
+            mkEntry.students.add(mhsId);
+            mkEntry.details.set(mhsId, { prodiId: profile?.prodiId, semester: profile?.semester });
+
+            // Per Class Aggregation
+            if (!mkEntry.byClass.has(kelasId)) {
+                mkEntry.byClass.set(kelasId, {
+                    totalNilai: 0,
+                    countNilai: 0,
+                    students: new Set<string>()
+                });
+            }
+            const classEntry = mkEntry.byClass.get(kelasId);
+            classEntry.totalNilai += nilai;
+            classEntry.countNilai++;
+            classEntry.students.add(mhsId);
+        });
+
 
         // 3. Count Expected Students (Complex because of filters)
         // We can't easily query this in one simple groupBy because conditions vary (prodi, semester, kelas).
@@ -455,26 +493,97 @@ export class DashboardService {
                 const mk = p.mataKuliah;
                 const kelasId = p.kelasId;
 
-                // Score
-                const score = gradeMap.get(mkId);
-                if (score !== undefined) {
-                    totalAvgScore += score;
-                    mkWithScores++;
-                }
+                // --- REFINED LOGIC ---
 
-                // Graded Count
-                const graded = gradedCountMap.get(mkId) || 0;
-                totalStudentsGraded += graded;
+                // Get Graded Students List for this MK
+                const mkEntry = gradeMap.get(mkId);
+                const gradedStudents = mkEntry ? Array.from(mkEntry.students) : [];
 
-                // Expected Count
-                let expected = 0;
+                let numerator = 0;
+                let denominator = 0;
+
+                // Helper to look up student info (cached in a map for speed?)
+                // Since we don't have a direct map of "StudentId -> {Class, Prodi, Sem}" for ALL students,
+                // we'll rely on the info we fetched attached to the grades for the numerator.
+                // For the denominator (base), we use the aggregate maps.
+
                 if (kelasId) {
-                    expected = classCountMap.get(kelasId) || 0;
-                } else if (mk?.prodiId) {
-                    const key = `${mk.prodiId}-${mk.semester}`;
-                    expected = prodiSemCountMap.get(key) || 0;
+                    // Strict Class Mode
+                    // Numerator: Graded students in this class
+                    // We need to check the STUDENT'S class, which we have in mkEntry.byClass
+                    if (mkEntry && mkEntry.byClass.has(kelasId)) {
+                        const classData = mkEntry.byClass.get(kelasId);
+                        numerator = classData.students.size; // Count of unique students
+
+                        // Accumulate scores for average
+                        if (classData.countNilai > 0) {
+                            const avg = classData.totalNilai / classData.countNilai;
+                            totalAvgScore += avg;
+                            mkWithScores++;
+                        }
+                    }
+
+                    // Denominator: Total students in this class
+                    denominator = classCountMap.get(kelasId) || 0;
+
+                    // Safety: If more graded than existing (e.g. data anomaly or student moved), cap denominator
+                    if (numerator > denominator) denominator = numerator;
+
+                } else {
+                    // General Mode (Null kelasId) -> "All students expected to take this course"
+                    // Numerator: ALL graded students for this MK
+                    if (mkEntry) {
+                        numerator = mkEntry.students.size;
+
+                        // Score (Global Average for MK)
+                        if (mkEntry.countNilai > 0) {
+                            const avg = mkEntry.totalNilai / mkEntry.countNilai;
+                            totalAvgScore += avg;
+                            mkWithScores++;
+                        }
+                    }
+
+                    // Denominator Calculation
+                    // Base: Students in the Target Cohort (Prodi + Semester)
+                    const targetProdi = mk?.prodiId;
+                    const targetSem = mk?.semester;
+
+                    let baseDenominator = 0;
+                    if (targetProdi && targetSem) {
+                        const key = `${targetProdi}-${targetSem}`;
+                        baseDenominator = prodiSemCountMap.get(key) || 0;
+                    }
+
+                    // Adjustment: "Extra" students (Retakers / Out of Cohort)
+                    // These are students present in 'numerator' but NOT in 'baseDenominator'
+                    // We need to identify them. 
+                    // To do this efficiently, we need to know the prodi/sem of every graded student.
+                    // We need to update the fetching logic above to include these details.
+
+                    // Let's assume we have `studentInfoMap` (id -> {prodi, sem}) mapping constructed from the grades query.
+                    // We count how many graded students do NOT match (targetProdi, targetSem).
+
+                    let extraCount = 0;
+                    if (mkEntry && targetProdi && targetSem) {
+                        mkEntry.details.forEach((student: any) => {
+                            // Check if student matches cohort
+                            const sProdi = student.prodiId;
+                            const sSem = student.semester;
+
+                            // If specific prodi filter is active in the request, we might need to respect it? 
+                            // But usually MK semester is fixed.
+                            // If student is NOT in standard cohort, add to denominator
+                            if (sProdi !== targetProdi || sSem !== targetSem) {
+                                extraCount++;
+                            }
+                        });
+                    }
+
+                    denominator = baseDenominator + extraCount;
                 }
-                totalStudentsExpected += expected;
+
+                totalStudentsGraded += numerator;
+                totalStudentsExpected += denominator;
             }
 
             const finalAvg = mkWithScores > 0 ? totalAvgScore / mkWithScores : 0;
@@ -483,12 +592,15 @@ export class DashboardService {
                 ? parseFloat(((totalStudentsGraded / totalStudentsExpected) * 100).toFixed(1))
                 : 0;
 
+            // Cap at 100% strictly if logical error persists, but the fix above should solve it naturally.
+            // const cappedProgress = Math.min(progressInput, 100); 
+
             return {
                 id: dosen.id,
                 nama: dosen.profile?.namaLengkap || dosen.email,
                 totalKelas: pengampu.length,
                 avgNilai: parseFloat(finalAvg.toFixed(2)),
-                progressInput
+                progressInput: progressInput // Should be correct now
             };
         });
     }

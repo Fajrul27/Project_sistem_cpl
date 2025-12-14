@@ -17,7 +17,7 @@ import SettingsPage from "./pages/dashboard/Settings";
 import ProfilePage from "./pages/dashboard/Profile";
 import CPMKPage from "./pages/dashboard/CPMK";
 import CPMKDetailPage from "./pages/dashboard/CPMKDetail";
-import ValidasiCPMKPage from "./pages/dashboard/ValidasiCPMK";
+
 import TranskripCPLPage from "./pages/dashboard/TranskripCPL";
 import KaprodiDataSettings from "./pages/dashboard/KaprodiDataSettings";
 import DosenPengampuPage from "./pages/dashboard/DosenPengampu";
@@ -66,14 +66,7 @@ const App = () => (
               }
             />
 
-            <Route
-              path="validasi-cpmk"
-              element={
-                <RequireRole roles={["admin", "kaprodi", "dosen"]}>
-                  <ValidasiCPMKPage />
-                </RequireRole>
-              }
-            />
+
             <Route
               path="mata-kuliah"
               element={

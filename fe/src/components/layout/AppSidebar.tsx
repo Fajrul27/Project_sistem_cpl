@@ -1,67 +1,140 @@
 import { useEffect, useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { BarChart3, BookOpen, FileText, GraduationCap, Home, Link2, Settings, Users, ClipboardList } from "lucide-react";
+import {
+  BarChart3,
+  BookOpen,
+  FileText,
+  GraduationCap,
+  Home,
+  Settings,
+  Users,
+  ClipboardList,
+  ChevronRight,
+  School,
+  Database,
+  UserCog,
+  BookCheck,
+  LayoutDashboard
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useUserRole, type UserRole } from "@/hooks/useUserRole";
-
-type MenuItem = {
-  title: string;
-  url: string;
-  icon: typeof Home;
-  roles: UserRole[];
-};
-
-const MENU_ITEMS: MenuItem[] = [
-  { title: "Dashboard", url: "/dashboard", icon: Home, roles: ["admin", "dosen", "mahasiswa", "kaprodi"] },
-  { title: "Visi & Misi", url: "/dashboard/visi-misi", icon: BookOpen, roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
-  { title: "Profil Lulusan", url: "/dashboard/profil-lulusan", icon: Users, roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
-  { title: "Kuesioner CPL", url: "/dashboard/kuesioner", icon: ClipboardList, roles: ["mahasiswa"] },
-  { title: "Rekap Kuesioner", url: "/dashboard/rekap-kuesioner", icon: BarChart3, roles: ["admin", "kaprodi"] },
-  { title: "CPL", url: "/dashboard/cpl", icon: GraduationCap, roles: ["admin", "dosen", "kaprodi"] },
-  { title: "Mata Kuliah", url: "/dashboard/mata-kuliah", icon: BookOpen, roles: ["admin", "kaprodi", "dosen"] },
-  { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", icon: Users, roles: ["admin"] },
-  { title: "CPMK", url: "/dashboard/cpmk", icon: ClipboardList, roles: ["admin", "dosen", "kaprodi"] },
-  { title: "Validasi CPMK", url: "/dashboard/validasi-cpmk", icon: ClipboardList, roles: ["admin", "kaprodi", "dosen"] },
-  { title: "Mahasiswa", url: "/dashboard/mahasiswa", icon: Users, roles: ["admin", "dosen", "kaprodi"] },
-  { title: "Transkrip CPL & CPMK", url: "/dashboard/transkrip-cpl", icon: FileText, roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
-  { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", icon: Users, roles: ["admin"] },
-  { title: "Pengguna", url: "/dashboard/users", icon: Users, roles: ["admin"] },
-  { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", icon: FileText, roles: ["dosen"] },
-  { title: "Analisis CPL", url: "/dashboard/analisis", icon: BarChart3, roles: ["admin", "dosen", "kaprodi"] },
-  { title: "Pengaturan", url: "/dashboard/settings", icon: Settings, roles: ["admin", "dosen", "kaprodi"] },
-];
 
 export function AppSidebar() {
   const { open, isMobile, openMobile, toggleSidebar } = useSidebar();
   const location = useLocation();
   const { role } = useUserRole();
 
-  const visibleMenuItems = useMemo(
-    () => {
-      return role ? MENU_ITEMS.filter((item) => item.roles.includes(role)) : [];
-    },
-    [role]
-  );
+  // Define hierarchical menu structure
+  const menuStructure = useMemo(() => {
+    return [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: LayoutDashboard,
+        roles: ["admin", "dosen", "mahasiswa", "kaprodi"] as UserRole[],
+      },
+      {
+        title: "Master Data & Perencanaan",
+        icon: Database,
+        roles: ["admin", "kaprodi", "dosen", "mahasiswa"] as UserRole[],
+        items: [
+          { title: "Visi & Misi", url: "/dashboard/visi-misi", roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
+          { title: "Profil Lulusan", url: "/dashboard/profil-lulusan", roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
+          { title: "CPL", url: "/dashboard/cpl", roles: ["admin", "dosen", "kaprodi"] },
+          { title: "Mata Kuliah", url: "/dashboard/mata-kuliah", roles: ["admin", "kaprodi", "dosen"] },
+        ]
+      },
+      {
+        title: "Persiapan & Pembelajaran",
+        icon: School,
+        roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
+        items: [
+          { title: "CPMK & Mapping", url: "/dashboard/cpmk", roles: ["admin", "dosen", "kaprodi"] },
 
+          { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", roles: ["dosen"] },
+          // Mahasiswa sees questionnaires here as part of learning process/feedback? Or separately?
+          // Keeping consistent with previous "Pembelajaran" group
+          { title: "Isi Kuesioner CPL", url: "/dashboard/kuesioner", roles: ["mahasiswa"] },
+        ]
+      },
+      {
+        title: "Manajemen Pengguna",
+        icon: UserCog,
+        roles: ["admin", "dosen", "kaprodi"] as UserRole[], // Mahasiswa usually doesn't need to manage users
+        items: [
+          { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", roles: ["admin"] },
+          { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", roles: ["admin"] },
+          { title: "Mahasiswa", url: "/dashboard/mahasiswa", roles: ["admin", "dosen", "kaprodi"] },
+          { title: "Pengguna Sistem", url: "/dashboard/users", roles: ["admin"] },
+        ]
+      },
+      {
+        title: "Laporan & Evaluasi",
+        icon: BarChart3,
+        roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
+        items: [
+          { title: "Transkrip CPL", url: "/dashboard/transkrip-cpl", roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
+          { title: "Analisis CPL", url: "/dashboard/analisis", roles: ["admin", "dosen", "kaprodi"] },
+          { title: "Rekap Kuesioner", url: "/dashboard/rekap-kuesioner", roles: ["admin", "kaprodi"] },
+        ]
+      },
+      {
+        title: "Sistem",
+        icon: Settings,
+        roles: ["admin", "dosen", "kaprodi"] as UserRole[],
+        items: [
+          { title: "Pengaturan", url: "/dashboard/settings", roles: ["admin", "dosen", "kaprodi"] },
+        ]
+      }
+    ];
+  }, [role]);
 
-  // Auto-tutup sidebar di mobile setiap kali ganti halaman
+  // Filter menu based on role
+  const filteredMenu = useMemo(() => {
+    if (!role) return [];
+
+    return menuStructure.map(group => {
+      // If it's a single link (Dashboard)
+      if (!group.items) {
+        return group.roles.includes(role as UserRole) ? group : null;
+      }
+
+      // If it's a group, filter its items
+      const visibleItems = group.items.filter(item => item.roles.includes(role as UserRole));
+
+      // If user has access to group AND it has visible items, show it
+      if (group.roles.includes(role as UserRole) && visibleItems.length > 0) {
+        return { ...group, items: visibleItems };
+      }
+
+      return null;
+    }).filter(Boolean);
+  }, [menuStructure, role]);
+
+  // Auto-close sidebar on mobile
   useEffect(() => {
     if (isMobile && openMobile) {
       toggleSidebar();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
   return (
@@ -86,50 +159,63 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <SidebarGroup className="px-2 py-3">
-          <SidebarGroupLabel
-            className={cn(
-              "px-2 text-[11px] font-medium uppercase tracking-[0.16em] text-sidebar-foreground/50",
-              !open && "text-center px-0",
-            )}
-          >
-            {open ? "Navigasi" : "⋯"}
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="mt-1 space-y-1 px-0.5">
-              {visibleMenuItems.map((item) => {
-                const isDashboardRoot = item.url === "/dashboard";
-                const pathname = location.pathname;
-                const isActive = isDashboardRoot
-                  ? pathname === "/dashboard"
-                  : pathname === item.url || pathname.startsWith(`${item.url}/`);
-                const Icon = item.icon;
-                return (
-                  <SidebarMenuItem key={item.title}>
+        {/* Navigation */}
+        <div className="flex-1 overflow-auto py-2">
+          <SidebarMenu>
+            {filteredMenu.map((item: any) => (
+              <div key={item.title}>
+                {/* Single Item (Dashboard) */}
+                {!item.items && (
+                  <SidebarMenuItem>
                     <SidebarMenuButton
+                      isActive={location.pathname === item.url}
                       asChild
-                      isActive={isActive}
                       tooltip={item.title}
-                      size="default"
-                      className="w-full transition-none"
                     >
-                      <NavLink
-                        to={item.url}
-                        className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center"
-                      >
-                        <Icon className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate group-data-[collapsible=icon]:hidden">
-                          {item.title}
-                        </span>
+                      <NavLink to={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                )}
+
+                {/* Collapsible Group */}
+                {item.items && (
+                  <Collapsible defaultOpen className="group/collapsible" asChild>
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton tooltip={item.title}>
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                          <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {item.items.map((subItem: any) => (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={location.pathname === subItem.url}
+                              >
+                                <NavLink to={subItem.url}>
+                                  <span>{subItem.title}</span>
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                )}
+              </div>
+            ))}
+          </SidebarMenu>
+        </div>
       </SidebarContent>
     </Sidebar>
   );
 }
+

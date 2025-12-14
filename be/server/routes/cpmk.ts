@@ -7,8 +7,7 @@ import {
     getCpmkById,
     createCpmk,
     updateCpmk,
-    deleteCpmk,
-    validateCpmk
+    deleteCpmk
 } from '../controllers/cpmk-controller.js';
 
 const router = Router();
@@ -30,8 +29,5 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), upd
 
 // Delete CPMK (soft delete)
 router.delete('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), deleteCpmk);
-
-// Validate CPMK (Kaprodi only)
-router.put('/:id/validate', authMiddleware, requireRole('admin', 'kaprodi'), validateCpmk);
 
 export default router;
