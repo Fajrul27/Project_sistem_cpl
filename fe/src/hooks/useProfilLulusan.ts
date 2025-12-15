@@ -276,6 +276,7 @@ export const useProfilLulusan = () => {
             limit
         },
         searchTerm,
-        setSearchTerm: handleSetSearchTerm
+        setSearchTerm: handleSetSearchTerm,
+        fetchProfilLulusan
     };
 };

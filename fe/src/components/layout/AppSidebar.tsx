@@ -59,7 +59,7 @@ export function AppSidebar() {
         items: [
           { title: "Visi & Misi", url: "/dashboard/visi-misi", roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
           { title: "Profil Lulusan", url: "/dashboard/profil-lulusan", roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
-          { title: "CPL", url: "/dashboard/cpl", roles: ["admin", "dosen", "kaprodi"] },
+          { title: "CPL & Mapping PL - CPL", url: "/dashboard/cpl", roles: ["admin", "dosen", "kaprodi"] },
           { title: "Mata Kuliah", url: "/dashboard/mata-kuliah", roles: ["admin", "kaprodi", "dosen"] },
         ]
       },
@@ -68,7 +68,7 @@ export function AppSidebar() {
         icon: School,
         roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
         items: [
-          { title: "CPMK & Mapping", url: "/dashboard/cpmk", roles: ["admin", "dosen", "kaprodi"] },
+          { title: "CPMK & Mapping CPMK - CPL", url: "/dashboard/cpmk", roles: ["admin", "dosen", "kaprodi"] },
 
           { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", roles: ["admin", "kaprodi"] },
           // Mahasiswa sees questionnaires here as part of learning process/feedback? Or separately?
