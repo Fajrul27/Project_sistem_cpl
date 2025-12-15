@@ -109,7 +109,7 @@ export class CPMKMappingService {
             throw new Error(`TOTAL_BOBOT_EXCEEDED:${currentTotal.toFixed(2)}`);
         }
 
-        return prisma.cpmkCplMapping.create({
+        const result = await prisma.cpmkCplMapping.create({
             data: {
                 cpmkId,
                 cplId,
@@ -120,6 +120,9 @@ export class CPMKMappingService {
                 cpl: { select: { id: true, kodeCpl: true, deskripsi: true } }
             }
         });
+
+        await this.recalculateCplForBatch(cpmkId, cpmk.mataKuliahId);
+        return result;
     }
 
     static async updateMapping(id: string, bobotPersentase: any) {

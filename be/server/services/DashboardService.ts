@@ -191,22 +191,77 @@ export class DashboardService {
         // --- CHARTS & ANALYSIS ---
 
         // 1. CPL Average
-        const cplAggregations = await prisma.nilaiCpl.groupBy({
-            by: ['cplId'],
-            where: nilaiFilter,
-            _avg: { nilai: true }
+        // 1. CPL Average (Weighted)
+        // We need to calculate Weighted Average: Σ(Nilai * SKS * Bobot) / Σ(SKS * Bobot)
+        // Aggregating per CPL across the filtered scope.
+
+        // Fetch all raw grades with helper data (SKS, Bobot)
+        const rawGrades = await prisma.nilaiCpl.findMany({
+            where: {
+                ...nilaiFilter,
+                mataKuliah: { isActive: true } // Ensure active courses only
+            },
+            select: {
+                cplId: true,
+                nilai: true,
+                mataKuliah: {
+                    select: {
+                        id: true,
+                        sks: true
+                    }
+                }
+            }
         });
 
+        // Fetch Weights (Optimization: Fetch all relevant CPL-MK weights)
+        // Identifying unique CPLs and MKs involved
+        const relevantCplIds = [...new Set(rawGrades.map(r => r.cplId))];
+        const relevantMkIds = [...new Set(rawGrades.map(r => r.mataKuliah.id))];
+
+        const weights = await prisma.cplMataKuliah.findMany({
+            where: {
+                cplId: { in: relevantCplIds },
+                mataKuliahId: { in: relevantMkIds }
+            },
+            select: { cplId: true, mataKuliahId: true, bobotKontribusi: true }
+        });
+
+        // Create Weight Map: "cplId-mkId" -> bobot
+        const weightMap = new Map<string, number>();
+        weights.forEach(w => weightMap.set(`${w.cplId}-${w.mataKuliahId}`, Number(w.bobotKontribusi)));
+
+        // Calculate Aggregate per CPL
+        const cplStats = new Map<string, { totalWeightedScore: number, totalWeight: number }>();
+
+        // Initialize map
+        relevantCplIds.forEach(id => cplStats.set(id, { totalWeightedScore: 0, totalWeight: 0 }));
+
+        for (const grade of rawGrades) {
+            const key = `${grade.cplId}-${grade.mataKuliah.id}`;
+            const bobot = weightMap.get(key) || 1.0; // Default to 1.0 if missing
+            const sks = grade.mataKuliah.sks || 0;
+            const nilai = Number(grade.nilai);
+
+            if (cplStats.has(grade.cplId)) {
+                const stat = cplStats.get(grade.cplId)!;
+                stat.totalWeightedScore += nilai * bobot * sks;
+                stat.totalWeight += bobot * sks;
+            }
+        }
+
         const cpls = await prisma.cpl.findMany({
-            where: { id: { in: cplAggregations.map(a => a.cplId) } },
+            where: { id: { in: relevantCplIds } },
             select: { id: true, kodeCpl: true }
         });
         const cplMap = new Map(cpls.map(c => [c.id, c.kodeCpl]));
 
-        const chartData = cplAggregations.map(item => ({
-            name: cplMap.get(item.cplId) || "Unknown",
-            nilai: parseFloat((item._avg.nilai || 0).toFixed(2))
-        }));
+        const chartData = Array.from(cplStats.entries()).map(([cplId, stats]) => {
+            const finalScore = stats.totalWeight > 0 ? stats.totalWeightedScore / stats.totalWeight : 0;
+            return {
+                name: cplMap.get(cplId) || "Unknown",
+                nilai: parseFloat(finalScore.toFixed(2))
+            };
+        }).sort((a, b) => a.name.localeCompare(b.name));
 
         // Global Average
         let avgScore = 0;
@@ -650,6 +705,10 @@ export class DashboardService {
             studentScoreMap.set(s.mahasiswaId, entry);
         });
 
+        // Pre-fetch CPL codes for mapping - MOVED OUTSIDE MAP
+        const cplList = await prisma.cpl.findMany({ select: { id: true, kodeCpl: true } });
+        const cplMap = new Map(cplList.map(c => [c.id, c.kodeCpl]));
+
         const evaluation = students.map((mhs) => {
             const scores = studentScoreMap.get(mhs.id) || [];
 
@@ -664,7 +723,13 @@ export class DashboardService {
                 nama: mhs.profile?.namaLengkap || mhs.email,
                 nim: mhs.profile?.nim || '-',
                 avgCpl: parseFloat(avgScore.toFixed(2)),
-                lowCplCount
+                lowCplCount,
+                lowCplDetails: scores
+                    .filter(s => s.avg < 55)
+                    .map(s => ({
+                        kodeCpl: cplMap.get(s.cplId) || 'Unknown',
+                        nilai: parseFloat(s.avg.toFixed(2))
+                    }))
             };
         });
 
