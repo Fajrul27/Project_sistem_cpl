@@ -102,7 +102,7 @@ const App = () => (
             <Route
               path="nilai-teknik"
               element={
-                <RequireRole roles={["dosen"]}>
+                <RequireRole roles={["admin", "kaprodi"]}>
                   <InputNilaiTeknikPage />
                 </RequireRole>
               }

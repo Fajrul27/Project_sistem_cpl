@@ -142,13 +142,13 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId }: MatrixProps) {
                     if (cell.isDirty) {
                         if (cell.isMapped) {
                             if (cell.mappingId) {
-                                promises.push(api.put(`/cpl-mapping/${cell.mappingId}`, { bobotPersentase: cell.bobot }));
+                                promises.push(api.put(`/cpmk-mapping/${cell.mappingId}`, { bobotPersentase: cell.bobot }));
                             } else {
-                                promises.push(api.post('/cpl-mapping', { cpmkId, cplId, bobotPersentase: cell.bobot }));
+                                promises.push(api.post('/cpmk-mapping', { cpmkId, cplId, bobotPersentase: cell.bobot }));
                             }
                         } else {
                             if (cell.mappingId) {
-                                promises.push(api.delete(`/cpl-mapping/${cell.mappingId}`));
+                                promises.push(api.delete(`/cpmk-mapping/${cell.mappingId}`));
                             }
                         }
                     }

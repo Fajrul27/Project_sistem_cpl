@@ -70,7 +70,7 @@ export function AppSidebar() {
         items: [
           { title: "CPMK & Mapping", url: "/dashboard/cpmk", roles: ["admin", "dosen", "kaprodi"] },
 
-          { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", roles: ["dosen"] },
+          { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", roles: ["admin", "kaprodi"] },
           // Mahasiswa sees questionnaires here as part of learning process/feedback? Or separately?
           // Keeping consistent with previous "Pembelajaran" group
           { title: "Isi Kuesioner CPL", url: "/dashboard/kuesioner", roles: ["mahasiswa"] },

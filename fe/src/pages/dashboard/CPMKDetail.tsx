@@ -250,6 +250,9 @@ const CPMKDetailPage = () => {
                                 <DialogContent>
                                     <DialogHeader>
                                         <DialogTitle>{editingMapping ? "Edit Mapping CPL" : "Tambah Mapping CPL"}</DialogTitle>
+                                        <DialogDescription>
+                                            Hubungkan CPMK ini dengan Capaian Pembelajaran Lulusan (CPL) yang relevan.
+                                        </DialogDescription>
                                     </DialogHeader>
                                     <form onSubmit={handleSubmitMapping} className="space-y-4">
                                         <div className="space-y-2">
@@ -364,6 +367,9 @@ const CPMKDetailPage = () => {
                                 <DialogContent>
                                     <DialogHeader>
                                         <DialogTitle>{editingTeknik ? "Edit Teknik Penilaian" : "Tambah Teknik Penilaian"}</DialogTitle>
+                                        <DialogDescription>
+                                            Tambahkan atau edit metode penilaian untuk CPMK ini (contoh: UTS, UAS, Tugas Besar).
+                                        </DialogDescription>
                                     </DialogHeader>
                                     <form onSubmit={handleSubmitTeknik} className="space-y-4">
                                         <div className="space-y-2">
@@ -577,6 +583,9 @@ const CPMKDetailPage = () => {
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>{currentSubCpmk ? "Edit Sub-CPMK" : "Tambah Sub-CPMK"}</DialogTitle>
+                            <DialogDescription>
+                                Definisikan detail Sub-CPMK sebagai indikator kinerja spesifik.
+                            </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={(e) => { e.preventDefault(); handleSaveSubCpmk(); }} className="space-y-4">
                             <div className="space-y-2">
@@ -619,6 +628,9 @@ const CPMKDetailPage = () => {
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Mapping Sub-CPMK ke Teknik Penilaian</DialogTitle>
+                            <DialogDescription>
+                                Tentukan teknik penilaian mana yang digunakan untuk mengukur Sub-CPMK ini.
+                            </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                             <div className="space-y-2">
