@@ -7,6 +7,7 @@ export interface Cpmk {
     kodeCpmk: string;
     deskripsi: string | null;
     levelTaksonomi: string | null;
+    mataKuliahId: string;
     mataKuliah: {
         kodeMk: string;
         namaMk: string;

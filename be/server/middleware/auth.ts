@@ -11,19 +11,27 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     // Get token from cookie or header
     let token = req.cookies?.token;
 
+    // Debug logging
+    console.log(`[Auth] Request to ${req.path}`);
+    console.log(`[Auth] Cookies present:`, !!req.cookies);
+    console.log(`[Auth] Token in cookie:`, !!token);
+
     if (!token) {
       const authHeader = req.headers.authorization;
+      console.log(`[Auth] Auth Header:`, authHeader);
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.split(' ')[1];
       }
     }
 
     if (!token) {
+      console.log('[Auth] No token found');
       return res.status(401).json({ error: 'Unauthorized - No token provided' });
     }
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+    console.log(`[Auth] Decoded token role: ${decoded.role}, User: ${decoded.email}`);
 
     // Attach user info to request
     (req as any).userId = decoded.userId;
@@ -32,6 +40,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
     next();
   } catch (error) {
+    console.error('[Auth] Token verification failed:', error);
     return res.status(401).json({ error: 'Unauthorized - Invalid token' });
   }
 };
@@ -41,6 +50,7 @@ export const requireRole = (...roles: string[]) => {
     const currentRole = (req as any).userRole as string | undefined;
 
     if (!currentRole || !roles.includes(currentRole)) {
+      console.log(`[Auth] Access denied. Required: ${roles.join('|')}, Current: ${currentRole}, User: ${(req as any).userEmail}`);
       return res.status(403).json({ error: 'Forbidden - Insufficient role' });
     }
 

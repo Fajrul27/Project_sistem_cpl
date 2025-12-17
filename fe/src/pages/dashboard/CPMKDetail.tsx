@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, ArrowLeft, AlertCircle, BookOpen, User, Hash, GraduationCap } from "lucide-react";
+import { Plus, Edit, Trash2, ArrowLeft, AlertCircle, BookOpen, User, Hash, GraduationCap, Eye } from "lucide-react";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
@@ -233,71 +233,17 @@ const CPMKDetailPage = () => {
                 <Card>
                     <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="space-y-1">
-                            <CardTitle>Mapping CPMK ke CPL</CardTitle>
+                            <CardTitle>Mapping CPMK - CPL</CardTitle>
                             <CardDescription>
                                 Total Bobot: {totalBobotMapping.toFixed(2)}% / 100%
                             </CardDescription>
                             <Progress value={totalBobotMapping} className="w-full mt-2" />
                         </div>
                         {canEdit && (
-                            <Dialog open={mappingDialogOpen} onOpenChange={setMappingDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button size="sm" onClick={() => { setMappingForm({ cplId: "", bobotPersentase: "" }); setEditingMapping(null); }}>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Tambah Mapping
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>{editingMapping ? "Edit Mapping CPL" : "Tambah Mapping CPL"}</DialogTitle>
-                                        <DialogDescription>
-                                            Hubungkan CPMK ini dengan Capaian Pembelajaran Lulusan (CPL) yang relevan.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <form onSubmit={handleSubmitMapping} className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label>CPL</Label>
-                                            <Select
-                                                value={mappingForm.cplId}
-                                                onValueChange={(value) => setMappingForm({ ...mappingForm, cplId: value })}
-                                                disabled={!!editingMapping}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih CPL" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {editingMapping ? (
-                                                        <SelectItem value={editingMapping.cpl.id}>
-                                                            {editingMapping.cpl.kodeCpl}
-                                                        </SelectItem>
-                                                    ) : (
-                                                        unmappedCpl.map((cpl) => (
-                                                            <SelectItem key={cpl.id} value={cpl.id}>
-                                                                {cpl.kodeCpl} - {cpl.deskripsi}
-                                                            </SelectItem>
-                                                        ))
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Kontribusi CPMK ini ke CPL (%)</Label>
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={mappingForm.bobotPersentase}
-                                                onChange={(e) => setMappingForm({ ...mappingForm, bobotPersentase: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                        <Button type="submit" disabled={submitting}>
-                                            {submitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
-                                            {editingMapping ? "Update" : "Simpan"}
-                                        </Button>
-                                    </form>
-                                </DialogContent>
-                            </Dialog>
+                            <Button size="sm" onClick={() => navigate(`/dashboard/cpmk?view=matrix&mkId=${cpmk.mataKuliahId}`)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Lihat Mapping
+                            </Button>
                         )}
                     </CardHeader>
                     <CardContent>
@@ -632,24 +578,86 @@ const CPMKDetailPage = () => {
                                 Tentukan teknik penilaian mana yang digunakan untuk mengukur Sub-CPMK ini.
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Teknik Penilaian</Label>
-                                <Select value={subCpmkMappingForm.teknikPenilaianId} onValueChange={(val) => setSubCpmkMappingForm({ ...subCpmkMappingForm, teknikPenilaianId: val })}>
-                                    <SelectTrigger><SelectValue placeholder="Pilih Teknik" /></SelectTrigger>
-                                    <SelectContent>
-                                        {teknikPenilaian.map((t) => (
-                                            <SelectItem key={t.id} value={t.id}>{t.namaTeknik} ({t.bobotPersentase}%)</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Bobot Pengukuran (%)</Label>
-                                <Input type="number" value={subCpmkMappingForm.bobot} onChange={(e) => setSubCpmkMappingForm({ ...subCpmkMappingForm, bobot: e.target.value })} />
-                            </div>
-                            <Button onClick={handleSaveSubCpmkMapping} disabled={submitting}>Simpan</Button>
-                        </div>
+                        {(() => {
+                            // Calculate limits
+                            const subCpmkTotalUsed = currentSubCpmkForMapping?.asesmenMappings?.reduce((sum: number, m: any) => sum + Number(m.bobot), 0) || 0;
+                            const subCpmkLimit = Number(currentSubCpmkForMapping?.bobot || 0);
+                            const sisaSub = subCpmkLimit - subCpmkTotalUsed;
+
+                            // Calculate limit for selected technique
+                            let sisaTeknik = 100;
+                            let teknikName = "";
+
+                            if (subCpmkMappingForm.teknikPenilaianId) {
+                                const selectedTeknik = teknikPenilaian.find(t => t.id === subCpmkMappingForm.teknikPenilaianId);
+                                if (selectedTeknik) {
+                                    teknikName = selectedTeknik.namaTeknik;
+                                    const teknikLimit = Number(selectedTeknik.bobotPersentase);
+
+                                    // Calculate used weight for this technique across ALL Sub-CPMKs
+                                    // We need to iterate over all subCpmkList and their mappings
+                                    const teknikUsed = subCpmkList.reduce((total, sub) => {
+                                        const mapping = sub.asesmenMappings?.find((m: any) => m.teknikPenilaianId === subCpmkMappingForm.teknikPenilaianId);
+                                        return total + (mapping ? Number(mapping.bobot) : 0);
+                                    }, 0);
+
+                                    sisaTeknik = teknikLimit - teknikUsed;
+                                }
+                            }
+
+                            const maxInput = Math.min(sisaSub, subCpmkMappingForm.teknikPenilaianId ? sisaTeknik : 100);
+                            const currentInput = Number(subCpmkMappingForm.bobot);
+                            const isValid = subCpmkMappingForm.teknikPenilaianId && currentInput > 0 && currentInput <= maxInput;
+
+                            return (
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label>Teknik Penilaian</Label>
+                                        <Select value={subCpmkMappingForm.teknikPenilaianId} onValueChange={(val) => setSubCpmkMappingForm({ ...subCpmkMappingForm, teknikPenilaianId: val })}>
+                                            <SelectTrigger><SelectValue placeholder="Pilih Teknik" /></SelectTrigger>
+                                            <SelectContent>
+                                                {teknikPenilaian.map((t) => (
+                                                    <SelectItem key={t.id} value={t.id}>{t.namaTeknik} ({t.bobotPersentase}%)</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {subCpmkMappingForm.teknikPenilaianId && (
+                                        <div className="text-xs space-y-1 bg-muted p-2 rounded-md">
+                                            <div className="flex justify-between">
+                                                <span>Sisa Bobot Sub-CPMK:</span>
+                                                <span className={sisaSub < 0 ? "text-red-500 font-bold" : "font-medium"}>{sisaSub.toFixed(2)}%</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Sisa Bobot Teknik ({teknikName}):</span>
+                                                <span className={sisaTeknik < 0 ? "text-red-500 font-bold" : "font-medium"}>{sisaTeknik.toFixed(2)}%</span>
+                                            </div>
+                                            <div className="flex justify-between border-t pt-1 mt-1">
+                                                <span className="font-semibold">Maksimum Input:</span>
+                                                <span className="font-bold text-blue-600">{Math.max(0, maxInput).toFixed(2)}%</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        <Label>Bobot Pengukuran (%)</Label>
+                                        <Input
+                                            type="number"
+                                            value={subCpmkMappingForm.bobot}
+                                            onChange={(e) => setSubCpmkMappingForm({ ...subCpmkMappingForm, bobot: e.target.value })}
+                                            className={!isValid && subCpmkMappingForm.teknikPenilaianId ? "border-red-500 focus-visible:ring-red-500" : ""}
+                                        />
+                                        {!isValid && subCpmkMappingForm.teknikPenilaianId && (
+                                            <p className="text-xs text-red-500">
+                                                {currentInput <= 0 ? "Bobot harus lebih dari 0" : `Bobot tidak boleh melebihi ${Math.max(0, maxInput).toFixed(2)}%`}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <Button onClick={handleSaveSubCpmkMapping} disabled={submitting || !isValid}>Simpan</Button>
+                                </div>
+                            );
+                        })()}
                     </DialogContent>
                 </Dialog>
 

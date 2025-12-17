@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Button } from "@/components/ui/button";
@@ -33,17 +33,19 @@ const CPLPage = () => {
   const {
     cplList, // Now filtered
     kategoriList,
+    fakultasList,
     prodiList,
     loading,
     fetchCPL,
     fetchKategori,
+    fetchFakultas,
     fetchProdi,
     createCPL,
     updateCPL,
     deleteCPL,
-    filters,
-    setSearchTerm,
-    setKategoriFilter,
+    filters: cplFilters,
+    setSearchTerm: setCplSearchTerm,
+    setFakultasFilter,
     setProdiFilter,
     resetFilters,
     pagination
@@ -67,21 +69,79 @@ const CPLPage = () => {
     profilList,
     loading: loadingProfil,
     updateProfil,
-    setSelectedProdi: setProfilProdi
+    setSelectedProdi: setProfilProdi,
+    searchTerm: profilSearchTerm,
+    setSearchTerm: setProfilSearchTerm,
+    setSearchBy
   } = useProfilLulusan();
+
+  const [searchParams] = useSearchParams();
+
+  // Switch searchBy mode based on view
+  useEffect(() => {
+    if (viewMode === "matrix") {
+      setSearchBy("all");
+    } else {
+      setSearchBy("all");
+    }
+  }, [viewMode, setSearchBy]);
 
   // Sync selected prodi for mapping
   useEffect(() => {
-    if (viewMode === "matrix" && filters.prodiFilter !== 'all') {
-      setProfilProdi(filters.prodiFilter);
+    if (viewMode === "matrix" && cplFilters.prodiFilter !== 'all') {
+      setProfilProdi(cplFilters.prodiFilter);
     }
-  }, [viewMode, filters.prodiFilter, setProfilProdi]);
+  }, [viewMode, cplFilters.prodiFilter, setProfilProdi]);
+
+  // Reset search terms when switching views
+  useEffect(() => {
+    if (viewMode === "matrix") {
+      setCplSearchTerm(""); // Clear CPL search so all columns show
+    } else {
+      setProfilSearchTerm(""); // Clear Profil search so list is clean
+    }
+  }, [viewMode, setCplSearchTerm, setProfilSearchTerm]);
+
+  const currentSearchTerm = viewMode === "matrix" ? profilSearchTerm : cplFilters.searchTerm;
+  const handleSearchChange = (val: string) => {
+    if (viewMode === "matrix") {
+      setProfilSearchTerm(val);
+    } else {
+      setCplSearchTerm(val);
+    }
+  };
+
+  // Handle URL params for navigation from other pages
+  useEffect(() => {
+    const viewParam = searchParams.get("view");
+    const fakultasIdParam = searchParams.get("fakultasId");
+    const prodiIdParam = searchParams.get("prodiId");
+
+    if (viewParam === "matrix") {
+      setViewMode("matrix");
+    }
+
+    if (fakultasIdParam) {
+      setFakultasFilter(fakultasIdParam);
+    }
+
+    if (prodiIdParam) {
+      // Small delay to ensure fakultas is set first if needed, though state updates are batched usually.
+      // But since prodi list depends on fakultas, we might need to wait for prodi list to load?
+      // Actually fetchProdi depends on fakultasFilter.
+      // So setting fakultasFilter triggers fetchProdi.
+      // We should probably set prodiFilter after a short delay or ensure it persists.
+      // For now, let's set it directly.
+      setProdiFilter(prodiIdParam);
+    }
+  }, [searchParams, setFakultasFilter, setProdiFilter]);
 
   useEffect(() => {
     fetchCPL();
     fetchKategori();
+    fetchFakultas();
     fetchProdi();
-  }, [fetchCPL, fetchKategori, fetchProdi]);
+  }, [fetchCPL, fetchKategori, fetchFakultas, fetchProdi]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +220,7 @@ const CPLPage = () => {
   const kategoriOptions = kategoriList.map(k => k.nama);
   const filterProdiOptions = prodiList;
 
-  const hasActiveFilter = filters.kategoriFilter !== "all" || filters.prodiFilter !== "all";
+  const hasActiveFilter = cplFilters.fakultasFilter !== "" || cplFilters.prodiFilter !== "all";
 
   if (loading && cplList.length === 0) {
     return (
@@ -195,9 +255,9 @@ const CPLPage = () => {
           <div className="relative flex-1 min-w-[220px] max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cari kode, deskripsi, atau kategori CPL..."
-              value={filters.searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={viewMode === "matrix" ? "Cari Profil atau Program Studi..." : "Cari kode, deskripsi, atau kategori CPL..."}
+              value={currentSearchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -207,7 +267,6 @@ const CPLPage = () => {
                 variant={hasActiveFilter ? "default" : "outline"}
                 size="sm"
                 className="gap-2"
-                disabled={kategoriOptions.length === 0}
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 <span className="hidden sm:inline">Filter</span>
@@ -216,19 +275,18 @@ const CPLPage = () => {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64 space-y-4">
               <div className="space-y-1">
-                <Label className="text-xs font-medium">Kategori</Label>
+                <Label className="text-xs font-medium">Fakultas</Label>
                 <Select
-                  value={filters.kategoriFilter}
-                  onValueChange={setKategoriFilter}
+                  value={cplFilters.fakultasFilter}
+                  onValueChange={setFakultasFilter}
                 >
                   <SelectTrigger className="w-full h-8 text-xs">
-                    <SelectValue placeholder="Semua kategori" />
+                    <SelectValue placeholder="Semua Fakultas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Semua kategori</SelectItem>
-                    {kategoriOptions.map((k) => (
-                      <SelectItem key={k} value={k}>
-                        {k}
+                    {fakultasList.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {f.nama}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -238,8 +296,12 @@ const CPLPage = () => {
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Program Studi</Label>
                   <Select
-                    value={filters.prodiFilter}
+                    value={cplFilters.prodiFilter}
                     onValueChange={setProdiFilter}
+                    disabled={!cplFilters.fakultasFilter && role === 'admin'} // Optional: disable if no fakultas selected? Or allow all?
+                  // User requested hierarchical, so maybe good to keep it open or dependent.
+                  // In PL page we disabled it. Here let's keep it enabled but it will show all if no fakultas selected (or filtered if fakultas selected).
+                  // Actually, fetchProdi depends on fakultasFilter. So if no fakultasFilter, it fetches all prodis.
                   >
                     <SelectTrigger className="w-full h-8 text-xs">
                       <SelectValue placeholder="Semua program studi" />
@@ -260,7 +322,7 @@ const CPLPage = () => {
           <Button
             variant="outline"
             onClick={resetFilters}
-            disabled={!hasActiveFilter && filters.searchTerm === ""}
+            disabled={!hasActiveFilter && currentSearchTerm === ""}
           >
             Reset Filter
           </Button>
@@ -490,14 +552,14 @@ const CPLPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {filters.prodiFilter === 'all' && role !== 'kaprodi' ? (
+              {cplFilters.prodiFilter === 'all' && role !== 'kaprodi' && !currentSearchTerm ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed">
                   <div className="p-4 bg-muted rounded-full mb-4">
                     <TableIcon className="w-8 h-8 text-muted-foreground/50" />
                   </div>
                   <h3 className="text-lg font-semibold">Pilih Program Studi</h3>
                   <p className="max-w-sm mt-2">
-                    Silakan pilih Program Studi terlebih dahulu pada filter di atas untuk menampilkan tabel matrix mapping.
+                    Silakan pilih Program Studi terlebih dahulu pada filter di atas atau gunakan pencarian untuk menampilkan tabel matrix mapping.
                   </p>
                 </div>
               ) : (

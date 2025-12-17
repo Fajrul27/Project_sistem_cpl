@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,7 +45,22 @@ const CPMKPage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingCpmk, setEditingCpmk] = useState<Cpmk | null>(null);
+    const [searchParams] = useSearchParams();
     const [viewMode, setViewMode] = useState<"list" | "matrix">("list");
+
+    // Handle URL params for direct navigation to matrix view
+    useEffect(() => {
+        const viewParam = searchParams.get("view");
+        const mkIdParam = searchParams.get("mkId");
+
+        if (viewParam === "matrix") {
+            setViewMode("matrix");
+        }
+
+        if (mkIdParam) {
+            setMataKuliahFilter(mkIdParam);
+        }
+    }, [searchParams, setMataKuliahFilter]);
 
     const [formData, setFormData] = useState({
         kodeCpmk: "",

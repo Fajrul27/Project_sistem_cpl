@@ -110,6 +110,8 @@ model Cpl {
   nilaiCpl     NilaiCpl[]
   profilLulusanMappings ProfilLulusanCpl[]
   penilaianTidakLangsung PenilaianTidakLangsung[]
+  targetCPL    TargetCPL[]
+  tindakLanjutCPL TindakLanjutCPL[]
 
   @@index([kodeCpl])
   @@index([kategori])
@@ -791,4 +793,70 @@ model PenilaianTidakLangsung {
   @@index([mahasiswaId])
   @@index([cplId])
   @@map("penilaian_tidak_langsung")
+}
+
+// ============================================
+// ROLE ACCESS SYSTEM (NEW)
+// ============================================
+
+model RolePermission {
+  id        String   @id @default(uuid())
+  role      Role
+  resource  String   // e.g. "mata_kuliah", "cpl"
+  action    String   // e.g. "view", "create", "edit", "delete"
+  isEnabled Boolean  @default(false) @map("is_enabled")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([role, resource, action])
+  @@map("role_permissions")
+}
+
+model TargetCPL {
+  id          String   @id @default(uuid())
+  prodiId     String   @map("prodi_id")
+  angkatan    String   // e.g., "2023"
+  tahunAjaran String   @map("tahun_ajaran") // e.g., "2023/2024"
+  semester    Int?     // Optional: if target is specific to a semester
+  cplId       String   @map("cpl_id")
+  target      Float    // e.g., 75.0
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  cpl         Cpl      @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  // prodi       Prodi    @relation(fields: [prodiId], references: [id]) // Assuming Prodi model exists or just storing ID
+
+  @@unique([prodiId, angkatan, tahunAjaran, semester, cplId], name: "unique_target")
+  @@map("target_cpl")
+}
+
+model TindakLanjutCPL {
+  id              String   @id @default(uuid())
+  evaluasiId      String?  @map("evaluasi_id") // Optional reference ID if we store evaluation snapshots
+  
+  // Context
+  prodiId         String   @map("prodi_id")
+  angkatan        String
+  tahunAjaran     String   @map("tahun_ajaran")
+  semester        Int?
+  cplId           String   @map("cpl_id")
+
+  // Analysis
+  akarMasalah     String   @db.Text @map("akar_masalah")
+  rencanaPerbaikan String  @db.Text @map("rencana_perbaikan")
+  
+  // Action Plan
+  penanggungJawab String   @map("penanggung_jawab")
+  targetSemester  String   @map("target_semester") // When this should be completed
+  status          String   @default("open") // open, in_progress, closed
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdBy       String   @map("created_by")
+
+  cpl             Cpl      @relation(fields: [cplId], references: [id], onDelete: Cascade)
+
+  @@index([prodiId, angkatan, tahunAjaran, cplId])
+  @@map("tindak_lanjut_cpl")
 }

@@ -23,7 +23,9 @@ const visiMisiCache: Record<string, VisiMisi[]> = {};
 export function useVisiMisi() {
     const { role, profile, loading: roleLoading } = useUserRole();
     const [visiMisiList, setVisiMisiList] = useState<VisiMisi[]>([]);
+    const [fakultasList, setFakultasList] = useState<{ id: string; nama: string }[]>([]);
     const [prodiList, setProdiList] = useState<Prodi[]>([]);
+    const [selectedFakultas, setSelectedFakultas] = useState<string>("");
     const [selectedProdi, setSelectedProdi] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -45,34 +47,57 @@ export function useVisiMisi() {
         }
     }, [role, profile, roleLoading]);
 
+    // Fetch Prodi when Fakultas changes (for Admin)
+    useEffect(() => {
+        if (role === "admin" && selectedFakultas) {
+            const fetchProdiByFakultas = async () => {
+                try {
+                    const res = await api.get(`/prodi?fakultasId=${selectedFakultas}`);
+                    setProdiList(res.data);
+                    // Don't auto-select prodi
+                    setSelectedProdi("");
+                    setVisiMisiList([]);
+                } catch (error) {
+                    console.error("Error fetching prodi:", error);
+                    setProdiList([]);
+                }
+            };
+            fetchProdiByFakultas();
+        } else if (role === "admin" && !selectedFakultas) {
+            setProdiList([]);
+            setSelectedProdi("");
+            setVisiMisiList([]);
+        }
+    }, [selectedFakultas, role]);
+
     useEffect(() => {
         if (selectedProdi) {
             fetchVisiMisi(selectedProdi);
+        } else {
+            // Clear data if no prodi selected
+            setVisiMisiList([]);
         }
     }, [selectedProdi]);
 
     const fetchInitialData = async () => {
         try {
-            // Fetch Prodi List for Admin
+            // Fetch Fakultas List for Admin
             if (role === "admin") {
-                const res = await api.get("/prodi");
-                setProdiList(res.data);
-                if (res.data.length > 0) setSelectedProdi(res.data[0].id);
+                const res = await api.get("/fakultas");
+                setFakultasList(res.data);
+                // Don't auto-select fakultas
+                // if (res.data.length > 0) {
+                //     setSelectedFakultas(res.data[0].id);
+                // }
             } else if ((role === "kaprodi" || role === "dosen" || role === "mahasiswa") && profile?.prodiId) {
                 // Kaprodi, Dosen, and Mahasiswa automatically selected
                 setSelectedProdi(profile.prodiId);
             } else if (role === "kaprodi" || role === "dosen" || role === "mahasiswa") {
-                // If role is set but profile/prodiId is missing, wait or show error
                 console.warn("User has role but missing prodiId in profile");
-            } else {
-                // Fallback for others
-                const res = await api.get("/prodi");
-                setProdiList(res.data);
-                if (res.data.length > 0) setSelectedProdi(res.data[0].id);
             }
         } catch (error) {
             console.error("Error fetching initial data:", error);
-            toast.error("Gagal memuat data prodi");
+            toast.error("Gagal memuat data");
         }
     };
 
@@ -174,6 +199,9 @@ export function useVisiMisi() {
         role,
         visiList,
         misiList,
+        fakultasList,
+        selectedFakultas,
+        setSelectedFakultas,
         prodiList,
         selectedProdi,
         setSelectedProdi,

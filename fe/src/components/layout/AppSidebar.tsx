@@ -14,7 +14,8 @@ import {
   Database,
   UserCog,
   BookCheck,
-  LayoutDashboard
+  LayoutDashboard,
+  Shield
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -69,17 +70,14 @@ export function AppSidebar() {
         roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
         items: [
           { title: "CPMK & Mapping CPMK - CPL", url: "/dashboard/cpmk", roles: ["admin", "dosen", "kaprodi"] },
-
           { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", roles: ["admin", "kaprodi"] },
-          // Mahasiswa sees questionnaires here as part of learning process/feedback? Or separately?
-          // Keeping consistent with previous "Pembelajaran" group
           { title: "Isi Kuesioner CPL", url: "/dashboard/kuesioner", roles: ["mahasiswa"] },
         ]
       },
       {
         title: "Manajemen Pengguna",
         icon: UserCog,
-        roles: ["admin", "dosen", "kaprodi"] as UserRole[], // Mahasiswa usually doesn't need to manage users
+        roles: ["admin", "dosen", "kaprodi"] as UserRole[],
         items: [
           { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", roles: ["admin"] },
           { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", roles: ["admin"] },
@@ -94,6 +92,7 @@ export function AppSidebar() {
         items: [
           { title: "Transkrip CPL", url: "/dashboard/transkrip-cpl", roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
           { title: "Analisis CPL", url: "/dashboard/analisis", roles: ["admin", "dosen", "kaprodi"] },
+          { title: "Evaluasi CPL", url: "/dashboard/evaluasi-cpl", roles: ["admin", "kaprodi", "dosen"] },
           { title: "Rekap Kuesioner", url: "/dashboard/rekap-kuesioner", roles: ["admin", "kaprodi"] },
         ]
       },
@@ -103,6 +102,7 @@ export function AppSidebar() {
         roles: ["admin", "dosen", "kaprodi"] as UserRole[],
         items: [
           { title: "Pengaturan", url: "/dashboard/settings", roles: ["admin", "dosen", "kaprodi"] },
+          { title: "Akses Role", url: "/dashboard/role-access", roles: ["admin"] },
         ]
       }
     ];

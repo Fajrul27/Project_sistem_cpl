@@ -3,8 +3,8 @@ import { prisma } from '../lib/prisma.js';
 import { otherSchemas } from '../schemas/other.schema.js';
 
 export class ProfilLulusanService {
-    static async getProfilLulusan(params: { prodiId?: string; page?: number; limit?: number; q?: string }) {
-        const { prodiId, page = 1, limit = 10, q } = params;
+    static async getProfilLulusan(params: { prodiId?: string; page?: number; limit?: number; q?: string; searchBy?: 'all' | 'prodi' }) {
+        const { prodiId, page = 1, limit = 10, q, searchBy = 'all' } = params;
         const whereClause: any = { isActive: true };
 
         if (prodiId) {
@@ -12,11 +12,16 @@ export class ProfilLulusanService {
         }
 
         if (q) {
-            whereClause.OR = [
-                { kode: { contains: q } },
-                { nama: { contains: q } },
-                { deskripsi: { contains: q } }
-            ];
+            if (searchBy === 'prodi') {
+                whereClause.prodi = { nama: { contains: q } };
+            } else {
+                whereClause.OR = [
+                    { kode: { contains: q } },
+                    { nama: { contains: q } },
+                    { deskripsi: { contains: q } },
+                    { prodi: { nama: { contains: q } } }
+                ];
+            }
         }
 
         const skip = (page - 1) * limit;
@@ -26,7 +31,7 @@ export class ProfilLulusanService {
                 where: whereClause,
                 orderBy: { kode: 'asc' },
                 include: {
-                    prodi: { select: { nama: true } },
+                    prodi: { select: { nama: true, fakultasId: true } },
                     cplMappings: { include: { cpl: true } }
                 },
                 skip: limit > 0 ? skip : undefined,

@@ -5,12 +5,13 @@ import { ProfilLulusanService } from '../services/ProfilLulusanService.js';
 // Get Profil Lulusan
 export const getProfilLulusan = async (req: Request, res: Response) => {
     try {
-        const { prodiId, page, limit, q } = req.query;
+        const { prodiId, page, limit, q, searchBy } = req.query;
         const result = await ProfilLulusanService.getProfilLulusan({
             prodiId: prodiId ? String(prodiId) : undefined,
             page: page ? Number(page) : 1,
             limit: limit ? Number(limit) : 10,
-            q: q as string
+            q: q as string,
+            searchBy: searchBy as 'all' | 'prodi'
         });
         res.json(result);
     } catch (error) {

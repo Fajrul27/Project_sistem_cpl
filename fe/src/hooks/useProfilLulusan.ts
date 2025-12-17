@@ -9,7 +9,7 @@ export interface ProfilLulusan {
     nama: string;
     deskripsi: string;
     prodiId: string;
-    prodi?: { nama: string };
+    prodi?: { nama: string; fakultasId?: string };
     percentage?: number;
     status?: string;
     cplMappings?: { cplId: string; cpl?: { kode: string } }[];
@@ -18,6 +18,7 @@ export interface ProfilLulusan {
 export interface Prodi {
     id: string;
     nama: string;
+    fakultasId?: string;
 }
 
 export interface CPL {
@@ -41,7 +42,9 @@ export const useProfilLulusan = () => {
 
     const [profilList, setProfilList] = useState<ProfilLulusan[]>([]);
     const [prodiList, setProdiList] = useState<Prodi[]>([]);
+    const [fakultasList, setFakultasList] = useState<{ id: string; nama: string }[]>([]);
     const [cplList, setCplList] = useState<CPL[]>([]);
+    const [selectedFakultas, setSelectedFakultas] = useState<string>("");
     const [selectedProdi, setSelectedProdi] = useState<string>("");
     const [loading, setLoading] = useState(true);
 
@@ -49,11 +52,10 @@ export const useProfilLulusan = () => {
         try {
             // Fetch Prodi List logic
             if (role === "admin") {
-                const res = await api.get("/prodi");
-                setProdiList(res.data);
-                if (res.data.length > 0 && !selectedProdi) {
-                    setSelectedProdi(res.data[0].id);
-                }
+                const res = await api.get("/references/fakultas");
+                setFakultasList(res.data);
+                // Removed auto-select for admin
+                setLoading(false); // Ensure loading is turned off since we are not auto-fetching
             } else if ((role === "kaprodi" || role === "dosen" || role === "mahasiswa") && profile?.prodiId) {
                 if (!selectedProdi) {
                     setSelectedProdi(profile.prodiId);
@@ -64,20 +66,38 @@ export const useProfilLulusan = () => {
                 // Fallback for edge cases
                 const res = await api.get("/prodi");
                 setProdiList(res.data);
-                if (res.data.length > 0 && !selectedProdi) {
-                    setSelectedProdi(res.data[0].id);
-                }
+                // Removed auto-select for fallback
             }
         } catch (error) {
             console.error("Error fetching initial data:", error);
-            toast.error("Gagal memuat data prodi");
+            toast.error("Gagal memuat data awal");
         }
     }, [role, profile, selectedProdi]);
 
-    const fetchProfilLulusan = useCallback(async (prodiId: string, force = false) => {
-        if (!prodiId) return;
+    // Fetch Prodi when Fakultas changes (for Admin)
+    useEffect(() => {
+        if (role === "admin" && selectedFakultas) {
+            const fetchProdi = async () => {
+                try {
+                    const res = await api.get(`/prodi?fakultasId=${selectedFakultas}`);
+                    setProdiList(res.data);
+                } catch (error) {
+                    console.error("Error fetching prodi:", error);
+                }
+            };
+            fetchProdi();
+        } else if (role === "admin" && !selectedFakultas) {
+            setProdiList([]);
+        }
+    }, [selectedFakultas, role]);
 
-        const cacheKey = `${prodiId}-${page}-${limit}-${searchTerm}`;
+    const [searchBy, setSearchBy] = useState<'all' | 'prodi'>('all');
+
+    const fetchProfilLulusan = useCallback(async (prodiId: string, force = false) => {
+        // Allow fetch if prodiId is present OR if searchTerm is present (Global Search)
+        if (!prodiId && !searchTerm) return;
+
+        const cacheKey = `${prodiId || 'global'}-${page}-${limit}-${searchTerm}-${searchBy}`;
 
         if (!force && profilCache[cacheKey]) {
             // Restore from cache immediately
@@ -92,12 +112,17 @@ export const useProfilLulusan = () => {
         setLoading(true);
 
         try {
-            const params = {
-                prodiId,
+            const params: any = {
                 page,
                 limit,
-                q: searchTerm
+                q: searchTerm,
+                searchBy
             };
+
+            if (prodiId) {
+                params.prodiId = prodiId;
+            }
+
             const res = await api.get('/profil-lulusan', { params });
 
             let newData: any[] = [];
@@ -138,7 +163,7 @@ export const useProfilLulusan = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, searchTerm]);
+    }, [page, searchTerm, searchBy]);
 
     const fetchProfilLulusanAnalysis = useCallback(async (mahasiswaId: string) => {
         setLoading(true);
@@ -182,17 +207,19 @@ export const useProfilLulusan = () => {
         }
     }, [roleLoading, fetchInitialData]);
 
-    // Effect to fetch Profil and CPLs when selectedProdi changes
+    // Effect to fetch Profil and CPLs when selectedProdi changes OR searchTerm changes
     useEffect(() => {
-        if (selectedProdi) {
+        if (selectedProdi || searchTerm) {
             if (role === "mahasiswa" && profile?.userId) {
                 fetchProfilLulusanAnalysis(profile.userId);
             } else {
                 fetchProfilLulusan(selectedProdi);
             }
-            fetchCpls(selectedProdi);
+            if (selectedProdi) {
+                fetchCpls(selectedProdi);
+            }
         }
-    }, [selectedProdi, role, profile, fetchProfilLulusan, fetchProfilLulusanAnalysis, fetchCpls]);
+    }, [selectedProdi, searchTerm, role, profile, fetchProfilLulusan, fetchProfilLulusanAnalysis, fetchCpls]);
 
     // Reset pagination when filter changes
     const handleSetSelectedProdi = (val: string) => {
@@ -260,7 +287,10 @@ export const useProfilLulusan = () => {
     return {
         profilList,
         prodiList,
+        fakultasList,
         cplList,
+        selectedFakultas,
+        setSelectedFakultas,
         selectedProdi,
         setSelectedProdi: handleSetSelectedProdi,
         loading,
@@ -277,6 +307,8 @@ export const useProfilLulusan = () => {
         },
         searchTerm,
         setSearchTerm: handleSetSearchTerm,
+        searchBy,
+        setSearchBy,
         fetchProfilLulusan
     };
 };

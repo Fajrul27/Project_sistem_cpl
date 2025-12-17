@@ -32,6 +32,8 @@ import profilLulusanRoutes from './profil-lulusan.js';
 import kuesionerRoutes from './kuesioner.js';
 import subCpmkRoutes from './sub-cpmk.js';
 import transkripProfilRoutes from './transkrip-profil.js';
+import roleAccessRoutes from './role-access.js';
+import evaluasiCplRoutes from './evaluasi-cpl.js';
 
 const router = Router();
 
@@ -68,5 +70,7 @@ router.use('/profil-lulusan', profilLulusanRoutes);
 router.use('/kuesioner', kuesionerRoutes);
 router.use('/sub-cpmk', subCpmkRoutes);
 router.use('/transkrip-profil', transkripProfilRoutes);
+router.use('/role-access', roleAccessRoutes);
+router.use('/evaluasi-cpl', evaluasiCplRoutes);
 
 export default router;

@@ -88,8 +88,12 @@ export const createSubCpmkMapping = async (req: Request, res: Response) => {
 
         const mapping = await SubCPMKService.createSubCpmkMapping(subCpmkId, teknikPenilaianId, Number(bobot) || 100);
         res.status(201).json({ data: mapping });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating mapping:', error);
+        if (error.message.startsWith('WEIGHT_EXCEEDED')) {
+            const message = error.message.split(':')[1];
+            return res.status(400).json({ error: message });
+        }
         res.status(500).json({ error: 'Gagal membuat mapping' });
     }
 };

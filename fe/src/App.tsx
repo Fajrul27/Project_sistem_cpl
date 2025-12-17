@@ -33,6 +33,8 @@ import VisiMisiPage from "./pages/dashboard/VisiMisi";
 import ProfilLulusanPage from "./pages/dashboard/ProfilLulusan";
 import KuesionerCplPage from "./pages/dashboard/KuesionerCpl";
 import RekapKuesionerPage from "./pages/dashboard/RekapKuesioner";
+import RoleAccessPage from "./pages/dashboard/RoleAccess";
+import EvaluasiCPLPage from "./pages/dashboard/EvaluasiCPL";
 
 
 
@@ -156,6 +158,19 @@ const App = () => (
                 </RequireRole>
               }
             />
+            <Route
+              path="role-access"
+              element={
+                <RequireRole roles={["admin"]}>
+                  <RoleAccessPage />
+                </RequireRole>
+              }
+            />
+            <Route path="evaluasi-cpl" element={
+              <RequireRole roles={['admin', 'kaprodi', 'dosen']}>
+                <EvaluasiCPLPage />
+              </RequireRole>
+            } />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="test-navbar" element={<TestNavbar />} />
           </Route>

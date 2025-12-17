@@ -83,7 +83,50 @@ export class SubCPMKService {
         }
     }
 
+    private static async validateMappingWeight(subCpmkId: string, teknikPenilaianId: string, newWeight: number) {
+        // 1. Validate against Sub-CPMK Limit
+        const subCpmk = await prisma.subCpmk.findUnique({
+            where: { id: subCpmkId },
+            include: { asesmenMappings: true }
+        });
+
+        if (!subCpmk) throw new Error('Sub-CPMK tidak ditemukan');
+
+        const currentSubUsed = subCpmk.asesmenMappings.reduce((sum, m) => sum + Number(m.bobot), 0);
+        const subRemaining = Number(subCpmk.bobot) - currentSubUsed;
+
+        if (newWeight > subRemaining) {
+            throw new Error(`WEIGHT_EXCEEDED:Bobot melebihi sisa bobot Sub-CPMK (${subRemaining.toFixed(2)}%)`);
+        }
+
+        // 2. Validate against Teknik Penilaian Limit
+        const teknik = await prisma.teknikPenilaian.findUnique({
+            where: { id: teknikPenilaianId }
+        });
+
+        if (!teknik) throw new Error('Teknik Penilaian tidak ditemukan');
+
+        // Find all mappings to this technique from ALL Sub-CPMKs in this CPMK
+        const mappingsToTeknik = await prisma.asesmenSubCpmk.findMany({
+            where: {
+                teknikPenilaianId: teknikPenilaianId,
+                subCpmk: {
+                    cpmkId: subCpmk.cpmkId
+                }
+            }
+        });
+
+        const currentTeknikUsed = mappingsToTeknik.reduce((sum, m) => sum + Number(m.bobot), 0);
+        const teknikRemaining = Number(teknik.bobotPersentase) - currentTeknikUsed;
+
+        if (newWeight > teknikRemaining) {
+            throw new Error(`WEIGHT_EXCEEDED:Bobot melebihi sisa bobot Teknik Penilaian (${teknikRemaining.toFixed(2)}%)`);
+        }
+    }
+
     static async createSubCpmkMapping(subCpmkId: string, teknikPenilaianId: string, bobot: number) {
+        await this.validateMappingWeight(subCpmkId, teknikPenilaianId, bobot);
+
         const mapping = await prisma.asesmenSubCpmk.upsert({
             where: {
                 teknikPenilaianId_subCpmkId: {

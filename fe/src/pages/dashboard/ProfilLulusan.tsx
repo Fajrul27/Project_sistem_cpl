@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "@/lib/api";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
+import { LoadingSpinner } from "@/components/common/LoadingScreen";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit, Save, Briefcase } from "lucide-react";
+import { Plus, Trash2, Edit, Save, Briefcase, Search, SlidersHorizontal, Eye } from "lucide-react";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
     Dialog,
     DialogContent,
@@ -29,11 +33,15 @@ import { Progress } from "@/components/ui/progress";
 import { useProfilLulusan, ProfilLulusan } from "@/hooks/useProfilLulusan";
 
 export default function ProfilLulusanPage() {
+    const navigate = useNavigate();
     const { role, profile } = useUserRole();
     const {
         profilList,
         prodiList,
+        fakultasList,
         cplList,
+        selectedFakultas,
+        setSelectedFakultas,
         selectedProdi,
         setSelectedProdi,
         loading,
@@ -47,23 +55,45 @@ export default function ProfilLulusanPage() {
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<ProfilLulusan | null>(null);
-    const [selectedCpls, setSelectedCpls] = useState<string[]>([]);
+    // const [selectedCpls, setSelectedCpls] = useState<string[]>([]); // Removed CPL mapping
 
     // Form State
     const [formData, setFormData] = useState({
         kode: "",
         nama: "",
         deskripsi: "",
+        fakultasId: "",
         prodiId: ""
     });
+
+    const [formProdiList, setFormProdiList] = useState<{ id: string; nama: string }[]>([]);
+
+    // Fetch Prodi list for form when fakultasId changes
+    useEffect(() => {
+        if (formData.fakultasId) {
+            const fetchFormProdi = async () => {
+                try {
+                    const res = await api.get(`/prodi?fakultasId=${formData.fakultasId}`);
+                    setFormProdiList(res.data);
+                } catch (error) {
+                    console.error("Error fetching form prodi:", error);
+                }
+            };
+            fetchFormProdi();
+        } else {
+            setFormProdiList([]);
+        }
+    }, [formData.fakultasId]);
 
     const canEdit = role === "admin" || role === "kaprodi";
 
     const handleSave = async () => {
         const payload = {
-            ...formData,
+            kode: formData.kode,
+            nama: formData.nama,
+            deskripsi: formData.deskripsi,
             prodiId: role === "kaprodi" ? profile?.prodiId : (formData.prodiId || selectedProdi),
-            cplIds: selectedCpls
+            // cplIds: selectedCpls // Removed
         };
 
         if (!payload.prodiId) {
@@ -81,8 +111,8 @@ export default function ProfilLulusanPage() {
         if (success) {
             setIsDialogOpen(false);
             setEditingItem(null);
-            setFormData({ kode: "", nama: "", deskripsi: "", prodiId: "" });
-            setSelectedCpls([]);
+            setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: "", prodiId: "" });
+            // setSelectedCpls([]);
         }
     };
 
@@ -109,49 +139,96 @@ export default function ProfilLulusanPage() {
             kode: item.kode,
             nama: item.nama,
             deskripsi: item.deskripsi,
+            fakultasId: item.prodi?.fakultasId || "",
             prodiId: item.prodiId
         });
-        // Map existing CPLs
-        const mappedCpls = (item as any).cplMappings?.map((m: any) => m.cplId) || [];
-        setSelectedCpls(mappedCpls);
-        setIsDialogOpen(true);
-    };
+        // If we want to pre-fill fakultas, we'd need to fetch the prodi details first or have it in the item.
+        // For now, leaving it empty or maybe try to find it in the global prodiList if loaded?
+        // But global prodiList might be filtered.
 
-    const toggleCplSelection = (cplId: string) => {
-        setSelectedCpls(prev =>
-            prev.includes(cplId)
-                ? prev.filter(id => id !== cplId)
-                : [...prev, cplId]
-        );
+        // Map existing CPLs - Removed
+        // const mappedCpls = (item as any).cplMappings?.map((m: any) => m.cplId) || [];
+        // setSelectedCpls(mappedCpls);
+        setIsDialogOpen(true);
     };
 
     return (
         <DashboardPage title="Profil Lulusan" description="Kelola profil karir yang diharapkan dari lulusan">
             <div className="space-y-6">
                 {/* Filter and Search */}
-                <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                    {role === "admin" && (
-                        <div className="w-full md:w-auto flex items-center gap-2">
-                            <Label className="whitespace-nowrap">Prodi:</Label>
-                            <Select value={selectedProdi} onValueChange={setSelectedProdi}>
-                                <SelectTrigger className="w-[200px] md:w-[300px]">
-                                    <SelectValue placeholder="Pilih Prodi" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {prodiList.map(p => (
-                                        <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-                    <div className="w-full md:w-auto relative flex-1 max-w-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative flex-1 min-w-[220px] max-w-sm">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Cari profil..."
+                            placeholder="Cari profil atau program studi..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9"
                         />
                     </div>
+                    {role === "admin" && (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={selectedProdi ? "default" : "outline"}
+                                    size="sm"
+                                    className="gap-2"
+                                >
+                                    <SlidersHorizontal className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Filter</span>
+                                    <span className="sm:hidden">Filter</span>
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-64 space-y-4">
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Fakultas</Label>
+                                    <Select value={selectedFakultas} onValueChange={(val) => {
+                                        setSelectedFakultas(val);
+                                        setSelectedProdi(""); // Reset Prodi when Fakultas changes
+                                    }}>
+                                        <SelectTrigger className="w-full h-8 text-xs">
+                                            <SelectValue placeholder="Semua Fakultas" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {fakultasList.map(f => (
+                                                <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-medium">Program Studi</Label>
+                                    <Select
+                                        value={selectedProdi}
+                                        onValueChange={setSelectedProdi}
+                                        disabled={!selectedFakultas}
+                                    >
+                                        <SelectTrigger className="w-full h-8 text-xs">
+                                            <SelectValue placeholder="Semua Program Studi" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {prodiList.map(p => (
+                                                <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    )}
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            setSearchTerm("");
+                            if (role === "admin") {
+                                setSelectedFakultas("");
+                                setSelectedProdi("");
+                            }
+                        }}
+                        disabled={!searchTerm && !selectedProdi && !selectedFakultas}
+                    >
+                        Reset Filter
+                    </Button>
                 </div>
 
                 <Card>
@@ -165,8 +242,7 @@ export default function ProfilLulusanPage() {
                         {canEdit && (
                             <Button onClick={() => {
                                 setEditingItem(null);
-                                setFormData({ kode: "", nama: "", deskripsi: "", prodiId: selectedProdi });
-                                setSelectedCpls([]);
+                                setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi });
                                 setIsDialogOpen(true);
                             }}>
                                 <Plus className="w-4 h-4 mr-2" /> Tambah Profil
@@ -175,7 +251,15 @@ export default function ProfilLulusanPage() {
                     </CardHeader>
                     <CardContent>
                         {loading && profilList.length === 0 ? (
-                            <div className="text-center py-8">Memuat...</div>
+                            <div className="flex justify-center py-8">
+                                <LoadingSpinner size="lg" />
+                            </div>
+                        ) : !selectedProdi && !searchTerm ? (
+                            <div className="text-center py-12 border rounded-lg border-dashed">
+                                <Briefcase className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                                <h3 className="text-lg font-medium">Pilih Program Studi</h3>
+                                <p className="text-muted-foreground mb-4">Silakan pilih Program Studi terlebih dahulu untuk menampilkan data Profil Lulusan.</p>
+                            </div>
                         ) : profilList && profilList.length > 0 ? (
                             <div className="rounded-md border">
                                 <div className="overflow-x-auto">
@@ -223,15 +307,22 @@ export default function ProfilLulusanPage() {
                                                         </TableCell>
                                                     )}
                                                     <TableCell>
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {(item as any).cplMappings?.map((m: any) => (
-                                                                <span key={m.cplId} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                                    {m.cpl?.kode}
-                                                                </span>
-                                                            ))}
-                                                            {(!(item as any).cplMappings || (item as any).cplMappings.length === 0) && (
-                                                                <span className="text-muted-foreground text-xs italic">Belum ada mapping</span>
-                                                            )}
+                                                        <div className="flex items-center justify-center">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => {
+                                                                    // Determine fakultasId. If admin selected one, use it.
+                                                                    // If not, we might need to rely on the item's prodi -> fakultas relation if available,
+                                                                    // or just pass prodiId and hope CPL page handles it (it might need fakultasId for filter logic).
+                                                                    // For now, let's pass selectedFakultas if available.
+                                                                    const targetFakultasId = selectedFakultas;
+                                                                    navigate(`/dashboard/cpl?view=matrix&fakultasId=${targetFakultasId}&prodiId=${item.prodiId}`);
+                                                                }}
+                                                                title="Lihat Mapping CPL"
+                                                            >
+                                                                <Eye className="w-4 h-4 text-blue-600" />
+                                                            </Button>
                                                         </div>
                                                     </TableCell>
                                                     {canEdit && (
@@ -260,8 +351,7 @@ export default function ProfilLulusanPage() {
                                 {canEdit && (
                                     <Button onClick={() => {
                                         setEditingItem(null);
-                                        setFormData({ kode: "", nama: "", deskripsi: "", prodiId: selectedProdi });
-                                        setSelectedCpls([]);
+                                        setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi });
                                         setIsDialogOpen(true);
                                     }}>
                                         <Plus className="w-4 h-4 mr-2" /> Tambah Profil
@@ -332,6 +422,49 @@ export default function ProfilLulusanPage() {
                                     placeholder="Contoh: PL-01"
                                 />
                             </div>
+
+                            {role === "admin" && (
+                                <>
+                                    <div className="grid grid-cols-4 gap-4 items-center">
+                                        <Label className="text-right">Fakultas</Label>
+                                        <div className="col-span-3">
+                                            <Select
+                                                value={formData.fakultasId}
+                                                onValueChange={(val) => setFormData({ ...formData, fakultasId: val, prodiId: "" })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Pilih Fakultas" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {fakultasList.map(f => (
+                                                        <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-4 items-center">
+                                        <Label className="text-right">Program Studi</Label>
+                                        <div className="col-span-3">
+                                            <Select
+                                                value={formData.prodiId}
+                                                onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
+                                                disabled={!formData.fakultasId}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Pilih Program Studi" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {formProdiList.map(p => (
+                                                        <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
                             <div className="grid grid-cols-4 gap-4 items-center">
                                 <Label className="text-right">Nama Profil</Label>
                                 <Input
@@ -350,36 +483,6 @@ export default function ProfilLulusanPage() {
                                     rows={3}
                                     placeholder="Deskripsi singkat tentang profil ini..."
                                 />
-                            </div>
-
-                            <div className="grid grid-cols-4 gap-4 items-start border-t pt-4 mt-4">
-                                <Label className="text-right pt-2">Mapping CPL</Label>
-                                <div className="col-span-3 space-y-2">
-                                    <div className="text-sm text-muted-foreground mb-2">
-                                        Pilih CPL yang dibebankan pada profil lulusan ini:
-                                    </div>
-                                    <div className="grid grid-cols-1 gap-2 max-h-[200px] overflow-y-auto border rounded p-2">
-                                        {cplList && cplList.map(cpl => (
-                                            <div key={cpl.id} className="flex items-start space-x-2 p-1 hover:bg-muted/50 rounded">
-                                                <input
-                                                    type="checkbox"
-                                                    id={`cpl-${cpl.id}`}
-                                                    className="mt-1"
-                                                    checked={selectedCpls.includes(cpl.id)}
-                                                    onChange={() => toggleCplSelection(cpl.id)}
-                                                />
-                                                <label htmlFor={`cpl-${cpl.id}`} className="text-sm cursor-pointer leading-tight">
-                                                    <span className="font-bold">{cpl.kode}</span> - {cpl.deskripsi}
-                                                </label>
-                                            </div>
-                                        ))}
-                                        {(!cplList || cplList.length === 0) && (
-                                            <div className="text-sm text-muted-foreground text-center py-2">
-                                                Tidak ada data CPL untuk prodi ini.
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
                             </div>
                         </div>
                         <DialogFooter>

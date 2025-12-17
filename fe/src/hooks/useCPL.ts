@@ -25,23 +25,35 @@ export function useCPL() {
 
     // Filter Stats
     const [searchTerm, setSearchTerm] = useState("");
-    const [kategoriFilter, setKategoriFilter] = useState<string>("all");
+    // const [kategoriFilter, setKategoriFilter] = useState<string>("all"); // Removed
+    const [fakultasFilter, setFakultasFilter] = useState<string>("");
     const [prodiFilter, setProdiFilter] = useState<string>("all");
 
     // Data
     const [cplList, setCplList] = useState<CPL[]>([]);
     const [kategoriList, setKategoriList] = useState<any[]>([]);
+    const [fakultasList, setFakultasList] = useState<any[]>([]);
     const [prodiList, setProdiList] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchFakultas = useCallback(async () => {
+        try {
+            const result = await api.get('/references/fakultas');
+            if (result.data) setFakultasList(result.data);
+        } catch (error) {
+            console.error("Error fetching fakultas:", error);
+        }
+    }, []);
+
     const fetchProdi = useCallback(async () => {
         try {
-            const result = await api.get('/prodi');
+            const url = fakultasFilter ? `/prodi?fakultasId=${fakultasFilter}` : '/prodi';
+            const result = await api.get(url);
             if (result.data) setProdiList(result.data);
         } catch (error) {
             console.error("Error fetching prodi:", error);
         }
-    }, []);
+    }, [fakultasFilter]);
 
     const fetchKategori = useCallback(async () => {
         try {
@@ -61,8 +73,12 @@ export function useCPL() {
                 q: searchTerm
             };
 
-            if (kategoriFilter !== "all") params.kategori = kategoriFilter;
+            // if (kategoriFilter !== "all") params.kategori = kategoriFilter; // Removed
             if (prodiFilter !== "all") params.prodiId = prodiFilter;
+            // Note: We might want to pass fakultasId if the backend supports it, 
+            // but usually selecting a Fakultas just filters the Prodi list.
+            // If we want to filter CPLs by Fakultas without selecting a Prodi, we'd need backend support.
+            // For now, we assume the user selects a Prodi.
 
             const response = await api.get('/cpl', { params });
 
@@ -93,11 +109,18 @@ export function useCPL() {
         } finally {
             setLoading(false);
         }
-    }, [page, searchTerm, kategoriFilter, prodiFilter]);
+    }, [page, searchTerm, prodiFilter]);
 
     useEffect(() => {
         fetchCPL();
-    }, [fetchCPL]);
+        fetchKategori();
+        fetchFakultas();
+    }, [fetchCPL, fetchKategori, fetchFakultas]);
+
+    // Fetch prodi when fakultas filter changes
+    useEffect(() => {
+        fetchProdi();
+    }, [fetchProdi]);
 
     // Wrapper setters to reset page
     const handleSetSearchTerm = (val: string) => {
@@ -105,8 +128,9 @@ export function useCPL() {
         setPage(1);
     };
 
-    const handleSetKategoriFilter = (val: string) => {
-        setKategoriFilter(val);
+    const handleSetFakultasFilter = (val: string) => {
+        setFakultasFilter(val);
+        setProdiFilter("all"); // Reset prodi when fakultas changes
         setPage(1);
     };
 
@@ -156,7 +180,7 @@ export function useCPL() {
 
     // Generic reset
     const resetFilters = () => {
-        setKategoriFilter("all");
+        setFakultasFilter("");
         setProdiFilter("all");
         setSearchTerm("");
         setPage(1);
@@ -167,12 +191,14 @@ export function useCPL() {
         cplList,
         fullCplList: cplList, // Keeping legacy support if any
         kategoriList,
+        fakultasList,
         prodiList,
         loading,
 
         // Actions
         fetchCPL,
         fetchKategori,
+        fetchFakultas,
         fetchProdi,
         createCPL,
         updateCPL,
@@ -181,13 +207,13 @@ export function useCPL() {
         // Standardized Filters Object
         filters: {
             searchTerm,
-            kategoriFilter,
+            fakultasFilter,
             prodiFilter
         },
 
         // Individual Setters
         setSearchTerm: handleSetSearchTerm,
-        setKategoriFilter: handleSetKategoriFilter,
+        setFakultasFilter: handleSetFakultasFilter,
         setProdiFilter: handleSetProdiFilter,
         resetFilters,
 
