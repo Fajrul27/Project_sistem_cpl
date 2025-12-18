@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
-import { fetchMahasiswaList, api, getTranskripCPMK } from "@/lib/api";
+import { fetchMahasiswaList, api, getTranskripCPMK, getTranskripProfil, fetchFakultasList, fetchProdiList } from "@/lib/api";
 
 export interface TranskripItem {
     cplId: string;
@@ -42,6 +42,16 @@ export interface TranskripCpmkItem {
     tahunAjaran: string;
 }
 
+export interface ProfilLulusanItem {
+    id: string;
+    kode: string;
+    nama: string;
+    deskripsi: string;
+    percentage: number;
+    status: string;
+    cplMappings: any[];
+}
+
 export interface Mahasiswa {
     id: string;
     profile: {
@@ -78,6 +88,7 @@ export function useTranskripCPL() {
 
     const [transkripList, setTranskripList] = useState<TranskripItem[]>([]);
     const [transkripCpmkList, setTranskripCpmkList] = useState<TranskripCpmkItem[]>([]);
+    const [profilLulusanList, setProfilLulusanList] = useState<ProfilLulusanItem[]>([]);
     const [mahasiswaList, setMahasiswaList] = useState<Mahasiswa[]>([]);
     const [selectedMahasiswa, setSelectedMahasiswa] = useState<string>("");
     const [currentStudent, setCurrentStudent] = useState<Mahasiswa | null>(null);
@@ -86,7 +97,14 @@ export function useTranskripCPL() {
     const [totalCurriculumCpl, setTotalCurriculumCpl] = useState<number>(0);
 
     const [semester, setSemester] = useState<string>("all");
+
     const [tahunAjaran, setTahunAjaran] = useState<string>("all");
+
+    // Filter Filters
+    const [fakultasList, setFakultasList] = useState<any[]>([]);
+    const [prodiList, setProdiList] = useState<any[]>([]);
+    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
+    const [selectedProdi, setSelectedProdi] = useState<string>("all");
 
     // Search state
     const [searchQuery, setSearchQuery] = useState("");
@@ -121,7 +139,25 @@ export function useTranskripCPL() {
         if (roleLoading) return;
         if (!isMahasiswa) fetchMahasiswaOptions(debouncedSearch);
         fetchSettings();
-    }, [debouncedSearch, roleLoading, isMahasiswa]);
+        fetchFilters();
+    }, [debouncedSearch, roleLoading, isMahasiswa, selectedFakultas, selectedProdi]);
+
+    const fetchFilters = async () => {
+        try {
+            const fakRef = await fetchFakultasList();
+            setFakultasList(fakRef.data || []);
+        } catch (e) { console.error(e); }
+    };
+
+    // Watch Fakultas change to update Prodi list
+    useEffect(() => {
+        if (selectedFakultas && selectedFakultas !== 'all') {
+            fetchProdiList(selectedFakultas).then(res => setProdiList(res.data || []));
+        } else {
+            // Reset or fetch all prodi if needed, but usually we filter by fakultas
+            fetchProdiList().then(res => setProdiList(res.data || []));
+        }
+    }, [selectedFakultas]);
 
     // Fetch data when student/filters change
     useEffect(() => {
@@ -154,7 +190,12 @@ export function useTranskripCPL() {
     const fetchMahasiswaOptions = async (query: string = "") => {
         try {
             if (query) setSearchLoading(true);
-            const response = await fetchMahasiswaList({ q: query, limit: 20 });
+            if (query) setSearchLoading(true);
+            const params: any = { q: query, limit: 20 };
+            if (selectedFakultas !== 'all') params.fakultasId = selectedFakultas;
+            if (selectedProdi !== 'all') params.prodiId = selectedProdi;
+
+            const response = await fetchMahasiswaList(params);
             const users = response?.data || [];
             const mapped: Mahasiswa[] = users
                 .filter((u: User) => u.profile && u.profile.nim)
@@ -207,12 +248,23 @@ export function useTranskripCPL() {
         }
     };
 
+    const fetchTranskripProfil = async () => {
+        try {
+            const result = await getTranskripProfil(selectedMahasiswa, semester, tahunAjaran);
+            setProfilLulusanList(result || []);
+        } catch (error) {
+            console.error("Error fetching transkrip profil:", error);
+            setProfilLulusanList([]);
+        }
+    };
+
     const fetchAllData = async () => {
         setLoading(true);
         try {
             await Promise.all([
                 fetchTranskrip(),
-                fetchTranskripCPMK()
+                fetchTranskripCPMK(),
+                fetchTranskripProfil()
             ]);
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -252,6 +304,7 @@ export function useTranskripCPL() {
         // State
         transkripList,
         transkripCpmkList,
+        profilLulusanList,
         mahasiswaList,
         loading,
         searchLoading,
@@ -261,6 +314,12 @@ export function useTranskripCPL() {
         // Selections
         selectedMahasiswa,
         setSelectedMahasiswa,
+        selectedFakultas,
+        setSelectedFakultas,
+        selectedProdi,
+        setSelectedProdi,
+        fakultasList,
+        prodiList,
         semester,
         setSemester,
         tahunAjaran,

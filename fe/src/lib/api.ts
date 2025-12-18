@@ -97,6 +97,16 @@ export async function fetchMataKuliahPengampu(dosenId: string) {
   return api.get(`/mata-kuliah-pengampu/dosen/${dosenId}`);
 }
 
+// Helper: fetch all pengampu (assignments) with filters
+export async function fetchAllPengampu(filters: {
+  prodiId?: string;
+  semester?: string;
+  fakultasId?: string;
+}) {
+  // Backend: GET /api/mata-kuliah-pengampu
+  return api.get('/mata-kuliah-pengampu', { params: filters });
+}
+
 // Helper: fetch all users (admin only)
 export async function fetchAllUsers(params?: {
   page?: number;
@@ -250,6 +260,14 @@ export async function getTranskripCPMK(mahasiswaId: string, semester?: string, t
   if (semester && semester !== 'all') params.append('semester', semester);
   if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaran', tahunAjaran);
   return api.get(`/transkrip-cpmk/${mahasiswaId}?${params.toString()}`);
+}
+
+// Helper: fetch transkrip profil data
+export async function getTranskripProfil(mahasiswaId: string, semester?: string, tahunAjaran?: string) {
+  const params = new URLSearchParams();
+  if (semester && semester !== 'all') params.append('semester', semester);
+  if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaran', tahunAjaran);
+  return api.get(`/transkrip-profil/mahasiswa/${mahasiswaId}?${params.toString()}`);
 }
 
 // Helper: fetch analysis data

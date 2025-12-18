@@ -6,10 +6,14 @@ import {
     getAssignmentsByDosen,
     assignDosenToMataKuliah,
     removeDosenFromMataKuliah,
-    getPesertaByMataKuliah
+    getPesertaByMataKuliah,
+    getAllAssignments
 } from '../controllers/mata-kuliah-pengampu-controller.js';
 
 const router = Router();
+
+// Get all assignments (filtering by query params)
+router.get('/', authMiddleware, requireRole('admin', 'kaprodi', 'dosen'), getAllAssignments);
 
 // Get all pengampu for a mata kuliah
 router.get('/mata-kuliah/:mataKuliahId', authMiddleware, getPengampuByMataKuliah);

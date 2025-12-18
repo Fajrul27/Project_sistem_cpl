@@ -31,7 +31,8 @@ const DosenPengampuPage = () => {
         setSelectedMk,
         setSelectedDosen,
         handleAddPengampu,
-        handleDeletePengampu
+        handleDeletePengampu,
+        allPengampuList // Added from hook
     } = useDosenPengampu();
 
     // Delete Dialog State
@@ -245,6 +246,53 @@ const DosenPengampuPage = () => {
                     </Card>
                 </div>
             </div>
+
+            {/* Added: Tabel Kelas Perkuliahan */}
+            <Card className="mt-6">
+                <CardHeader>
+                    <CardTitle>Tabel Kelas Perkuliahan</CardTitle>
+                    <CardDescription>
+                        Daftar semua kelas perkuliahan beserta dosen pengampu sesuai filter yang dipilih.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-12 text-center">No</TableHead>
+                                    <TableHead>Kode MK</TableHead>
+                                    <TableHead>Nama MK</TableHead>
+                                    <TableHead className="text-center">Sem</TableHead>
+                                    <TableHead className="text-center">Kelas</TableHead>
+                                    <TableHead>Dosen Pengampu</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {allPengampuList && allPengampuList.length > 0 ? (
+                                    allPengampuList.map((item, index) => (
+                                        <TableRow key={item.id}>
+                                            <TableCell className="text-center">{index + 1}</TableCell>
+                                            <TableCell>{(item as any).mataKuliah?.kodeMk || '-'}</TableCell>
+                                            <TableCell>{(item as any).mataKuliah?.namaMk || '-'}</TableCell>
+                                            <TableCell className="text-center">{(item as any).mataKuliah?.semester || '-'}</TableCell>
+                                            <TableCell className="text-center">{(item as any).kelas?.nama || '-'}</TableCell>
+                                            <TableCell>{item.dosen?.namaLengkap || item.dosen?.user?.email || '-'}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                                            Tidak ada data kelas perkuliahan.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+
             <DeleteConfirmationDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}

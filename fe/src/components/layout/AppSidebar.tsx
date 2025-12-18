@@ -90,7 +90,7 @@ export function AppSidebar() {
         icon: BarChart3,
         roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
         items: [
-          { title: "Transkrip CPL", url: "/dashboard/transkrip-cpl", roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
+          { title: "Capaian Pembelajaran", url: "/dashboard/transkrip-cpl", roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
           { title: "Analisis CPL", url: "/dashboard/analisis", roles: ["admin", "dosen", "kaprodi"] },
           { title: "Evaluasi CPL", url: "/dashboard/evaluasi-cpl", roles: ["admin", "kaprodi", "dosen"] },
           { title: "Rekap Kuesioner", url: "/dashboard/rekap-kuesioner", roles: ["admin", "kaprodi"] },
@@ -168,7 +168,7 @@ export function AppSidebar() {
                 {!item.items && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
-                      isActive={location.pathname === item.url}
+                      isActive={item.url.includes('?') ? (location.pathname + location.search) === item.url : location.pathname === item.url}
                       asChild
                       tooltip={item.title}
                     >
@@ -197,7 +197,7 @@ export function AppSidebar() {
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton
                                 asChild
-                                isActive={location.pathname === subItem.url}
+                                isActive={subItem.url.includes('?') ? (location.pathname + location.search) === subItem.url : location.pathname === subItem.url}
                               >
                                 <NavLink to={subItem.url}>
                                   <span>{subItem.title}</span>

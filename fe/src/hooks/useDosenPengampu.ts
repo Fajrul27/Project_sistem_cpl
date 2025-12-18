@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { api, fetchKelas, fetchProdiList, fetchSemesters, fetchFakultasList } from "@/lib/api";
+import { api, fetchKelas, fetchProdiList, fetchSemesters, fetchFakultasList, fetchAllPengampu } from "@/lib/api";
 import { toast } from "sonner";
 
 export interface MataKuliah {
@@ -49,6 +49,7 @@ export function useDosenPengampu() {
     const [mataKuliahList, setMataKuliahList] = useState<MataKuliah[]>([]);
     const [dosenList, setDosenList] = useState<Dosen[]>([]);
     const [pengampuList, setPengampuList] = useState<Pengampu[]>([]);
+    const [allPengampuList, setAllPengampuList] = useState<Pengampu[]>([]);
     const [fakultasList, setFakultasList] = useState<any[]>([]);
     const [prodiList, setProdiList] = useState<any[]>([]);
     const [semesterList, setSemesterList] = useState<any[]>([]);
@@ -141,7 +142,25 @@ export function useDosenPengampu() {
     // Effect for MK
     useEffect(() => {
         fetchMataKuliah();
+        fetchAllAssignments();
     }, [selectedProdi, selectedSemester, fetchMataKuliah]);
+
+    const fetchAllAssignments = useCallback(async () => {
+        try {
+            setLoadingPengampu(true);
+            const filters: any = {};
+            if (selectedProdi && selectedProdi !== 'all') filters.prodiId = selectedProdi;
+            if (selectedSemester && selectedSemester !== 'all') filters.semester = selectedSemester;
+            if (selectedFakultas && selectedFakultas !== 'all') filters.fakultasId = selectedFakultas;
+
+            const res = await fetchAllPengampu(filters);
+            setAllPengampuList(res.data || []);
+        } catch (error) {
+            console.error("Error fetching all assignments:", error);
+        } finally {
+            setLoadingPengampu(false);
+        }
+    }, [selectedProdi, selectedSemester, selectedFakultas]);
 
     // Effect for Pengampu
     useEffect(() => {
@@ -200,6 +219,7 @@ export function useDosenPengampu() {
         mataKuliahList,
         dosenList,
         pengampuList,
+        allPengampuList,
         fakultasList,
         prodiList,
         semesterList,

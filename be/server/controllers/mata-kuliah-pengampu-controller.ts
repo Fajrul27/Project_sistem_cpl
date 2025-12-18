@@ -13,6 +13,23 @@ export const getPengampuByMataKuliah = async (req: Request, res: Response) => {
     }
 };
 
+// Get all assignments (with filters)
+export const getAllAssignments = async (req: Request, res: Response) => {
+    try {
+        const { prodiId, semester, fakultasId } = req.query;
+        const filters = {
+            prodiId: prodiId as string,
+            semester: semester ? Number(semester) : undefined,
+            fakultasId: fakultasId as string
+        };
+        const assignments = await MataKuliahPengampuService.getAllAssignments(filters);
+        res.json({ data: assignments });
+    } catch (error) {
+        console.error('Error fetching all assignments:', error);
+        res.status(500).json({ error: 'Failed to fetch assignments' });
+    }
+};
+
 // Get all mata kuliah for a dosen
 export const getAssignmentsByDosen = async (req: Request, res: Response) => {
     try {

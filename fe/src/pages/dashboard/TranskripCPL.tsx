@@ -1,23 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { Printer, FileText, Check, ChevronsUpDown } from "lucide-react";
+import { Printer, FileText, Check, ChevronsUpDown, Briefcase, Eye, Filter } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn, getGradeLetter } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranskripCPL } from "@/hooks/useTranskripCPL";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
+
 
 const TranskripCPLPage = () => {
     const {
         transkripList,
         transkripCpmkList,
+        profilLulusanList,
         mahasiswaList,
         loading,
         searchLoading,
@@ -25,6 +30,7 @@ const TranskripCPLPage = () => {
         settings,
         selectedMahasiswa,
         setSelectedMahasiswa,
+
         semester,
         setSemester,
         tahunAjaran,
@@ -36,11 +42,87 @@ const TranskripCPLPage = () => {
         avgScore,
         completedCPL,
         totalCurriculumCpl,
-        isMahasiswa
+
+        isMahasiswa,
+        // Filter props
+        selectedFakultas,
+        setSelectedFakultas,
+        selectedProdi,
+        setSelectedProdi,
+        fakultasList,
+        prodiList
     } = useTranskripCPL();
 
+    const [searchParams, setSearchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState("cpl");
     const [openCombobox, setOpenCombobox] = useState(false);
+
+    // Sync tab with URL
+    useEffect(() => {
+        const tab = searchParams.get("tab");
+        if (tab && (tab === "cpl" || tab === "cpmk")) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
+
+    const handleTabChange = (val: string) => {
+        setActiveTab(val);
+        setSearchParams({ tab: val });
+    };
+
+    // Calculate RowSpans for CPMK Table
+    const processedCpmkList = useMemo(() => {
+        // 1. Sort by Kode MK then Kode CPMK
+        const sorted = [...transkripCpmkList].sort((a, b) =>
+            a.mataKuliah.kodeMk.localeCompare(b.mataKuliah.kodeMk) ||
+            a.kodeCpmk.localeCompare(b.kodeCpmk)
+        );
+
+        // 2. Add rowSpan information and numbering
+        const result: (typeof transkripCpmkList[0] & { rowSpan?: number, courseNumber?: number, isLastInGroup?: boolean, courseScore?: number })[] = [];
+        let i = 0;
+        let courseCounter = 1;
+
+        while (i < sorted.length) {
+            const current = sorted[i];
+
+            // Calculate group size & total score
+            let count = 1;
+            let totalScore = current.nilai;
+
+            // Check subsequent items for same Mata Kuliah
+            for (let j = i + 1; j < sorted.length; j++) {
+                if (sorted[j].mataKuliah.kodeMk === current.mataKuliah.kodeMk) {
+                    count++;
+                    totalScore += sorted[j].nilai;
+                } else {
+                    break;
+                }
+            }
+
+            // Calculate Average Score
+            const avgScore = totalScore / count;
+
+            // Push items with metadata
+            for (let k = 0; k < count; k++) {
+                const item = sorted[i + k];
+                const isFirst = k === 0;
+                const isLast = k === count - 1;
+
+                result.push({
+                    ...item,
+                    rowSpan: isFirst ? count : 0,
+                    courseNumber: isFirst ? courseCounter : undefined, // Only set for first item
+                    isLastInGroup: isLast,
+                    courseScore: avgScore
+                });
+            }
+
+            courseCounter++;
+            i += count;
+        }
+        return result;
+    }, [transkripCpmkList]);
 
     const handlePrint = () => {
         const originalTitle = document.title;
@@ -76,39 +158,87 @@ const TranskripCPLPage = () => {
                                 <CardDescription>Cari mahasiswa berdasarkan Nama atau NIM</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" aria-expanded={openCombobox} className="w-full justify-between">
-                                            {selectedMahasiswa ? mahasiswaList.find((mhs) => mhs.id === selectedMahasiswa)?.profile.namaLengkap : "Pilih Mahasiswa..."}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[400px] p-0">
-                                        <Command shouldFilter={false}>
-                                            <CommandInput
-                                                placeholder="Cari nama atau NIM..."
-                                                value={searchQuery}
-                                                onValueChange={setSearchQuery}
-                                                className="focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 border-none focus:border-none ring-0 outline-none shadow-none !outline-none !border-none !ring-0 !shadow-none"
-                                            />
-                                            <CommandList>
-                                                {searchLoading && <div className="py-6 text-center text-sm text-muted-foreground">Mencari...</div>}
-                                                {!searchLoading && mahasiswaList.length === 0 && <CommandEmpty>Mahasiswa tidak ditemukan.</CommandEmpty>}
-                                                <CommandGroup>
-                                                    {mahasiswaList.map((mhs) => (
-                                                        <CommandItem key={mhs.id} value={mhs.id} onSelect={(val) => { setSelectedMahasiswa(val === selectedMahasiswa ? "" : val); setOpenCombobox(false); }}>
-                                                            <Check className={cn("mr-2 h-4 w-4", selectedMahasiswa === mhs.id ? "opacity-100" : "opacity-0")} />
-                                                            <div className="flex flex-col">
-                                                                <span>{mhs.profile.namaLengkap}</span>
-                                                                <span className="text-xs text-muted-foreground">{mhs.profile.nim} - {mhs.profile.programStudi}</span>
-                                                            </div>
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                <div className="flex gap-2">
+                                    <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" aria-expanded={openCombobox} className="w-full justify-between">
+                                                {selectedMahasiswa ? mahasiswaList.find((mhs) => mhs.id === selectedMahasiswa)?.profile.namaLengkap : "Pilih Mahasiswa..."}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[400px] p-0">
+                                            <Command shouldFilter={false}>
+                                                <CommandInput
+                                                    placeholder="Cari nama atau NIM..."
+                                                    value={searchQuery}
+                                                    onValueChange={setSearchQuery}
+                                                    className="focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 border-none focus:border-none ring-0 outline-none shadow-none !outline-none !border-none !ring-0 !shadow-none"
+                                                />
+                                                <CommandList>
+                                                    {searchLoading && <div className="py-6 text-center text-sm text-muted-foreground">Mencari...</div>}
+                                                    {!searchLoading && mahasiswaList.length === 0 && <CommandEmpty>Mahasiswa tidak ditemukan.</CommandEmpty>}
+                                                    <CommandGroup>
+                                                        {mahasiswaList.map((mhs) => (
+                                                            <CommandItem key={mhs.id} value={mhs.id} onSelect={(val) => { setSelectedMahasiswa(val === selectedMahasiswa ? "" : val); setOpenCombobox(false); }}>
+                                                                <Check className={cn("mr-2 h-4 w-4", selectedMahasiswa === mhs.id ? "opacity-100" : "opacity-0")} />
+                                                                <div className="flex flex-col">
+                                                                    <span>{mhs.profile.namaLengkap}</span>
+                                                                    <span className="text-xs text-muted-foreground">{mhs.profile.nim} - {mhs.profile.programStudi}</span>
+                                                                </div>
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant={selectedFakultas !== 'all' || selectedProdi !== 'all' ? "default" : "outline"}
+                                                className={cn("w-[120px]", (selectedFakultas !== 'all' || selectedProdi !== 'all') && "bg-blue-600 hover:bg-blue-700 text-white border-transparent")}
+                                            >
+                                                <Filter className="mr-2 h-4 w-4" /> Filter
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80 p-4" align="end">
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <h4 className="font-medium leading-none">Filter Mahasiswa</h4>
+                                                    <p className="text-sm text-muted-foreground">Filter daftar pencarian mahasiswa</p>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">Fakultas</label>
+                                                    <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Semua Fakultas" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="all">Semua Fakultas</SelectItem>
+                                                            {fakultasList.map((f: any) => (
+                                                                <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">Program Studi</label>
+                                                    <Select value={selectedProdi} onValueChange={setSelectedProdi}>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Semua Prodi" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="all">Semua Prodi</SelectItem>
+                                                            {prodiList.map((p: any) => (
+                                                                <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                             </CardContent>
                         </Card>
                     )
@@ -146,42 +276,154 @@ const TranskripCPLPage = () => {
                                 </Card>
                             </div>
 
-                            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                                 <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100 dark:bg-muted p-1 rounded-xl gap-2 h-auto">
                                     <TabsTrigger
                                         value="cpl"
                                         className="py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-foreground/10 transition-all duration-300 ease-in-out rounded-lg font-medium"
                                     >
-                                        Transkrip CPL
+                                        Capaian OBE
                                     </TabsTrigger>
                                     <TabsTrigger
                                         value="cpmk"
                                         className="py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md hover:bg-muted-foreground/10 transition-all duration-300 ease-in-out rounded-lg font-medium"
                                     >
-                                        Transkrip CPMK
+                                        Capaian Makul
                                     </TabsTrigger>
                                 </TabsList>
 
                                 <TabsContent value="cpl" className="animate-in fade-in slide-in-from-top-4 duration-500">
-                                    <div className="grid gap-4 md:grid-cols-3 mb-6">
-                                        <Card>
-                                            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Rata-rata Nilai</CardTitle></CardHeader>
-                                            <CardContent><div className="text-2xl font-bold">{avgScore.toFixed(2)}</div></CardContent>
+
+
+
+                                    {/* CPL Chart & Analysis */}
+                                    <div className="grid gap-4 md:grid-cols-7 mb-6">
+                                        <Card className="md:col-span-3">
+                                            <CardHeader>
+                                                <CardTitle className="text-sm font-medium">Analisis Capaian</CardTitle>
+                                                <CardDescription>CPL Tertinggi & Terendah</CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                {validTranskripList.length > 0 ? (() => {
+                                                    const sorted = [...validTranskripList].sort((a, b) => b.nilaiAkhir - a.nilaiAkhir);
+                                                    const highest = sorted[0];
+                                                    const lowest = sorted[sorted.length - 1];
+                                                    return (
+                                                        <>
+                                                            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-900">
+                                                                <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">CPL Tertinggi</div>
+                                                                <div className="text-3xl font-bold text-green-700 dark:text-green-300">{highest.nilaiAkhir.toFixed(2)}</div>
+                                                                <div className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">{highest.cpl.kodeCpl}</div>
+                                                                <div className="text-[10px] text-green-600/80 dark:text-green-400/80 line-clamp-2 mt-1">{highest.cpl.deskripsi}</div>
+                                                            </div>
+                                                            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-100 dark:border-red-900">
+                                                                <div className="text-sm text-red-600 dark:text-red-400 font-medium mb-1">CPL Terendah</div>
+                                                                <div className="text-3xl font-bold text-red-700 dark:text-red-300">{lowest.nilaiAkhir.toFixed(2)}</div>
+                                                                <div className="text-xs text-red-600 dark:text-red-400 mt-1 font-medium">{lowest.cpl.kodeCpl}</div>
+                                                                <div className="text-[10px] text-red-600/80 dark:text-red-400/80 line-clamp-2 mt-1">{lowest.cpl.deskripsi}</div>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })() : <div className="text-muted-foreground text-sm">Belum ada data</div>}
+                                            </CardContent>
                                         </Card>
-                                        <Card>
-                                            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">CPL Tercapai</CardTitle></CardHeader>
-                                            <CardContent><div className="text-2xl font-bold">{completedCPL} / {totalCurriculumCpl || validTranskripList.length}</div></CardContent>
-                                        </Card>
-                                        <Card>
-                                            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Persentase Kelulusan</CardTitle></CardHeader>
-                                            <CardContent><div className="text-2xl font-bold">{validTranskripList.length > 0 ? ((completedCPL / validTranskripList.length) * 100).toFixed(0) : 0}%</div></CardContent>
+                                        <Card className="md:col-span-4">
+                                            <CardHeader>
+                                                <CardTitle className="text-sm font-medium">Peta Radar CPL</CardTitle>
+                                                <CardDescription>Visualisasi sebaran capaian lulusan</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="h-[300px] w-full">
+                                                    {validTranskripList.length > 0 ? (
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={validTranskripList.map(i => ({ subject: i.cpl.kodeCpl, A: Number(i.nilaiAkhir) || 0, fullMark: 100 }))}>
+                                                                <PolarGrid stroke="#e5e7eb" />
+                                                                <PolarAngleAxis dataKey="subject" tick={{ fill: 'currentColor', fontSize: 10 }} />
+                                                                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 10 }} />
+                                                                <Radar name="Capaian" dataKey="A" stroke="#2563eb" fill="#3b82f6" fillOpacity={0.5} />
+                                                                <Tooltip
+                                                                    contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                    itemStyle={{ color: '#2563eb', fontWeight: 600 }}
+                                                                />
+                                                            </RadarChart>
+                                                        </ResponsiveContainer>
+                                                    ) : (
+                                                        <div className="flex h-full items-center justify-center text-muted-foreground">
+                                                            Data tidak tersedia untuk visualisasi
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </CardContent>
                                         </Card>
                                     </div>
+
+                                    {/* Profil Lulusan Section */}
+                                    <Card className="mb-6">
+                                        <CardHeader>
+                                            <CardTitle className="text-sm font-medium">Daftar Profil Lulusan</CardTitle>
+                                            <CardDescription>Menampilkan {profilLulusanList.length} dari {profilLulusanList.length} Profil Lulusan</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="w-[50px]">No</TableHead>
+                                                        <TableHead>Kode</TableHead>
+                                                        <TableHead>Nama Profil</TableHead>
+                                                        <TableHead>Deskripsi</TableHead>
+                                                        <TableHead className="w-[200px]">Ketercapaian</TableHead>
+                                                        <TableHead className="text-center">Mapping CPL</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {profilLulusanList.length > 0 ? (
+                                                        profilLulusanList.map((profil, idx) => (
+                                                            <TableRow key={profil.id}>
+                                                                <TableCell>{idx + 1}</TableCell>
+                                                                <TableCell>{profil.kode}</TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400">
+                                                                            <Briefcase size={16} />
+                                                                        </div>
+                                                                        <span className="font-medium">{profil.nama}</span>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="max-w-xs text-xs text-muted-foreground line-clamp-2">{profil.deskripsi}</TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <div className="flex justify-between text-xs">
+                                                                            <span>{profil.percentage.toFixed(2)}%</span>
+                                                                            <span className={profil.percentage >= 80 ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
+                                                                                {profil.percentage >= 80 ? "Tercapai" : "Belum Tercapai"}
+                                                                            </span>
+                                                                        </div>
+                                                                        <Progress value={profil.percentage} className="h-2" />
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="text-center">
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600">
+                                                                        <Eye size={16} />
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))
+                                                    ) : (
+                                                        <TableRow>
+                                                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                                                Belum ada data profil lulusan
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </CardContent>
+                                    </Card>
 
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between">
                                             <div>
-                                                <CardTitle>Transkrip CPL</CardTitle>
+                                                <CardTitle>Capaian OBE</CardTitle>
                                                 <CardDescription>{selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}</CardDescription>
                                             </div>
                                             <div className="flex gap-2">
@@ -259,10 +501,120 @@ const TranskripCPLPage = () => {
                                         </Card>
                                     </div>
 
+                                    {/* CPMK Chart & Analysis */}
+                                    <div className="grid gap-4 md:grid-cols-7 mb-6">
+                                        <Card className="md:col-span-3">
+                                            <CardHeader>
+                                                <CardTitle className="text-sm font-medium">Analisis Mata Kuliah</CardTitle>
+                                                <CardDescription>Nilai Mata Kuliah Tertinggi & Terendah</CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                {transkripCpmkList.length > 0 ? (() => {
+                                                    // Aggregate CPMK data by Mata Kuliah
+                                                    const makulMap = new Map();
+                                                    transkripCpmkList.forEach(item => {
+                                                        const key = item.mataKuliah.kodeMk;
+                                                        if (!makulMap.has(key)) {
+                                                            makulMap.set(key, {
+                                                                kodeMk: key,
+                                                                namaMk: item.mataKuliah.namaMk,
+                                                                totalNilai: 0,
+                                                                count: 0
+                                                            });
+                                                        }
+                                                        const entry = makulMap.get(key);
+                                                        entry.totalNilai += item.nilai;
+                                                        entry.count += 1;
+                                                    });
+
+                                                    const makulList = Array.from(makulMap.values()).map((m: any) => ({
+                                                        ...m,
+                                                        average: m.totalNilai / m.count
+                                                    }));
+
+                                                    const sorted = makulList.sort((a: any, b: any) => b.average - a.average);
+                                                    const highest = sorted[0];
+                                                    const lowest = sorted[sorted.length - 1];
+
+                                                    return (
+                                                        <>
+                                                            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-900">
+                                                                <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">Nilai Makul Tertinggi</div>
+                                                                <div className="text-3xl font-bold text-green-700 dark:text-green-300">{highest.average.toFixed(2)}</div>
+                                                                <div className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">{highest.kodeMk}</div>
+                                                                <div className="text-[10px] text-green-600/80 dark:text-green-400/80 line-clamp-2 mt-1">{highest.namaMk}</div>
+                                                            </div>
+                                                            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-100 dark:border-red-900">
+                                                                <div className="text-sm text-red-600 dark:text-red-400 font-medium mb-1">Nilai Makul Terendah</div>
+                                                                <div className="text-3xl font-bold text-red-700 dark:text-red-300">{lowest.average.toFixed(2)}</div>
+                                                                <div className="text-xs text-red-600 dark:text-red-400 mt-1 font-medium">{lowest.kodeMk}</div>
+                                                                <div className="text-[10px] text-red-600/80 dark:text-red-400/80 line-clamp-2 mt-1">{lowest.namaMk}</div>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })() : <div className="text-muted-foreground text-sm">Belum ada data</div>}
+                                            </CardContent>
+                                        </Card>
+                                        <Card className="md:col-span-4">
+                                            <CardHeader>
+                                                <CardTitle className="text-sm font-medium">Peta Radar Mata Kuliah</CardTitle>
+                                                <CardDescription>Sebaran rata-rata nilai per Mata Kuliah (Sample 10 Data)</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="h-[300px] w-full">
+                                                    {transkripCpmkList.length > 0 ? (() => {
+                                                        const makulMap = new Map();
+                                                        transkripCpmkList.forEach(item => {
+                                                            const key = item.mataKuliah.kodeMk;
+                                                            if (!makulMap.has(key)) {
+                                                                makulMap.set(key, {
+                                                                    subject: key,
+                                                                    totalNilai: 0,
+                                                                    count: 0
+                                                                });
+                                                            }
+                                                            const entry = makulMap.get(key);
+                                                            entry.totalNilai += item.nilai;
+                                                            entry.count += 1;
+                                                        });
+
+                                                        const radarData = Array.from(makulMap.values())
+                                                            .map((m: any) => ({
+                                                                subject: m.subject,
+                                                                A: Number((m.totalNilai / m.count).toFixed(2)) || 0,
+                                                                fullMark: 100
+                                                            }))
+                                                            .slice(0, 10);
+
+                                                        return (
+                                                            <ResponsiveContainer width="100%" height="100%">
+                                                                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                                                                    <PolarGrid stroke="#e5e7eb" />
+                                                                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'currentColor', fontSize: 10 }} />
+                                                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 10 }} />
+                                                                    <Radar name="Rata-rata Nilai" dataKey="A" stroke="#8b5cf6" fill="#a78bfa" fillOpacity={0.5} />
+                                                                    <Tooltip
+                                                                        contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                        itemStyle={{ color: '#8b5cf6', fontWeight: 600 }}
+                                                                    />
+                                                                </RadarChart>
+                                                            </ResponsiveContainer>
+                                                        );
+                                                    })() : (
+
+                                                        <div className="flex h-full items-center justify-center text-muted-foreground">
+                                                            Data tidak tersedia untuk visualisasi
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between">
                                             <div>
-                                                <CardTitle>Transkrip CPMK</CardTitle>
+                                                <CardTitle>Capaian Makul</CardTitle>
                                                 <CardDescription>{selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}</CardDescription>
                                             </div>
                                             <div className="flex gap-2">
@@ -279,28 +631,45 @@ const TranskripCPLPage = () => {
                                                     <Table>
                                                         <TableHeader>
                                                             <TableRow>
-                                                                <TableHead>Kode CPMK</TableHead>
                                                                 <TableHead>Mata Kuliah</TableHead>
-                                                                <TableHead>Deskripsi</TableHead>
+                                                                <TableHead>Kode CPMK</TableHead>
                                                                 <TableHead className="text-right">Nilai</TableHead>
                                                                 <TableHead className="text-center">Huruf</TableHead>
                                                                 <TableHead className="text-center">Status</TableHead>
                                                             </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
-                                                            {transkripCpmkList.map((item, index) => (
-                                                                <TableRow key={index}>
-                                                                    <TableCell className="font-medium">{item.kodeCpmk}</TableCell>
-                                                                    <TableCell>
-                                                                        <div className="font-medium">{item.mataKuliah.namaMk}</div>
-                                                                        <div className="text-xs text-muted-foreground">{item.mataKuliah.kodeMk}</div>
+                                                            {processedCpmkList.map((item, index) => (
+                                                                <TableRow key={index} className={item.isLastInGroup ? "" : "border-b-0"}>
+                                                                    {item.rowSpan !== 0 && (
+                                                                        <>
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center font-medium">
+                                                                                {item.courseNumber}
+                                                                            </TableCell>
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r">
+                                                                                <div className="font-medium">{item.mataKuliah.kodeMk} - {item.mataKuliah.namaMk}</div>
+                                                                            </TableCell>
+                                                                        </>
+                                                                    )}
+                                                                    <TableCell className={item.isLastInGroup ? "" : "border-b-0"}>
+                                                                        <div className="font-medium">{item.kodeCpmk}</div>
+                                                                        <div className="text-xs text-muted-foreground mt-1">{item.deskripsi}</div>
                                                                     </TableCell>
-                                                                    <TableCell className="max-w-md">{item.deskripsi}</TableCell>
-                                                                    <TableCell className="text-right font-medium">{item.nilai.toFixed(2)}</TableCell>
-                                                                    <TableCell className="text-center font-bold">{getGradeLetter(item.nilai)}</TableCell>
-                                                                    <TableCell className="text-center">
-                                                                        {item.status === 'tercapai' ? <Badge className="bg-green-500">Tercapai</Badge> : <Badge variant="destructive">Belum Tercapai</Badge>}
-                                                                    </TableCell>
+                                                                    {item.rowSpan !== 0 && (
+                                                                        <>
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-right font-medium">
+                                                                                {item.courseScore?.toFixed(2)}
+                                                                            </TableCell>
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center font-bold">
+                                                                                {getGradeLetter(item.courseScore || 0)}
+                                                                            </TableCell>
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center">
+                                                                                {item.courseScore && item.courseScore >= 70
+                                                                                    ? <Badge className="bg-green-500">Tercapai</Badge>
+                                                                                    : <Badge variant="destructive">Belum Tercapai</Badge>}
+                                                                            </TableCell>
+                                                                        </>
+                                                                    )}
                                                                 </TableRow>
                                                             ))}
                                                         </TableBody>
@@ -317,9 +686,10 @@ const TranskripCPLPage = () => {
             </div >
 
             {/* PRINT LAYOUT PORTAL */}
-            {selectedStudent && createPortal(
-                <div id="print-root" className="bg-white text-black">
-                    <style>{`
+            {
+                selectedStudent && createPortal(
+                    <div id="print-root" className="bg-white text-black">
+                        <style>{`
                     @media print {
                         @page { 
                             size: A4;
@@ -371,165 +741,179 @@ const TranskripCPLPage = () => {
                         }
                     }
                 `}</style>
-                    <div className="">
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-2 relative border-b-2 border-black pb-2">
-                            <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                <img src={settings.logoUrl || "/logo.png"} alt="Logo" className="w-full h-full object-contain" />
+                        <div className="">
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-2 relative border-b-2 border-black pb-2">
+                                <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                                    <img src={settings.logoUrl || "/logo.png"} alt="Logo" className="w-full h-full object-contain" />
+                                </div>
+                                <div className="flex-1 text-center px-2">
+                                    <h1 className="text-base font-bold uppercase tracking-wide leading-tight">{settings.univName}</h1>
+                                    <p className="text-[10px] mt-1 leading-tight">{settings.univAddress}</p>
+                                    <p className="text-[10px] mt-1 leading-tight">{settings.univContact}</p>
+                                </div>
+                                <div className="w-20 h-20 flex-shrink-0"></div> {/* Spacer for centering */}
                             </div>
-                            <div className="flex-1 text-center px-2">
-                                <h1 className="text-base font-bold uppercase tracking-wide leading-tight">{settings.univName}</h1>
-                                <p className="text-[10px] mt-1 leading-tight">{settings.univAddress}</p>
-                                <p className="text-[10px] mt-1 leading-tight">{settings.univContact}</p>
-                            </div>
-                            <div className="w-20 h-20 flex-shrink-0"></div> {/* Spacer for centering */}
-                        </div>
 
-                        <div className="border-b border-black mb-4"></div>
+                            <div className="border-b border-black mb-4"></div>
 
-                        <h2 className="text-center text-base font-bold mb-4 uppercase">
-                            {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CPMK SEMENTARA'}
-                        </h2>
+                            <h2 className="text-center text-base font-bold mb-4 uppercase">
+                                {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CPMK SEMENTARA'}
+                            </h2>
 
-                        {/* Student Info */}
-                        <div className="grid grid-cols-2 gap-x-8 mb-4 text-[11px]">
-                            <div className="space-y-1">
-                                <div className="grid grid-cols-[100px_5px_1fr]">
-                                    <div>Program Studi</div>
-                                    <div>:</div>
-                                    <div className="uppercase font-medium">{selectedStudent.profile?.programStudi || '-'}</div>
+                            {/* Student Info */}
+                            <div className="grid grid-cols-2 gap-x-8 mb-4 text-[11px]">
+                                <div className="space-y-1">
+                                    <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div>Program Studi</div>
+                                        <div>:</div>
+                                        <div className="uppercase font-medium">{selectedStudent.profile?.programStudi || '-'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div>NIM</div>
+                                        <div>:</div>
+                                        <div className="uppercase font-medium">{selectedStudent.profile?.nim || '-'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div>Tempat Lahir</div>
+                                        <div>:</div>
+                                        <div className="uppercase font-medium">-</div>
+                                    </div>
+                                    <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div>Tanggal Lahir</div>
+                                        <div>:</div>
+                                        <div className="uppercase font-medium">-</div>
+                                    </div>
                                 </div>
-                                <div className="grid grid-cols-[100px_5px_1fr]">
-                                    <div>NIM</div>
-                                    <div>:</div>
-                                    <div className="uppercase font-medium">{selectedStudent.profile?.nim || '-'}</div>
-                                </div>
-                                <div className="grid grid-cols-[100px_5px_1fr]">
-                                    <div>Tempat Lahir</div>
-                                    <div>:</div>
-                                    <div className="uppercase font-medium">-</div>
-                                </div>
-                                <div className="grid grid-cols-[100px_5px_1fr]">
-                                    <div>Tanggal Lahir</div>
-                                    <div>:</div>
-                                    <div className="uppercase font-medium">-</div>
-                                </div>
-                            </div>
-                            <div className="space-y-1">
-                                <div className="grid grid-cols-[100px_5px_1fr]">
-                                    <div>Jenjang Pendidikan</div>
-                                    <div>:</div>
-                                    <div className="uppercase font-medium">SARJANA</div>
-                                </div>
-                                <div className="grid grid-cols-[100px_5px_1fr]">
-                                    <div>Nama</div>
-                                    <div>:</div>
-                                    <div className="uppercase font-medium">{selectedStudent.profile?.namaLengkap || '-'}</div>
-                                </div>
-                                <div className="grid grid-cols-[100px_5px_1fr]">
-                                    <div>Tahun Masuk</div>
-                                    <div>:</div>
-                                    <div className="uppercase font-medium">{selectedStudent.profile?.tahunMasuk || '-'}</div>
-                                </div>
-                                <div className="grid grid-cols-[100px_5px_1fr]">
-                                    <div>Semester</div>
-                                    <div>:</div>
-                                    <div className="uppercase font-medium">{selectedStudent.profile?.semester || '-'}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Table */}
-                        <div className="mb-4">
-                            <table className="w-full border-collapse border border-black text-[10px]">
-                                <thead>
-                                    <tr className="bg-gray-100">
-                                        <th className="border border-black p-1 w-8 text-center">NO</th>
-                                        <th className="border border-black p-1 w-20 text-center">KODE</th>
-                                        <th className="border border-black p-1 text-left">{activeTab === 'cpl' ? 'CAPAIAN PEMBELAJARAN / MATA KULIAH' : 'CPMK / MATA KULIAH'}</th>
-                                        <th className="border border-black p-1 w-12 text-center">NILAI</th>
-                                        <th className="border border-black p-1 w-10 text-center">HURUF</th>
-                                        <th className="border border-black p-1 w-16 text-center">STATUS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {activeTab === 'cpl' ? (
-                                        validTranskripList.map((item, index) => (
-                                            <tr key={index}>
-                                                <td className="border border-black p-1 text-center">{index + 1}</td>
-                                                <td className="border border-black p-1 text-center">{item.cpl.kodeCpl}</td>
-                                                <td className="border border-black p-1">
-                                                    <div className="font-bold mb-0.5">{item.cpl.deskripsi}</div>
-                                                    <div className="text-[9px] text-gray-600">
-                                                        MK: {item.mataKuliahList && item.mataKuliahList.length > 0
-                                                            ? item.mataKuliahList.map((mk) => mk.namaMk).join(', ')
-                                                            : (item.mataKuliah?.namaMk || '-')}
-                                                    </div>
-                                                </td>
-                                                <td className="border border-black p-1 text-center font-bold">{item.nilaiAkhir.toFixed(2)}</td>
-                                                <td className="border border-black p-1 text-center font-bold">{getGradeLetter(item.nilaiAkhir)}</td>
-                                                <td className="border border-black p-1 text-center">
-                                                    {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        transkripCpmkList.map((item, index) => (
-                                            <tr key={index}>
-                                                <td className="border border-black p-1 text-center">{index + 1}</td>
-                                                <td className="border border-black p-1 text-center">{item.kodeCpmk}</td>
-                                                <td className="border border-black p-1">
-                                                    <div className="font-bold">{item.mataKuliah.namaMk}</div>
-                                                    <div className="text-[9px] mb-0.5">Kode MK: {item.mataKuliah.kodeMk}</div>
-                                                    <div className="text-[9px] italic">{item.deskripsi}</div>
-                                                </td>
-                                                <td className="border border-black p-1 text-center font-bold">{item.nilai.toFixed(2)}</td>
-                                                <td className="border border-black p-1 text-center font-bold">{getGradeLetter(item.nilai)}</td>
-                                                <td className="border border-black p-1 text-center">
-                                                    {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Summary & Footer */}
-                        <div className="flex justify-between items-end break-inside-avoid mt-8 page-break-inside-avoid">
-                            <div className="border border-black p-2 w-56">
-                                <div className="font-bold mb-1 text-[10px]">KETERANGAN</div>
-                                <div className="grid grid-cols-[1fr_auto] gap-2 text-[10px]">
-                                    <div>Rata-rata Nilai</div>
-                                    <div className="font-bold">: {avgScore.toFixed(2)}</div>
-                                    <div>Total {activeTab === 'cpl' ? 'CPL' : 'CPMK'} Tercapai</div>
-                                    <div className="font-bold">: {activeTab === 'cpl' ? completedCPL : transkripCpmkList.filter(i => i.status === 'tercapai').length} / {activeTab === 'cpl' ? (totalCurriculumCpl || validTranskripList.length) : transkripCpmkList.length}</div>
+                                <div className="space-y-1">
+                                    <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div>Jenjang Pendidikan</div>
+                                        <div>:</div>
+                                        <div className="uppercase font-medium">SARJANA</div>
+                                    </div>
+                                    <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div>Nama</div>
+                                        <div>:</div>
+                                        <div className="uppercase font-medium">{selectedStudent.profile?.namaLengkap || '-'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div>Tahun Masuk</div>
+                                        <div>:</div>
+                                        <div className="uppercase font-medium">{selectedStudent.profile?.tahunMasuk || '-'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div>Semester</div>
+                                        <div>:</div>
+                                        <div className="uppercase font-medium">{selectedStudent.profile?.semester || '-'}</div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="text-center text-[10px]">
-                                <div className="mb-12">
-                                    <div>Cilacap, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-                                    <div className="font-bold">Ketua Program Studi</div>
-                                    <div className="italic">{selectedStudent?.profile?.programStudi || '........................'}</div>
+                            {/* Table */}
+                            <div className="mb-4">
+                                <table className="w-full border-collapse border border-black text-[10px]">
+                                    <thead>
+                                        <tr className="bg-gray-100">
+                                            <th className="border border-black p-1 w-8 text-center">NO</th>
+                                            <th className="border border-black p-1 text-left">MATA KULIAH</th>
+                                            <th className="border border-black p-1 text-left">{activeTab === 'cpl' ? 'CAPAIAN PEMBELAJARAN' : 'CPMK'}</th>
+                                            <th className="border border-black p-1 w-12 text-center">NILAI</th>
+                                            <th className="border border-black p-1 w-10 text-center">HURUF</th>
+                                            <th className="border border-black p-1 w-16 text-center">STATUS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {activeTab === 'cpl' ? (
+                                            validTranskripList.map((item, index) => (
+                                                <tr key={index}>
+                                                    <td className="border border-black p-1 text-center">{index + 1}</td>
+                                                    <td className="border border-black p-1 text-center">{item.cpl.kodeCpl}</td>
+                                                    <td className="border border-black p-1">
+                                                        <div className="font-bold mb-0.5">{item.cpl.deskripsi}</div>
+                                                        <div className="text-[9px] text-gray-600">
+                                                            MK: {item.mataKuliahList && item.mataKuliahList.length > 0
+                                                                ? item.mataKuliahList.map((mk) => mk.namaMk).join(', ')
+                                                                : (item.mataKuliah?.namaMk || '-')}
+                                                        </div>
+                                                    </td>
+                                                    <td className="border border-black p-1 text-center font-bold">{item.nilaiAkhir.toFixed(2)}</td>
+                                                    <td className="border border-black p-1 text-center font-bold">{getGradeLetter(item.nilaiAkhir)}</td>
+                                                    <td className="border border-black p-1 text-center">
+                                                        {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+
+                                            processedCpmkList.map((item, index) => (
+                                                <tr key={index}>
+                                                    {item.rowSpan !== 0 && (
+                                                        <td className="border border-black p-1 text-center align-top" rowSpan={item.rowSpan}>{item.courseNumber}</td>
+                                                    )}
+                                                    {item.rowSpan !== 0 && (
+                                                        <td className="border border-black p-1 align-top" rowSpan={item.rowSpan}>
+                                                            <div className="font-medium">{item.mataKuliah.kodeMk} - {item.mataKuliah.namaMk}</div>
+                                                        </td>
+                                                    )}
+                                                    <td className={`border-x border-black p-1 ${item.isLastInGroup ? 'border-b' : ''}`}>
+                                                        <div className="font-bold">{item.kodeCpmk}</div>
+                                                        <div className="text-[9px] italic">{item.deskripsi}</div>
+                                                    </td>
+                                                    {item.rowSpan !== 0 && (
+                                                        <>
+                                                            <td className="border border-black p-1 text-center font-bold align-top" rowSpan={item.rowSpan}>
+                                                                {item.courseScore?.toFixed(2)}
+                                                            </td>
+                                                            <td className="border border-black p-1 text-center font-bold align-top" rowSpan={item.rowSpan}>
+                                                                {getGradeLetter(item.courseScore || 0)}
+                                                            </td>
+                                                            <td className="border border-black p-1 text-center align-top" rowSpan={item.rowSpan}>
+                                                                {item.courseScore && item.courseScore >= 70 ? 'Tercapai' : 'Belum'}
+                                                            </td>
+                                                        </>
+                                                    )}
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Summary & Footer */}
+                            <div className="flex justify-between items-end break-inside-avoid mt-8 page-break-inside-avoid">
+                                <div className="border border-black p-2 w-56">
+                                    <div className="font-bold mb-1 text-[10px]">KETERANGAN</div>
+                                    <div className="grid grid-cols-[1fr_auto] gap-2 text-[10px]">
+                                        <div>Rata-rata Nilai</div>
+                                        <div className="font-bold">: {avgScore.toFixed(2)}</div>
+                                        <div>Total {activeTab === 'cpl' ? 'CPL' : 'CPMK'} Tercapai</div>
+                                        <div className="font-bold">: {activeTab === 'cpl' ? completedCPL : transkripCpmkList.filter(i => i.status === 'tercapai').length} / {activeTab === 'cpl' ? (totalCurriculumCpl || validTranskripList.length) : transkripCpmkList.length}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="font-bold underline uppercase">
-                                        {kaprodiData?.namaKaprodi || settings.kaprodiName || "( ........................................................ )"}
+
+                                <div className="text-center text-[10px]">
+                                    <div className="mb-12">
+                                        <div>Cilacap, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                                        <div className="font-bold">Ketua Program Studi</div>
+                                        <div className="italic">{selectedStudent?.profile?.programStudi || '........................'}</div>
                                     </div>
                                     <div>
-                                        NIDN. {kaprodiData?.nidnKaprodi || settings.kaprodiNip || "........................"}
+                                        <div className="font-bold underline uppercase">
+                                            {kaprodiData?.namaKaprodi || settings.kaprodiName || "( ........................................................ )"}
+                                        </div>
+                                        <div>
+                                            NIDN. {kaprodiData?.nidnKaprodi || settings.kaprodiNip || "........................"}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+                    </div>,
+                    document.body
+                )
+            }
         </DashboardPage >
     );
 };
 
 export default TranskripCPLPage;
-

@@ -35,6 +35,52 @@ export class MataKuliahPengampuService {
         });
     }
 
+    static async getAllAssignments(filters?: { prodiId?: string; semester?: number; fakultasId?: string }) {
+        const where: any = {};
+
+        if (filters?.semester) {
+            where.mataKuliah = { semester: filters.semester };
+        }
+
+        if (filters?.prodiId) {
+            where.mataKuliah = { ...where.mataKuliah, prodiId: filters.prodiId };
+        } else if (filters?.fakultasId) {
+            where.mataKuliah = { ...where.mataKuliah, prodi: { fakultasId: filters.fakultasId } };
+        }
+
+        return prisma.mataKuliahPengampu.findMany({
+            where,
+            include: {
+                mataKuliah: {
+                    select: {
+                        id: true,
+                        kodeMk: true,
+                        namaMk: true,
+                        semester: true,
+                        sks: true,
+                        prodi: { select: { nama: true } }
+                    }
+                },
+                dosen: {
+                    select: {
+                        id: true,
+                        namaLengkap: true,
+                        nidn: true,
+                        nip: true,
+                        user: { select: { email: true } }
+                    }
+                },
+                kelas: {
+                    select: { id: true, nama: true }
+                }
+            },
+            orderBy: [
+                { mataKuliah: { semester: 'asc' } },
+                { mataKuliah: { kodeMk: 'asc' } }
+            ]
+        });
+    }
+
     static async assignDosen(data: any, userId: string, userRole: string) {
         const { mataKuliahId, dosenId, kelasId, isPengampu } = data;
 
