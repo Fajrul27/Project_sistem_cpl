@@ -125,21 +125,26 @@ export class EvaluasiCPLService {
             // Calculate average CPL for this cohort
             // We want CUMULATIVE score, so we DO NOT filter by tahunAjaran of the grade.
             // The tahunAjaran param is used for Target and TindakLanjut context.
+            // Calculate average CPL for this cohort
+            // STRICT FILTERING: Filter by Tahun Ajaran and Semester if provided
             const whereNilai: any = {
                 mahasiswaId: { in: studentIds }
             };
+            if (tahunAjaran) whereNilai.tahunAjaran = tahunAjaran;
             if (semester) whereNilai.semester = semester;
 
-            console.log('Aggregating scores with filter:', JSON.stringify(whereNilai, null, 2));
-            const aggregations = await prisma.nilaiCpl.groupBy({
-                by: ['cplId'],
-                _avg: { nilai: true },
-                where: whereNilai
-            });
-            console.log(`Aggregation result count: ${aggregations.length}`);
-            console.log('Raw Aggregation Data:', JSON.stringify(aggregations, null, 2));
+            console.log('Fetching scores with strict filter:', JSON.stringify(whereNilai, null, 2));
 
-            // Get all CPLs for this prodi to ensure we show even those with 0 score
+            // Fetch ALL scores to calculate detailed metrics in memory
+            // (More flexible than groupBy for calculating % Pass per student)
+            const allScores = await prisma.nilaiCpl.findMany({
+                where: whereNilai,
+                include: { mataKuliah: true }
+            });
+
+            console.log(`Found ${allScores.length} score records`);
+
+            // Get all CPLs for this prodi
             console.log('Fetching all CPLs...');
             const allCpls = await prisma.cpl.findMany({
                 where: { prodiId, isActive: true },
@@ -154,20 +159,57 @@ export class EvaluasiCPLService {
             console.log(`Found ${allCpls.length} CPLs`);
 
             const evaluation = allCpls.map(cpl => {
-                const avgVal = aggregations.find(a => a.cplId === cpl.id)?._avg.nilai;
+                const cplScores = allScores.filter(s => s.cplId === cpl.id);
+                const target = targetMap.get(cpl.id) ?? 75.0;
 
-                // Safe Decimal conversion
-                let actual = 0;
-                if (avgVal) {
-                    if (typeof avgVal === 'object' && 'toNumber' in avgVal) {
-                        actual = (avgVal as any).toNumber();
-                    } else {
-                        actual = Number(avgVal);
-                    }
-                }
+                // 1. Calculate Actual Score (Average of all scores for this CPL)
+                // Note: This averages all "course-cpl" entries. 
+                // Alternatively, we could average per student first, then average the students.
+                // Let's average per student first to be fairer (student as unit of analysis).
 
-                const target = targetMap.get(cpl.id) ?? 75.0; // Default target if not set
+                const studentScoresMap = new Map<string, number[]>();
+                cplScores.forEach(s => {
+                    if (!studentScoresMap.has(s.mahasiswaId)) studentScoresMap.set(s.mahasiswaId, []);
+                    studentScoresMap.get(s.mahasiswaId)?.push(Number(s.nilai));
+                });
+
+                let totalStudentAvg = 0;
+                let passCount = 0;
+                let studentCountForCpl = 0;
+
+                studentScoresMap.forEach((scores) => {
+                    const studentAvg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                    totalStudentAvg += studentAvg;
+                    if (studentAvg >= target) passCount++;
+                    studentCountForCpl++;
+                });
+
+                const actual = studentCountForCpl > 0 ? totalStudentAvg / studentCountForCpl : 0;
+                const passPercentage = studentCountForCpl > 0 ? (passCount / studentCountForCpl) * 100 : 0;
                 const status = actual >= target ? 'Tercapai' : 'Tidak Tercapai';
+
+                // 2. Course Breakdown
+                const courseMap = new Map<string, { kode: string, name: string, total: number, count: number }>();
+                cplScores.forEach(s => {
+                    const mkId = s.mataKuliahId;
+                    if (!courseMap.has(mkId)) {
+                        courseMap.set(mkId, {
+                            kode: s.mataKuliah.kodeMk,
+                            name: s.mataKuliah.namaMk,
+                            total: 0,
+                            count: 0
+                        });
+                    }
+                    const entry = courseMap.get(mkId)!;
+                    entry.total += Number(s.nilai);
+                    entry.count++;
+                });
+
+                const courseBreakdown = Array.from(courseMap.values()).map(c => ({
+                    kodeMk: c.kode,
+                    namaMk: c.name,
+                    averageScore: Number((c.total / c.count).toFixed(2))
+                })).sort((a, b) => a.averageScore - b.averageScore); // Sort by lowest score first (to highlight issues)
 
                 return {
                     cplId: cpl.id,
@@ -175,7 +217,9 @@ export class EvaluasiCPLService {
                     deskripsi: cpl.deskripsi,
                     target,
                     actual: Number(actual.toFixed(2)),
+                    passPercentage: Number(passPercentage.toFixed(2)),
                     status,
+                    courseBreakdown,
                     tindakLanjut: cpl.tindakLanjutCPL[0] || null
                 };
             });

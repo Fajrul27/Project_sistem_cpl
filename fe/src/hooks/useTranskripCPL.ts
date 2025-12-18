@@ -105,6 +105,7 @@ export function useTranskripCPL() {
     const [prodiList, setProdiList] = useState<any[]>([]);
     const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
     const [selectedProdi, setSelectedProdi] = useState<string>("all");
+    const [selectedSemester, setSelectedSemester] = useState<string>("all");
 
     // Search state
     const [searchQuery, setSearchQuery] = useState("");
@@ -134,13 +135,11 @@ export function useTranskripCPL() {
         }
     }, [isMahasiswa, userId]);
 
-    // Fetch options and settings
+    // Initial data fetch (Settings & Filters)
     useEffect(() => {
-        if (roleLoading) return;
-        if (!isMahasiswa) fetchMahasiswaOptions(debouncedSearch);
         fetchSettings();
         fetchFilters();
-    }, [debouncedSearch, roleLoading, isMahasiswa, selectedFakultas, selectedProdi]);
+    }, []);
 
     const fetchFilters = async () => {
         try {
@@ -154,20 +153,9 @@ export function useTranskripCPL() {
         if (selectedFakultas && selectedFakultas !== 'all') {
             fetchProdiList(selectedFakultas).then(res => setProdiList(res.data || []));
         } else {
-            // Reset or fetch all prodi if needed, but usually we filter by fakultas
             fetchProdiList().then(res => setProdiList(res.data || []));
         }
     }, [selectedFakultas]);
-
-    // Fetch data when student/filters change
-    useEffect(() => {
-        if (selectedMahasiswa) {
-            fetchAllData();
-        } else {
-            // console.log("No selectedMahasiswa, setLoading false");
-            setLoading(false);
-        }
-    }, [selectedMahasiswa, semester, tahunAjaran]);
 
     const fetchSettings = async () => {
         try {
@@ -187,13 +175,18 @@ export function useTranskripCPL() {
         }
     };
 
-    const fetchMahasiswaOptions = async (query: string = "") => {
+    const fetchMahasiswaOptions = useCallback(async (query: string = "") => {
         try {
             if (query) setSearchLoading(true);
-            if (query) setSearchLoading(true);
-            const params: any = { q: query, limit: 20 };
+            const params: any = {
+                q: query,
+                limit: 50, // Increased limit to show more students initially
+                sortBy: 'nama', // Sort by name for better usability
+                sortOrder: 'asc'
+            };
             if (selectedFakultas !== 'all') params.fakultasId = selectedFakultas;
             if (selectedProdi !== 'all') params.prodiId = selectedProdi;
+            if (selectedSemester !== 'all') params.semester = selectedSemester;
 
             const response = await fetchMahasiswaList(params);
             const users = response?.data || [];
@@ -216,7 +209,22 @@ export function useTranskripCPL() {
         } finally {
             if (query) setSearchLoading(false);
         }
-    };
+    }, [selectedFakultas, selectedProdi, selectedSemester]);
+
+    // Fetch students when search or filters change
+    useEffect(() => {
+        if (roleLoading) return;
+        if (!isMahasiswa) fetchMahasiswaOptions(debouncedSearch);
+    }, [debouncedSearch, roleLoading, isMahasiswa, fetchMahasiswaOptions]);
+
+    // Fetch data when student/filters change
+    useEffect(() => {
+        if (selectedMahasiswa) {
+            fetchAllData();
+        } else {
+            setLoading(false);
+        }
+    }, [selectedMahasiswa, semester, tahunAjaran]);
 
     const fetchTranskrip = async () => {
         try {
@@ -318,6 +326,8 @@ export function useTranskripCPL() {
         setSelectedFakultas,
         selectedProdi,
         setSelectedProdi,
+        selectedSemester,
+        setSelectedSemester,
         fakultasList,
         prodiList,
         semester,

@@ -14,6 +14,7 @@ interface GetUsersParams {
     // New filters
     semester?: number;
     prodi?: string;
+    prodiId?: string;
     kelas?: string;
 
     sortBy?: string;
@@ -26,7 +27,7 @@ export class UserService {
             role, page, limit, q,
             userId, userRole, mataKuliahId,
             kelasId, fakultasId,
-            semester, prodi, kelas,
+            semester, prodi, prodiId, kelas,
             sortBy = 'createdAt', sortOrder = 'desc'
         } = params;
 
@@ -180,6 +181,11 @@ export class UserService {
         if (fakultasId) {
             ensureProfileWhere();
             where.profile.prodi = { fakultasId: fakultasId };
+        }
+
+        if (prodiId) {
+            ensureProfileWhere();
+            where.profile.prodiId = prodiId;
         }
 
         if (semester) {

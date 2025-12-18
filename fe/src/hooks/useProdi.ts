@@ -7,6 +7,7 @@ export interface Prodi {
     nama: string;
     kode?: string;
     jenjang?: string;
+    fakultasId?: string;
 }
 
 export function useProdi() {

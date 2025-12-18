@@ -75,17 +75,6 @@ export function AppSidebar() {
         ]
       },
       {
-        title: "Manajemen Pengguna",
-        icon: UserCog,
-        roles: ["admin", "dosen", "kaprodi"] as UserRole[],
-        items: [
-          { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", roles: ["admin"] },
-          { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", roles: ["admin"] },
-          { title: "Mahasiswa", url: "/dashboard/mahasiswa", roles: ["admin", "dosen", "kaprodi"] },
-          { title: "Pengguna Sistem", url: "/dashboard/users", roles: ["admin"] },
-        ]
-      },
-      {
         title: "Laporan & Evaluasi",
         icon: BarChart3,
         roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
@@ -94,6 +83,17 @@ export function AppSidebar() {
           { title: "Analisis CPL", url: "/dashboard/analisis", roles: ["admin", "dosen", "kaprodi"] },
           { title: "Evaluasi CPL", url: "/dashboard/evaluasi-cpl", roles: ["admin", "kaprodi", "dosen"] },
           { title: "Rekap Kuesioner", url: "/dashboard/rekap-kuesioner", roles: ["admin", "kaprodi"] },
+        ]
+      },
+      {
+        title: "Manajemen Pengguna",
+        icon: UserCog,
+        roles: ["admin", "dosen", "kaprodi"] as UserRole[],
+        items: [
+          { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", roles: ["admin"] },
+          { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", roles: ["admin"] },
+          { title: "Mahasiswa", url: "/dashboard/mahasiswa", roles: ["admin", "dosen", "kaprodi"] },
+          { title: "Pengguna Sistem", url: "/dashboard/users", roles: ["admin"] },
         ]
       },
       {

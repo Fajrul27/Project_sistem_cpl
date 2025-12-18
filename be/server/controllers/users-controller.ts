@@ -4,7 +4,7 @@ import { UserService } from '../services/UserService.js';
 // Get all users (admin only)
 export const getAllUsers = async (req: Request, res: Response) => {
     try {
-        const { role, page = 1, limit = 10, q, sortBy, sortOrder, kelasId, fakultasId, mataKuliahId, semester, prodi, kelas } = req.query;
+        const { role, page = 1, limit = 10, q, sortBy, sortOrder, kelasId, fakultasId, mataKuliahId, semester, prodi, prodiId, kelas } = req.query;
         const userId = (req as any).userId;
         const userRole = (req as any).userRole;
 
@@ -20,6 +20,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
             mataKuliahId: mataKuliahId as string,
             semester: semester ? Number(semester) : undefined,
             prodi: prodi as string,
+            prodiId: prodiId as string,
             kelas: kelas as string,
             sortBy: sortBy as string,
             sortOrder: sortOrder as string

@@ -50,7 +50,9 @@ const TranskripCPLPage = () => {
         selectedProdi,
         setSelectedProdi,
         fakultasList,
-        prodiList
+        prodiList,
+        selectedSemester,
+        setSelectedSemester
     } = useTranskripCPL();
 
     const [searchParams, setSearchParams] = useSearchParams();
@@ -235,6 +237,33 @@ const TranskripCPLPage = () => {
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium">Semester</label>
+                                                    <Select value={selectedSemester} onValueChange={setSelectedSemester}>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Semua Semester" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="all">Semua Semester</SelectItem>
+                                                            {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                                                                <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="pt-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        className="w-full"
+                                                        onClick={() => {
+                                                            setSelectedFakultas("all");
+                                                            setSelectedProdi("all");
+                                                            setSelectedSemester("all");
+                                                        }}
+                                                    >
+                                                        Reset Filter
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </PopoverContent>
                                     </Popover>
@@ -372,7 +401,6 @@ const TranskripCPLPage = () => {
                                                         <TableHead>Nama Profil</TableHead>
                                                         <TableHead>Deskripsi</TableHead>
                                                         <TableHead className="w-[200px]">Ketercapaian</TableHead>
-                                                        <TableHead className="text-center">Mapping CPL</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
@@ -400,11 +428,6 @@ const TranskripCPLPage = () => {
                                                                         </div>
                                                                         <Progress value={profil.percentage} className="h-2" />
                                                                     </div>
-                                                                </TableCell>
-                                                                <TableCell className="text-center">
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600">
-                                                                        <Eye size={16} />
-                                                                    </Button>
                                                                 </TableCell>
                                                             </TableRow>
                                                         ))
@@ -470,36 +493,6 @@ const TranskripCPLPage = () => {
                                 </TabsContent>
 
                                 <TabsContent value="cpmk" className="animate-in fade-in slide-in-from-top-4 duration-500">
-                                    <div className="grid gap-4 md:grid-cols-3 mb-6">
-                                        <Card>
-                                            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Rata-rata Nilai</CardTitle></CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">
-                                                    {transkripCpmkList.length > 0
-                                                        ? (transkripCpmkList.reduce((sum, item) => sum + item.nilai, 0) / transkripCpmkList.length).toFixed(2)
-                                                        : "0.00"}
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                        <Card>
-                                            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">CPMK Tercapai</CardTitle></CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">
-                                                    {transkripCpmkList.filter(item => item.status === 'tercapai').length} / {transkripCpmkList.length}
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                        <Card>
-                                            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Persentase Kelulusan</CardTitle></CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">
-                                                    {transkripCpmkList.length > 0
-                                                        ? ((transkripCpmkList.filter(item => item.status === 'tercapai').length / transkripCpmkList.length) * 100).toFixed(0)
-                                                        : 0}%
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
 
                                     {/* CPMK Chart & Analysis */}
                                     <div className="grid gap-4 md:grid-cols-7 mb-6">
@@ -610,6 +603,63 @@ const TranskripCPLPage = () => {
                                             </CardContent>
                                         </Card>
                                     </div>
+
+                                    {/* Profil Lulusan Section (Duplicated from CPL Tab) */}
+                                    <Card className="mb-6">
+                                        <CardHeader>
+                                            <CardTitle className="text-sm font-medium">Daftar Profil Lulusan</CardTitle>
+                                            <CardDescription>Menampilkan {profilLulusanList.length} dari {profilLulusanList.length} Profil Lulusan</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="w-[50px]">No</TableHead>
+                                                        <TableHead>Kode</TableHead>
+                                                        <TableHead>Nama Profil</TableHead>
+                                                        <TableHead>Deskripsi</TableHead>
+                                                        <TableHead className="w-[200px]">Ketercapaian</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {profilLulusanList.length > 0 ? (
+                                                        profilLulusanList.map((profil, idx) => (
+                                                            <TableRow key={profil.id}>
+                                                                <TableCell>{idx + 1}</TableCell>
+                                                                <TableCell>{profil.kode}</TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400">
+                                                                            <Briefcase size={16} />
+                                                                        </div>
+                                                                        <span className="font-medium">{profil.nama}</span>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="max-w-xs text-xs text-muted-foreground line-clamp-2">{profil.deskripsi}</TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <div className="flex justify-between text-xs">
+                                                                            <span>{profil.percentage.toFixed(2)}%</span>
+                                                                            <span className={profil.percentage >= 80 ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
+                                                                                {profil.percentage >= 80 ? "Tercapai" : "Belum Tercapai"}
+                                                                            </span>
+                                                                        </div>
+                                                                        <Progress value={profil.percentage} className="h-2" />
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))
+                                                    ) : (
+                                                        <TableRow>
+                                                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                                                Belum ada data profil lulusan
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </CardContent>
+                                    </Card>
 
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between">

@@ -20,6 +20,12 @@ export interface EvaluationItem {
     target: number;
     actual: number;
     status: 'Tercapai' | 'Tidak Tercapai';
+    passPercentage: number;
+    courseBreakdown: {
+        kodeMk: string;
+        namaMk: string;
+        averageScore: number;
+    }[];
     tindakLanjut: {
         id: string;
         akarMasalah: string;
@@ -93,6 +99,12 @@ export function useEvaluasiCPL() {
         }
     }, []);
 
+    const resetEvaluation = useCallback(() => {
+        setEvaluation([]);
+        setSummary({ totalCpl: 0, tercapai: 0, tidakTercapai: 0 });
+        setTargets([]);
+    }, []);
+
     return {
         loading,
         targets,
@@ -101,6 +113,8 @@ export function useEvaluasiCPL() {
         fetchTargets,
         saveTargets,
         fetchEvaluation,
-        saveTindakLanjut
+        fetchEvaluation,
+        saveTindakLanjut,
+        resetEvaluation
     };
 }

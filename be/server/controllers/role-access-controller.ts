@@ -57,7 +57,7 @@ export const updatePermission = async (req: Request, res: Response) => {
 // Initialize default permissions (Helper)
 export const initializePermissions = async (req: Request, res: Response) => {
     try {
-        // Define default resources and actions
+        // Define default resources
         const resources = [
             'dashboard',
             'visi_misi',
@@ -73,6 +73,7 @@ export const initializePermissions = async (req: Request, res: Response) => {
             'users',
             'transkrip_cpl',
             'analisis_cpl',
+            'evaluasi_cpl',
             'rekap_kuesioner',
             'settings'
         ];
@@ -82,23 +83,60 @@ export const initializePermissions = async (req: Request, res: Response) => {
 
         let count = 0;
 
+        // Helper to check if a role should have specific access
+        const shouldHaveAccess = (role: string, resource: string, action: string): boolean => {
+            // 1. ADMIN: Has access to EVERYTHING
+            if (role === 'admin') return true;
+
+            // 2. KAPRODI
+            if (role === 'kaprodi') {
+                // Full Management Access
+                if (['visi_misi', 'profil_lulusan', 'cpl', 'mata_kuliah', 'cpmk', 'kaprodi_data', 'mahasiswa', 'evaluasi_cpl', 'analisis_cpl'].includes(resource)) {
+                    return true;
+                }
+                // View Only Access
+                if (['dashboard', 'dosen_pengampu', 'users', 'transkrip_cpl', 'rekap_kuesioner', 'settings'].includes(resource)) {
+                    return action === 'view';
+                }
+                // No Access
+                return false;
+            }
+
+            // 3. DOSEN
+            if (role === 'dosen') {
+                // Operational Access (Input Nilai, Evaluasi)
+                if (['nilai_teknik', 'evaluasi_cpl'].includes(resource)) {
+                    return true;
+                }
+                // View Only Access (Standardization: CPMK must be view only)
+                if (['dashboard', 'visi_misi', 'profil_lulusan', 'cpl', 'mata_kuliah', 'cpmk', 'mahasiswa', 'transkrip_cpl', 'analisis_cpl'].includes(resource)) {
+                    return action === 'view';
+                }
+                // No Access
+                return false;
+            }
+
+            // 4. MAHASISWA
+            if (role === 'mahasiswa') {
+                // Input Kuesioner
+                if (resource === 'kuesioner') {
+                    return ['view', 'create', 'edit'].includes(action);
+                }
+                // View Only Access (Self Data)
+                if (['dashboard', 'visi_misi', 'profil_lulusan', 'cpl', 'transkrip_cpl'].includes(resource)) {
+                    return action === 'view';
+                }
+                // No Access
+                return false;
+            }
+
+            return false;
+        };
+
         for (const resource of resources) {
             for (const role of roles) {
                 for (const action of actions) {
-                    // Default logic (simplified)
-                    let isEnabled = false;
-
-                    if (role === 'admin') isEnabled = true;
-                    else if (action === 'view') isEnabled = true; // Default view for all (refine later)
-
-                    // Specific overrides based on current system logic
-                    if (role === 'mahasiswa') {
-                        if (['users', 'dosen_pengampu', 'kaprodi_data', 'nilai_teknik', 'rekap_kuesioner', 'settings'].includes(resource)) {
-                            isEnabled = false;
-                        }
-                        if (resource === 'kuesioner' && action === 'create') isEnabled = true;
-                        if (action !== 'view' && resource !== 'kuesioner') isEnabled = false;
-                    }
+                    const isEnabled = shouldHaveAccess(role, resource, action);
 
                     await prisma.rolePermission.upsert({
                         where: {
@@ -108,7 +146,7 @@ export const initializePermissions = async (req: Request, res: Response) => {
                                 action
                             }
                         },
-                        update: {}, // Don't overwrite if exists
+                        update: { isEnabled }, // Force update to reset to defaults
                         create: {
                             role: role as any,
                             resource,
@@ -121,7 +159,7 @@ export const initializePermissions = async (req: Request, res: Response) => {
             }
         }
 
-        res.json({ message: `Initialized ${count} permissions` });
+        res.json({ message: `Initialized ${count} permissions with standard defaults` });
     } catch (error) {
         console.error('Error initializing permissions:', error);
         res.status(500).json({ error: 'Gagal inisialisasi hak akses' });
