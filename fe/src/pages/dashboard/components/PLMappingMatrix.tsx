@@ -29,8 +29,9 @@ export const PLMappingMatrix = ({
   profilList,
   cplList,
   onUpdate,
-  loading = false
-}: PLMappingMatrixProps) => {
+  loading = false,
+  readOnly = false
+}: PLMappingMatrixProps & { readOnly?: boolean }) => {
   const [mappings, setMappings] = useState<Record<string, Set<string>>>({});
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState<Set<string>>(new Set());
@@ -48,6 +49,8 @@ export const PLMappingMatrix = ({
   }, [profilList]);
 
   const handleToggle = (profilId: string, cplId: string) => {
+    if (readOnly) return; // Prevent toggle if readOnly
+
     setMappings(prev => {
       const currentSet = new Set(prev[profilId] || []);
       if (currentSet.has(cplId)) {
@@ -66,6 +69,7 @@ export const PLMappingMatrix = ({
   };
 
   const handleBatchSave = async () => {
+    if (readOnly) return;
     setSaving(true);
     try {
       const promises = Array.from(hasChanges).map(profilId => {
@@ -103,14 +107,16 @@ export const PLMappingMatrix = ({
             <ul className="list-disc pl-4 space-y-0.5 text-blue-700/80 dark:text-blue-300/80">
               <li>Klik kotak pertemuan untuk menghubungkan Profil Lulusan dengan CPL.</li>
               <li>Tanda <span className="font-bold">Check</span> menandakan terhubung.</li>
-              <li>Jangan lupa klik tombol <span className="font-bold">Simpan Semua Perubahan</span> setelah selesai.</li>
+              {!readOnly && <li>Jangan lupa klik tombol <span className="font-bold">Simpan Semua Perubahan</span> setelah selesai.</li>}
             </ul>
           </div>
         </div>
-        <Button onClick={handleBatchSave} disabled={saving || hasChanges.size === 0} className="shadow-sm">
-          {saving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-          Simpan Semua Perubahan
-        </Button>
+        {!readOnly && (
+          <Button onClick={handleBatchSave} disabled={saving || hasChanges.size === 0} className="shadow-sm">
+            {saving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            Simpan Semua Perubahan
+          </Button>
+        )}
       </div>
 
       <div className="border rounded-lg shadow-sm bg-background overflow-hidden relative">
@@ -168,14 +174,15 @@ export const PLMappingMatrix = ({
                     return (
                       <TableCell
                         key={`${profil.id}-${cpl.id}`}
-                        className={`p-0 border-r border-dashed border-border/50 last:border-r-0 relative align-middle cursor-pointer transition-colors ${isChecked ? 'bg-primary/5 dark:bg-primary/10' : 'hover:bg-muted/30'}`}
+                        className={`p-0 border-r border-dashed border-border/50 last:border-r-0 relative align-middle transition-colors ${readOnly ? 'cursor-default' : 'cursor-pointer'} ${isChecked ? 'bg-primary/5 dark:bg-primary/10' : (!readOnly && 'hover:bg-muted/30')}`}
                         onClick={() => handleToggle(profil.id, cpl.id)}
                       >
                         <div className="flex flex-col items-center justify-center w-full h-[80px] relative group/cell">
                           <Checkbox
                             checked={isChecked}
                             onCheckedChange={() => handleToggle(profil.id, cpl.id)}
-                            className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground scale-125 pointer-events-none"
+                            disabled={readOnly}
+                            className={`data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground scale-125 pointer-events-none ${readOnly ? 'opacity-50' : ''}`}
                           />
                         </div>
                       </TableCell>

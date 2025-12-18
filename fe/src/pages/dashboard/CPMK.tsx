@@ -151,7 +151,7 @@ const CPMKPage = () => {
         setEditingCpmk(null);
     };
 
-    const canEdit = role === "admin" || role === "dosen";
+    const canEdit = role === "admin" || role === "kaprodi";
 
     const hasActiveFilter =
         filters.selectedFakultas !== "all" ||
@@ -676,6 +676,7 @@ const CPMKPage = () => {
                                             if (!selectedMK) return undefined;
                                             return selectedMK.mataKuliah?.prodiId || selectedMK.prodiId;
                                         })()}
+                                        readOnly={role === 'dosen'}
                                     />
                                 ) : (
                                     <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed">

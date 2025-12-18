@@ -104,7 +104,7 @@ const App = () => (
             <Route
               path="nilai-teknik"
               element={
-                <RequireRole roles={["admin", "kaprodi"]}>
+                <RequireRole roles={["admin", "kaprodi", "dosen"]}>
                   <InputNilaiTeknikPage />
                 </RequireRole>
               }
@@ -139,8 +139,16 @@ const App = () => (
                 <RekapKuesionerPage />
               </RequireRole>
             } />
-            <Route path="rubrik/:cpmkId" element={<RubrikManager />} />
-            <Route path="evaluasi/:mataKuliahId" element={<EvaluasiMataKuliah />} />
+            <Route path="rubrik/:cpmkId" element={
+              <RequireRole roles={["admin", "kaprodi", "dosen"]}>
+                <RubrikManager />
+              </RequireRole>
+            } />
+            <Route path="evaluasi/:mataKuliahId" element={
+              <RequireRole roles={["admin", "kaprodi", "dosen"]}>
+                <EvaluasiMataKuliah />
+              </RequireRole>
+            } />
 
             <Route
               path="settings"

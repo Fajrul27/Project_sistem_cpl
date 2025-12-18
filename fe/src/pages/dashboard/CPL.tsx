@@ -571,6 +571,7 @@ const CPLPage = () => {
                     return success;
                   }}
                   loading={loadingProfil}
+                  readOnly={role === 'dosen'}
                 />
               )}
             </CardContent>

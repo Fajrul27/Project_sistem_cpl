@@ -102,7 +102,7 @@ const MataKuliahPage = () => {
     setEditingMK(null);
   };
 
-  const canManage = role === "admin";
+  const canManage = role === "admin" || role === "kaprodi";
   const canEvaluate = role === "admin" || role === "dosen" || role === "kaprodi";
   const showActions = canManage || canEvaluate;
 

@@ -70,8 +70,19 @@ export function AppSidebar() {
         roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
         items: [
           { title: "CPMK & Mapping CPMK - CPL", url: "/dashboard/cpmk", roles: ["admin", "dosen", "kaprodi"] },
-          { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", roles: ["admin", "kaprodi"] },
+          { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", roles: ["admin", "kaprodi", "dosen"] },
           { title: "Isi Kuesioner CPL", url: "/dashboard/kuesioner", roles: ["mahasiswa"] },
+        ]
+      },
+      {
+        title: "Manajemen Pengguna",
+        icon: UserCog,
+        roles: ["admin", "dosen", "kaprodi"] as UserRole[],
+        items: [
+          { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", roles: ["admin", "kaprodi"] },
+          { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", roles: ["admin"] },
+          { title: "Mahasiswa", url: "/dashboard/mahasiswa", roles: ["admin", "dosen", "kaprodi"] },
+          { title: "Pengguna Sistem", url: "/dashboard/users", roles: ["admin"] },
         ]
       },
       {
@@ -86,22 +97,11 @@ export function AppSidebar() {
         ]
       },
       {
-        title: "Manajemen Pengguna",
-        icon: UserCog,
-        roles: ["admin", "dosen", "kaprodi"] as UserRole[],
-        items: [
-          { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", roles: ["admin"] },
-          { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", roles: ["admin"] },
-          { title: "Mahasiswa", url: "/dashboard/mahasiswa", roles: ["admin", "dosen", "kaprodi"] },
-          { title: "Pengguna Sistem", url: "/dashboard/users", roles: ["admin"] },
-        ]
-      },
-      {
         title: "Sistem",
         icon: Settings,
         roles: ["admin", "dosen", "kaprodi"] as UserRole[],
         items: [
-          { title: "Pengaturan", url: "/dashboard/settings", roles: ["admin", "dosen", "kaprodi"] },
+          { title: "Pengaturan", url: "/dashboard/settings", roles: ["admin", "kaprodi"] },
           { title: "Akses Role", url: "/dashboard/role-access", roles: ["admin"] },
         ]
       }

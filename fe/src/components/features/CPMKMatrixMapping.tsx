@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/common/LoadingScreen";
 import { toast } from "sonner";
@@ -20,6 +19,7 @@ import { cn } from "@/lib/utils";
 interface MatrixProps {
     mataKuliahId: string;
     prodiId?: string;
+    readOnly?: boolean;
 }
 
 interface CellData {
@@ -29,7 +29,7 @@ interface CellData {
     isDirty: boolean;
 }
 
-export function CPMKMatrixMapping({ mataKuliahId, prodiId }: MatrixProps) {
+export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false }: MatrixProps) {
     const [cpmks, setCpmks] = useState<any[]>([]);
     const [cpls, setCpls] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -97,6 +97,8 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId }: MatrixProps) {
     };
 
     const handleToggle = (cpmkId: string, cplId: string) => {
+        if (readOnly) return;
+
         setMatrix(prev => {
             const cell = prev[cpmkId][cplId];
             return {
@@ -115,6 +117,8 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId }: MatrixProps) {
     };
 
     const handleBobotChange = (cpmkId: string, cplId: string, val: string) => {
+        if (readOnly) return;
+
         let numVal = Number(val);
         if (numVal < 0) numVal = 0;
         if (numVal > 100) numVal = 100;
@@ -133,6 +137,7 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId }: MatrixProps) {
     };
 
     const saveChanges = async () => {
+        if (readOnly) return;
         setSaving(true);
         try {
             const promises: Promise<any>[] = [];
@@ -195,10 +200,12 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId }: MatrixProps) {
                         </ul>
                     </div>
                 </div>
-                <Button onClick={saveChanges} disabled={saving} className="shadow-sm">
-                    {saving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                    Simpan Semua Perubahan
-                </Button>
+                {!readOnly && (
+                    <Button onClick={saveChanges} disabled={saving} className="shadow-sm">
+                        {saving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                        Simpan Semua Perubahan
+                    </Button>
+                )}
             </div>
 
             <div className="border rounded-lg shadow-sm bg-background overflow-hidden relative">
@@ -281,13 +288,13 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId }: MatrixProps) {
                                                     key={cpl.id}
                                                     className={cn(
                                                         "p-0 border-r border-dashed border-border/50 last:border-r-0 relative align-middle",
-                                                        !cell.isMapped ? "hover:bg-muted/30 cursor-pointer" : "bg-primary/5 dark:bg-primary/10"
+                                                        !cell.isMapped ? (readOnly ? "cursor-default" : "hover:bg-muted/30 cursor-pointer") : "bg-primary/5 dark:bg-primary/10"
                                                     )}
-                                                    onClick={() => !cell.isMapped && handleToggle(cpmk.id, cpl.id)}
+                                                    onClick={() => !readOnly && !cell.isMapped && handleToggle(cpmk.id, cpl.id)}
                                                 >
                                                     <div className="flex flex-col items-center justify-center w-full h-[70px] relative group/cell">
                                                         {!cell.isMapped ? (
-                                                            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/40 group-hover/cell:text-primary transition-colors">
+                                                            <div className={`absolute inset-0 flex items-center justify-center text-muted-foreground/40 ${!readOnly && "group-hover/cell:text-primary"} transition-colors`}>
                                                                 <span className="text-2xl font-light select-none bg-muted/20 rounded-full w-8 h-8 flex items-center justify-center">+</span>
                                                             </div>
                                                         ) : (
@@ -302,22 +309,25 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId }: MatrixProps) {
                                                                             onChange={(e) => handleBobotChange(cpmk.id, cpl.id, e.target.value)}
                                                                             onFocus={(e) => e.target.select()}
                                                                             placeholder="0"
+                                                                            disabled={readOnly}
                                                                         />
                                                                         <span className="absolute right-2 top-2.5 text-xs text-muted-foreground pointer-events-none font-medium">%</span>
                                                                     </div>
                                                                 </div>
 
                                                                 {/* Unmap Button (X) - visible on hover */}
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleToggle(cpmk.id, cpl.id);
-                                                                    }}
-                                                                    className="absolute top-1 right-1 opacity-0 group-hover/cell:opacity-100 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-md hover:bg-destructive/90 transition-all z-10"
-                                                                    title="Hapus Mapping"
-                                                                >
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                                                                </button>
+                                                                {!readOnly && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleToggle(cpmk.id, cpl.id);
+                                                                        }}
+                                                                        className="absolute top-1 right-1 opacity-0 group-hover/cell:opacity-100 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-md hover:bg-destructive/90 transition-all z-10"
+                                                                        title="Hapus Mapping"
+                                                                    >
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                                                    </button>
+                                                                )}
                                                             </>
                                                         )}
                                                     </div>
@@ -339,7 +349,6 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId }: MatrixProps) {
                                                     className={cn("h-2 w-16",
                                                         isValid ? "bg-green-100 dark:bg-green-950" : "bg-muted"
                                                     )}
-                                                // Customize indicator color via global CSS or style override if needed, logical class manipulation is safer
                                                 />
                                                 {!isValid && !isZero && (
                                                     <TooltipProvider>
