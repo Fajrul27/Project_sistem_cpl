@@ -362,7 +362,7 @@ export const supabase = {
 
         const session = {
           access_token: 'cookie', // Dummy token for frontend logic compatibility
-          user: { id: data.user.id, email: data.user.email }
+          user: { ...data.user }
         };
 
         // setToken(data.token); // No longer needed
@@ -434,7 +434,7 @@ export const supabase = {
           data: {
             session: {
               access_token: 'cookie',
-              user: { id: user.id, email: user.email }
+              user: { ...user }
             }
           },
           error: null

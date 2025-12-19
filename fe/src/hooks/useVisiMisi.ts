@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePermission } from "@/contexts/PermissionContext"; // Add this
+
 
 export interface VisiMisi {
     id: string;
@@ -39,17 +41,19 @@ export function useVisiMisi() {
         prodiId: ""
     });
 
-    const canEdit = role === "admin" || role === "kaprodi";
+    const { can } = usePermission();
+    const canEdit = can('edit', 'visi_misi') || can('create', 'visi_misi');
+    const canViewAll = can('view_all', 'visi_misi') || role === 'admin';
 
     useEffect(() => {
         if (!roleLoading) {
             fetchInitialData();
         }
-    }, [role, profile, roleLoading]);
+    }, [role, profile, roleLoading, canViewAll]);
 
-    // Fetch Prodi when Fakultas changes (for Admin)
+    // Fetch Prodi when Fakultas changes (for Admin/ViewAll)
     useEffect(() => {
-        if (role === "admin" && selectedFakultas) {
+        if (canViewAll && selectedFakultas) {
             const fetchProdiByFakultas = async () => {
                 try {
                     const res = await api.get(`/prodi?fakultasId=${selectedFakultas}`);
@@ -63,12 +67,12 @@ export function useVisiMisi() {
                 }
             };
             fetchProdiByFakultas();
-        } else if (role === "admin" && !selectedFakultas) {
+        } else if (canViewAll && !selectedFakultas) {
             setProdiList([]);
             setSelectedProdi("");
             setVisiMisiList([]);
         }
-    }, [selectedFakultas, role]);
+    }, [selectedFakultas, canViewAll]);
 
     useEffect(() => {
         if (selectedProdi) {
@@ -81,19 +85,15 @@ export function useVisiMisi() {
 
     const fetchInitialData = async () => {
         try {
-            // Fetch Fakultas List for Admin
-            if (role === "admin") {
+            // Fetch Fakultas List for Admin/ViewAll
+            if (canViewAll) {
                 const res = await api.get("/fakultas");
                 setFakultasList(res.data);
-                // Don't auto-select fakultas
-                // if (res.data.length > 0) {
-                //     setSelectedFakultas(res.data[0].id);
-                // }
-            } else if ((role === "kaprodi" || role === "dosen" || role === "mahasiswa") && profile?.prodiId) {
-                // Kaprodi, Dosen, and Mahasiswa automatically selected
+            } else if (!canViewAll && profile?.prodiId) {
+                // Anyone else restricted to their prodi
                 setSelectedProdi(profile.prodiId);
-            } else if (role === "kaprodi" || role === "dosen" || role === "mahasiswa") {
-                console.warn("User has role but missing prodiId in profile");
+            } else if (!canViewAll) {
+                console.warn("User missing prodiId in profile");
             }
         } catch (error) {
             console.error("Error fetching initial data:", error);

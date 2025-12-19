@@ -47,6 +47,30 @@ export class MataKuliahService {
             } else if (profile?.programStudi) {
                 where.programStudi = profile.programStudi;
             }
+        } else if (userRole === 'mahasiswa') {
+            const profile = await prisma.profile.findUnique({ where: { userId } });
+            if (profile?.kelasId) {
+                const enrolled = await prisma.mataKuliahPengampu.findMany({
+                    where: { kelasId: profile.kelasId },
+                    select: { mataKuliahId: true },
+                    distinct: ['mataKuliahId']
+                });
+                const ids = enrolled.map(e => e.mataKuliahId);
+                if (ids.length > 0) {
+                    where.id = { in: ids };
+                } else {
+                    // No courses found for this class
+                    where.id = { in: [] }; // Prisma handles empty in array as "match nothing" usually, or strictly false
+                    // Actually Prisma `in: []` returns nothing, which is correct.
+                }
+            } else {
+                // No class assigned, so no courses followed
+                where.id = { in: [] };
+
+                // Optional: Fallback to show courses they have GRADES in (History)?
+                // For now, adhere to "di ikuti" (active following via Class). 
+                // If the user wants history, they check Transkrip.
+            }
         }
 
         // Handle pagination

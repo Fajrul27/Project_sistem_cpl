@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, List as ListIcon, Table as TableIcon } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, List as ListIcon, Table as TableIcon, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePermission } from "@/contexts/PermissionContext";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useCPL, CPL } from "@/hooks/useCPL";
 import { PLMappingMatrix } from "./components/PLMappingMatrix";
@@ -29,7 +30,9 @@ type FormData = {
 
 const CPLPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { role } = useUserRole();
+  const { can } = usePermission();
   const {
     cplList, // Now filtered
     kategoriList,
@@ -214,7 +217,8 @@ const CPLPage = () => {
     setEditingCPL(null);
   };
 
-  const canEdit = role === "admin" || role === "kaprodi";
+  const canEdit = can('edit', 'cpl') || can('create', 'cpl') || can('delete', 'cpl'); // Broaden to management rights
+  const canViewAll = can('view_all', 'cpl') || role === 'admin';
 
   // Use full lists for filter options now since we don't have all data client-side
   const kategoriOptions = kategoriList.map(k => k.nama);
@@ -230,10 +234,19 @@ const CPLPage = () => {
     );
   }
 
+  const showBackButton = location.state?.from === 'profil-lulusan';
+
+  const actions = showBackButton ? (
+    <Button variant="outline" size="sm" onClick={() => navigate('/dashboard/profil-lulusan', { state: { filters: location.state?.filters } })} className="gap-2">
+      <ArrowLeft className="w-4 h-4" /> Kembali
+    </Button>
+  ) : undefined;
+
   return (
     <DashboardPage
       title="Data CPL & Mapping"
       description="Kelola Capaian Pembelajaran Lulusan dan Mapping ke Profil Lulusan"
+      actions={actions}
     >
       <div className="space-y-6">
 
@@ -292,13 +305,13 @@ const CPLPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {role !== 'dosen' && (
+              {(canViewAll || role === 'kaprodi') && (
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Program Studi</Label>
                   <Select
                     value={cplFilters.prodiFilter}
                     onValueChange={setProdiFilter}
-                    disabled={!cplFilters.fakultasFilter && role === 'admin'} // Optional: disable if no fakultas selected? Or allow all?
+                    disabled={!cplFilters.fakultasFilter && canViewAll} // Optional: disable if no fakultas selected
                   // User requested hierarchical, so maybe good to keep it open or dependent.
                   // In PL page we disabled it. Here let's keep it enabled but it will show all if no fakultas selected (or filtered if fakultas selected).
                   // Actually, fetchProdi depends on fakultasFilter. So if no fakultasFilter, it fetches all prodis.
@@ -398,7 +411,7 @@ const CPLPage = () => {
                         <Select
                           value={formData.prodiId}
                           onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
-                          disabled={role === 'kaprodi'}
+                          disabled={!canViewAll}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih Program Studi" />
@@ -552,7 +565,7 @@ const CPLPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {cplFilters.prodiFilter === 'all' && role !== 'kaprodi' && !currentSearchTerm ? (
+              {cplFilters.prodiFilter === 'all' && canViewAll && !currentSearchTerm ? (
                 <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed">
                   <div className="p-4 bg-muted rounded-full mb-4">
                     <TableIcon className="w-8 h-8 text-muted-foreground/50" />
@@ -571,13 +584,14 @@ const CPLPage = () => {
                     return success;
                   }}
                   loading={loadingProfil}
-                  readOnly={role === 'dosen'}
+                  readOnly={!canEdit}
                 />
               )}
             </CardContent>
           </Card>
         )}
       </div >
+
 
       <DeleteConfirmationDialog
         open={deleteDialogOpen}

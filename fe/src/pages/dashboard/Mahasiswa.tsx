@@ -14,8 +14,10 @@ import { Search, TrendingUp, SlidersHorizontal } from "lucide-react";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useMahasiswa, Profile } from "@/hooks/useMahasiswa";
+import { usePermission } from "@/contexts/PermissionContext";
 
 const MahasiswaPage = () => {
+  const { can } = usePermission();
   const {
     profiles,
     fakultasList,
@@ -85,7 +87,8 @@ const MahasiswaPage = () => {
     filters.kelasFilter !== "all" ||
     filters.fakultasFilter !== "all";
 
-  // Removed blocking loader
+  // Const for checks
+  const isDosen = currentUser?.role === 'dosen';
 
   return (
     <DashboardPage
@@ -121,8 +124,8 @@ const MahasiswaPage = () => {
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-80 space-y-4">
-              {/* Fakultas Filter (Admin Only) */}
-              {currentUser?.role === 'admin' && (
+              {/* Fakultas Filter (Admin Only/Can View All) */}
+              {can('view_all', 'fakultas') && (
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Fakultas</Label>
                   <Select value={filters.fakultasFilter} onValueChange={setFakultasFilter}>
@@ -139,8 +142,8 @@ const MahasiswaPage = () => {
                 </div>
               )}
 
-              {/* Prodi Filter */}
-              {currentUser?.role !== 'dosen' && (
+              {/* Prodi Filter - Hide for Dosen if they are restricted */}
+              {!isDosen && (
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Program Studi</Label>
                   <Select value={filters.prodiFilter} onValueChange={setProdiFilter}>
@@ -291,10 +294,6 @@ const MahasiswaPage = () => {
                         if (start + 4 > pagination.totalPages) {
                           start = Math.max(1, pagination.totalPages - 4);
                         }
-
-                        // Recalculate p based on new logic
-                        // Wait, simpler approach: just render window directly
-                        // But sticking to the loop
                         p = start + i;
 
                         if (p > pagination.totalPages) return null;
@@ -457,7 +456,6 @@ const MahasiswaPage = () => {
                   </CardContent>
                 </Card>
 
-                {/* Analysis & Recommendations */}
                 {/* Analysis & Recommendations */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Strengths */}

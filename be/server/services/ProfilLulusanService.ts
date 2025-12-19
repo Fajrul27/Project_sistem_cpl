@@ -69,6 +69,7 @@ export class ProfilLulusanService {
                     kode: validated.kode,
                     nama: validated.nama,
                     deskripsi: validated.deskripsi,
+                    targetKetercapaian: validated.targetKetercapaian,
                     prodiId: validated.prodiId,
                     isActive: validated.isActive ?? true
                 }
@@ -108,6 +109,7 @@ export class ProfilLulusanService {
                     kode: validated.kode,
                     nama: validated.nama,
                     deskripsi: validated.deskripsi,
+                    targetKetercapaian: validated.targetKetercapaian,
                     prodiId: validated.prodiId,
                     isActive: validated.isActive
                 }

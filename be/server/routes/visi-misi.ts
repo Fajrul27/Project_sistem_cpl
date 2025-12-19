@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { authMiddleware, requireRole, requirePermission } from '../middleware/auth.js';
 import {
     getVisiMisi,
     createVisiMisi,
@@ -14,12 +14,12 @@ const router = Router();
 router.get('/', authMiddleware, getVisiMisi);
 
 // POST /api/visi-misi
-router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), createVisiMisi);
+router.post('/', authMiddleware, requirePermission('visi_misi', 'create'), createVisiMisi);
 
 // PUT /api/visi-misi/:id
-router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), updateVisiMisi);
+router.put('/:id', authMiddleware, requirePermission('visi_misi', 'edit'), updateVisiMisi);
 
 // DELETE /api/visi-misi/:id
-router.delete('/:id', authMiddleware, requireRole('admin', 'kaprodi'), deleteVisiMisi);
+router.delete('/:id', authMiddleware, requirePermission('visi_misi', 'delete'), deleteVisiMisi);
 
 export default router;

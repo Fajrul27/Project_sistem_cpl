@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { LogOut, Settings, User, ChevronDown, Moon, Sun } from "lucide-react";
+import { LogOut, User, ChevronDown, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -155,13 +155,7 @@ export function DashboardNavbar({ title, actions, user, profile, role }: NavbarP
               <span>Profil Saya</span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem
-              onClick={() => navigate("/dashboard/settings")}
-              className="cursor-pointer"
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Pengaturan</span>
-            </DropdownMenuItem>
+
 
             <DropdownMenuSeparator />
 

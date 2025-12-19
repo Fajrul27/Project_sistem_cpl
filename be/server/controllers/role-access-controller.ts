@@ -19,10 +19,38 @@ export const getPermissions = async (req: Request, res: Response) => {
     }
 };
 
-// Update permission
+// Update permission (Single or Batch)
 export const updatePermission = async (req: Request, res: Response) => {
     try {
-        const { role, resource, action, isEnabled } = req.body;
+        const data = req.body;
+
+        // Handle Batch Update
+        if (Array.isArray(data)) {
+            const updates = data.map((item: any) =>
+                prisma.rolePermission.upsert({
+                    where: {
+                        role_resource_action: {
+                            role: item.role,
+                            resource: item.resource,
+                            action: item.action
+                        }
+                    },
+                    update: { isEnabled: item.isEnabled },
+                    create: {
+                        role: item.role,
+                        resource: item.resource,
+                        action: item.action,
+                        isEnabled: item.isEnabled
+                    }
+                })
+            );
+
+            await prisma.$transaction(updates);
+            return res.json({ message: 'Hak akses berhasil diperbarui' });
+        }
+
+        // Handle Single Update
+        const { role, resource, action, isEnabled } = data;
 
         if (!role || !resource || !action) {
             return res.status(400).json({ error: 'Role, resource, dan action harus diisi' });
@@ -75,10 +103,13 @@ export const initializePermissions = async (req: Request, res: Response) => {
             'analisis_cpl',
             'evaluasi_cpl',
             'rekap_kuesioner',
-            'settings'
+            'settings',
+            'evaluasi_mk',
+            'role_access',
+            'fakultas'
         ];
 
-        const actions = ['view', 'create', 'edit', 'delete'];
+        const actions = ['view', 'create', 'edit', 'delete', 'view_all', 'verify'];
         const roles = ['admin', 'dosen', 'kaprodi', 'mahasiswa'];
 
         let count = 0;
@@ -90,12 +121,16 @@ export const initializePermissions = async (req: Request, res: Response) => {
 
             // 2. KAPRODI
             if (role === 'kaprodi') {
-                // Full Management Access
-                if (['visi_misi', 'profil_lulusan', 'cpl', 'mata_kuliah', 'cpmk', 'kaprodi_data', 'mahasiswa', 'evaluasi_cpl', 'analisis_cpl'].includes(resource)) {
-                    return true;
+                // Full Management Access (CRUD)
+                // Added: dosen_pengampu, nilai_teknik
+                if (['visi_misi', 'profil_lulusan', 'cpl', 'mata_kuliah', 'cpmk', 'kaprodi_data', 'mahasiswa', 'evaluasi_cpl', 'analisis_cpl', 'evaluasi_mk', 'dosen_pengampu', 'nilai_teknik'].includes(resource)) {
+                    if (resource === 'evaluasi_mk' && action === 'verify') return true; // Kaprodi verifies evaluations
+                    if (action === 'view_all') return true;
+                    return ['view', 'create', 'edit', 'delete'].includes(action);
                 }
                 // View Only Access
-                if (['dashboard', 'dosen_pengampu', 'users', 'transkrip_cpl', 'rekap_kuesioner', 'settings'].includes(resource)) {
+                if (['dashboard', 'users', 'transkrip_cpl', 'rekap_kuesioner', 'settings', 'fakultas'].includes(resource)) {
+                    if (action === 'view_all') return resource === 'rekap_kuesioner' || resource === 'fakultas';
                     return action === 'view';
                 }
                 // No Access
@@ -105,11 +140,13 @@ export const initializePermissions = async (req: Request, res: Response) => {
             // 3. DOSEN
             if (role === 'dosen') {
                 // Operational Access (Input Nilai, Evaluasi)
-                if (['nilai_teknik', 'evaluasi_cpl'].includes(resource)) {
+                if (['nilai_teknik', 'evaluasi_cpl', 'evaluasi_mk'].includes(resource)) {
+                    if (resource === 'evaluasi_mk') return ['view', 'edit', 'create'].includes(action); // Dosen creates/edits evaluation
                     return true;
                 }
-                // View Only Access (Standardization: CPMK must be view only)
-                if (['dashboard', 'visi_misi', 'profil_lulusan', 'cpl', 'mata_kuliah', 'cpmk', 'mahasiswa', 'transkrip_cpl', 'analisis_cpl'].includes(resource)) {
+                // View Only Access
+                if (['dashboard', 'visi_misi', 'profil_lulusan', 'cpl', 'mata_kuliah', 'cpmk', 'mahasiswa', 'transkrip_cpl', 'analisis_cpl', 'users', 'fakultas'].includes(resource)) {
+                    if (resource === 'fakultas' && action === 'view') return true;
                     return action === 'view';
                 }
                 // No Access
@@ -123,7 +160,7 @@ export const initializePermissions = async (req: Request, res: Response) => {
                     return ['view', 'create', 'edit'].includes(action);
                 }
                 // View Only Access (Self Data)
-                if (['dashboard', 'visi_misi', 'profil_lulusan', 'cpl', 'transkrip_cpl'].includes(resource)) {
+                if (['dashboard', 'visi_misi', 'profil_lulusan', 'transkrip_cpl', 'fakultas'].includes(resource)) {
                     return action === 'view';
                 }
                 // No Access

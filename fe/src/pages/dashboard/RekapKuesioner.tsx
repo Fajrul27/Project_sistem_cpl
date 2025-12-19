@@ -14,9 +14,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Label } from "@/components/ui/label";
 import { SlidersHorizontal } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { usePermission } from "@/contexts/PermissionContext";
 import { useRekapKuesioner } from "@/hooks/useRekapKuesioner";
 
 export default function RekapKuesionerPage() {
+    const { can } = usePermission();
     const {
         role,
         stats,
@@ -35,7 +37,7 @@ export default function RekapKuesionerPage() {
         isFiltered
     } = useRekapKuesioner();
 
-    if (role !== "kaprodi" && role !== "admin") {
+    if (!can('view', 'rekap_kuesioner')) {
         return (
             <DashboardPage title="Rekap Kuesioner CPL" description="Monitoring Penilaian Tidak Langsung">
                 <Card>
@@ -64,7 +66,7 @@ export default function RekapKuesionerPage() {
                         </PopoverTrigger>
                         <PopoverContent align="start" className="w-80 space-y-4" onClick={(e) => e.stopPropagation()}>
                             {/* Admin Filters */}
-                            {role === 'admin' && (
+                            {(role === 'admin' || can('view_all', 'rekap_kuesioner')) && (
                                 <>
                                     <div className="space-y-1">
                                         <Label className="text-xs font-medium">Fakultas</Label>
@@ -152,7 +154,7 @@ export default function RekapKuesionerPage() {
                     <CardHeader>
                         <CardTitle>Grafik Rata-Rata Penilaian per CPL</CardTitle>
                         <CardDescription>
-                            {role === 'admin'
+                            {(role === 'admin' || can('view_all', 'rekap_kuesioner'))
                                 ? (selectedProdi !== 'all'
                                     ? `Prodi: ${prodiList.find(p => p.id === selectedProdi)?.nama || 'Unknown'}`
                                     : 'Semua Program Studi')

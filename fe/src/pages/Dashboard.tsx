@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { usePermission } from "@/contexts/PermissionContext";
 
 import { DashboardFilterBar } from "@/components/layout/DashboardFilterBar";
 
@@ -29,6 +30,11 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const { role, loading: roleLoading } = useUserRole();
+  const { can } = usePermission();
+
+  const canEdit = can('edit', 'dashboard');
+  const canVerify = can('verify', 'dashboard');
+  const isStaff = canEdit || canVerify;
 
   // Filter State
   const [activeFilters, setActiveFilters] = useState<any>({});
@@ -97,6 +103,7 @@ const Dashboard = () => {
       description: role === 'mahasiswa' ? "CPL Tercapai" : "Capaian Pembelajaran terdaftar",
       icon: GraduationCap,
       gradient: "bg-gradient-primary",
+      resource: 'cpl' // Optional resource mapping
     },
     {
       title: role === 'mahasiswa' ? "Mata Kuliah" : "Mata Kuliah",
@@ -104,6 +111,7 @@ const Dashboard = () => {
       description: role === 'mahasiswa' ? "Mata kuliah diambil" : "Mata kuliah aktif",
       icon: BookOpen,
       gradient: "bg-gradient-secondary",
+      resource: 'mata_kuliah'
     },
     {
       title: role === 'mahasiswa' ? "Status" : "Mahasiswa",
@@ -111,6 +119,7 @@ const Dashboard = () => {
       description: role === 'mahasiswa' ? "Semester 5" : "Mahasiswa terdaftar",
       icon: Users,
       gradient: "bg-gradient-primary",
+      resource: 'mahasiswa'
     },
     {
       title: role === 'mahasiswa' ? "Rata-rata Nilai" : "Rata-rata CPL",
@@ -118,19 +127,29 @@ const Dashboard = () => {
       description: "Pencapaian keseluruhan",
       icon: BarChart3,
       gradient: "bg-gradient-secondary",
+      resource: role === 'mahasiswa' ? 'transkrip_cpl' : 'analisis_cpl'
     },
-  ];
+  ].filter(stat => {
+    // If explicit resource defined, check permission. 
+    // For Mahasiswa, mostly they see "Self Data".
+    // But if we want to respect Role Access settings:
+    if (stat.resource === 'mata_kuliah') return can('view', 'mata_kuliah');
+    if (stat.resource === 'mahasiswa' && role !== 'mahasiswa') return can('view', 'mahasiswa');
+    // For CPL, Mahasiswa has 'transkrip_cpl'.
+    // Keep others visible for now or map stricter.
+    return true;
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 relative">
-      {role !== 'mahasiswa' && (
+      {isStaff && (
         <DashboardFilterBar
           role={role || ''}
           filters={activeFilters}
           onFilterChange={setActiveFilters}
         />
       )}
-      {role === 'dosen' && (
+      {canEdit && (
         <Card className="mb-6 animate-in fade-in slide-in-from-top-4">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Aksi Cepat</CardTitle>
@@ -172,7 +191,7 @@ const Dashboard = () => {
       </div>
 
       {
-        role !== 'mahasiswa' && (
+        isStaff && (
           <div className="grid gap-6 animate-in fade-in duration-800">
             <div className="grid gap-6 md:grid-cols-2">
               {completeness && <CompletenessCard data={completeness} />}
@@ -341,7 +360,7 @@ const Dashboard = () => {
       </div>
 
       {
-        (role === 'admin' || role === 'kaprodi') && (
+        canVerify && (
           <div className="grid gap-4 md:grid-cols-2 animate-in fade-in duration-1000">
             <DosenAnalysisTable data={dosenAnalysis} />
             <StudentEvaluationTable data={studentEvaluation} />

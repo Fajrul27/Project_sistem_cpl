@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api, fetchFakultasList, fetchProdiList } from "@/lib/api";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePermission } from "@/contexts/PermissionContext";
 import { toast } from "sonner";
 
 export interface KuesionerStat {
@@ -13,6 +14,7 @@ export interface KuesionerStat {
 
 export function useRekapKuesioner() {
     const { role, profile } = useUserRole();
+    const { can } = usePermission(); // Use permission context
     const [stats, setStats] = useState<KuesionerStat[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -26,8 +28,11 @@ export function useRekapKuesioner() {
     const [fakultasList, setFakultasList] = useState<any[]>([]);
     const [prodiList, setProdiList] = useState<any[]>([]);
 
+    const canViewAll = can('view_all', 'rekap_kuesioner') || role === 'admin';
+    const canView = can('view', 'rekap_kuesioner');
+
     const fetchInitialData = useCallback(async () => {
-        if (role === 'admin') {
+        if (canViewAll) {
             try {
                 const [fakultasRes, prodiRes] = await Promise.all([
                     fetchFakultasList(),
@@ -39,25 +44,10 @@ export function useRekapKuesioner() {
                 console.error("Error fetching initial data:", error);
             }
         }
-    }, [role]);
-
-    const fetchProdi = useCallback(async () => {
-        try {
-            const fakultasId = selectedFakultas !== 'all' ? selectedFakultas : undefined;
-            const res = await fetchProdiList(fakultasId);
-            setProdiList(res.data || []);
-
-            // Reset selected Prodi if not in new list
-            if (selectedProdi !== 'all') {
-                const exists = (res.data || []).find((p: any) => p.id === selectedProdi);
-                if (!exists) setSelectedProdi("all");
-            }
-        } catch (error) {
-            console.error("Error fetching prodi:", error);
-        }
-    }, [selectedFakultas, selectedProdi]);
+    }, [canViewAll]);
 
     const fetchStats = useCallback(async () => {
+        if (!canView) return; // Guard
         setLoading(true);
         try {
             const params: any = {
@@ -68,17 +58,16 @@ export function useRekapKuesioner() {
                 params.semester = semester;
             }
 
-            if (role === 'admin') {
+            if (canViewAll) {
                 if (selectedProdi !== 'all') params.prodiId = selectedProdi;
                 if (selectedFakultas !== 'all') params.fakultasId = selectedFakultas;
             }
-            // For Kaprodi, backend handles prodiId enforcement automatically
+            // For others (Kaprodi/Dosen), backend handles prodiId enforcement automatically or based on profile
 
             const res = await api.get("/kuesioner/stats", { params });
 
             // Handle response format (direct array or object with data property)
             const statsData = Array.isArray(res) ? res : (res.data || []);
-            // console.log("Fetched Kuesioner Stats:", statsData.length, "items", statsData);
             setStats(statsData);
         } catch (error) {
             console.error("Error fetching stats:", error);
@@ -86,37 +75,37 @@ export function useRekapKuesioner() {
         } finally {
             setLoading(false);
         }
-    }, [tahunAjaran, semester, selectedProdi, selectedFakultas, role]);
+    }, [tahunAjaran, semester, selectedProdi, selectedFakultas, canView, canViewAll]);
 
     useEffect(() => {
-        if (role === "kaprodi" || role === "admin") {
+        if (canViewAll) {
             fetchInitialData();
         }
-    }, [role, fetchInitialData]);
+    }, [canViewAll, fetchInitialData]);
 
-    // Fetch Prodi when Fakultas changes (Admin only)
+    // Fetch Prodi when Fakultas changes (Admin/ViewAll only)
     useEffect(() => {
-        if (role === 'admin') {
-            fetchProdi();
+        if (canViewAll) {
+            // Re-fetch prodi when fakultas changes logic
+            const loadProdi = async () => {
+                const fakultasId = selectedFakultas !== 'all' ? selectedFakultas : undefined;
+                const res = await fetchProdiList(fakultasId);
+                setProdiList(res.data || []);
+                if (selectedProdi !== 'all') {
+                    const exists = (res.data || []).find((p: any) => p.id === selectedProdi);
+                    if (!exists) setSelectedProdi("all");
+                }
+            };
+            loadProdi();
         }
-    }, [selectedFakultas, role, fetchProdi]);
-
-    // DEBUG: Check if ANY data exists
-    useEffect(() => {
-        if (role === 'admin') {
-            api.get("/kuesioner/stats").then(res => {
-                const data = Array.isArray(res) ? res : (res.data || []);
-                // console.log("DEBUG: All Stats (No Filter):", data.length, "items");
-            }).catch(e => console.error("DEBUG FETCH ERROR:", e));
-        }
-    }, [role]);
+    }, [selectedFakultas, canViewAll]); // Simplified dependency
 
     // Re-fetch stats when filters change or initially
     useEffect(() => {
-        if (role === "kaprodi" || role === "admin") {
+        if (canView) {
             fetchStats();
         }
-    }, [tahunAjaran, semester, selectedFakultas, selectedProdi, role, fetchStats]);
+    }, [tahunAjaran, semester, selectedFakultas, selectedProdi, canView, fetchStats]);
 
     const resetFilters = () => {
         setSelectedFakultas("all");

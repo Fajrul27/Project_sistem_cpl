@@ -135,9 +135,8 @@ export function useTranskripCPL() {
         }
     }, [isMahasiswa, userId]);
 
-    // Initial data fetch (Settings & Filters)
+    // Initial data fetch (Filters only)
     useEffect(() => {
-        fetchSettings();
         fetchFilters();
     }, []);
 
@@ -157,14 +156,7 @@ export function useTranskripCPL() {
         }
     }, [selectedFakultas]);
 
-    const fetchSettings = async () => {
-        try {
-            const result = await api.get('/settings');
-            if (result.data) setSettings(prev => ({ ...prev, ...result.data }));
-        } catch (error) {
-            console.error("Error fetching settings:", error);
-        }
-    };
+
 
     const fetchKaprodiData = async (programStudi: string) => {
         try {

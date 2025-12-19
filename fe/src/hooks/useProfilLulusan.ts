@@ -11,6 +11,7 @@ export interface ProfilLulusan {
     prodiId: string;
     prodi?: { nama: string; fakultasId?: string };
     percentage?: number;
+    targetKetercapaian?: number;
     status?: string;
     cplMappings?: { cplId: string; cpl?: { kode: string } }[];
 }

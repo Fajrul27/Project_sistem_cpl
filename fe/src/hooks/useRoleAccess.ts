@@ -14,6 +14,8 @@ export interface RolePermission {
 export const useRoleAccess = () => {
     const [permissions, setPermissions] = useState<RolePermission[]>([]);
     const [loading, setLoading] = useState(true);
+    const [hasChanges, setHasChanges] = useState(false);
+    const [pendingChanges, setPendingChanges] = useState<RolePermission[]>([]);
 
     const fetchPermissions = useCallback(async () => {
         setLoading(true);
@@ -21,8 +23,11 @@ export const useRoleAccess = () => {
             const res = await api.get('/role-access');
             if (Array.isArray(res)) {
                 setPermissions(res);
+                setPendingChanges(res); // Initialize pending changes
+                setHasChanges(false);
             } else {
                 setPermissions([]);
+                setPendingChanges([]);
                 console.error('Invalid permissions format:', res);
             }
         } catch (error) {
@@ -33,31 +38,33 @@ export const useRoleAccess = () => {
         }
     }, []);
 
-    const updatePermission = async (role: string, resource: string, action: string, isEnabled: boolean) => {
+    const updatePermission = (role: string, resource: string, action: string, isEnabled: boolean) => {
+        setPendingChanges(prev => prev.map(p =>
+            (p.role === role && p.resource === resource && p.action === action)
+                ? { ...p, isEnabled }
+                : p
+        ));
+        setHasChanges(true);
+    };
+
+    const saveChanges = async () => {
         try {
-            // Optimistic update
-            setPermissions(prev => prev.map(p =>
-                (p.role === role && p.resource === resource && p.action === action)
-                    ? { ...p, isEnabled }
-                    : p
-            ));
+            // Only send changed items or all items (sending all is simpler for now since backend handles upsert)
+            // Ideally we track diffs, but for < 100 items sending all is fine.
+            await api.put('/role-access', pendingChanges);
 
-            await api.put('/role-access', { role, resource, action, isEnabled });
-            toast.success('Hak akses diperbarui');
-
-            // Refetch to ensure consistency (optional)
-            // fetchPermissions(); 
+            setPermissions(pendingChanges);
+            setHasChanges(false);
+            toast.success('Hak akses berhasil disimpan');
         } catch (error) {
-            console.error('Error updating permission:', error);
-            toast.error('Gagal memperbarui hak akses');
-            // Revert optimistic update
-            fetchPermissions();
+            console.error('Error saving permissions:', error);
+            toast.error('Gagal menyimpan perubahan');
         }
     };
 
     const initializePermissions = async () => {
         try {
-            await api.post('/role-access/init');
+            await api.post('/role-access/init', {});
             toast.success('Hak akses diinisialisasi');
             fetchPermissions();
         } catch (error) {
@@ -71,10 +78,12 @@ export const useRoleAccess = () => {
     }, [fetchPermissions]);
 
     return {
-        permissions,
+        permissions: pendingChanges, // UI uses pending state
         loading,
+        hasChanges,
         fetchPermissions,
         updatePermission,
+        saveChanges,
         initializePermissions
     };
 };

@@ -113,7 +113,6 @@ export function useEvaluasiCPL() {
         fetchTargets,
         saveTargets,
         fetchEvaluation,
-        fetchEvaluation,
         saveTindakLanjut,
         resetEvaluation
     };

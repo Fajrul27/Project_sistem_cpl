@@ -10,6 +10,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
 import { Plus, Edit, Trash2, Search, SlidersHorizontal } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePermission } from "@/contexts/PermissionContext";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useMataKuliah, MataKuliah, MataKuliahFormData } from "@/hooks/useMataKuliah";
 import { LoadingSpinner, LoadingScreen } from "@/components/common/LoadingScreen";
@@ -102,9 +103,8 @@ const MataKuliahPage = () => {
     setEditingMK(null);
   };
 
-  const canManage = role === "admin" || role === "kaprodi";
-  const canEvaluate = role === "admin" || role === "dosen" || role === "kaprodi";
-  const showActions = canManage || canEvaluate;
+  const { can } = usePermission();
+  const showActions = can('edit', 'mata_kuliah') || can('delete', 'mata_kuliah') || can('edit', 'cpmk');
 
   // Static semester options 1-8 (fallback if list empty)
   const semesterOptions = semesterList.length > 0 ? semesterList.map(s => s.angka) : [1, 2, 3, 4, 5, 6, 7, 8];
@@ -259,7 +259,7 @@ const MataKuliahPage = () => {
                 <span className="font-medium">{pagination.totalItems}</span> mata kuliah
               </CardDescription>
             </div>
-            {canManage && (
+            {can('create', 'mata_kuliah') && (
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
@@ -451,17 +451,17 @@ const MataKuliahPage = () => {
                           {showActions && (
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
-                                {canManage && (
+                                {can('edit', 'mata_kuliah') && (
                                   <Button size="sm" variant="outline" onClick={() => handleEdit(mk)}>
                                     <Edit className="h-4 w-4" />
                                   </Button>
                                 )}
-                                {canEvaluate && (
+                                {can('edit', 'cpmk') && (
                                   <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/evaluasi/${mk.id}`)} title="Evaluasi / CQI">
                                     <SlidersHorizontal className="h-4 w-4" />
                                   </Button>
                                 )}
-                                {canManage && (
+                                {can('delete', 'mata_kuliah') && (
                                   <Button size="sm" variant="destructive" onClick={() => handleDelete(mk.id)}>
                                     <Trash2 className="h-4 w-4" />
                                   </Button>

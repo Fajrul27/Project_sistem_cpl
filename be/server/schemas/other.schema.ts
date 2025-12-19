@@ -8,6 +8,7 @@ export const otherSchemas = {
         kode: z.string().min(1),
         nama: z.string().min(1),
         deskripsi: z.string().optional(),
+        targetKetercapaian: z.coerce.number().min(0).max(100).optional(),
         prodiId: commonSchema.uuid,
         isActive: z.boolean().optional(),
         cplIds: z.array(commonSchema.uuid).optional()

@@ -33,6 +33,21 @@ export function useUsers() {
     const [totalItems, setTotalItems] = useState(0);
     const limit = 10;
 
+    // Data States
+    const [users, setUsers] = useState<UserRow[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    // Reference Lists
+    const [angkatanList, setAngkatanList] = useState<any[]>([]);
+    const [fakultasList, setFakultasList] = useState<FakultasOption[]>([]);
+    const [kelasList, setKelasList] = useState<any[]>([]);
+
+    // Filter States
+    const [searchTerm, setSearchTerm] = useState("");
+    const [roleFilter, setRoleFilter] = useState("all");
+    const [fakultasFilter, setFakultasFilter] = useState("all");
+    const [prodiFilter, setProdiFilter] = useState("all");
+
     const loadAngkatan = useCallback(async () => {
         try {
             const res = await fetchAngkatanList();

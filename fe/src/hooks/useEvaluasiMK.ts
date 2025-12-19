@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePermission } from "@/contexts/PermissionContext";
 
 export interface EvaluasiData {
     id?: string;
@@ -24,6 +25,8 @@ export function useEvaluasiMK() {
     const { mataKuliahId } = useParams<{ mataKuliahId: string }>();
     const navigate = useNavigate();
     const { role } = useUserRole();
+    const { can } = usePermission();
+
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -73,8 +76,11 @@ export function useEvaluasiMK() {
                 return;
             }
 
-            if (role === 'kaprodi' && evaluasi.id) {
-                // Kaprodi Review Mode
+            // Kaprodi Review Mode
+            // Logic: If role is kaprodi (or has verification permission) AND the evaluation exists
+            const isReviewing = (role === 'kaprodi' || can('verify', 'evaluasi_mk')) && evaluasi.id;
+
+            if (isReviewing) {
                 await api.put(`/evaluasi/${evaluasi.id}/review`, {
                     feedbackKaprodi: evaluasi.feedbackKaprodi
                 });
@@ -99,8 +105,12 @@ export function useEvaluasiMK() {
         }
     };
 
-    const isKaprodi = role === 'kaprodi' || role === 'admin';
-    const isDosen = role === 'dosen';
+    // Refactored to use Permissions
+    // isKaprodi effectively means "Can Review/Verify"
+    const isKaprodi = role === 'kaprodi' || can('verify', 'evaluasi_mk') || role === 'admin';
+
+    // isDosen effectively means "Can Edit/Submit"
+    const isDosen = role === 'dosen' || can('edit', 'evaluasi_mk') || role === 'admin';
 
     return {
         evaluasi,

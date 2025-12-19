@@ -15,6 +15,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { useVisiMisi } from "@/hooks/useVisiMisi";
+import { usePermission } from "@/contexts/PermissionContext";
 
 export default function VisiMisiPage() {
     const {
@@ -39,6 +40,7 @@ export default function VisiMisiPage() {
         openEdit,
         openAdd
     } = useVisiMisi();
+    const { can } = usePermission(); // Add this line
 
     return (
         <DashboardPage title="Visi & Misi Program Studi" description="Kelola Visi dan Misi sebagai landasan kurikulum OBE">
@@ -93,7 +95,7 @@ export default function VisiMisiPage() {
                                     <CardTitle>Visi Keilmuan</CardTitle>
                                     <CardDescription>Cita-cita luhur program studi di masa depan</CardDescription>
                                 </div>
-                                {canEdit && visiList.length === 0 && (
+                                {can('create', 'visi_misi') && visiList.length === 0 && (
                                     <Button size="sm" onClick={() => openAdd("visi")}>
                                         <Plus className="w-4 h-4 mr-2" /> Tambah Visi
                                     </Button>
@@ -105,7 +107,7 @@ export default function VisiMisiPage() {
                                 ) : visiList.length > 0 ? (
                                     <div className="bg-muted/30 p-6 rounded-lg border text-lg font-medium text-center italic relative group">
                                         "{visiList[0].teks}"
-                                        {canEdit && (
+                                        {can('edit', 'visi_misi') && (
                                             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                                                 <Button variant="ghost" size="icon" onClick={() => openEdit(visiList[0])}>
                                                     <Edit className="w-4 h-4" />
@@ -126,7 +128,7 @@ export default function VisiMisiPage() {
                                     <CardTitle>Misi Program Studi</CardTitle>
                                     <CardDescription>Langkah-langkah strategis untuk mencapai Visi</CardDescription>
                                 </div>
-                                {canEdit && (
+                                {can('create', 'visi_misi') && (
                                     <Button size="sm" onClick={() => openAdd("misi")}>
                                         <Plus className="w-4 h-4 mr-2" /> Tambah Misi
                                     </Button>
@@ -145,14 +147,18 @@ export default function VisiMisiPage() {
                                                 <div className="flex-1">
                                                     <p className="text-base leading-relaxed">{item.teks}</p>
                                                 </div>
-                                                {canEdit && (
+                                                {(can('edit', 'visi_misi') || can('delete', 'visi_misi')) && (
                                                     <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}>
-                                                            <Edit className="w-4 h-4" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </Button>
+                                                        {can('edit', 'visi_misi') && (
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}>
+                                                                <Edit className="w-4 h-4" />
+                                                            </Button>
+                                                        )}
+                                                        {can('delete', 'visi_misi') && (
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>

@@ -6,7 +6,6 @@ import {
   FileText,
   GraduationCap,
   Home,
-  Settings,
   Users,
   ClipboardList,
   ChevronRight,
@@ -38,6 +37,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useUserRole, type UserRole } from "@/hooks/useUserRole";
+import { usePermission } from "@/contexts/PermissionContext";
 
 export function AppSidebar() {
   const { open, isMobile, openMobile, toggleSidebar } = useSidebar();
@@ -52,16 +52,17 @@ export function AppSidebar() {
         url: "/dashboard",
         icon: LayoutDashboard,
         roles: ["admin", "dosen", "mahasiswa", "kaprodi"] as UserRole[],
+        resource: 'dashboard'
       },
       {
         title: "Master Data & Perencanaan",
         icon: Database,
         roles: ["admin", "kaprodi", "dosen", "mahasiswa"] as UserRole[],
         items: [
-          { title: "Visi & Misi", url: "/dashboard/visi-misi", roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
-          { title: "Profil Lulusan", url: "/dashboard/profil-lulusan", roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
-          { title: "CPL & Mapping PL - CPL", url: "/dashboard/cpl", roles: ["admin", "dosen", "kaprodi"] },
-          { title: "Mata Kuliah", url: "/dashboard/mata-kuliah", roles: ["admin", "kaprodi", "dosen"] },
+          { title: "Visi & Misi", url: "/dashboard/visi-misi", roles: ["admin", "dosen", "kaprodi", "mahasiswa"], resource: 'visi_misi' },
+          { title: "Profil Lulusan", url: "/dashboard/profil-lulusan", roles: ["admin", "dosen", "kaprodi", "mahasiswa"], resource: 'profil_lulusan' },
+          { title: "CPL & Mapping PL - CPL", url: "/dashboard/cpl", roles: ["admin", "dosen", "kaprodi"], resource: 'cpl' },
+          { title: "Mata Kuliah", url: "/dashboard/mata-kuliah", icon: BookOpen, roles: ["admin", "kaprodi", "dosen"], resource: 'mata_kuliah' },
         ]
       },
       {
@@ -69,20 +70,9 @@ export function AppSidebar() {
         icon: School,
         roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
         items: [
-          { title: "CPMK & Mapping CPMK - CPL", url: "/dashboard/cpmk", roles: ["admin", "dosen", "kaprodi"] },
-          { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", roles: ["admin", "kaprodi", "dosen"] },
-          { title: "Isi Kuesioner CPL", url: "/dashboard/kuesioner", roles: ["mahasiswa"] },
-        ]
-      },
-      {
-        title: "Manajemen Pengguna",
-        icon: UserCog,
-        roles: ["admin", "dosen", "kaprodi"] as UserRole[],
-        items: [
-          { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", roles: ["admin", "kaprodi"] },
-          { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", roles: ["admin"] },
-          { title: "Mahasiswa", url: "/dashboard/mahasiswa", roles: ["admin", "dosen", "kaprodi"] },
-          { title: "Pengguna Sistem", url: "/dashboard/users", roles: ["admin"] },
+          { title: "CPMK & Mapping CPMK - CPL", url: "/dashboard/cpmk", roles: ["admin", "dosen", "kaprodi"], resource: 'cpmk' },
+          { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", roles: ["admin", "kaprodi", "dosen"], resource: 'nilai_teknik' },
+          { title: "Isi Kuesioner CPL", url: "/dashboard/kuesioner", roles: ["mahasiswa"], resource: 'kuesioner' },
         ]
       },
       {
@@ -90,45 +80,75 @@ export function AppSidebar() {
         icon: BarChart3,
         roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
         items: [
-          { title: "Capaian Pembelajaran", url: "/dashboard/transkrip-cpl", roles: ["admin", "dosen", "kaprodi", "mahasiswa"] },
-          { title: "Analisis CPL", url: "/dashboard/analisis", roles: ["admin", "dosen", "kaprodi"] },
-          { title: "Evaluasi CPL", url: "/dashboard/evaluasi-cpl", roles: ["admin", "kaprodi", "dosen"] },
-          { title: "Rekap Kuesioner", url: "/dashboard/rekap-kuesioner", roles: ["admin", "kaprodi"] },
+          { title: "Capaian Pembelajaran", url: "/dashboard/transkrip-cpl", roles: ["admin", "dosen", "kaprodi", "mahasiswa"], resource: 'transkrip_cpl' },
+          { title: "Analisis CPL", url: "/dashboard/analisis", roles: ["admin", "dosen", "kaprodi"], resource: 'analisis_cpl' },
+          { title: "Evaluasi CPL", url: "/dashboard/evaluasi-cpl", roles: ["admin", "kaprodi", "dosen"], resource: 'evaluasi_cpl' },
+          { title: "Rekap Kuesioner", url: "/dashboard/rekap-kuesioner", roles: ["admin", "kaprodi"], resource: 'rekap_kuesioner' },
+        ]
+      },
+      {
+        title: "Manajemen Pengguna",
+        icon: UserCog,
+        roles: ["admin", "dosen", "kaprodi"] as UserRole[],
+        items: [
+          { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", roles: ["admin", "kaprodi"], resource: 'dosen_pengampu' },
+          { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", roles: ["admin"], resource: 'kaprodi_data' },
+          { title: "Mahasiswa", url: "/dashboard/mahasiswa", roles: ["admin", "dosen", "kaprodi"], resource: 'mahasiswa' },
+          { title: "Pengguna Sistem", url: "/dashboard/users", roles: ["admin"], resource: 'users' },
         ]
       },
       {
         title: "Sistem",
-        icon: Settings,
+        icon: Shield,
         roles: ["admin", "dosen", "kaprodi"] as UserRole[],
         items: [
-          { title: "Pengaturan", url: "/dashboard/settings", roles: ["admin", "kaprodi"] },
-          { title: "Akses Role", url: "/dashboard/role-access", roles: ["admin"] },
+          { title: "Akses Role", url: "/dashboard/role-access", roles: ["admin"], resource: 'role_access' },
         ]
       }
     ];
   }, [role]);
 
   // Filter menu based on role
+
+
+  const { can } = usePermission();
+
+  // Filter menu based on role AND permission
   const filteredMenu = useMemo(() => {
     if (!role) return [];
 
     return menuStructure.map(group => {
       // If it's a single link (Dashboard)
       if (!group.items) {
-        return group.roles.includes(role as UserRole) ? group : null;
+        // If resource is defined, use permission check strictly. Otherwise fallback to roles.
+        const isVisible = group.resource
+          ? can('view', group.resource)
+          : group.roles.includes(role as UserRole);
+
+        return isVisible ? group : null;
       }
 
       // If it's a group, filter its items
-      const visibleItems = group.items.filter(item => item.roles.includes(role as UserRole));
+      const visibleItems = group.items.filter(item => {
+        // If resource is defined, use permission check strictly. Otherwise fallback to roles.
+        return item.resource
+          ? can('view', item.resource)
+          : item.roles.includes(role as UserRole);
+      });
 
       // If user has access to group AND it has visible items, show it
-      if (group.roles.includes(role as UserRole) && visibleItems.length > 0) {
+      // For the group header itself, we check if it has a resource (rare) or if at least one child is visible
+      // OR if the group itself has strict role requirements (fallback)
+      const isGroupVisible = (group.resource ? can('view', group.resource) : group.roles.includes(role as UserRole))
+        && visibleItems.length > 0;
+
+      if (isGroupVisible) {
         return { ...group, items: visibleItems };
       }
 
       return null;
     }).filter(Boolean);
-  }, [menuStructure, role]);
+  }, [menuStructure, role, can]);
 
   // Auto-close sidebar on mobile
   useEffect(() => {

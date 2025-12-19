@@ -8,7 +8,8 @@ const router = Router();
 router.use(authMiddleware);
 
 // Only admin can manage permissions
-router.get('/', requireRole('admin'), getPermissions);
+// Everyone needs to read permissions to know what they can access
+router.get('/', getPermissions);
 router.put('/', requireRole('admin'), updatePermission);
 router.post('/init', requireRole('admin'), initializePermissions);
 

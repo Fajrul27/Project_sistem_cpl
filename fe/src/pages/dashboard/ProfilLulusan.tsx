@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "@/lib/api";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { LoadingSpinner } from "@/components/common/LoadingScreen";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePermission } from "@/contexts/PermissionContext";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit, Save, Briefcase, Search, SlidersHorizontal, Eye } from "lucide-react";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
@@ -34,6 +35,7 @@ import { useProfilLulusan, ProfilLulusan } from "@/hooks/useProfilLulusan";
 
 export default function ProfilLulusanPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { role, profile } = useUserRole();
     const {
         profilList,
@@ -53,6 +55,17 @@ export default function ProfilLulusanPage() {
         setSearchTerm
     } = useProfilLulusan();
 
+    // Restore state from navigation
+    useEffect(() => {
+        if (location.state?.filters) {
+            const f = location.state.filters;
+            if (f.page) pagination.setPage(f.page);
+            if (f.searchTerm) setSearchTerm(f.searchTerm);
+            if (f.fakultasId) setSelectedFakultas(f.fakultasId);
+            if (f.prodiId) setSelectedProdi(f.prodiId);
+        }
+    }, [location.state]); // Run when location state changes (usually on mount)
+
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<ProfilLulusan | null>(null);
     // const [selectedCpls, setSelectedCpls] = useState<string[]>([]); // Removed CPL mapping
@@ -63,7 +76,8 @@ export default function ProfilLulusanPage() {
         nama: "",
         deskripsi: "",
         fakultasId: "",
-        prodiId: ""
+        prodiId: "",
+        targetKetercapaian: ""
     });
 
     const [formProdiList, setFormProdiList] = useState<{ id: string; nama: string }[]>([]);
@@ -85,13 +99,16 @@ export default function ProfilLulusanPage() {
         }
     }, [formData.fakultasId]);
 
-    const canEdit = role === "admin" || role === "kaprodi";
+    const { can } = usePermission();
+
+    // const canEdit = role === "admin" || role === "kaprodi"; // Removed in favor of dynamic checks
 
     const handleSave = async () => {
         const payload = {
             kode: formData.kode,
             nama: formData.nama,
             deskripsi: formData.deskripsi,
+            targetKetercapaian: formData.targetKetercapaian ? parseFloat(formData.targetKetercapaian) : undefined,
             prodiId: role === "kaprodi" ? profile?.prodiId : (formData.prodiId || selectedProdi),
             // cplIds: selectedCpls // Removed
         };
@@ -111,7 +128,7 @@ export default function ProfilLulusanPage() {
         if (success) {
             setIsDialogOpen(false);
             setEditingItem(null);
-            setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: "", prodiId: "" });
+            setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: "", prodiId: "", targetKetercapaian: "" });
             // setSelectedCpls([]);
         }
     };
@@ -140,7 +157,8 @@ export default function ProfilLulusanPage() {
             nama: item.nama,
             deskripsi: item.deskripsi,
             fakultasId: item.prodi?.fakultasId || "",
-            prodiId: item.prodiId
+            prodiId: item.prodiId,
+            targetKetercapaian: item.targetKetercapaian ? item.targetKetercapaian.toString() : ""
         });
         // If we want to pre-fill fakultas, we'd need to fetch the prodi details first or have it in the item.
         // For now, leaving it empty or maybe try to find it in the global prodiList if loaded?
@@ -239,10 +257,10 @@ export default function ProfilLulusanPage() {
                                 Menampilkan {profilList.length} dari {pagination.totalItems} Profil Lulusan
                             </CardDescription>
                         </div>
-                        {canEdit && (
+                        {can('create', 'profil_lulusan') && (
                             <Button onClick={() => {
                                 setEditingItem(null);
-                                setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi });
+                                setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi, targetKetercapaian: "" });
                                 setIsDialogOpen(true);
                             }}>
                                 <Plus className="w-4 h-4 mr-2" /> Tambah Profil
@@ -270,9 +288,11 @@ export default function ProfilLulusanPage() {
                                                 <TableHead className="w-[100px]">Kode</TableHead>
                                                 <TableHead className="w-[200px]">Nama Profil</TableHead>
                                                 <TableHead>Deskripsi</TableHead>
+
+                                                {role !== 'mahasiswa' && <TableHead className="w-[100px]">Target</TableHead>}
                                                 {role === "mahasiswa" && <TableHead className="w-[200px]">Ketercapaian</TableHead>}
-                                                <TableHead>Mapping CPL</TableHead>
-                                                {canEdit && <TableHead className="w-[100px] text-right">Aksi</TableHead>}
+                                                {(role !== 'mahasiswa' || can('edit', 'profil_lulusan')) && <TableHead>Mapping CPL</TableHead>}
+                                                {(can('edit', 'profil_lulusan') || can('delete', 'profil_lulusan')) && <TableHead className="w-[100px] text-right">Aksi</TableHead>}
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -291,49 +311,68 @@ export default function ProfilLulusanPage() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-muted-foreground">{item.deskripsi || "-"}</TableCell>
+                                                    {role !== 'mahasiswa' && (
+                                                        <TableCell>{item.targetKetercapaian || "-"}</TableCell>
+                                                    )}
                                                     {role === "mahasiswa" && (
                                                         <TableCell>
                                                             <div className="space-y-1">
                                                                 <div className="flex items-center justify-between text-xs">
                                                                     <span className="font-medium">{item.percentage || 0}%</span>
                                                                     <span className={
-                                                                        (item.percentage || 0) >= 70 ? "text-green-600" : "text-yellow-600"
+                                                                        (item.percentage || 0) >= (item.targetKetercapaian || 75) ? "text-green-600 font-bold" : "text-red-500 font-bold"
                                                                     }>
-                                                                        {item.status || "Belum Ada Data"}
+                                                                        {(item.percentage || 0) >= (item.targetKetercapaian || 75) ? "Tercapai" : "Belum Tercapai"}
                                                                     </span>
                                                                 </div>
                                                                 <Progress value={item.percentage || 0} className="h-2" />
                                                             </div>
                                                         </TableCell>
                                                     )}
-                                                    <TableCell>
-                                                        <div className="flex items-center justify-center">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() => {
-                                                                    // Determine fakultasId. If admin selected one, use it.
-                                                                    // If not, we might need to rely on the item's prodi -> fakultas relation if available,
-                                                                    // or just pass prodiId and hope CPL page handles it (it might need fakultasId for filter logic).
-                                                                    // For now, let's pass selectedFakultas if available.
-                                                                    const targetFakultasId = selectedFakultas;
-                                                                    navigate(`/dashboard/cpl?view=matrix&fakultasId=${targetFakultasId}&prodiId=${item.prodiId}`);
-                                                                }}
-                                                                title="Lihat Mapping CPL"
-                                                            >
-                                                                <Eye className="w-4 h-4 text-blue-600" />
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                    {canEdit && (
+                                                    {(role !== 'mahasiswa' || can('edit', 'profil_lulusan')) && (
+                                                        <TableCell>
+                                                            <div className="flex items-center justify-center">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() => {
+                                                                        // Determine fakultasId. If admin selected one, use it.
+                                                                        // If not, we might need to rely on the item's prodi -> fakultas relation if available,
+                                                                        // or just pass prodiId and hope CPL page handles it (it might need fakultasId for filter logic).
+                                                                        // For now, let's pass selectedFakultas if available.
+                                                                        const targetFakultasId = selectedFakultas;
+                                                                        navigate(`/dashboard/cpl?view=matrix&fakultasId=${targetFakultasId}&prodiId=${item.prodiId}`, {
+                                                                            state: {
+                                                                                from: 'profil-lulusan',
+                                                                                filters: {
+                                                                                    page: pagination.page,
+                                                                                    searchTerm,
+                                                                                    fakultasId: selectedFakultas,
+                                                                                    prodiId: selectedProdi
+                                                                                }
+                                                                            }
+                                                                        });
+                                                                    }}
+                                                                    title="Lihat Mapping CPL"
+                                                                >
+                                                                    <Eye className="w-4 h-4 text-blue-600" />
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    )}
+                                                    {(can('edit', 'profil_lulusan') || can('delete', 'profil_lulusan')) && (
                                                         <TableCell className="text-right">
                                                             <div className="flex justify-end gap-2">
-                                                                <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
-                                                                    <Edit className="w-4 h-4" />
-                                                                </Button>
-                                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(item.id)}>
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </Button>
+                                                                {can('edit', 'profil_lulusan') && (
+                                                                    <Button variant="ghost" size="icon" onClick={() => openEdit(item)}>
+                                                                        <Edit className="w-4 h-4" />
+                                                                    </Button>
+                                                                )}
+                                                                {can('delete', 'profil_lulusan') && (
+                                                                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(item.id)}>
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </Button>
+                                                                )}
                                                             </div>
                                                         </TableCell>
                                                     )}
@@ -348,10 +387,10 @@ export default function ProfilLulusanPage() {
                                 <Briefcase className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
                                 <h3 className="text-lg font-medium">Belum ada Profil Lulusan</h3>
                                 <p className="text-muted-foreground mb-4">Tambahkan profil lulusan untuk mulai memetakan karir.</p>
-                                {canEdit && (
+                                {can('create', 'profil_lulusan') && (
                                     <Button onClick={() => {
                                         setEditingItem(null);
-                                        setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi });
+                                        setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi, targetKetercapaian: "" });
                                         setIsDialogOpen(true);
                                     }}>
                                         <Plus className="w-4 h-4 mr-2" /> Tambah Profil
@@ -472,6 +511,20 @@ export default function ProfilLulusanPage() {
                                     value={formData.nama}
                                     onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                                     placeholder="Contoh: Software Engineer"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-4 gap-4 items-center">
+                                <Label className="text-right">Target</Label>
+                                <Input
+                                    className="col-span-3"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.1"
+                                    value={formData.targetKetercapaian}
+                                    onChange={(e) => setFormData({ ...formData, targetKetercapaian: e.target.value })}
+                                    placeholder="Target (0-100)"
                                 />
                             </div>
                             <div className="grid grid-cols-4 gap-4 items-start">

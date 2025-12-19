@@ -58,6 +58,39 @@ export const requireRole = (...roles: string[]) => {
   };
 };
 
+// Dynamic Permission Middleware
+export const requirePermission = (resource: string, action: string = 'view') => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userRole = (req as any).userRole;
+      if (!userRole) return res.status(403).json({ error: 'Forbidden - No role' });
+
+      // Admin override (optional, but consistent with Policy)
+      if (userRole === 'admin') return next();
+
+      const permission = await prisma.rolePermission.findUnique({
+        where: {
+          role_resource_action: {
+            role: userRole,
+            resource,
+            action
+          }
+        }
+      });
+
+      if (permission && permission.isEnabled) {
+        return next();
+      }
+
+      console.log(`[Auth] Permission denied. Required: ${resource}.${action}, User: ${(req as any).userEmail} (${userRole})`);
+      return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
+    } catch (error) {
+      console.error('requirePermission middleware error:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+};
+
 // Helper: Get user profile
 export const getUserProfile = async (userId: string) => {
   const profile = await prisma.profile.findUnique({

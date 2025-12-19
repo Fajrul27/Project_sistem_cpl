@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { authMiddleware, requireRole, requirePermission } from '../middleware/auth.js';
 import {
   getAllUsers,
   getUserById,
@@ -11,19 +11,19 @@ import {
 
 const router = Router();
 
-// Get all users (admin only)
-router.get('/', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), getAllUsers);
+// Get all users (admin only -> dynamic)
+router.get('/', authMiddleware, requirePermission('users', 'view'), getAllUsers);
 
 // Get user by ID
-router.get('/:id', authMiddleware, requireRole('admin'), getUserById);
+router.get('/:id', authMiddleware, requirePermission('users', 'view'), getUserById);
 
-// Update user role (admin only)
-router.put('/:id/role', authMiddleware, requireRole('admin'), updateUserRole);
+// Update user role (admin only -> dynamic)
+router.put('/:id/role', authMiddleware, requirePermission('users', 'edit'), updateUserRole);
 
-// Update user basic info (admin only)
-router.put('/:id', authMiddleware, requireRole('admin'), updateUser);
+// Update user basic info (admin only -> dynamic)
+router.put('/:id', authMiddleware, requirePermission('users', 'edit'), updateUser);
 
-// Delete user (admin only)
-router.delete('/:id', authMiddleware, requireRole('admin'), deleteUser);
+// Delete user (admin only -> dynamic)
+router.delete('/:id', authMiddleware, requirePermission('users', 'delete'), deleteUser);
 
 export default router;

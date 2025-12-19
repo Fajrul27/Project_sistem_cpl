@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { usePermission } from "@/contexts/PermissionContext";
 import { useKuesioner } from "@/hooks/useKuesioner";
 
 export default function KuesionerCplPage() {
+    const { can } = usePermission();
     const {
         role,
         cplList,
@@ -19,12 +21,12 @@ export default function KuesionerCplPage() {
         handleSubmit
     } = useKuesioner();
 
-    if (role !== "mahasiswa") {
+    if (!can('view', 'kuesioner')) {
         return (
             <DashboardPage title="Kuesioner CPL" description="Evaluasi Diri Mahasiswa">
                 <Card>
                     <CardContent className="pt-6 text-center">
-                        <p>Halaman ini khusus untuk mahasiswa.</p>
+                        <p>Halaman ini khusus untuk mahasiswa yang memiliki akses kuesioner.</p>
                     </CardContent>
                 </Card>
             </DashboardPage>
