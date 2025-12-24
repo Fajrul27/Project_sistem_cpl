@@ -320,9 +320,14 @@ export default function ProfilLulusanPage() {
                                                                 <div className="flex items-center justify-between text-xs">
                                                                     <span className="font-medium">{item.percentage || 0}%</span>
                                                                     <span className={
-                                                                        (item.percentage || 0) >= (item.targetKetercapaian || 75) ? "text-green-600 font-bold" : "text-red-500 font-bold"
+                                                                        Number(item.percentage || 0) >= Number(item.targetKetercapaian || 70) ? "text-green-600 font-bold" : "text-red-500 font-bold"
                                                                     }>
-                                                                        {(item.percentage || 0) >= (item.targetKetercapaian || 75) ? "Tercapai" : "Belum Tercapai"}
+                                                                        {Number(item.percentage || 0) >= Number(item.targetKetercapaian || 70) ? "Tercapai" : "Belum Tercapai"}
+                                                                        <div className="text-[10px] text-gray-500 font-normal">
+                                                                            DEBUG: P:{item.percentage}({typeof item.percentage}) {'>='} T:{item.targetKetercapaian}({typeof item.targetKetercapaian})
+                                                                            <br />
+                                                                            Res: {Number(item.percentage || 0) >= Number(item.targetKetercapaian || 70) ? 'True' : 'False'}
+                                                                        </div>
                                                                     </span>
                                                                 </div>
                                                                 <Progress value={item.percentage || 0} className="h-2" />

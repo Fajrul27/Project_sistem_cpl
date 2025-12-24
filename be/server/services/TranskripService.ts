@@ -450,10 +450,15 @@ export class TranskripService {
 
             const avgProfileScore = cplCount > 0 ? totalCplScore / cplCount : 0;
 
+            // DEBUG LOGGING
+            console.log(`[Transkrip] ${profil.kode} - Name: ${profil.nama}`);
+            console.log(`[Transkrip] ${profil.kode} - Target DB: ${profil.targetKetercapaian} (Type: ${typeof profil.targetKetercapaian})`);
+            console.log(`[Transkrip] ${profil.kode} - Score: ${avgProfileScore} (Type: ${typeof avgProfileScore})`);
+
             return {
                 ...profil,
                 percentage: Number(avgProfileScore.toFixed(2)),
-                status: avgProfileScore >= 70 ? 'Tercapai' : 'Dalam Proses'
+                status: avgProfileScore >= (profil.targetKetercapaian || 70) ? 'Tercapai' : 'Belum Tercapai'
             };
         });
     }
