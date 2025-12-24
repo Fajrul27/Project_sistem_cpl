@@ -47,6 +47,18 @@ export default function KuesionerCplPage() {
                     <CardContent>
                         {loading ? (
                             <div className="text-center py-8">Memuat...</div>
+                        ) : role !== 'mahasiswa' ? (
+                            <div className="text-center py-12 border rounded-lg border-dashed bg-muted/20">
+                                <p className="text-lg font-medium text-muted-foreground">Mode Pratinjau Terbatas</p>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    Sebagai {role}, Anda tidak dapat mengisi kuesioner ini.
+                                    Halaman ini khusus untuk mahasiswa.
+                                </p>
+                            </div>
+                        ) : cplList.length === 0 ? (
+                            <div className="text-center py-12 border rounded-lg border-dashed">
+                                <p className="text-muted-foreground">Belum ada data CPL yang tersedia untuk Program Studi Anda.</p>
+                            </div>
                         ) : (
                             <div className="space-y-8">
                                 {cplList.map((cpl) => (

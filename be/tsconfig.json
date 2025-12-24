@@ -21,6 +21,7 @@
   "include": [
     "server/**/*.ts",
     "prisma/**/*.ts",
+    "scripts/**/*.ts",
     "seed_teknik_ref.ts"
   ],
   "exclude": [

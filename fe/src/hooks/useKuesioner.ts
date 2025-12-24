@@ -63,8 +63,12 @@ export function useKuesioner() {
     }, [currentSemester, currentTahunAjaran]);
 
     useEffect(() => {
-        if (!roleLoading && role === "mahasiswa") {
-            fetchData();
+        if (!roleLoading) {
+            if (role === "mahasiswa") {
+                fetchData();
+            } else {
+                setLoading(false);
+            }
         }
     }, [role, roleLoading, currentSemester, fetchData]);
 
