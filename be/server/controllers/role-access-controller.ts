@@ -1,6 +1,7 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
+import { DefaultPermissionService } from '../services/DefaultPermissionService.js';
 
 // Get all permissions
 export const getPermissions = async (req: Request, res: Response) => {
@@ -85,7 +86,35 @@ export const updatePermission = async (req: Request, res: Response) => {
 // Initialize default permissions (Helper)
 export const initializePermissions = async (req: Request, res: Response) => {
     try {
-        // Define default resources
+        // Check if custom defaults exist
+        const customDefaults = await DefaultPermissionService.getAllDefaults();
+
+        if (customDefaults && customDefaults.length > 0) {
+            // Use custom defaults
+            let count = 0;
+            for (const defaultPerm of customDefaults) {
+                await prisma.rolePermission.upsert({
+                    where: {
+                        role_resource_action: {
+                            role: defaultPerm.role as any,
+                            resource: defaultPerm.resource,
+                            action: defaultPerm.action
+                        }
+                    },
+                    update: { isEnabled: defaultPerm.isEnabled },
+                    create: {
+                        role: defaultPerm.role as any,
+                        resource: defaultPerm.resource,
+                        action: defaultPerm.action,
+                        isEnabled: defaultPerm.isEnabled
+                    }
+                });
+                count++;
+            }
+            return res.json({ message: `Initialized ${count} permissions from custom defaults`, source: 'custom' });
+        }
+
+        // No custom defaults, use hardcoded system defaults
         const resources = [
             'dashboard',
             'visi_misi',
@@ -106,6 +135,7 @@ export const initializePermissions = async (req: Request, res: Response) => {
             'settings',
             'evaluasi_mk',
             'role_access',
+            'default_role_access',
             'fakultas'
         ];
 

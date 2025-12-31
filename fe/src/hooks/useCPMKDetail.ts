@@ -219,13 +219,24 @@ export function useCPMKDetail(id: string | undefined) {
         setSubmitting(true);
         try {
             if (editingId) {
-                await api.put(`/teknik-penilaian/${editingId}`, {
+                const response = await api.put(`/teknik-penilaian/${editingId}`, {
                     namaTeknik: form.namaTeknik.trim(),
                     bobotPersentase: parseFloat(form.bobotPersentase),
                     deskripsi: form.deskripsi.trim() || null,
                     teknikRefId: form.teknikRefId || null,
                 });
+
                 toast.success("Teknik penilaian berhasil diupdate");
+
+                // Show warning if assessment mappings were deleted
+                if (response.data.affectedSubCpmkCount > 0) {
+                    toast.warning(
+                        `${response.data.affectedSubCpmkCount} Sub-CPMK yang ter-mapping telah direset. Silakan lakukan mapping ulang.`,
+                        { duration: 5000 }
+                    );
+                    // Refresh Sub-CPMK list to show updated mapping status
+                    await fetchSubCpmk();
+                }
             } else {
                 await api.post('/teknik-penilaian', {
                     cpmkId: id,

@@ -37,6 +37,7 @@ import ProfilLulusanPage from "./pages/dashboard/ProfilLulusan";
 import KuesionerCplPage from "./pages/dashboard/KuesionerCpl";
 import RekapKuesionerPage from "./pages/dashboard/RekapKuesioner";
 import RoleAccessPage from "./pages/dashboard/RoleAccess";
+import DefaultRoleAccessPage from "./pages/dashboard/DefaultRoleAccess";
 import EvaluasiCPLPage from "./pages/dashboard/EvaluasiCPL";
 
 
@@ -197,6 +198,14 @@ const App = () => (
                   element={
                     <RequireRole roles={["admin"]} resource="role_access">
                       <RoleAccessPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="default-role-access"
+                  element={
+                    <RequireRole roles={["admin"]} resource="role_access">
+                      <DefaultRoleAccessPage />
                     </RequireRole>
                   }
                 />

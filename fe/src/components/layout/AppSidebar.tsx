@@ -14,7 +14,8 @@ import {
   UserCog,
   BookCheck,
   LayoutDashboard,
-  Shield
+  Shield,
+  Settings
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -67,7 +68,7 @@ export function AppSidebar() {
       },
       {
         title: "Persiapan & Pembelajaran",
-        icon: School,
+        icon: GraduationCap,
         roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
         items: [
           { title: "CPMK & Mapping CPMK - CPL", url: "/dashboard/cpmk", roles: ["admin", "dosen", "kaprodi"], resource: 'cpmk' },
@@ -77,7 +78,7 @@ export function AppSidebar() {
       },
       {
         title: "Laporan & Evaluasi",
-        icon: BarChart3,
+        icon: FileText,
         roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
         items: [
           { title: "Capaian Pembelajaran", url: "/dashboard/transkrip-cpl", roles: ["admin", "dosen", "kaprodi", "mahasiswa"], resource: 'transkrip_cpl' },
@@ -88,7 +89,7 @@ export function AppSidebar() {
       },
       {
         title: "Manajemen Pengguna",
-        icon: UserCog,
+        icon: Users,
         roles: ["admin", "dosen", "kaprodi"] as UserRole[],
         items: [
           { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", roles: ["admin", "kaprodi"], resource: 'dosen_pengampu' },
@@ -99,10 +100,11 @@ export function AppSidebar() {
       },
       {
         title: "Sistem",
-        icon: Shield,
+        icon: Settings,
         roles: ["admin", "dosen", "kaprodi"] as UserRole[],
         items: [
           { title: "Akses Role", url: "/dashboard/role-access", roles: ["admin"], resource: 'role_access' },
+          { title: "Default Akses Role", url: "/dashboard/default-role-access", roles: ["admin"], resource: 'role_access' },
         ]
       }
     ];

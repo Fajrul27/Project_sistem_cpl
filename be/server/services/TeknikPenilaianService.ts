@@ -100,6 +100,27 @@ export class TeknikPenilaianService {
             weightChanged = true;
         }
 
+        // Auto-delete assessment mappings if weight changed
+        let affectedSubCpmkIds: string[] = [];
+        let affectedSubCpmkCount = 0;
+        if (weightChanged) {
+            // Find all Sub-CPMK that have assessment mappings using this technique
+            const mappings = await prisma.asesmenSubCpmk.findMany({
+                where: { teknikPenilaianId: id },
+                select: { subCpmkId: true }
+            });
+
+            if (mappings.length > 0) {
+                affectedSubCpmkIds = mappings.map(m => m.subCpmkId);
+                affectedSubCpmkCount = new Set(affectedSubCpmkIds).size;
+
+                // Delete all assessment mappings for this technique
+                await prisma.asesmenSubCpmk.deleteMany({
+                    where: { teknikPenilaianId: id }
+                });
+            }
+        }
+
         const result = await prisma.teknikPenilaian.update({
             where: { id },
             data: updateData
@@ -109,7 +130,11 @@ export class TeknikPenilaianService {
             await this.recalculateCpmkForBatch(existing.cpmkId, existing.cpmk.mataKuliahId);
         }
 
-        return result;
+        return {
+            ...result,
+            affectedSubCpmkCount,
+            affectedSubCpmkIds: Array.from(new Set(affectedSubCpmkIds))
+        };
     }
 
     static async deleteTeknikPenilaian(id: string) {

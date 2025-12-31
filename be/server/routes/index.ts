@@ -34,6 +34,7 @@ import subCpmkRoutes from './sub-cpmk.js';
 import transkripProfilRoutes from './transkrip-profil.js';
 import roleAccessRoutes from './role-access.js';
 import evaluasiCplRoutes from './evaluasi-cpl.js';
+import defaultPermissionsRoutes from './default-permissions.js';
 
 const router = Router();
 
@@ -72,5 +73,6 @@ router.use('/sub-cpmk', subCpmkRoutes);
 router.use('/transkrip-profil', transkripProfilRoutes);
 router.use('/role-access', roleAccessRoutes);
 router.use('/evaluasi-cpl', evaluasiCplRoutes);
+router.use('/default-permissions', defaultPermissionsRoutes);
 
 export default router;

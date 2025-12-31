@@ -591,4 +591,30 @@ export const supabase = {
   })
 };
 
+// Helper: Default Permissions API
+export async function fetchDefaultPermissions() {
+  return api.get('/default-permissions');
+}
+
+export async function fetchDefaultPermissionsByRole(role: string) {
+  return api.get(`/default-permissions/${role}`);
+}
+
+export async function initializeDefaultPermissions() {
+  return api.post('/default-permissions/initialize', {});
+}
+
+export async function updateRoleDefaultPermissions(role: string, permissions: Array<{ resource: string, action: string, isEnabled: boolean }>) {
+  return api.put(`/default-permissions/${role}`, { permissions });
+}
+
+export async function exportDefaultPermissions() {
+  return api.get('/default-permissions/export');
+}
+
+export async function importDefaultPermissions(data: any) {
+  return api.post('/default-permissions/import', data);
+}
+
 export default supabase;
+

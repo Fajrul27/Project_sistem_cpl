@@ -61,6 +61,17 @@ const CPMKDetailPage = () => {
     const [currentSubCpmkForMapping, setCurrentSubCpmkForMapping] = useState<any>(null);
     const [subCpmkMappingForm, setSubCpmkMappingForm] = useState({ teknikPenilaianId: "", bobot: "100" });
 
+    // Confirmation dialog for technique update
+    const [showUpdateConfirmation, setShowUpdateConfirmation] = useState(false);
+    const [pendingTeknikUpdate, setPendingTeknikUpdate] = useState<any>(null);
+
+    // Helper: Get count of Sub-CPMK mapped to a technique
+    const getMappedSubCpmkCount = (teknikId: string): number => {
+        return subCpmkList.filter(sub =>
+            sub.asesmenMappings?.some((m: any) => m.teknikPenilaianId === teknikId)
+        ).length;
+    };
+
     useEffect(() => {
         initializeData();
     }, [initializeData]);
@@ -78,11 +89,32 @@ const CPMKDetailPage = () => {
 
     const handleSubmitTeknik = async (e: React.FormEvent) => {
         e.preventDefault();
-        const success = await saveTeknik(teknikForm, editingTeknik?.id);
+
+        // If editing and technique has mappings, show confirmation
+        if (editingTeknik?.id) {
+            const mappedCount = getMappedSubCpmkCount(editingTeknik.id);
+            if (mappedCount > 0) {
+                setPendingTeknikUpdate({ form: teknikForm, editId: editingTeknik.id, mappedCount });
+                setShowUpdateConfirmation(true);
+                return;
+            }
+        }
+
+        // Proceed with save if no mappings
+        await proceedWithTeknikUpdate();
+    };
+
+    const proceedWithTeknikUpdate = async () => {
+        const form = pendingTeknikUpdate?.form || teknikForm;
+        const editId = pendingTeknikUpdate?.editId || editingTeknik?.id;
+
+        const success = await saveTeknik(form, editId);
         if (success) {
             setTeknikDialogOpen(false);
             setTeknikForm({ namaTeknik: "", bobotPersentase: "", deskripsi: "", teknikRefId: "" });
             setEditingTeknik(null);
+            setShowUpdateConfirmation(false);
+            setPendingTeknikUpdate(null);
         }
     };
 
@@ -300,80 +332,121 @@ const CPMKDetailPage = () => {
                             <Progress value={totalBobotTeknik} className="w-full mt-2" />
                         </div>
                         {canEdit && (
-                            <Dialog open={teknikDialogOpen} onOpenChange={setTeknikDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button size="sm" onClick={() => {
-                                        setTeknikForm({ namaTeknik: "", bobotPersentase: "", deskripsi: "", teknikRefId: "" });
-                                        setEditingTeknik(null);
-                                    }}>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Tambah Teknik
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>{editingTeknik ? "Edit Teknik Penilaian" : "Tambah Teknik Penilaian"}</DialogTitle>
-                                        <DialogDescription>
-                                            Tambahkan atau edit metode penilaian untuk CPMK ini (contoh: UTS, UAS, Tugas Besar).
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <form onSubmit={handleSubmitTeknik} className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label>Referensi Teknik (Opsional)</Label>
-                                            <Select
-                                                value={teknikForm.teknikRefId}
-                                                onValueChange={(val) => {
-                                                    const ref = teknikRefs.find(r => r.id === val);
-                                                    setTeknikForm({
-                                                        ...teknikForm,
-                                                        teknikRefId: val,
-                                                        namaTeknik: ref ? ref.nama : teknikForm.namaTeknik,
-                                                        deskripsi: ref ? (ref.deskripsi || "") : teknikForm.deskripsi
-                                                    });
+                            <>
+                                <Dialog open={teknikDialogOpen} onOpenChange={setTeknikDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button size="sm" onClick={() => {
+                                            setTeknikForm({ namaTeknik: "", bobotPersentase: "", deskripsi: "", teknikRefId: "" });
+                                            setEditingTeknik(null);
+                                        }}>
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Tambah Teknik
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>{editingTeknik ? "Edit Teknik Penilaian" : "Tambah Teknik Penilaian"}</DialogTitle>
+                                            <DialogDescription>
+                                                Tambahkan atau edit metode penilaian untuk CPMK ini (contoh: UTS, UAS, Tugas Besar).
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <form onSubmit={handleSubmitTeknik} className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label>Referensi Teknik (Opsional)</Label>
+                                                <Select
+                                                    value={teknikForm.teknikRefId}
+                                                    onValueChange={(val) => {
+                                                        const ref = teknikRefs.find(r => r.id === val);
+                                                        setTeknikForm({
+                                                            ...teknikForm,
+                                                            teknikRefId: val,
+                                                            namaTeknik: ref ? ref.nama : teknikForm.namaTeknik,
+                                                            deskripsi: ref ? (ref.deskripsi || "") : teknikForm.deskripsi
+                                                        });
+                                                    }}
+                                                >
+                                                    <SelectTrigger><SelectValue placeholder="Pilih Jenis Teknik" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {teknikRefs.map(r => (
+                                                            <SelectItem key={r.id} value={r.id}>{r.nama}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Nama Teknik</Label>
+                                                <Input
+                                                    value={teknikForm.namaTeknik}
+                                                    onChange={(e) => setTeknikForm({ ...teknikForm, namaTeknik: e.target.value })}
+                                                    placeholder="Contoh: UTS, Tugas Besar"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Bobot (%)</Label>
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    value={teknikForm.bobotPersentase}
+                                                    onChange={(e) => setTeknikForm({ ...teknikForm, bobotPersentase: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Deskripsi</Label>
+                                                <Input
+                                                    value={teknikForm.deskripsi}
+                                                    onChange={(e) => setTeknikForm({ ...teknikForm, deskripsi: e.target.value })}
+                                                />
+                                            </div>
+                                            <Button type="submit" disabled={submitting}>
+                                                {submitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+                                                {editingTeknik ? "Update" : "Simpan"}
+                                            </Button>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+
+                                <Dialog open={showUpdateConfirmation} onOpenChange={setShowUpdateConfirmation}>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Konfirmasi Update Teknik Penilaian</DialogTitle>
+                                            <DialogDescription>
+                                                Teknik penilaian ini memiliki {pendingTeknikUpdate?.mappedCount} Sub-CPMK yang sudah ter-mapping.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <Alert className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/30">
+                                            <AlertCircle className="h-4 w-4 text-yellow-600" />
+                                            <AlertTitle className="text-yellow-900 dark:text-yellow-100">
+                                                Peringatan
+                                            </AlertTitle>
+                                            <AlertDescription className="text-yellow-800 dark:text-yellow-200 text-sm">
+                                                Jika Anda melanjutkan update, semua mapping assessment untuk {pendingTeknikUpdate?.mappedCount} Sub-CPMK akan <strong>dihapus otomatis</strong>.
+                                                Anda perlu melakukan mapping ulang setelah update.
+                                            </AlertDescription>
+                                        </Alert>
+                                        <div className="flex justify-end gap-2 mt-4">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setShowUpdateConfirmation(false);
+                                                    setPendingTeknikUpdate(null);
                                                 }}
                                             >
-                                                <SelectTrigger><SelectValue placeholder="Pilih Jenis Teknik" /></SelectTrigger>
-                                                <SelectContent>
-                                                    {teknikRefs.map(r => (
-                                                        <SelectItem key={r.id} value={r.id}>{r.nama}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                                Batal
+                                            </Button>
+                                            <Button
+                                                onClick={proceedWithTeknikUpdate}
+                                                disabled={submitting}
+                                            >
+                                                {submitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+                                                OK, Lanjutkan Update
+                                            </Button>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label>Nama Teknik</Label>
-                                            <Input
-                                                value={teknikForm.namaTeknik}
-                                                onChange={(e) => setTeknikForm({ ...teknikForm, namaTeknik: e.target.value })}
-                                                placeholder="Contoh: UTS, Tugas Besar"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Bobot (%)</Label>
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={teknikForm.bobotPersentase}
-                                                onChange={(e) => setTeknikForm({ ...teknikForm, bobotPersentase: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Deskripsi</Label>
-                                            <Input
-                                                value={teknikForm.deskripsi}
-                                                onChange={(e) => setTeknikForm({ ...teknikForm, deskripsi: e.target.value })}
-                                            />
-                                        </div>
-                                        <Button type="submit" disabled={submitting}>
-                                            {submitting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
-                                            {editingTeknik ? "Update" : "Simpan"}
-                                        </Button>
-                                    </form>
-                                </DialogContent>
-                            </Dialog>
+                                    </DialogContent>
+                                </Dialog>
+                            </>
                         )}
                     </CardHeader>
                     <CardContent>

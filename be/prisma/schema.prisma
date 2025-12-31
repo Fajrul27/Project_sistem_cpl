@@ -766,6 +766,19 @@ model RolePermission {
   @@map("role_permissions")
 }
 
+model DefaultRolePermission {
+  id        String   @id @default(uuid())
+  role      Role
+  resource  String
+  action    String
+  isEnabled Boolean  @default(true) @map("is_enabled")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([role, resource, action])
+  @@map("default_role_permissions")
+}
+
 model TargetCPL {
   id          String   @id @default(uuid())
   prodiId     String   @map("prodi_id")
