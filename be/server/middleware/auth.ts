@@ -59,14 +59,18 @@ export const requireRole = (...roles: string[]) => {
 };
 
 // Dynamic Permission Middleware
-export const requirePermission = (resource: string, action: string = 'view') => {
+export const requirePermission = (action: string, resource: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userRole = (req as any).userRole;
+      console.log(`[Permission] Checking ${action} on ${resource}. UserRole: ${userRole}`);
       if (!userRole) return res.status(403).json({ error: 'Forbidden - No role' });
 
       // Admin override (optional, but consistent with Policy)
-      if (userRole === 'admin') return next();
+      if (userRole === 'admin') {
+        console.log(`[Permission] Admin bypass granted for ${action} on ${resource}`);
+        return next();
+      }
 
       const permission = await prisma.rolePermission.findUnique({
         where: {

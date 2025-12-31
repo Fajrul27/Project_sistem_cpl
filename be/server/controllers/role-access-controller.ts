@@ -16,7 +16,33 @@ export const getPermissions = async (req: Request, res: Response) => {
         res.json(permissions);
     } catch (error) {
         console.error('Error fetching permissions:', error);
-        res.status(500).json({ error: 'Gagal mengambil data hak akses' });
+        res.status(500).json({ error: 'Gagal mengambil data permissions' });
+    }
+};
+
+// Export current permissions as JSON
+export const exportPermissions = async (req: Request, res: Response) => {
+    try {
+        const permissions = await prisma.rolePermission.findMany({
+            select: {
+                role: true,
+                resource: true,
+                action: true,
+                isEnabled: true
+            },
+            orderBy: [
+                { role: 'asc' },
+                { resource: 'asc' },
+                { action: 'asc' }
+            ]
+        });
+
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename="role-permissions.json"');
+        res.json(permissions);
+    } catch (error) {
+        console.error('Error exporting permissions:', error);
+        res.status(500).json({ error: 'Gagal export permissions' });
     }
 };
 
