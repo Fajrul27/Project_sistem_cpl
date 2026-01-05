@@ -5,7 +5,12 @@ import { useUser } from '@/contexts/UserContext';
 // Define the shape of a permission object
 export interface Permission {
     id: string;
-    role: string;
+    roleId: string;
+    role: {
+        id: string;
+        name: string;
+        displayName: string;
+    };
     resource: string;
     action: string;
     isEnabled: boolean;
@@ -47,17 +52,16 @@ export const PermissionProvider = ({ children }: { children: ReactNode }) => {
     const can = useCallback((action: string, resource: string): boolean => {
         if (!role) return false;
 
-        // Safety: Admin always has access to role access management to prevent lockout
-        if (role === 'admin' && resource === 'role_access') return true;
+        // Safety: Admin always has access to everything
+        if (role === 'admin') return true;
 
         const permission = permissions.find(p =>
-            p.role.toLowerCase() === role.toLowerCase() &&
+            p.role?.name?.toLowerCase() === role.toLowerCase() &&
             p.resource === resource &&
             p.action === action
         );
 
         // Debug logging
-        // console.log(`Checking permission: Role=${role}, Resource=${resource}, Action=${action}, Enabled=${permission?.isEnabled}`);
 
         return permission ? permission.isEnabled : false;
     }, [permissions, role]);

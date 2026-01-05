@@ -7,9 +7,10 @@ import { DefaultPermissionService } from '../services/DefaultPermissionService.j
 export const getPermissions = async (req: Request, res: Response) => {
     try {
         const permissions = await prisma.rolePermission.findMany({
+            include: { role: true },
             orderBy: [
                 { resource: 'asc' },
-                { role: 'asc' },
+                { roleId: 'asc' },
                 { action: 'asc' }
             ]
         });
@@ -25,13 +26,14 @@ export const exportPermissions = async (req: Request, res: Response) => {
     try {
         const permissions = await prisma.rolePermission.findMany({
             select: {
-                role: true,
+                roleId: true,
+                role: { select: { name: true } },
                 resource: true,
                 action: true,
                 isEnabled: true
             },
             orderBy: [
-                { role: 'asc' },
+                { roleId: 'asc' },
                 { resource: 'asc' },
                 { action: 'asc' }
             ]
@@ -56,15 +58,15 @@ export const updatePermission = async (req: Request, res: Response) => {
             const updates = data.map((item: any) =>
                 prisma.rolePermission.upsert({
                     where: {
-                        role_resource_action: {
-                            role: item.role,
+                        roleId_resource_action: {
+                            roleId: item.roleId,
                             resource: item.resource,
                             action: item.action
                         }
                     },
                     update: { isEnabled: item.isEnabled },
                     create: {
-                        role: item.role,
+                        roleId: item.roleId,
                         resource: item.resource,
                         action: item.action,
                         isEnabled: item.isEnabled
@@ -77,16 +79,16 @@ export const updatePermission = async (req: Request, res: Response) => {
         }
 
         // Handle Single Update
-        const { role, resource, action, isEnabled } = data;
+        const { roleId, resource, action, isEnabled } = data;
 
-        if (!role || !resource || !action) {
-            return res.status(400).json({ error: 'Role, resource, dan action harus diisi' });
+        if (!roleId || !resource || !action) {
+            return res.status(400).json({ error: 'RoleId, resource, dan action harus diisi' });
         }
 
         const permission = await prisma.rolePermission.upsert({
             where: {
-                role_resource_action: {
-                    role,
+                roleId_resource_action: {
+                    roleId,
                     resource,
                     action
                 }
@@ -95,7 +97,7 @@ export const updatePermission = async (req: Request, res: Response) => {
                 isEnabled
             },
             create: {
-                role,
+                roleId,
                 resource,
                 action,
                 isEnabled
@@ -109,9 +111,61 @@ export const updatePermission = async (req: Request, res: Response) => {
     }
 };
 
+// Get default permissions
+export const getDefaultPermissions = async (req: Request, res: Response) => {
+    try {
+        const defaults = await DefaultPermissionService.getAllDefaults();
+        res.json(defaults);
+    } catch (error) {
+        console.error('Error fetching default permissions:', error);
+        res.status(500).json({ error: 'Gagal mengambil data default permissions' });
+    }
+};
+
+// Update default permissions (Batch only for now as UI sends all)
+export const updateDefaultPermissions = async (req: Request, res: Response) => {
+    try {
+        const data = req.body;
+
+        if (!Array.isArray(data)) {
+            return res.status(400).json({ error: 'Format data harus array' });
+        }
+
+        const updates = data.map((item: any) =>
+            prisma.defaultRolePermission.upsert({
+                where: {
+                    roleId_resource_action: {
+                        roleId: item.roleId,
+                        resource: item.resource,
+                        action: item.action
+                    }
+                },
+                update: { isEnabled: item.isEnabled },
+                create: {
+                    roleId: item.roleId,
+                    resource: item.resource,
+                    action: item.action,
+                    isEnabled: item.isEnabled
+                }
+            })
+        );
+
+        await prisma.$transaction(updates);
+        res.json({ message: 'Default hak akses berhasil diperbarui' });
+    } catch (error) {
+        console.error('Error updating default permissions:', error);
+        res.status(500).json({ error: 'Gagal mengupdate default hak akses' });
+    }
+};
+
 // Initialize default permissions (Helper)
 export const initializePermissions = async (req: Request, res: Response) => {
     try {
+        // Get all roles for ID lookup
+        const rolesMap = new Map<string, string>();
+        const allRoles = await prisma.role.findMany();
+        allRoles.forEach(r => rolesMap.set(r.name, r.id));
+
         // Check if custom defaults exist
         const customDefaults = await DefaultPermissionService.getAllDefaults();
 
@@ -121,15 +175,15 @@ export const initializePermissions = async (req: Request, res: Response) => {
             for (const defaultPerm of customDefaults) {
                 await prisma.rolePermission.upsert({
                     where: {
-                        role_resource_action: {
-                            role: defaultPerm.role as any,
+                        roleId_resource_action: {
+                            roleId: defaultPerm.roleId,
                             resource: defaultPerm.resource,
                             action: defaultPerm.action
                         }
                     },
                     update: { isEnabled: defaultPerm.isEnabled },
                     create: {
-                        role: defaultPerm.role as any,
+                        roleId: defaultPerm.roleId,
                         resource: defaultPerm.resource,
                         action: defaultPerm.action,
                         isEnabled: defaultPerm.isEnabled
@@ -227,21 +281,24 @@ export const initializePermissions = async (req: Request, res: Response) => {
         };
 
         for (const resource of resources) {
-            for (const role of roles) {
+            for (const roleName of roles) {
+                const roleId = rolesMap.get(roleName);
+                if (!roleId) continue; // Skip if role not found
+
                 for (const action of actions) {
-                    const isEnabled = shouldHaveAccess(role, resource, action);
+                    const isEnabled = shouldHaveAccess(roleName, resource, action);
 
                     await prisma.rolePermission.upsert({
                         where: {
-                            role_resource_action: {
-                                role: role as any,
+                            roleId_resource_action: {
+                                roleId,
                                 resource,
                                 action
                             }
                         },
                         update: { isEnabled }, // Force update to reset to defaults
                         create: {
-                            role: role as any,
+                            roleId,
                             resource,
                             action,
                             isEnabled

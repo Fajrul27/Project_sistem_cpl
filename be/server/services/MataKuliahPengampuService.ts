@@ -174,7 +174,7 @@ export class MataKuliahPengampuService {
                 where: {
                     prodiId: mataKuliah.prodiId,
                     semester: mataKuliah.semester,
-                    user: { role: { role: 'mahasiswa' } }
+                    user: { role: { role: { name: 'mahasiswa' } } }
                 },
                 select: commonSelect
             });
@@ -183,7 +183,7 @@ export class MataKuliahPengampuService {
                 where: {
                     programStudi: mataKuliah.programStudi,
                     semester: mataKuliah.semester,
-                    user: { role: { role: 'mahasiswa' } }
+                    user: { role: { role: { name: 'mahasiswa' } } }
                 },
                 select: commonSelect
             });

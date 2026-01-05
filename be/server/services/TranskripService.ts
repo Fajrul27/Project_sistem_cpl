@@ -113,14 +113,11 @@ export class TranskripService {
             orderBy: { kodeCpl: 'asc' }
         });
 
-        // console.log(`[Transkrip] Mahasiswa prodiId: ${mahasiswa.prodiId}`);
-        // console.log(`[Transkrip] Found ${allCpls.length} CPLs in curriculum for this prodi`);
 
         const where: any = { mahasiswaId };
         if (semester) where.semester = semester;
         if (tahunAjaran) where.tahunAjaran = tahunAjaran;
 
-        // console.log(`[Transkrip] Fetching for mahasiswa=${mahasiswaId}, semester=${semester}, tahunAjaran=${tahunAjaran}`);
 
         // PARALLEL FETCHING: Fetch unrelated data concurrently
         const [nilaiCplList, nilaiTeknikList] = await Promise.all([
@@ -168,8 +165,6 @@ export class TranskripService {
         const transkrip: any[] = [];
         const minNilai = 70;
 
-        // console.log(`[Transkrip] Processing ${allCpls.length} CPLs from curriculum`);
-        // console.log(`[Transkrip] cplMap has ${cplMap.size} entries`);
 
         // Get unique CPL IDs from nilai_cpl records
         const cplIdsWithNilai = Array.from(cplMap.keys());
@@ -180,7 +175,6 @@ export class TranskripService {
             include: { kategoriRef: true }
         });
 
-        // console.log(`[Transkrip] Found ${cplsWithNilai.length} CPLs with nilai records`);
 
         for (const cpl of cplsWithNilai) {
             const nilaiList = cplMap.get(cpl.id) || [];
@@ -247,10 +241,8 @@ export class TranskripService {
         };
         (stats as any).persentaseTercapai = stats.totalCpl > 0 ? Number(((stats.tercapai / stats.totalCpl) * 100).toFixed(2)) : 0;
 
-        // console.log(`[Transkrip] Returning ${transkrip.length} items to frontend`);
         /*
         if (transkrip.length > 0) {
-            console.log(`[Transkrip] Sample item:`, {
                 cplId: transkrip[0].cplId,
                 kodeCpl: transkrip[0].cpl?.kodeCpl,
                 nilaiAkhir: transkrip[0].nilaiAkhir,
@@ -451,9 +443,6 @@ export class TranskripService {
             const avgProfileScore = cplCount > 0 ? totalCplScore / cplCount : 0;
 
             // DEBUG LOGGING
-            console.log(`[Transkrip] ${profil.kode} - Name: ${profil.nama}`);
-            console.log(`[Transkrip] ${profil.kode} - Target DB: ${profil.targetKetercapaian} (Type: ${typeof profil.targetKetercapaian})`);
-            console.log(`[Transkrip] ${profil.kode} - Score: ${avgProfileScore} (Type: ${typeof avgProfileScore})`);
 
             return {
                 ...profil,

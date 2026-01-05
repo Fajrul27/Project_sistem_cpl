@@ -28,6 +28,7 @@ const MataKuliahPage = () => {
     setSemesterFilter,
     setFakultasFilter,
     setProdiFilter,
+    setKurikulumFilter,
     resetFilters,
     prodiList,
     kurikulumList,
@@ -137,7 +138,7 @@ const MataKuliahPage = () => {
     return prodis;
   })();
 
-  const hasActiveFilter = filters.semesterFilter !== "all" || filters.fakultasFilter !== "all" || filters.prodiFilter !== "all";
+  const hasActiveFilter = filters.semesterFilter !== "all" || filters.fakultasFilter !== "all" || filters.prodiFilter !== "all" || filters.kurikulumFilter !== "all";
 
   return (
     <DashboardPage
@@ -229,6 +230,24 @@ const MataKuliahPage = () => {
                         <SelectItem key={String(s)} value={String(s)}>
                           Semester {s}
                         </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium">Kurikulum</Label>
+                  <Select
+                    value={filters.kurikulumFilter}
+                    onValueChange={(value) => setKurikulumFilter(value)}
+                  >
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Semua Kurikulum" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Kurikulum</SelectItem>
+                      {kurikulumList.map((k) => (
+                        <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -359,6 +378,7 @@ const MataKuliahPage = () => {
                           type="number"
                           min="1"
                           max="6"
+                          placeholder="Contoh: 3"
                           value={formData.sks}
                           onChange={(e) => setFormData({ ...formData, sks: e.target.value })}
                           required

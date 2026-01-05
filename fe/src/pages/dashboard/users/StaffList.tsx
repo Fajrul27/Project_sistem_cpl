@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
-import { fetchAllUsers, createUserWithRole, updateUser, deleteUser, updateProfile, fetchFakultasList } from "@/lib/api";
+import { fetchAllUsers, createUserWithRole, updateUser, deleteUser, updateProfile, fetchFakultasList, api } from "@/lib/api";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { Pagination } from "@/components/common/Pagination";
@@ -20,6 +20,7 @@ interface UserRow {
     id: string;
     email: string;
     role: string;
+    roleDisplay?: string;
     namaLengkap?: string | null;
     nip?: string | null;
     fakultas?: string | null;
@@ -49,7 +50,7 @@ interface EditUserForm {
 type ProdiOption = { id: string; nama: string; kode: string };
 type FakultasOption = { id: string; nama: string; kode: string; prodi: ProdiOption[] };
 
-const ROLE_OPTIONS = [
+const STATIC_ROLE_OPTIONS = [
     { value: "dosen", label: "Dosen" },
     { value: "kaprodi", label: "Kaprodi" },
     { value: "admin", label: "Admin" },
@@ -58,6 +59,7 @@ const ROLE_OPTIONS = [
 export const StaffList = () => {
     const [users, setUsers] = useState<UserRow[]>([]);
     const [loading, setLoading] = useState(true);
+    const [roleOptions, setRoleOptions] = useState(STATIC_ROLE_OPTIONS);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [limit] = useState(10);
@@ -101,6 +103,19 @@ export const StaffList = () => {
         fetchFakultasList().then(res => {
             if (res.data) setFakultasList(res.data);
         });
+
+        // Fetch dynamic roles
+        api.get('/roles')
+            .then(res => {
+                if (res.data && Array.isArray(res.data)) {
+                    const options = res.data.map((r: any) => ({
+                        value: r.roleName || r.name, // Handle possible key variations
+                        label: r.displayName || r.roleName
+                    }));
+                    setRoleOptions(options);
+                }
+            })
+            .catch(err => console.error("Failed to fetch roles:", err));
     }, []);
 
     useEffect(() => {
@@ -133,10 +148,15 @@ export const StaffList = () => {
                 if (u.profile?.prodi?.fakultas?.nama) fakultasName = u.profile.prodi.fakultas.nama;
                 if (u.profile?.prodi?.nama) prodiName = u.profile.prodi.nama;
 
+                const roleObj = u.role?.role;
+                const roleName = roleObj?.roleName || roleObj?.name || "dosen";
+                const roleDisplay = roleObj?.displayName || roleName;
+
                 return {
                     id: u.id,
                     email: u.email,
-                    role: u.role?.role || "dosen",
+                    role: roleName,
+                    roleDisplay: roleDisplay,
                     namaLengkap: u.profile?.namaLengkap,
                     nip: u.profile?.nip,
                     fakultas: fakultasName,
@@ -258,12 +278,12 @@ export const StaffList = () => {
                 </div>
                 <div className="flex gap-2 items-center flex-wrap">
                     {/* Role Filter Toggles */}
-                    <div className="flex bg-muted p-1 rounded-lg">
-                        {ROLE_OPTIONS.map(opt => (
+                    <div className="flex bg-muted p-1 rounded-lg overflow-x-auto max-w-[400px]">
+                        {roleOptions.map(opt => (
                             <button
                                 key={opt.value}
                                 onClick={() => { setRoleFilter(opt.value); setPage(1); }}
-                                className={`px-3 py-1 text-xs rounded-md transition-all ${roleFilter === opt.value ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                className={`px-3 py-1 text-xs rounded-md transition-all whitespace-nowrap ${roleFilter === opt.value ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                             >
                                 {opt.label}
                             </button>
@@ -318,7 +338,7 @@ export const StaffList = () => {
                                 <Label>Role</Label>
                                 <Select value={newUser.role} onValueChange={v => setNewUser({ ...newUser, role: v })}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>{ROLE_OPTIONS.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
+                                    <SelectContent>{roleOptions.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2"><Label>Nama</Label><Input value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} required /></div>
@@ -368,7 +388,7 @@ export const StaffList = () => {
                                             <TableCell className="font-mono text-xs">{user.email}</TableCell>
                                             <TableCell>{user.namaLengkap}</TableCell>
                                             <TableCell>{user.nip || "-"}</TableCell>
-                                            <TableCell><Badge variant="outline" className="capitalize">{user.role}</Badge></TableCell>
+                                            <TableCell><Badge variant="outline" className="capitalize">{user.roleDisplay || user.role}</Badge></TableCell>
                                             <TableCell className="text-xs">
                                                 {(user as any).taughtProdis && (user as any).taughtProdis.length > 0
                                                     ? (user as any).taughtProdis.join(", ")
@@ -412,7 +432,7 @@ export const StaffList = () => {
                             <div className="space-y-2"><Label>Role</Label>
                                 <Select value={editData.role} onValueChange={v => setEditData({ ...editData, role: v })}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>{ROLE_OPTIONS.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
+                                    <SelectContent>{roleOptions.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2"><Label>Nama</Label><Input value={editData.fullName} onChange={e => setEditData({ ...editData, fullName: e.target.value })} /></div>

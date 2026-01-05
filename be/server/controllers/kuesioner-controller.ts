@@ -8,7 +8,6 @@ export const getMyKuesioner = async (req: Request, res: Response) => {
         const userId = (req as any).userId;
         const { semester, tahunAjaran } = req.query;
 
-        // console.log(`[Kuesioner GET] User: ${userId}, Sem: ${semester}, TA: ${tahunAjaran}`);
 
         if (!semester || !tahunAjaran) {
             return res.status(400).json({ error: 'Semester dan Tahun Ajaran wajib diisi' });
@@ -20,7 +19,6 @@ export const getMyKuesioner = async (req: Request, res: Response) => {
             String(tahunAjaran)
         );
 
-        // console.log(`[Kuesioner GET] Found ${data.length} records`);
         res.json(data);
     } catch (error) {
         console.error('Error fetching kuesioner:', error);
@@ -32,11 +30,9 @@ export const getMyKuesioner = async (req: Request, res: Response) => {
 export const submitKuesioner = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).userId;
-        // console.log(`[Kuesioner POST] User: ${userId}, Body:`, JSON.stringify(req.body, null, 2));
 
         const result = await KuesionerService.submitKuesioner(userId, req.body);
 
-        // console.log(`[Kuesioner POST] Upserted ${result.length} records`);
         res.json({ message: 'Kuesioner berhasil disimpan' });
     } catch (error: any) {
         if (error.name === 'ZodError') {
@@ -56,10 +52,6 @@ export const getKuesionerStats = async (req: Request, res: Response) => {
         const userRole = (req as any).user?.role;
 
         /*
-        console.log('--- DEBUG KUESIONER STATS REQUEST ---');
-        console.log('Query:', req.query);
-        console.log('User:', { userId, userRole });
-        console.log('-------------------------------------');
         */
 
         const stats = await KuesionerService.getKuesionerStats({
@@ -72,10 +64,6 @@ export const getKuesionerStats = async (req: Request, res: Response) => {
         });
 
         /*
-        console.log('--- DEBUG KUESIONER STATS RESPONSE ---');
-        console.log('Count:', stats.length);
-        if (stats.length > 0) console.log('First Item:', stats[0]);
-        console.log('--------------------------------------');
         */
 
         res.json(stats);

@@ -40,6 +40,8 @@ import {
 import { useUserRole, type UserRole } from "@/hooks/useUserRole";
 import { usePermission } from "@/contexts/PermissionContext";
 
+import { MENU_ITEMS } from "@/constants/menu";
+
 export function AppSidebar() {
   const { open, isMobile, openMobile, toggleSidebar } = useSidebar();
   const location = useLocation();
@@ -47,68 +49,9 @@ export function AppSidebar() {
 
   // Define hierarchical menu structure
   const menuStructure = useMemo(() => {
-    return [
-      {
-        title: "Dashboard",
-        url: "/dashboard",
-        icon: LayoutDashboard,
-        roles: ["admin", "dosen", "mahasiswa", "kaprodi"] as UserRole[],
-        resource: 'dashboard'
-      },
-      {
-        title: "Master Data & Perencanaan",
-        icon: Database,
-        roles: ["admin", "kaprodi", "dosen", "mahasiswa"] as UserRole[],
-        items: [
-          { title: "Visi & Misi", url: "/dashboard/visi-misi", roles: ["admin", "dosen", "kaprodi", "mahasiswa"], resource: 'visi_misi' },
-          { title: "Profil Lulusan", url: "/dashboard/profil-lulusan", roles: ["admin", "dosen", "kaprodi", "mahasiswa"], resource: 'profil_lulusan' },
-          { title: "CPL & Mapping PL - CPL", url: "/dashboard/cpl", roles: ["admin", "dosen", "kaprodi"], resource: 'cpl' },
-          { title: "Mata Kuliah", url: "/dashboard/mata-kuliah", icon: BookOpen, roles: ["admin", "kaprodi", "dosen"], resource: 'mata_kuliah' },
-        ]
-      },
-      {
-        title: "Persiapan & Pembelajaran",
-        icon: GraduationCap,
-        roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
-        items: [
-          { title: "CPMK & Mapping CPMK - CPL", url: "/dashboard/cpmk", roles: ["admin", "dosen", "kaprodi"], resource: 'cpmk' },
-          { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", roles: ["admin", "kaprodi", "dosen"], resource: 'nilai_teknik' },
-          { title: "Isi Kuesioner CPL", url: "/dashboard/kuesioner", roles: ["mahasiswa"], resource: 'kuesioner' },
-        ]
-      },
-      {
-        title: "Laporan & Evaluasi",
-        icon: FileText,
-        roles: ["admin", "dosen", "kaprodi", "mahasiswa"] as UserRole[],
-        items: [
-          { title: "Capaian Pembelajaran", url: "/dashboard/transkrip-cpl", roles: ["admin", "dosen", "kaprodi", "mahasiswa"], resource: 'transkrip_cpl' },
-          { title: "Analisis CPL", url: "/dashboard/analisis", roles: ["admin", "dosen", "kaprodi"], resource: 'analisis_cpl' },
-          { title: "Evaluasi CPL", url: "/dashboard/evaluasi-cpl", roles: ["admin", "kaprodi", "dosen"], resource: 'evaluasi_cpl' },
-          { title: "Rekap Kuesioner", url: "/dashboard/rekap-kuesioner", roles: ["admin", "kaprodi"], resource: 'rekap_kuesioner' },
-        ]
-      },
-      {
-        title: "Manajemen Pengguna",
-        icon: Users,
-        roles: ["admin", "dosen", "kaprodi"] as UserRole[],
-        items: [
-          { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", roles: ["admin", "kaprodi"], resource: 'dosen_pengampu' },
-          { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", roles: ["admin"], resource: 'kaprodi_data' },
-          { title: "Mahasiswa", url: "/dashboard/mahasiswa", roles: ["admin", "dosen", "kaprodi"], resource: 'mahasiswa' },
-          { title: "Pengguna Sistem", url: "/dashboard/users", roles: ["admin"], resource: 'users' },
-        ]
-      },
-      {
-        title: "Sistem",
-        icon: Settings,
-        roles: ["admin", "dosen", "kaprodi"] as UserRole[],
-        items: [
-          { title: "Akses Role", url: "/dashboard/role-access", roles: ["admin"], resource: 'role_access' },
-          { title: "Default Akses Role", url: "/dashboard/default-role-access", roles: ["admin"], resource: 'role_access' },
-        ]
-      }
-    ];
-  }, [role]);
+    return MENU_ITEMS;
+  }, []);
+
 
   // Filter menu based on role
 
@@ -204,7 +147,7 @@ export function AppSidebar() {
 
                 {/* Collapsible Group */}
                 {item.items && (
-                  <Collapsible defaultOpen className="group/collapsible" asChild>
+                  <Collapsible className="group/collapsible" asChild>
                     <SidebarMenuItem>
                       <CollapsibleTrigger asChild>
                         <SidebarMenuButton tooltip={item.title}>

@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 
 export interface RolePermission {
     id: string;
-    role: string;
+    roleId: string;
+    role?: { id: string; name: string; };
     resource: string;
     action: string;
     isEnabled: boolean;

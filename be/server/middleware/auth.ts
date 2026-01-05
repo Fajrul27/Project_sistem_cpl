@@ -5,6 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
+import { context } from '../lib/context.js';
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -12,33 +13,30 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     let token = req.cookies?.token;
 
     // Debug logging
-    console.log(`[Auth] Request to ${req.path}`);
-    console.log(`[Auth] Cookies present:`, !!req.cookies);
-    console.log(`[Auth] Token in cookie:`, !!token);
 
     if (!token) {
       const authHeader = req.headers.authorization;
-      console.log(`[Auth] Auth Header:`, authHeader);
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.split(' ')[1];
       }
     }
 
     if (!token) {
-      console.log('[Auth] No token found');
       return res.status(401).json({ error: 'Unauthorized - No token provided' });
     }
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
-    console.log(`[Auth] Decoded token role: ${decoded.role}, User: ${decoded.email}`);
 
     // Attach user info to request
     (req as any).userId = decoded.userId;
     (req as any).userEmail = decoded.email;
     (req as any).userRole = decoded.role;
 
-    next();
+    // Run next middleware in the context of the user
+    context.run({ userId: decoded.userId }, () => {
+      next();
+    });
   } catch (error) {
     console.error('[Auth] Token verification failed:', error);
     return res.status(401).json({ error: 'Unauthorized - Invalid token' });
@@ -50,7 +48,6 @@ export const requireRole = (...roles: string[]) => {
     const currentRole = (req as any).userRole as string | undefined;
 
     if (!currentRole || !roles.includes(currentRole)) {
-      console.log(`[Auth] Access denied. Required: ${roles.join('|')}, Current: ${currentRole}, User: ${(req as any).userEmail}`);
       return res.status(403).json({ error: 'Forbidden - Insufficient role' });
     }
 
@@ -62,23 +59,35 @@ export const requireRole = (...roles: string[]) => {
 export const requirePermission = (action: string, resource: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const userId = (req as any).userId;
       const userRole = (req as any).userRole;
-      console.log(`[Permission] Checking ${action} on ${resource}. UserRole: ${userRole}`);
-      if (!userRole) return res.status(403).json({ error: 'Forbidden - No role' });
 
-      // Admin override (optional, but consistent with Policy)
-      if (userRole === 'admin') {
-        console.log(`[Permission] Admin bypass granted for ${action} on ${resource}`);
+
+      if (!userId) return res.status(403).json({ error: 'Forbidden - No user' });
+
+      // Fetch user's roleId from database
+      const userRoleRecord = await prisma.userRole.findUnique({
+        where: { userId },
+        include: { role: true }
+      });
+
+      if (!userRoleRecord) {
+        return res.status(403).json({ error: 'Forbidden - No role assigned' });
+      }
+
+      const roleId = userRoleRecord.roleId;
+      const roleName = userRoleRecord.role.name;
+
+      // Admin override
+      if (roleName === 'admin') {
         return next();
       }
 
-      const permission = await prisma.rolePermission.findUnique({
+      const permission = await prisma.rolePermission.findFirst({
         where: {
-          role_resource_action: {
-            role: userRole,
-            resource,
-            action
-          }
+          roleId: roleId,
+          resource,
+          action
         }
       });
 
@@ -86,7 +95,6 @@ export const requirePermission = (action: string, resource: string) => {
         return next();
       }
 
-      console.log(`[Auth] Permission denied. Required: ${resource}.${action}, User: ${(req as any).userEmail} (${userRole})`);
       return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
     } catch (error) {
       console.error('requirePermission middleware error:', error);

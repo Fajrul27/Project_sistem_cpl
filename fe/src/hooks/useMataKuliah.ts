@@ -39,7 +39,7 @@ export interface MataKuliahFormData {
 const initialForm: MataKuliahFormData = {
     kodeMk: "",
     namaMk: "",
-    sks: "3",
+    sks: "",
     semester: "1",
     prodiId: "",
     kurikulumId: "",
@@ -73,13 +73,14 @@ export const useMataKuliah = () => {
     const [semesterFilter, setSemesterFilter] = useState<string>("all");
     const [fakultasFilter, setFakultasFilter] = useState<string>("all");
     const [prodiFilter, setProdiFilter] = useState<string>("all");
+    const [kurikulumFilter, setKurikulumFilter] = useState<string>("all");
 
     useEffect(() => {
         fetchMataKuliah();
         // Master data only needs to be fetched once or when dependencies change? 
         // We'll leave it to separate call or inside effect if strictly needed.
         // But preventing repeated fetches for master data is good.
-    }, [page, searchTerm, semesterFilter, fakultasFilter, prodiFilter]);
+    }, [page, searchTerm, semesterFilter, fakultasFilter, prodiFilter, kurikulumFilter]);
 
     useEffect(() => {
         fetchMasterData();
@@ -106,7 +107,7 @@ export const useMataKuliah = () => {
     };
 
     const fetchMataKuliah = async (force = false) => {
-        const cacheKey = `${page}-${limit}-${searchTerm}-${semesterFilter}-${fakultasFilter}-${prodiFilter}`;
+        const cacheKey = `${page}-${limit}-${searchTerm}-${semesterFilter}-${fakultasFilter}-${prodiFilter}-${kurikulumFilter}`;
 
         if (!force && mkCache[cacheKey]) {
             const cached = mkCache[cacheKey];
@@ -127,6 +128,7 @@ export const useMataKuliah = () => {
             if (semesterFilter !== 'all') params.semester = semesterFilter;
             if (fakultasFilter !== 'all') params.fakultasId = fakultasFilter;
             if (prodiFilter !== 'all') params.prodiId = prodiFilter;
+            if (kurikulumFilter !== 'all') params.kurikulumId = kurikulumFilter;
 
             const result = await api.get('/mata-kuliah', { params });
             const data = result.data || [];
@@ -236,11 +238,13 @@ export const useMataKuliah = () => {
     const handleSetSemesterFilter = (val: string) => { semesterFilter !== val && setPage(1); setSemesterFilter(val); };
     const handleSetFakultasFilter = (val: string) => { fakultasFilter !== val && setPage(1); setFakultasFilter(val); };
     const handleSetProdiFilter = (val: string) => { prodiFilter !== val && setPage(1); setProdiFilter(val); };
+    const handleSetKurikulumFilter = (val: string) => { kurikulumFilter !== val && setPage(1); setKurikulumFilter(val); };
 
     const resetFilters = () => {
         setSemesterFilter("all");
         setFakultasFilter("all");
         setProdiFilter("all");
+        setKurikulumFilter("all");
         setSearchTerm("");
         setPage(1);
     };
@@ -264,7 +268,8 @@ export const useMataKuliah = () => {
             searchTerm,
             semesterFilter,
             fakultasFilter,
-            prodiFilter
+            prodiFilter,
+            kurikulumFilter
         },
 
         // Individual Setters (Wrapped)
@@ -272,6 +277,7 @@ export const useMataKuliah = () => {
         setSemesterFilter: handleSetSemesterFilter,
         setFakultasFilter: handleSetFakultasFilter,
         setProdiFilter: handleSetProdiFilter,
+        setKurikulumFilter: handleSetKurikulumFilter,
         resetFilters,
 
         // Actions

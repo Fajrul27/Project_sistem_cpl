@@ -168,7 +168,6 @@ export class TeknikPenilaianService {
                 distinct: ['mahasiswaId', 'semester', 'tahunAjaran']
             });
 
-            // console.log(`Recalculating CPMK ${cpmkId} for ${affectedGrades.length} students`);
 
             for (const grade of affectedGrades) {
                 await calculateNilaiCpmk(

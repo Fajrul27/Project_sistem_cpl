@@ -302,15 +302,39 @@ export async function fetchKelas() {
   return api.get('/references/kelas');
 }
 
-// Helper: fetch fakultas
-export async function fetchFakultasList() {
-  return api.get('/references/fakultas');
-}
-
 // Helper: fetch prodi
 export async function fetchProdiList(fakultasId?: string) {
   const params = fakultasId ? { fakultasId } : {};
   return api.get('/prodi', { params });
+}
+
+export async function createProdi(data: any) {
+  return api.post('/prodi', data);
+}
+
+export async function updateProdi(id: string, data: any) {
+  return api.put(`/prodi/${id}`, data);
+}
+
+export async function deleteProdi(id: string) {
+  return api.delete(`/prodi/${id}`);
+}
+
+// Helper: fetch fakultas
+export async function fetchFakultasList() {
+  return api.get('/fakultas');
+}
+
+export async function createFakultas(data: any) {
+  return api.post('/fakultas', data);
+}
+
+export async function updateFakultas(id: string, data: any) {
+  return api.put(`/fakultas/${id}`, data);
+}
+
+export async function deleteFakultas(id: string) {
+  return api.delete(`/fakultas/${id}`);
 }
 
 // Helper: fetch angkatan
@@ -591,30 +615,19 @@ export const supabase = {
   })
 };
 
-// Helper: Default Permissions API
-export async function fetchDefaultPermissions() {
-  return api.get('/default-permissions');
-}
 
-export async function fetchDefaultPermissionsByRole(role: string) {
-  return api.get(`/default-permissions/${role}`);
-}
+// Default Permissions
+export const fetchDefaultPermissions = () => api.get('/default-permissions');
+export const fetchDefaultPermissionsByRole = (role: string) => api.get(`/default-permissions/${role}`);
+export const updateDefaultPermissions = (role: string, permissions: any[]) =>
+  api.put(`/default-permissions/${role}`, { permissions });
+export const initializeDefaultPermissions = () => api.post('/default-permissions/init', {});
+export const exportDefaultPermissions = () => api.get('/default-permissions/export');
+export const importDefaultPermissions = (data: any) => api.post('/default-permissions/import', data);
 
-export async function initializeDefaultPermissions() {
-  return api.post('/default-permissions/initialize', {});
-}
-
-export async function updateRoleDefaultPermissions(role: string, permissions: Array<{ resource: string, action: string, isEnabled: boolean }>) {
-  return api.put(`/default-permissions/${role}`, { permissions });
-}
-
-export async function exportDefaultPermissions() {
-  return api.get('/default-permissions/export');
-}
-
-export async function importDefaultPermissions(data: any) {
-  return api.post('/default-permissions/import', data);
-}
+// Role Metadata
+export const fetchRoleMetadata = () => api.get('/roles');
+export const updateRoleMetadata = (roleName: string, data: any) => api.put(`/roles/${roleName}`, data);
+export const initializeRoleMetadata = () => api.post('/roles/init', {});
 
 export default supabase;
-

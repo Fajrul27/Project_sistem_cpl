@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { DefaultPermissionService } from '../services/DefaultPermissionService.js';
-import { Role } from '@prisma/client';
 
 export class DefaultPermissionController {
     // GET /api/default-permissions - Get all defaults
@@ -14,11 +13,11 @@ export class DefaultPermissionController {
         }
     }
 
-    // GET /api/default-permissions/:role - Get defaults for a role
-    static async getDefaultsByRole(req: Request, res: Response) {
+    // GET /api/default-permissions/:roleId - Get defaults for a role
+    static async getDefaultsByRoleId(req: Request, res: Response) {
         try {
-            const role = req.params.role as Role;
-            const defaults = await DefaultPermissionService.getDefaultsByRole(role);
+            const { roleId } = req.params;
+            const defaults = await DefaultPermissionService.getDefaultsByRoleId(roleId);
             res.json(defaults);
         } catch (error) {
             console.error('Error getting defaults for role:', error);
@@ -37,17 +36,17 @@ export class DefaultPermissionController {
         }
     }
 
-    // PUT /api/default-permissions/:role - Update defaults for a role
+    // PUT /api/default-permissions/:roleId - Update defaults for a role
     static async updateRoleDefaults(req: Request, res: Response) {
         try {
-            const role = req.params.role as Role;
+            const { roleId } = req.params;
             const { permissions } = req.body;
 
             if (!permissions || !Array.isArray(permissions)) {
                 return res.status(400).json({ error: 'Invalid permissions data' });
             }
 
-            const updated = await DefaultPermissionService.updateRoleDefaults(role, permissions);
+            const updated = await DefaultPermissionService.updateRoleDefaults(roleId, permissions);
             res.json({ message: 'Default permissions updated', defaults: updated });
         } catch (error) {
             console.error('Error updating defaults:', error);

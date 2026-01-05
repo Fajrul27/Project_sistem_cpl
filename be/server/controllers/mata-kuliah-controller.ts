@@ -7,7 +7,7 @@ export const getAllMataKuliah = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).userId;
         const userRole = (req as any).userRole;
-        const { semester, fakultasId, prodiId, page, limit, q } = req.query;
+        const { semester, fakultasId, prodiId, kurikulumId, page, limit, q } = req.query;
 
         const result = await MataKuliahService.getAllMataKuliah({
             userId,
@@ -15,6 +15,7 @@ export const getAllMataKuliah = async (req: Request, res: Response) => {
             semester: semester as string,
             fakultasId: fakultasId as string,
             prodiId: prodiId as string,
+            kurikulumId: kurikulumId as string,
             page: page ? Number(page) : 1,
             limit: limit ? Number(limit) : 10,
             q: q as string

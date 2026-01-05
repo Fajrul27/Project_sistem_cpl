@@ -93,7 +93,6 @@ export function useVisiMisi() {
                 // Anyone else restricted to their prodi
                 setSelectedProdi(profile.prodiId);
             } else if (!canViewAll) {
-                console.warn("User missing prodiId in profile");
             }
         } catch (error) {
             console.error("Error fetching initial data:", error);

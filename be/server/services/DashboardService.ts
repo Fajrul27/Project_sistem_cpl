@@ -85,7 +85,7 @@ export class DashboardService {
         if (prodiId) {
             userFilter = {
                 ...userFilter,
-                role: { role: 'mahasiswa' },
+                role: { role: { name: 'mahasiswa' } },
             };
             if (!userFilter.profile) userFilter.profile = {};
             userFilter.profile.prodiId = prodiId;
@@ -100,7 +100,7 @@ export class DashboardService {
             // Admin without specific prodi filter sees all students
             userFilter = {
                 ...userFilter,
-                role: { role: 'mahasiswa' },
+                role: { role: { name: 'mahasiswa' } },
             };
         }
 
@@ -127,7 +127,7 @@ export class DashboardService {
             // Calculate User Count for Dosen
             customUserCount = await prisma.profile.count({
                 where: {
-                    user: { role: { role: 'mahasiswa' } },
+                    user: { role: { role: { name: 'mahasiswa' } } },
                     ...userFilter.profile
                 }
             });
@@ -367,7 +367,7 @@ export class DashboardService {
     }
 
     static async getDosenAnalysis(prodiId?: string) {
-        const where: any = { role: { role: 'dosen' } };
+        const where: any = { role: { role: { name: 'dosen' } } };
 
         if (prodiId && prodiId !== 'all') {
             where.profile = { prodiId: prodiId };
@@ -499,7 +499,7 @@ export class DashboardService {
             by: ['kelasId'],
             where: {
                 kelasId: { in: Array.from(kelasIds) },
-                user: { role: { role: 'mahasiswa' } }
+                user: { role: { role: { name: 'mahasiswa' } } }
             },
             _count: { userId: true }
         });
@@ -519,7 +519,7 @@ export class DashboardService {
         const prodiSemCounts = await prisma.profile.groupBy({
             by: ['prodiId', 'semester'],
             where: {
-                user: { role: { role: 'mahasiswa' } },
+                user: { role: { role: { name: 'mahasiswa' } } },
                 // Ideally we filter by the needed prodiIds and semesters to optimize
             },
             _count: { userId: true }
@@ -662,7 +662,7 @@ export class DashboardService {
 
     static async getStudentEvaluation(params: { prodiId?: string, angkatan?: string, semester?: string }) {
         const { prodiId, angkatan, semester } = params;
-        const where: any = { role: { role: 'mahasiswa' } };
+        const where: any = { role: { role: { name: 'mahasiswa' } } };
         const profileWhere: any = {};
 
         if (prodiId && prodiId !== 'all') profileWhere.prodiId = prodiId;

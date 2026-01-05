@@ -36,6 +36,8 @@ import roleAccessRoutes from './role-access.js';
 import evaluasiCplRoutes from './evaluasi-cpl.js';
 import defaultPermissionsRoutes from './default-permissions.js';
 
+import rolesRoutes from './roles.js';
+
 const router = Router();
 
 router.use('/auth', authRoutes);
@@ -74,5 +76,7 @@ router.use('/transkrip-profil', transkripProfilRoutes);
 router.use('/role-access', roleAccessRoutes);
 router.use('/evaluasi-cpl', evaluasiCplRoutes);
 router.use('/default-permissions', defaultPermissionsRoutes);
+
+router.use('/roles', rolesRoutes);
 
 export default router;

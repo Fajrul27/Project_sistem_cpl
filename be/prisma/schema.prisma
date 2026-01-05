@@ -36,12 +36,13 @@ model User {
 model UserRole {
   id        Int      @id @default(autoincrement())
   userId    String   @unique @map("user_id")
-  role      Role     @default(mahasiswa)
+  roleId    String   @map("role_id")
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([role])
+  @@index([roleId])
   @@index([userId])
   @@map("user_roles")
 }
@@ -755,27 +756,29 @@ model PenilaianTidakLangsung {
 
 model RolePermission {
   id        String   @id @default(uuid())
-  role      Role
+  roleId    String   @map("role_id")
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
   resource  String
   action    String
   isEnabled Boolean  @default(false) @map("is_enabled")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([role, resource, action])
+  @@unique([roleId, resource, action])
   @@map("role_permissions")
 }
 
 model DefaultRolePermission {
   id        String   @id @default(uuid())
-  role      Role
+  roleId    String   @map("role_id")
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
   resource  String
   action    String
   isEnabled Boolean  @default(true) @map("is_enabled")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([role, resource, action])
+  @@unique([roleId, resource, action])
   @@map("default_role_permissions")
 }
 
@@ -819,10 +822,22 @@ model TindakLanjutCPL {
   @@map("tindak_lanjut_cpl")
 }
 
-enum Role {
-  admin
-  dosen
-  mahasiswa
-  kaprodi
-  dekan
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  displayName String   @map("display_name")
+  description String?  @db.Text
+  isSystem    Boolean  @default(false) @map("is_system")
+  isActive    Boolean  @default(true) @map("is_active")
+  icon        String?
+  color       String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  userRoles            UserRole[]
+  rolePermissions      RolePermission[]
+  defaultPermissions   DefaultRolePermission[]
+
+  @@map("roles")
 }

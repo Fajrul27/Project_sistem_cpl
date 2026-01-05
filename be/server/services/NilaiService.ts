@@ -318,7 +318,7 @@ export class NilaiService {
             targetKelasIds = pengampuClasses.map(p => p.kelasId).filter((id): id is string => id !== null);
 
             const mahasiswaWhere: any = {
-                role: { role: 'mahasiswa' },
+                role: { role: { name: 'mahasiswa' } },
                 profile: { kelasId: { in: targetKelasIds } }
             };
 

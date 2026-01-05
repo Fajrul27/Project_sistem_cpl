@@ -225,7 +225,6 @@ export function useTranskripCPL() {
             if (tahunAjaran !== 'all') params.tahunAjaran = tahunAjaran;
 
             const result = await api.get(`/transkrip-cpl/${selectedMahasiswa}`, { params });
-            // console.log("FetchTranskrip result:", result);
             setTranskripList(result.data?.transkrip || []);
             setTotalCurriculumCpl(result.data?.summary?.totalCurriculumCpl || 0);
             updateStudentInfo(result.data?.mahasiswa);
@@ -274,7 +273,6 @@ export function useTranskripCPL() {
     };
 
     const updateStudentInfo = (m: any) => {
-        // console.log("Updating student info:", m);
         if (m) {
             const programStudi = m.prodi?.nama || m.programStudi || "-";
             setCurrentStudent({

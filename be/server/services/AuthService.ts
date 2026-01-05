@@ -37,6 +37,15 @@ export class AuthService {
             }
         }
 
+        // Get default role (mahasiswa)
+        const mahasiswaRole = await prisma.role.findUnique({
+            where: { name: 'mahasiswa' }
+        });
+
+        if (!mahasiswaRole) {
+            throw new Error('Default role (mahasiswa) not found');
+        }
+
         // Create user with profile and role
         const user = await prisma.user.create({
             data: {
@@ -45,7 +54,7 @@ export class AuthService {
                 emailVerified: true,
                 role: {
                     create: {
-                        role: 'mahasiswa' // Default role
+                        roleId: mahasiswaRole.id
                     }
                 },
                 profile: {
@@ -58,7 +67,7 @@ export class AuthService {
                 }
             },
             include: {
-                role: true,
+                role: { include: { role: true } },
                 profile: true
             }
         });
@@ -66,7 +75,7 @@ export class AuthService {
         return {
             id: user.id,
             email: user.email,
-            role: user.role?.role || 'mahasiswa',
+            role: user.role?.role?.name || 'mahasiswa',
             profile: user.profile
         };
     }
@@ -78,7 +87,7 @@ export class AuthService {
         const user = await prisma.user.findUnique({
             where: { email },
             include: {
-                role: true,
+                role: { include: { role: true } },
                 profile: true
             }
         });
@@ -98,7 +107,7 @@ export class AuthService {
             {
                 userId: user.id,
                 email: user.email,
-                role: user.role?.role || 'mahasiswa'
+                role: user.role?.role?.name || 'mahasiswa'
             },
             process.env.JWT_SECRET || 'your-secret-key',
             { expiresIn: '7d' }
@@ -123,7 +132,7 @@ export class AuthService {
             user: {
                 id: user.id,
                 email: user.email,
-                role: user.role?.role || 'mahasiswa',
+                role: user.role?.role?.name || 'mahasiswa',
                 profile: user.profile
             }
         };
@@ -133,7 +142,7 @@ export class AuthService {
         const user = await prisma.user.findUnique({
             where: { id: userId },
             include: {
-                role: true,
+                role: { include: { role: true } },
                 profile: {
                     include: {
                         kelasRef: true,
@@ -154,7 +163,7 @@ export class AuthService {
         return {
             id: user.id,
             email: user.email,
-            role: user.role?.role || 'mahasiswa',
+            role: user.role?.role?.name || 'mahasiswa',
             profile: user.profile
         };
     }

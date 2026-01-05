@@ -4,5 +4,3 @@ git push origin main
 
 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
 docker-compose down --remove-orphans && docker-compose build && docker-compose up -d
-
-

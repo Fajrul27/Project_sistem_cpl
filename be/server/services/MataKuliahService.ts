@@ -8,6 +8,7 @@ interface GetMataKuliahParams {
     semester?: string;
     fakultasId?: string;
     prodiId?: string;
+    kurikulumId?: string;
     page?: number;
     limit?: number;
     q?: string;
@@ -15,10 +16,11 @@ interface GetMataKuliahParams {
 
 export class MataKuliahService {
     static async getAllMataKuliah(params: GetMataKuliahParams) {
-        const { userId, userRole, semester, fakultasId, prodiId, page = 1, limit = 10, q } = params;
+        const { userId, userRole, semester, fakultasId, prodiId, kurikulumId, page = 1, limit = 10, q } = params;
         const where: any = { isActive: true };
 
         if (semester) where.semester = parseInt(semester);
+        if (kurikulumId) where.kurikulumId = kurikulumId;
 
         if (q) {
             where.OR = [

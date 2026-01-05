@@ -241,7 +241,6 @@ export const useNilaiTeknik = () => {
                 setGradesMetadata(existingMetadata);
                 setLastUpdated(maxDate);
             } catch (err) {
-                // console.log("No existing grades or error fetching grades", err);
             }
 
         } catch (error) {

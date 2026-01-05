@@ -38,7 +38,10 @@ import KuesionerCplPage from "./pages/dashboard/KuesionerCpl";
 import RekapKuesionerPage from "./pages/dashboard/RekapKuesioner";
 import RoleAccessPage from "./pages/dashboard/RoleAccess";
 import DefaultRoleAccessPage from "./pages/dashboard/DefaultRoleAccess";
+import RoleManagementPage from "./pages/dashboard/RoleManagement";
 import EvaluasiCPLPage from "./pages/dashboard/EvaluasiCPL";
+import FakultasPage from "./pages/dashboard/FakultasPage";
+import ActivityLogPage from "./pages/dashboard/ActivityLog";
 
 
 
@@ -206,6 +209,30 @@ const App = () => (
                   element={
                     <RequireRole roles={["admin"]} resource="role_access">
                       <DefaultRoleAccessPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="role-management"
+                  element={
+                    <RequireRole roles={["admin"]} resource="role_metadata">
+                      <RoleManagementPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="fakultas"
+                  element={
+                    <RequireRole roles={["admin"]} resource="fakultas">
+                      <FakultasPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="activity-log"
+                  element={
+                    <RequireRole roles={["admin", "dekan"]} resource="audit_log">
+                      <ActivityLogPage />
                     </RequireRole>
                   }
                 />

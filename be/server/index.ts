@@ -9,7 +9,6 @@ import cookieParser from 'cookie-parser';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-// console.log('Environment:', process.env.NODE_ENV);
 
 // Middleware
 const allowedOrigins = [
@@ -33,7 +32,6 @@ app.use(cors({
     }
 
     // For development, we might want to log blocked origins
-    // console.log('Blocked by CORS:', origin);
     callback(null, false);
   },
   credentials: true
@@ -43,7 +41,6 @@ app.use(cookieParser());
 
 // Debug: Log all requests
 app.use((req, res, next) => {
-  console.log(`[Global] ${req.method} ${req.url}`);
   next();
 });
 
@@ -59,9 +56,11 @@ app.get('/health', (req, res) => {
 
 // Import routes
 import routes from './routes/index.js';
+import auditLogRoutes from './routes/audit-log.js';
 
 // API Routes
 app.use('/api', routes);
+app.use('/api/audit-logs', auditLogRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -74,20 +73,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // Start server
 app.listen(Number(PORT), '0.0.0.0', () => {
-  console.log('Force Restart 3: Crash Fixed');
-  console.log('');
-  console.log('🚀 Server running on http://localhost:' + PORT);
-  console.log('📊 Database: MySQL + Prisma');
-  console.log('🎨 Frontend: ' + (process.env.CORS_ORIGIN || 'http://localhost:5173'));
-  console.log('');
-  console.log('API Endpoints:');
-  console.log('  POST   /api/auth/register');
-  console.log('  POST   /api/auth/login');
-  console.log('  GET    /api/auth/me');
-  console.log('  POST   /api/auth/logout');
-  console.log('  GET    /api/cpl');
-  console.log('  GET    /api/dashboard/stats');
-  console.log('');
 });
 
 export default app;

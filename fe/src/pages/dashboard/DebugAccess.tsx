@@ -12,7 +12,7 @@ const DebugAccess = () => {
     const normalizedRole = role?.toLowerCase();
 
     // Filter permissions relevant to current user for easier reading
-    const myPermissions = permissions.filter(p => p.role.toLowerCase() === normalizedRole);
+    const myPermissions = permissions.filter(p => p.role?.name?.toLowerCase() === normalizedRole);
 
     return (
         <DashboardPage title="Debug Access Control">

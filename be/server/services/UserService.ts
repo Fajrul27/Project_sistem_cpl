@@ -36,7 +36,7 @@ export class UserService {
 
         // Filter by role
         if (role) {
-            where.role = { role: role };
+            where.role = { role: { name: role } };
         }
 
         // Initialize profile where clause if needed
@@ -65,7 +65,7 @@ export class UserService {
                 const prodiStudents = await prisma.profile.findMany({
                     where: {
                         prodiId: dosenProdiId,
-                        user: { role: { role: 'mahasiswa' } }
+                        user: { role: { role: { name: 'mahasiswa' } } }
                     },
                     select: { userId: true }
                 });
@@ -91,7 +91,7 @@ export class UserService {
                         where: {
                             prodiId: mataKuliah.prodiId,
                             semester: mataKuliah.semester,
-                            user: { role: { role: 'mahasiswa' } }
+                            user: { role: { role: { name: 'mahasiswa' } } }
                         },
                         select: { userId: true }
                     });
@@ -100,7 +100,7 @@ export class UserService {
                         where: {
                             programStudi: mataKuliah.programStudi,
                             semester: mataKuliah.semester,
-                            user: { role: { role: 'mahasiswa' } }
+                            user: { role: { role: { name: 'mahasiswa' } } }
                         },
                         select: { userId: true }
                     });
@@ -121,19 +121,19 @@ export class UserService {
                     if (mkPengampu.kelasId) {
                         criteria.push({
                             kelasId: mkPengampu.kelasId,
-                            user: { role: { role: 'mahasiswa' } }
+                            user: { role: { role: { name: 'mahasiswa' } } }
                         });
                     } else if (mk.prodiId) {
                         criteria.push({
                             prodiId: mk.prodiId,
                             semester: mk.semester,
-                            user: { role: { role: 'mahasiswa' } }
+                            user: { role: { role: { name: 'mahasiswa' } } }
                         });
                     } else if (mk.programStudi) {
                         criteria.push({
                             programStudi: mk.programStudi,
                             semester: mk.semester,
-                            user: { role: { role: 'mahasiswa' } }
+                            user: { role: { role: { name: 'mahasiswa' } } }
                         });
                     }
                 });
@@ -229,7 +229,7 @@ export class UserService {
         const users = await prisma.user.findMany({
             where,
             include: {
-                role: true,
+                role: { include: { role: true } },
                 profile: {
                     include: {
                         prodi: { include: { fakultas: true } },
@@ -257,7 +257,7 @@ export class UserService {
             const userData = { ...user } as any;
 
             // For dosen/kaprodi, add info about which prodi they teach
-            if (user.role?.role === 'dosen' || user.role?.role === 'kaprodi') {
+            if (user.role?.role?.name === 'dosen' || user.role?.role?.name === 'kaprodi') {
                 const pengampu = user.profile?.mataKuliahPengampu || [];
                 const taughtProdis = new Set<string>();
 
@@ -296,24 +296,28 @@ export class UserService {
         return user;
     }
 
-    static async updateUserRole(id: string, role: string) {
-        const allowedRoles = ['admin', 'dosen', 'mahasiswa', 'kaprodi'];
-        if (!role || !allowedRoles.includes(role)) {
+    static async updateUserRole(id: string, roleName: string) {
+        const allowedRoles = ['admin', 'dosen', 'mahasiswa', 'kaprodi', 'dekan'];
+        if (!roleName || !allowedRoles.includes(roleName)) {
             throw new Error('Role tidak valid');
         }
 
         const existingUser = await prisma.user.findUnique({ where: { id } });
         if (!existingUser) throw new Error('User tidak ditemukan');
 
+        // Get role ID
+        const roleRecord = await prisma.role.findUnique({ where: { name: roleName } });
+        if (!roleRecord) throw new Error('Role tidak ditemukan');
+
         await prisma.userRole.upsert({
             where: { userId: id },
-            update: { role: role as any },
-            create: { userId: id, role: role as any }
+            update: { roleId: roleRecord.id },
+            create: { userId: id, roleId: roleRecord.id }
         });
 
         return prisma.user.findUnique({
             where: { id },
-            include: { role: true, profile: true }
+            include: { role: { include: { role: true } }, profile: true }
         });
     }
 
@@ -330,12 +334,18 @@ export class UserService {
 
         const { email, role, isActive, profile, password } = validated;
 
-        const roleUpdate = role ? {
-            upsert: {
-                create: { role: role as any },
-                update: { role: role as any }
-            }
-        } : undefined;
+        // Get roleId if role name provided
+        let roleUpdate;
+        if (role) {
+            const roleRecord = await prisma.role.findUnique({ where: { name: role } });
+            if (!roleRecord) throw new Error('Role tidak ditemukan');
+            roleUpdate = {
+                upsert: {
+                    create: { roleId: roleRecord.id },
+                    update: { roleId: roleRecord.id }
+                }
+            };
+        }
 
         return prisma.user.update({
             where: { id },

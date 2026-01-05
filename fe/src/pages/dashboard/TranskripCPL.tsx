@@ -422,8 +422,8 @@ const TranskripCPLPage = () => {
                                                                     <div className="flex flex-col gap-1">
                                                                         <div className="flex justify-between text-xs">
                                                                             <span>{profil.percentage.toFixed(2)}%</span>
-                                                                            <span className={profil.percentage >= (profil.targetKetercapaian || 70) ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
-                                                                                {profil.percentage >= (profil.targetKetercapaian || 70) ? "Tercapai" : "Belum Tercapai"}
+                                                                            <span className={profil.percentage >= ((profil as any).targetKetercapaian || 70) ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
+                                                                                {profil.percentage >= ((profil as any).targetKetercapaian || 70) ? "Tercapai" : "Belum Tercapai"}
                                                                             </span>
                                                                         </div>
                                                                         <Progress value={profil.percentage} className="h-2" />

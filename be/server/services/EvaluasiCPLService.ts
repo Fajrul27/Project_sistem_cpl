@@ -43,7 +43,6 @@ export class EvaluasiCPLService {
 
     static async upsertTargets(params: UpsertTargetParams) {
         const { prodiId, angkatan, tahunAjaran, semester, targets } = params;
-        console.log(`EvaluasiCPLService.upsertTargets: Saving ${targets.length} targets for Prodi ${prodiId}, Angkatan ${angkatan}, TA ${tahunAjaran}, Sem ${semester}`);
 
         const results = [];
         for (const t of targets) {
@@ -89,19 +88,15 @@ export class EvaluasiCPLService {
     // --- EVALUATION LOGIC ---
 
     static async getEvaluation(params: TargetParams) {
-        console.log('EvaluasiCPLService.getEvaluation called with:', params);
         const { prodiId, angkatan, tahunAjaran, semester } = params;
 
         try {
             // 1. Get Targets
-            console.log('Fetching targets...');
             const targets = await this.getTargets(params);
             const targetMap = new Map(targets.map(t => [t.cplId, t.target]));
-            console.log(`Found ${targets.length} targets`);
 
             // 2. Get Actual Scores (Average of students in this cohort)
             // We need to fetch students first
-            console.log('Fetching students...');
             const students = await prisma.profile.findMany({
                 where: {
                     prodiId,
@@ -111,10 +106,8 @@ export class EvaluasiCPLService {
             });
 
             const studentIds = students.map(s => s.userId);
-            console.log(`Found ${studentIds.length} students:`, studentIds);
 
             if (studentIds.length === 0) {
-                console.log('No students found for this cohort, returning empty evaluation.');
                 return {
                     targets,
                     evaluation: [],
@@ -133,7 +126,6 @@ export class EvaluasiCPLService {
             if (tahunAjaran) whereNilai.tahunAjaran = tahunAjaran;
             if (semester) whereNilai.semester = semester;
 
-            console.log('Fetching scores with strict filter:', JSON.stringify(whereNilai, null, 2));
 
             // Fetch ALL scores to calculate detailed metrics in memory
             // (More flexible than groupBy for calculating % Pass per student)
@@ -142,10 +134,8 @@ export class EvaluasiCPLService {
                 include: { mataKuliah: true }
             });
 
-            console.log(`Found ${allScores.length} score records`);
 
             // Get all CPLs for this prodi
-            console.log('Fetching all CPLs...');
             const allCpls = await prisma.cpl.findMany({
                 where: { prodiId, isActive: true },
                 include: {
@@ -156,7 +146,6 @@ export class EvaluasiCPLService {
                     }
                 }
             });
-            console.log(`Found ${allCpls.length} CPLs`);
 
             const evaluation = allCpls.map(cpl => {
                 const cplScores = allScores.filter(s => s.cplId === cpl.id);
