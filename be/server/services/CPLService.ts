@@ -159,10 +159,20 @@ export class CPLService {
             entry.count += 1;
         });
 
-        const semesterData = Array.from(semesterMap.values()).map((entry: any) => ({
-            semester: entry.semester,
-            nilai: Number((entry.sum / entry.count).toFixed(2))
-        }));
+        const semesterData = Array.from(semesterMap.values())
+            .map((entry: any) => ({
+                semester: entry.semester,
+                nilai: Number((entry.sum / entry.count).toFixed(2)),
+                // Add sortable keys
+                tahunAjaran: entry.semester.split(' - ')[0],
+                semIndex: parseInt(entry.semester.split('Sem ')[1])
+            }))
+            .sort((a, b) => {
+                if (a.tahunAjaran !== b.tahunAjaran) return a.tahunAjaran.localeCompare(b.tahunAjaran);
+                return a.semIndex - b.semIndex;
+            })
+            // Clean up internal keys if needed, or keep them
+            .map(({ semester, nilai }) => ({ semester, nilai }));
 
         let trend = 'stable';
         if (semesterData.length >= 2) {
@@ -172,18 +182,28 @@ export class CPLService {
             else if (last < prev) trend = 'down';
         }
 
-        // Distribution
+        // Distribution - Aggregate per Student first
+        const studentScores = new Map<string, { sum: number, count: number }>();
+        nilaiList.forEach(n => {
+            if (!studentScores.has(n.mahasiswaId)) {
+                studentScores.set(n.mahasiswaId, { sum: 0, count: 0 });
+            }
+            const s = studentScores.get(n.mahasiswaId)!; // Assert non-null because we just set it
+            s.sum += Number(n.nilai);
+            s.count += 1;
+        });
+
         const ranges = [
-            { range: '0-50', min: 0, max: 50, count: 0 },
-            { range: '51-60', min: 51, max: 60, count: 0 },
-            { range: '61-70', min: 61, max: 70, count: 0 },
-            { range: '71-80', min: 71, max: 80, count: 0 },
+            { range: '0-50', min: 0, max: 50.99, count: 0 },
+            { range: '51-60', min: 51, max: 60.99, count: 0 },
+            { range: '61-70', min: 61, max: 70.99, count: 0 },
+            { range: '71-80', min: 71, max: 80.99, count: 0 },
             { range: '81-100', min: 81, max: 100, count: 0 },
         ];
 
-        nilaiList.forEach(n => {
-            const val = Number(n.nilai);
-            const range = ranges.find(r => val >= r.min && val <= r.max);
+        studentScores.forEach((data) => {
+            const avg = data.sum / data.count;
+            const range = ranges.find(r => avg >= r.min && avg <= r.max);
             if (range) range.count++;
         });
 

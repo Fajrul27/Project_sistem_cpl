@@ -6,7 +6,9 @@ import {
     updatePermission,
     initializePermissions,
     getDefaultPermissions,
-    updateDefaultPermissions
+
+    updateDefaultPermissions,
+    resetDefaultPermissions
 } from '../controllers/role-access-controller.js';
 import { authMiddleware, requireRole } from '../middleware/auth.js';
 
@@ -24,5 +26,6 @@ router.post('/init', requireRole('admin'), initializePermissions);
 // Default Roles Permissions
 router.get('/defaults', requireRole('admin'), getDefaultPermissions);
 router.put('/defaults', requireRole('admin'), updateDefaultPermissions);
+router.post('/defaults/reset', requireRole('admin'), resetDefaultPermissions);
 
 export default router;

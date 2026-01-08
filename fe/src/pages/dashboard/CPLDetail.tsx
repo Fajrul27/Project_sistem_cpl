@@ -119,6 +119,7 @@ const CPLDetailPage = () => {
                       tickLine={false}
                       axisLine={false}
                       dy={10}
+                      tickFormatter={(val) => val.replace(' - Sem ', ' S')} // Shorten label: 2024/2025 S1
                     />
                     <YAxis
                       domain={[0, 100]}
@@ -126,33 +127,41 @@ const CPLDetailPage = () => {
                       tickLine={false}
                       axisLine={false}
                       dx={-10}
+                      label={{ value: 'Nilai Rata-rata', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 } }}
                     />
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        borderColor: 'hsl(var(--border))',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-popover border border-border p-3 rounded-lg shadow-lg">
+                              <p className="text-sm font-semibold mb-1">{label}</p>
+                              <p className="text-sm text-primary">
+                                Rata-rata: <span className="font-bold">{payload[0].value}</span>
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Nilai rata-rata mahasiswa pada semester ini
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
                       }}
-                      itemStyle={{ color: 'hsl(var(--foreground))' }}
                     />
-                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
                     <Line
                       type="monotone"
                       dataKey="nilai"
                       stroke="hsl(var(--primary))"
                       strokeWidth={2}
-                      name="Nilai"
+                      name="Nilai Rata-rata"
                       dot={{ r: 4, fill: "hsl(var(--primary))" }}
                       activeDot={{ r: 6 }}
                       animationDuration={2000}
-                      animationEasing="ease-out"
                     />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                  <p className="text-muted-foreground">Belum ada data</p>
+                  <p className="text-muted-foreground">Belum ada data historis</p>
                 </div>
               )}
             </CardContent>
@@ -161,7 +170,7 @@ const CPLDetailPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>Distribusi Nilai</CardTitle>
-              <CardDescription>Sebaran nilai mahasiswa</CardDescription>
+              <CardDescription>Sebaran kemampuan mahasiswa</CardDescription>
             </CardHeader>
             <CardContent>
               {stats?.distribution && stats.distribution.length > 0 ? (
@@ -186,18 +195,27 @@ const CPLDetailPage = () => {
                       tickLine={false}
                       axisLine={false}
                       dx={-10}
+                      label={{ value: 'Jml Mahasiswa', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))', fontSize: 12 } }}
                     />
                     <Tooltip
                       cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--card))',
-                        borderColor: 'hsl(var(--border))',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-popover border border-border p-3 rounded-lg shadow-lg">
+                              <p className="text-sm font-semibold mb-1">Rentang Nilai: {label}</p>
+                              <p className="text-sm text-primary">
+                                Jumlah: <span className="font-bold">{payload[0].value} Mahasiswa</span>
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {Number(payload[0].value) > 0 ? 'Mahasiswa di range ini' : 'Tidak ada mahasiswa'}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
                       }}
-                      itemStyle={{ color: 'hsl(var(--foreground))' }}
                     />
-                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
                     <Bar
                       dataKey="count"
                       fill="url(#colorDistCPL)"
@@ -205,13 +223,12 @@ const CPLDetailPage = () => {
                       radius={[6, 6, 0, 0]}
                       barSize={40}
                       animationDuration={2000}
-                      animationEasing="ease-out"
                     />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                  <p className="text-muted-foreground">Belum ada data</p>
+                  <p className="text-muted-foreground">Belum ada data distribusi</p>
                 </div>
               )}
             </CardContent>
@@ -222,12 +239,12 @@ const CPLDetailPage = () => {
         <Card>
           <CardHeader>
             <CardTitle>Pencapaian per Mata Kuliah</CardTitle>
-            <CardDescription>Top 10 mata kuliah dengan rata-rata nilai tertinggi</CardDescription>
+            <CardDescription>Top 10 mata kuliah dengan kontribusi nilai tertinggi terhadap CPL ini</CardDescription>
           </CardHeader>
           <CardContent>
             {stats?.mkData && stats.mkData.length > 0 ? (
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={stats.mkData} layout="vertical">
+                <BarChart data={stats.mkData} layout="vertical" margin={{ left: 20 }}>
                   <defs>
                     <linearGradient id="colorMKCPL" x1="0" y1="0" x2="1" y2="0">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
@@ -245,22 +262,30 @@ const CPLDetailPage = () => {
                   <YAxis
                     dataKey="name"
                     type="category"
-                    width={150}
+                    width={180}
                     className="text-xs font-medium"
                     tickLine={false}
                     axisLine={false}
                   />
                   <Tooltip
                     cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      borderColor: 'hsl(var(--border))',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-popover border border-border p-3 rounded-lg shadow-lg">
+                            <p className="text-sm font-semibold mb-1">{label}</p>
+                            <p className="text-sm text-primary">
+                              Rata-rata: <span className="font-bold">{payload[0].value}</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Kontribusi nilai rata-rata dari mata kuliah ini
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
                     }}
-                    itemStyle={{ color: 'hsl(var(--foreground))' }}
                   />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
                   <Bar
                     dataKey="nilai"
                     fill="url(#colorMKCPL)"
@@ -268,7 +293,6 @@ const CPLDetailPage = () => {
                     radius={[0, 6, 6, 0]}
                     barSize={20}
                     animationDuration={2000}
-                    animationEasing="ease-out"
                   />
                 </BarChart>
               </ResponsiveContainer>

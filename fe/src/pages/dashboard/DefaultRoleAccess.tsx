@@ -2,14 +2,14 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { usePermission } from "@/contexts/PermissionContext";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import {
-    RefreshCw,
+    RotateCcw,
     Save,
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -85,7 +85,7 @@ const DefaultRoleAccessPage = () => {
                 const rolesData = response.data || response;
                 if (Array.isArray(rolesData)) {
                     setRoles(rolesData);
-                    if (rolesData.length > 0) setActiveRole(rolesData[0].id);
+                    // if (rolesData.length > 0) setActiveRole(rolesData[0].id);
                 }
             } catch (error) {
                 console.error('[DefaultRoleAccess] Error fetching roles:', error);
@@ -142,6 +142,25 @@ const DefaultRoleAccessPage = () => {
         } catch (error) {
             console.error('Error saving default permissions:', error);
             toast.error('Gagal menyimpan perubahan');
+        }
+    };
+
+    const handleResetDefaults = async () => {
+        if (!window.confirm('APAKAH ANDA YAKIN?\n\nTindakan ini akan me-reset SEMUA konfigurasi default role kembali ke pengaturan awal sistem.\nPerubahan kustom yang Anda buat pada default akan hilang.')) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await api.post('/role-access/defaults/reset', {});
+            toast.success('Default hak akses berhasil di-reset ke sistem');
+            // Refresh local data
+            await fetchPermissions();
+        } catch (error) {
+            console.error('Error resetting defaults:', error);
+            toast.error('Gagal me-reset defaults');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -355,25 +374,42 @@ const DefaultRoleAccessPage = () => {
                             <Save className="w-4 h-4 mr-2" />
                             Simpan Perubahan
                         </Button>
-                        <Button variant="outline" onClick={() => fetchPermissions()}>
-                            <RefreshCw className="w-4 h-4 mr-2" />
-                            Refresh
+                        <Button variant="outline" onClick={handleResetDefaults} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                            <RotateCcw className="w-4 h-4 mr-2" />
+                            Reset Default System
                         </Button>
                     </div>
 
-                    <Tabs value={activeRole} onValueChange={setActiveRole} className="w-full">
-                        <TabsList className="inline-flex w-full justify-start overflow-x-auto">
-                            {roles.map(role => (
-                                <TabsTrigger key={role.id} value={role.id}>{role.displayName || role.name}</TabsTrigger>
-                            ))}
-                        </TabsList>
+                    <div className="space-y-4">
+                        <div className="w-full md:w-[300px]">
+                            <Select value={activeRole} onValueChange={setActiveRole}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih Role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {roles.map(role => (
+                                        <SelectItem key={role.id} value={role.id}>
+                                            {role.displayName || role.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {!activeRole && (
+                            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                                <p>Silakan pilih role terlebih dahulu untuk mengatur default hak akses.</p>
+                            </div>
+                        )}
 
                         {roles.map(role => (
-                            <TabsContent key={role.id} value={role.id}>
-                                {role.id === activeRole && renderRoleContent(role)}
-                            </TabsContent>
+                            role.id === activeRole && (
+                                <div key={role.id} className="mt-4">
+                                    {renderRoleContent(role)}
+                                </div>
+                            )
                         ))}
-                    </Tabs>
+                    </div>
                 </div>
             </DashboardPage>
         </TooltipProvider>
