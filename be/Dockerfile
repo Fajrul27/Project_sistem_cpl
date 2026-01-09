@@ -20,7 +20,7 @@ RUN npx prisma generate
 # Build TypeScript → menghasilkan folder dist/
 RUN npm run build
 
-EXPOSE 3000
+EXPOSE 8002
 
 # Start server from built JS
 CMD ["node", "dist/server/index.js"]

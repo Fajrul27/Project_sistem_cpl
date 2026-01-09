@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # Database only - untuk development lokal
+  db:
+    image: mariadb:latest
+    container_name: sistem_cpl_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sistem_cpl
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db_data:

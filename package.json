@@ -1,0 +1,23 @@
+{
+    "name": "sistem-cpl-workspace",
+    "version": "1.0.0",
+    "description": "Workspace untuk menjalankan frontend dan backend secara bersamaan",
+    "scripts": {
+        "install:all": "npm run install:be && npm run install:fe",
+        "install:be": "cd be && npm install",
+        "install:fe": "cd fe && npm install --legacy-peer-deps",
+        "dev": "concurrently \"npm run dev:be\" \"npm run dev:fe\"",
+        "dev:be": "cd be && npm run server",
+        "dev:fe": "cd fe && npm run dev",
+        "build:all": "npm run build:be && npm run build:fe",
+        "build:be": "cd be && npm run build",
+        "build:fe": "cd fe && npm run build",
+        "prisma:generate": "cd be && npx prisma generate",
+        "prisma:push": "cd be && npx prisma db push",
+        "prisma:seed": "cd be && npm run prisma:seed",
+        "prisma:studio": "cd be && npx prisma studio"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

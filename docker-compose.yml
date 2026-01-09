@@ -6,7 +6,7 @@ services:
     container_name: sistem_cpl_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: sistem_cpl
     ports:
       - "3307:3306" # Map to 3307 to avoid conflict with local MySQL/MariaDB
@@ -24,12 +24,12 @@ services:
     container_name: sistem_cpl_be
     restart: always
     ports:
-      - "3000:3000"
+      - "8002:8002"
     environment:
-      DATABASE_URL: mysql://root:root@db:3306/sistem_cpl
+      DATABASE_URL: mysql://root@db:3306/sistem_cpl
       JWT_SECRET: your-super-secret-key-change-in-production-minimum-32-characters
-      PORT: 3000
-      CORS_ORIGIN: http://localhost:8081
+      PORT: 8002
+      CORS_ORIGIN: http://localhost:8001
     depends_on:
       db:
         condition: service_healthy
