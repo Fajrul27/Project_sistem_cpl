@@ -2,11 +2,11 @@
 node_modules/
 
 # Environment files
-
-.env.local
-.env.development
-.env.production
-.env.test
+#.env
+#.env.local
+#.env.development
+#.env.production
+#.env.test
 
 # Logs
 npm-debug.log*
