@@ -158,4 +158,76 @@ export class DefaultPermissionService {
 
         return defaultPermissions;
     }
+
+    // Update defaults for a specific role
+    static async updateRoleDefaults(roleId: string, permissions: Array<{ resource: string; action: string; isEnabled: boolean }>) {
+        // Delete existing defaults for this role
+        await prisma.defaultRolePermission.deleteMany({
+            where: { roleId }
+        });
+
+        // Create new defaults
+        const defaultPermissions = permissions.map(p => ({
+            roleId,
+            resource: p.resource,
+            action: p.action,
+            isEnabled: p.isEnabled
+        }));
+
+        if (defaultPermissions.length > 0) {
+            await prisma.defaultRolePermission.createMany({
+                data: defaultPermissions,
+                skipDuplicates: true
+            });
+        }
+
+        return await this.getDefaultsByRoleId(roleId);
+    }
+
+    // Export defaults as JSON
+    static async exportDefaults() {
+        const defaults = await this.getAllDefaults();
+        return {
+            exportDate: new Date().toISOString(),
+            defaults: defaults.map(d => ({
+                roleName: d.role.name,
+                resource: d.resource,
+                action: d.action,
+                isEnabled: d.isEnabled
+            }))
+        };
+    }
+
+    // Import defaults from JSON
+    static async importDefaults(data: any) {
+        if (!data.defaults || !Array.isArray(data.defaults)) {
+            throw new Error('Invalid import data format');
+        }
+
+        // Get all roles
+        const roles = await prisma.role.findMany();
+        const rolesMap = new Map(roles.map(r => [r.name, r.id]));
+
+        // Clear existing defaults
+        await prisma.defaultRolePermission.deleteMany();
+
+        // Create new defaults
+        const defaultPermissions = data.defaults
+            .filter((d: any) => rolesMap.has(d.roleName))
+            .map((d: any) => ({
+                roleId: rolesMap.get(d.roleName)!,
+                resource: d.resource,
+                action: d.action,
+                isEnabled: d.isEnabled
+            }));
+
+        if (defaultPermissions.length > 0) {
+            await prisma.defaultRolePermission.createMany({
+                data: defaultPermissions,
+                skipDuplicates: true
+            });
+        }
+
+        return await this.getAllDefaults();
+    }
 }

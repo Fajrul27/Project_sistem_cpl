@@ -25,6 +25,8 @@
     "seed_teknik_ref.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "prisma/seed_comprehensive.ts",
+    "server/scripts/fix-permissions.ts"
   ]
 }
