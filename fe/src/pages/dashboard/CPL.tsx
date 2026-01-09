@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, List as ListIcon, Table as TableIcon, ArrowLeft } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, List as ListIcon, Table as TableIcon, ArrowLeft, Save, Target, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePermission } from "@/contexts/PermissionContext";
@@ -20,6 +20,8 @@ import { useCPL, CPL } from "@/hooks/useCPL";
 import { PLMappingMatrix } from "./components/PLMappingMatrix";
 import { useProfilLulusan } from "@/hooks/useProfilLulusan";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEvaluasiCPL } from "@/hooks/useEvaluasiCPL";
+import { useAngkatan } from "@/hooks/useAngkatan";
 
 type FormData = {
   kodeCpl: string;
@@ -58,7 +60,60 @@ const CPLPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingCPL, setEditingCPL] = useState<CPL | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "matrix">("list");
+  const [viewMode, setViewMode] = useState<"list" | "matrix" | "target">("list");
+
+  // Target CPL State
+  const {
+    loading: loadingTargets,
+    targets,
+    fetchTargets,
+    saveTargets
+  } = useEvaluasiCPL();
+
+  const { angkatanList } = useAngkatan();
+
+  const [targetFilters, setTargetFilters] = useState({
+    angkatan: "",
+    tahunAjaran: ""
+  });
+
+  const [targetInputs, setTargetInputs] = useState<Record<string, number>>({});
+
+  // Sync targets to inputs
+  useEffect(() => {
+    if (targets.length > 0) {
+      const inputs: Record<string, number> = {};
+      targets.forEach(t => {
+        inputs[t.cplId] = t.target;
+      });
+      setTargetInputs(inputs);
+    }
+  }, [targets]);
+
+  // Fetch targets when filters change and view is 'target'
+  useEffect(() => {
+    if (viewMode === "target" && cplFilters.prodiFilter && cplFilters.prodiFilter !== 'all' && targetFilters.angkatan && targetFilters.tahunAjaran) {
+      fetchTargets({
+        prodiId: cplFilters.prodiFilter,
+        angkatan: targetFilters.angkatan,
+        tahunAjaran: targetFilters.tahunAjaran
+      });
+    }
+  }, [viewMode, cplFilters.prodiFilter, targetFilters, fetchTargets]);
+
+  const handleSaveTargets = async () => {
+    const targetData = Object.entries(targetInputs).map(([cplId, target]) => ({
+      cplId,
+      target
+    }));
+
+    await saveTargets({
+      prodiId: cplFilters.prodiFilter,
+      angkatan: targetFilters.angkatan,
+      tahunAjaran: targetFilters.tahunAjaran,
+      targets: targetData
+    });
+  };
 
   const [formData, setFormData] = useState<FormData>({
     kodeCpl: "",
@@ -120,24 +175,40 @@ const CPLPage = () => {
     const fakultasIdParam = searchParams.get("fakultasId");
     const prodiIdParam = searchParams.get("prodiId");
 
-    if (viewParam === "matrix") {
+    if (viewParam === "matrix" && viewMode !== "matrix") {
       setViewMode("matrix");
+    } else if (viewParam === "target" && viewMode !== "target") {
+      setViewMode("target");
     }
 
-    if (fakultasIdParam) {
+    if (fakultasIdParam && cplFilters.fakultasFilter !== fakultasIdParam) {
       setFakultasFilter(fakultasIdParam);
     }
 
-    if (prodiIdParam) {
-      // Small delay to ensure fakultas is set first if needed, though state updates are batched usually.
-      // But since prodi list depends on fakultas, we might need to wait for prodi list to load?
-      // Actually fetchProdi depends on fakultasFilter.
-      // So setting fakultasFilter triggers fetchProdi.
-      // We should probably set prodiFilter after a short delay or ensure it persists.
-      // For now, let's set it directly.
+    if (prodiIdParam && cplFilters.prodiFilter !== prodiIdParam) {
+      // Small delay to ensure fakultas is set first if needed...
       setProdiFilter(prodiIdParam);
     }
-  }, [searchParams, setFakultasFilter, setProdiFilter]);
+
+    const angkatanParam = searchParams.get("angkatan");
+    const tahunAjaranParam = searchParams.get("tahunAjaran");
+
+    if (angkatanParam || tahunAjaranParam) {
+      setTargetFilters(prev => {
+        const nextAngkatan = angkatanParam || prev.angkatan;
+        const nextTA = tahunAjaranParam || prev.tahunAjaran;
+
+        if (prev.angkatan === nextAngkatan && prev.tahunAjaran === nextTA) {
+          return prev;
+        }
+        return {
+          ...prev,
+          angkatan: nextAngkatan,
+          tahunAjaran: nextTA
+        };
+      });
+    }
+  }, [searchParams, viewMode, cplFilters.fakultasFilter, cplFilters.prodiFilter, setViewMode, setFakultasFilter, setProdiFilter]);
 
   useEffect(() => {
     fetchCPL();
@@ -252,7 +323,8 @@ const CPLPage = () => {
 
         {/* View Mode Switcher */}
         <div className="flex items-center space-x-4 border-b pb-4">
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "list" | "matrix")} className="w-[400px]">
+
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "list" | "matrix" | "target")} className="w-[500px]">
             <TabsList>
               <TabsTrigger value="list" className="flex items-center gap-2">
                 <ListIcon className="w-4 h-4" /> Daftar CPL
@@ -260,64 +332,154 @@ const CPLPage = () => {
               <TabsTrigger value="matrix" className="flex items-center gap-2">
                 <TableIcon className="w-4 h-4" /> Matrix Mapping
               </TabsTrigger>
+              <TabsTrigger value="target" className="flex items-center gap-2">
+                <Target className="w-4 h-4" /> Target CPL
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[220px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={viewMode === "matrix" ? "Cari Profil atau Program Studi..." : "Cari kode, deskripsi, atau kategori CPL..."}
-              value={currentSearchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={hasActiveFilter ? "default" : "outline"}
-                size="sm"
-                className="gap-2"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="hidden sm:inline">Filter</span>
-                <span className="sm:hidden">Filter</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-64 space-y-4">
-              <div className="space-y-1">
-                <Label className="text-xs font-medium">Fakultas</Label>
-                <Select
-                  value={cplFilters.fakultasFilter}
-                  onValueChange={setFakultasFilter}
-                >
-                  <SelectTrigger className="w-full h-8 text-xs">
-                    <SelectValue placeholder="Semua Fakultas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fakultasList.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {f.nama}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {viewMode !== 'target' && (
+            <>
+              <div className="relative flex-1 min-w-[220px] max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={viewMode === "matrix" ? "Cari Profil atau Program Studi..." : "Cari kode, deskripsi, atau kategori CPL..."}
+                  value={currentSearchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-9"
+                />
               </div>
-              {(canViewAll || role === 'kaprodi') && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={hasActiveFilter ? "default" : "outline"}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    <span className="hidden sm:inline">Filter</span>
+                    <span className="sm:hidden">Filter</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 space-y-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Fakultas</Label>
+                    <Select
+                      value={cplFilters.fakultasFilter}
+                      onValueChange={setFakultasFilter}
+                    >
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Semua Fakultas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fakultasList.map((f) => (
+                          <SelectItem key={f.id} value={f.id}>
+                            {f.nama}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {(canViewAll || role === 'kaprodi') && (
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Program Studi</Label>
+                      <Select
+                        value={cplFilters.prodiFilter}
+                        onValueChange={setProdiFilter}
+                        disabled={!cplFilters.fakultasFilter && canViewAll}
+                      >
+                        <SelectTrigger className="w-full h-8 text-xs">
+                          <SelectValue placeholder="Semua program studi" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filterProdiOptions.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.nama}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+              <Button
+                variant="outline"
+                onClick={resetFilters}
+                disabled={!hasActiveFilter && currentSearchTerm === ""}
+              >
+                Reset Filter
+              </Button>
+            </>
+          )}
+        </div>
+
+
+
+        {viewMode === "target" ? (
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Target Capaian Pembelajaran Lulusan</CardTitle>
+                  <CardDescription>Tentukan target minimal pencapaian untuk setiap CPL</CardDescription>
+                </div>
+                <Button onClick={handleSaveTargets} disabled={loadingTargets || !cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Simpan Target
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="relative grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 pt-10 bg-muted/30 rounded-lg border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="absolute top-2 right-2 h-8 px-3 text-xs"
+                  onClick={() => {
+                    resetFilters();
+                    setTargetFilters({
+                      angkatan: "",
+                      tahunAjaran: ""
+                    });
+                  }}
+                  title="Reset Filter"
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" /> Reset Filter
+                </Button>
+
+                {/* Fakultas Filter */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">Program Studi</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">Fakultas</Label>
+                  <Select
+                    value={cplFilters.fakultasFilter}
+                    onValueChange={setFakultasFilter}
+                  >
+                    <SelectTrigger className="w-full h-9 bg-background">
+                      <SelectValue placeholder="Semua Fakultas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {fakultasList.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>
+                          {f.nama}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Prodi Filter */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">Program Studi</Label>
                   <Select
                     value={cplFilters.prodiFilter}
                     onValueChange={setProdiFilter}
-                    disabled={!cplFilters.fakultasFilter && canViewAll} // Optional: disable if no fakultas selected
-                  // User requested hierarchical, so maybe good to keep it open or dependent.
-                  // In PL page we disabled it. Here let's keep it enabled but it will show all if no fakultas selected (or filtered if fakultas selected).
-                  // Actually, fetchProdi depends on fakultasFilter. So if no fakultasFilter, it fetches all prodis.
+                    disabled={!canViewAll && role !== 'kaprodi'}
                   >
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Semua program studi" />
+                    <SelectTrigger className="w-full h-9 bg-background">
+                      <SelectValue placeholder="Semua Prodi" />
                     </SelectTrigger>
                     <SelectContent>
                       {filterProdiOptions.map((p) => (
@@ -328,19 +490,79 @@ const CPLPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-            </PopoverContent>
-          </Popover>
-          <Button
-            variant="outline"
-            onClick={resetFilters}
-            disabled={!hasActiveFilter && currentSearchTerm === ""}
-          >
-            Reset Filter
-          </Button>
-        </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">Angkatan</Label>
+                  <Select
+                    value={targetFilters.angkatan}
+                    onValueChange={(v) => setTargetFilters({ ...targetFilters, angkatan: v })}
+                  >
+                    <SelectTrigger className="h-9 bg-background">
+                      <SelectValue placeholder="Pilih Angkatan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {angkatanList.filter(a => a.tahun).map(a => (
+                        <SelectItem key={a.id} value={a.tahun.toString()}>{a.tahun}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">Tahun Ajaran</Label>
+                  <Select
+                    value={targetFilters.tahunAjaran}
+                    onValueChange={(v) => setTargetFilters({ ...targetFilters, tahunAjaran: v })}
+                  >
+                    <SelectTrigger className="h-9 bg-background">
+                      <SelectValue placeholder="Pilih Tahun Ajaran" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2023/2024">2023/2024</SelectItem>
+                      <SelectItem value="2024/2025">2024/2025</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-        {viewMode === "list" ? (
+              {(!cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan) ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Silakan pilih Program Studi dan Angkatan terlebih dahulu
+                </div>
+              ) : loadingTargets ? (
+                <LoadingScreen fullScreen={false} />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Kode CPL</TableHead>
+                      <TableHead>Deskripsi</TableHead>
+                      <TableHead className="w-[150px]">Target (%)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cplList.map(cpl => (
+                      <TableRow key={cpl.id}>
+                        <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
+                        <TableCell>{cpl.deskripsi}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={targetInputs[cpl.id] ?? 75}
+                            onChange={(e) => setTargetInputs({
+                              ...targetInputs,
+                              [cpl.id]: parseFloat(e.target.value)
+                            })}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        ) : viewMode === "list" ? (
           <Card>
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-1">

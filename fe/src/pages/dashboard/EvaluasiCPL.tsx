@@ -16,10 +16,12 @@ import { useProdi } from "@/hooks/useProdi";
 import { useFakultas } from "@/hooks/useFakultas";
 import { useAngkatan } from "@/hooks/useAngkatan";
 import { useCPL } from "@/hooks/useCPL";
-import { CheckCircle, XCircle, AlertCircle, Save, ChevronDown, ChevronRight, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // Added import
+import { CheckCircle, XCircle, AlertCircle, Save, ChevronDown, ChevronRight, TrendingUp, Edit } from "lucide-react"; // Added Edit
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const EvaluasiCPLPage = () => {
+    const navigate = useNavigate();
     const {
         loading, targets, evaluation, summary,
         fetchTargets, saveTargets, fetchEvaluation, saveTindakLanjut, resetEvaluation
@@ -35,7 +37,7 @@ const EvaluasiCPLPage = () => {
         fakultasId: "",
         prodiId: "",
         angkatan: "",
-        tahunAjaran: "2023/2024", // Default or dynamic
+        tahunAjaran: "", // Default or dynamic
         semester: "all"
     });
 
@@ -237,7 +239,7 @@ const EvaluasiCPLPage = () => {
                                             onValueChange={(v) => setFilters({ ...filters, tahunAjaran: v })}
                                         >
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Pilih TA" />
+                                                <SelectValue placeholder="Pilih Tahun Ajaran" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="2023/2024">2023/2024</SelectItem>
@@ -282,9 +284,22 @@ const EvaluasiCPLPage = () => {
                                         <CardTitle>Target Capaian Pembelajaran Lulusan</CardTitle>
                                         <CardDescription>Tentukan target minimal pencapaian untuk setiap CPL</CardDescription>
                                     </div>
-                                    <Button onClick={handleSaveTargets} disabled={!canLoad || loading}>
-                                        <Save className="w-4 h-4 mr-2" />
-                                        Simpan Target
+                                    <Button
+                                        onClick={() => {
+                                            const params = new URLSearchParams();
+                                            params.set("view", "target");
+                                            if (filters.fakultasId) params.set("fakultasId", filters.fakultasId);
+                                            if (filters.prodiId) params.set("prodiId", filters.prodiId);
+                                            if (filters.angkatan) params.set("angkatan", filters.angkatan);
+                                            if (filters.tahunAjaran) params.set("tahunAjaran", filters.tahunAjaran);
+
+                                            navigate(`/dashboard/cpl?${params.toString()}`);
+                                        }}
+                                        disabled={!canLoad}
+                                        variant="outline" // Using outline or maybe standard? User asked for "rubah target".
+                                    >
+                                        <Edit className="w-4 h-4 mr-2" />
+                                        Ubah Target
                                     </Button>
                                 </div>
                             </CardHeader>
@@ -315,10 +330,8 @@ const EvaluasiCPLPage = () => {
                                                             min="0"
                                                             max="100"
                                                             value={targetInputs[cpl.id] ?? 75}
-                                                            onChange={(e) => setTargetInputs({
-                                                                ...targetInputs,
-                                                                [cpl.id]: parseFloat(e.target.value)
-                                                            })}
+                                                            disabled // Make read-only
+                                                            className="bg-muted" // Optional visual cue
                                                         />
                                                     </TableCell>
                                                 </TableRow>
