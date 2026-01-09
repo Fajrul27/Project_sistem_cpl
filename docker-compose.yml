@@ -33,7 +33,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "npx prisma db push --force-reset --accept-data-loss && mysql -h db -u root -proot sistem_cpl < /app/sistem_cpl.sql && npm start"
+    command: sh -c "npx prisma db push --force-reset --accept-data-loss && mysql -h db -u root -proot --force sistem_cpl < /app/sistem_cpl.sql && npm start"
 
   fe:
     build: ./fe
