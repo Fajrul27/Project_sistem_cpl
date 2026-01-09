@@ -56,6 +56,21 @@ services:
       - be
       - fe
 
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: sistem_cpl_phpmyadmin
+    restart: always
+    ports:
+      - "8181:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      - db
+
 
 volumes:
   db_data:
