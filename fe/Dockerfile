@@ -8,8 +8,9 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-# Use production environment for build
-RUN cp .env.production.example .env.production
+# Set API URL for production build (default to relative /api)
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build
 
