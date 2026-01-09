@@ -320,7 +320,6 @@ const CPLPage = () => {
                       <SelectValue placeholder="Semua program studi" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Semua program studi</SelectItem>
                       {filterProdiOptions.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
                           {p.nama}

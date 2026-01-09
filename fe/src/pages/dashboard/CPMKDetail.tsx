@@ -391,6 +391,12 @@ const CPMKDetailPage = () => {
                                                     value={teknikForm.bobotPersentase}
                                                     onChange={(e) => setTeknikForm({ ...teknikForm, bobotPersentase: e.target.value })}
                                                     required
+                                                    className={
+                                                        (editingTeknik
+                                                            ? (totalBobotTeknik - Number(editingTeknik.bobotPersentase) + Number(teknikForm.bobotPersentase)) > 100
+                                                            : (totalBobotTeknik + Number(teknikForm.bobotPersentase)) > 100
+                                                        ) ? "text-red-500 font-bold" : ""
+                                                    }
                                                 />
                                             </div>
                                             <div className="space-y-2">
@@ -563,7 +569,7 @@ const CPMKDetailPage = () => {
                                                                 className="h-6 text-xs justify-start px-0 text-blue-600"
                                                                 onClick={() => {
                                                                     setCurrentSubCpmkForMapping(sub);
-                                                                    setSubCpmkMappingForm({ teknikPenilaianId: "", bobot: "100" });
+                                                                    setSubCpmkMappingForm({ teknikPenilaianId: "", bobot: "" });
                                                                     setIsSubCpmkMappingDialogOpen(true);
                                                                 }}
                                                             >
@@ -686,7 +692,36 @@ const CPMKDetailPage = () => {
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label>Teknik Penilaian</Label>
-                                        <Select value={subCpmkMappingForm.teknikPenilaianId} onValueChange={(val) => setSubCpmkMappingForm({ ...subCpmkMappingForm, teknikPenilaianId: val })}>
+                                        <Select
+                                            value={subCpmkMappingForm.teknikPenilaianId}
+                                            onValueChange={(val) => {
+                                                let suggestedBobot = "0";
+                                                const selectedTeknik = teknikPenilaian.find(t => t.id === val);
+
+                                                if (selectedTeknik && currentSubCpmkForMapping) {
+                                                    // Calculate limits
+                                                    const subCpmkTotalUsed = currentSubCpmkForMapping.asesmenMappings?.reduce((sum: number, m: any) => sum + Number(m.bobot), 0) || 0;
+                                                    const subCpmkLimit = Number(currentSubCpmkForMapping.bobot || 0);
+                                                    const sisaSub = subCpmkLimit - subCpmkTotalUsed;
+
+                                                    const teknikLimit = Number(selectedTeknik.bobotPersentase);
+                                                    const teknikUsed = subCpmkList.reduce((total, sub) => {
+                                                        const mapping = sub.asesmenMappings?.find((m: any) => m.teknikPenilaianId === val);
+                                                        return total + (mapping ? Number(mapping.bobot) : 0);
+                                                    }, 0);
+                                                    const sisaTeknik = teknikLimit - teknikUsed;
+
+                                                    const maxInput = Math.max(0, Math.min(sisaSub, sisaTeknik));
+                                                    suggestedBobot = maxInput.toString();
+                                                }
+
+                                                setSubCpmkMappingForm({
+                                                    ...subCpmkMappingForm,
+                                                    teknikPenilaianId: val,
+                                                    bobot: suggestedBobot
+                                                });
+                                            }}
+                                        >
                                             <SelectTrigger><SelectValue placeholder="Pilih Teknik" /></SelectTrigger>
                                             <SelectContent>
                                                 {teknikPenilaian.map((t) => (
@@ -720,6 +755,8 @@ const CPMKDetailPage = () => {
                                             value={subCpmkMappingForm.bobot}
                                             onChange={(e) => setSubCpmkMappingForm({ ...subCpmkMappingForm, bobot: e.target.value })}
                                             className={!isValid && subCpmkMappingForm.teknikPenilaianId ? "border-red-500 focus-visible:ring-red-500" : ""}
+                                            placeholder={!subCpmkMappingForm.teknikPenilaianId ? "Pilih teknik terlebih dahulu" : "Masukkan bobot"}
+                                            disabled={!subCpmkMappingForm.teknikPenilaianId}
                                         />
                                         {!isValid && subCpmkMappingForm.teknikPenilaianId && (
                                             <p className="text-xs text-red-500">
