@@ -15,7 +15,7 @@ RUN npm install
 COPY . .
 
 # Copy SQL dump for database seeding
-COPY ../sistem_cpl.sql /app/sistem_cpl.sql
+COPY sistem_cpl.sql /app/sistem_cpl.sql
 
 # Generate Prisma Client AFTER copying all files
 RUN npx prisma generate
