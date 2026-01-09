@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install system dependencies
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl mysql-client
 
 # Copy package files
 COPY package*.json ./
@@ -13,6 +13,9 @@ RUN npm install
 
 # Copy all project files
 COPY . .
+
+# Copy SQL dump for database seeding
+COPY ../sistem_cpl.sql /app/sistem_cpl.sql
 
 # Generate Prisma Client AFTER copying all files
 RUN npx prisma generate
