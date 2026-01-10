@@ -42,6 +42,7 @@ export default function ProfilLulusanPage() {
         prodiList,
         fakultasList,
         cplList,
+        kurikulumList,
         selectedFakultas,
         setSelectedFakultas,
         selectedProdi,
@@ -77,6 +78,7 @@ export default function ProfilLulusanPage() {
         deskripsi: "",
         fakultasId: "",
         prodiId: "",
+        kurikulumId: "",
         targetKetercapaian: ""
     });
 
@@ -110,6 +112,7 @@ export default function ProfilLulusanPage() {
             deskripsi: formData.deskripsi,
             targetKetercapaian: formData.targetKetercapaian ? parseFloat(formData.targetKetercapaian) : undefined,
             prodiId: role === "kaprodi" ? profile?.prodiId : (formData.prodiId || selectedProdi),
+            kurikulumId: formData.kurikulumId || null,
             // cplIds: selectedCpls // Removed
         };
 
@@ -128,7 +131,7 @@ export default function ProfilLulusanPage() {
         if (success) {
             setIsDialogOpen(false);
             setEditingItem(null);
-            setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: "", prodiId: "", targetKetercapaian: "" });
+            setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: "", prodiId: "", kurikulumId: "", targetKetercapaian: "" });
             // setSelectedCpls([]);
         }
     };
@@ -158,6 +161,7 @@ export default function ProfilLulusanPage() {
             deskripsi: item.deskripsi,
             fakultasId: item.prodi?.fakultasId || "",
             prodiId: item.prodiId,
+            kurikulumId: item.kurikulumId || "",
             targetKetercapaian: item.targetKetercapaian ? item.targetKetercapaian.toString() : ""
         });
         // If we want to pre-fill fakultas, we'd need to fetch the prodi details first or have it in the item.
@@ -260,7 +264,7 @@ export default function ProfilLulusanPage() {
                         {can('create', 'profil_lulusan') && (
                             <Button onClick={() => {
                                 setEditingItem(null);
-                                setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi, targetKetercapaian: "" });
+                                setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi, kurikulumId: "", targetKetercapaian: "" });
                                 setIsDialogOpen(true);
                             }}>
                                 <Plus className="w-4 h-4 mr-2" /> Tambah Profil
@@ -287,6 +291,7 @@ export default function ProfilLulusanPage() {
                                                 <TableHead className="w-[50px]">No</TableHead>
                                                 <TableHead className="w-[100px]">Kode</TableHead>
                                                 <TableHead className="w-[200px]">Nama Profil</TableHead>
+                                                <TableHead>Kurikulum</TableHead>
                                                 <TableHead>Deskripsi</TableHead>
 
                                                 {role !== 'mahasiswa' && <TableHead className="w-[100px]">Target</TableHead>}
@@ -310,6 +315,7 @@ export default function ProfilLulusanPage() {
                                                             {item.nama}
                                                         </div>
                                                     </TableCell>
+                                                    <TableCell>{item.kurikulum?.nama || '-'}</TableCell>
                                                     <TableCell className="text-muted-foreground">{item.deskripsi || "-"}</TableCell>
                                                     {role !== 'mahasiswa' && (
                                                         <TableCell>{item.targetKetercapaian || "-"}</TableCell>
@@ -395,7 +401,7 @@ export default function ProfilLulusanPage() {
                                 {can('create', 'profil_lulusan') && (
                                     <Button onClick={() => {
                                         setEditingItem(null);
-                                        setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi, targetKetercapaian: "" });
+                                        setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi, kurikulumId: "", targetKetercapaian: "" });
                                         setIsDialogOpen(true);
                                     }}>
                                         <Plus className="w-4 h-4 mr-2" /> Tambah Profil
@@ -510,6 +516,29 @@ export default function ProfilLulusanPage() {
                             )}
 
                             <div className="grid grid-cols-4 gap-4 items-center">
+                                <Label className="text-right">Kurikulum</Label>
+                                <div className="col-span-3">
+                                    <Select
+                                        value={formData.kurikulumId}
+                                        onValueChange={(val) => setFormData({ ...formData, kurikulumId: val })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih Kurikulum" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {kurikulumList
+                                                .filter(k => k.isActive || k.id === formData.kurikulumId)
+                                                .map((k: any) => (
+                                                    <SelectItem key={k.id} value={k.id}>
+                                                        {k.nama} {!k.isActive && "(Tidak Aktif)"}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-4 gap-4 items-center">
                                 <Label className="text-right">Nama Profil</Label>
                                 <Input
                                     className="col-span-3"
@@ -557,7 +586,7 @@ export default function ProfilLulusanPage() {
                 title="Hapus Profil Lulusan"
                 description="Apakah Anda yakin ingin menghapus profil ini? Data terkait mungkin akan terpengaruh."
             />
-        </DashboardPage>
+        </DashboardPage >
     );
 }
 

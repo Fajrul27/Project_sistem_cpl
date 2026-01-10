@@ -1,14 +1,19 @@
-
 import { Router } from 'express';
+import { getAllAngkatan, createAngkatan, updateAngkatan, deleteAngkatan } from '../controllers/angkatan-controller.js';
 import { authMiddleware, requireRole } from '../middleware/auth.js';
-import { getAllAngkatan, createAngkatan } from '../controllers/angkatan-controller.js';
 
 const router = Router();
 
-// Get all angkatan
+// Get all angkatan (public/authenticated only)
 router.get('/', authMiddleware, getAllAngkatan);
 
-// Create angkatan
-router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), createAngkatan);
+// Create angkatan (admin only)
+router.post('/', authMiddleware, requireRole('admin'), createAngkatan);
+
+// Update angkatan (admin only)
+router.put('/:id', authMiddleware, requireRole('admin'), updateAngkatan);
+
+// Delete angkatan (admin only)
+router.delete('/:id', authMiddleware, requireRole('admin'), deleteAngkatan);
 
 export default router;

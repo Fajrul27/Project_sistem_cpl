@@ -86,6 +86,9 @@ export class MataKuliahService {
                 skip,
                 take,
                 include: {
+                    kurikulum: {
+                        select: { id: true, nama: true }
+                    },
                     pengampu: {
                         include: {
                             dosen: {

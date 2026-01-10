@@ -12,6 +12,8 @@ export interface CPL {
     kategoriRef?: { id: string; nama: string };
     prodiId?: string;
     prodi?: { id: string; nama: string; kode?: string };
+    kurikulumId?: string;
+    kurikulum?: { id: string; nama: string };
     createdAt?: string;
     updatedAt?: string;
 }
@@ -34,6 +36,7 @@ export function useCPL() {
     const [kategoriList, setKategoriList] = useState<any[]>([]);
     const [fakultasList, setFakultasList] = useState<any[]>([]);
     const [prodiList, setProdiList] = useState<any[]>([]);
+    const [kurikulumList, setKurikulumList] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchFakultas = useCallback(async () => {
@@ -61,6 +64,15 @@ export function useCPL() {
             if (result.data) setKategoriList(result.data);
         } catch (error) {
             console.error("Error fetching kategori CPL:", error);
+        }
+    }, []);
+
+    const fetchKurikulum = useCallback(async () => {
+        try {
+            const result = await api.get('/kurikulum');
+            if (result.data) setKurikulumList(result.data);
+        } catch (error) {
+            console.error("Error fetching kurikulum:", error);
         }
     }, []);
 
@@ -115,7 +127,8 @@ export function useCPL() {
         fetchCPL();
         fetchKategori();
         fetchFakultas();
-    }, [fetchCPL, fetchKategori, fetchFakultas]);
+        fetchKurikulum();
+    }, [fetchCPL, fetchKategori, fetchFakultas, fetchKurikulum]);
 
     // Fetch prodi when fakultas filter changes
     useEffect(() => {
@@ -193,6 +206,7 @@ export function useCPL() {
         kategoriList,
         fakultasList,
         prodiList,
+        kurikulumList,
         loading,
 
         // Actions
@@ -200,6 +214,7 @@ export function useCPL() {
         fetchKategori,
         fetchFakultas,
         fetchProdi,
+        fetchKurikulum,
         createCPL,
         updateCPL,
         deleteCPL,

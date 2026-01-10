@@ -40,9 +40,34 @@ export class ReferenceService {
         });
     }
 
-    static async getAllKurikulum() {
+    static async getAllKurikulum(filters: { isActive?: boolean } = {}) {
+        const whereClause: any = {};
+        if (filters.isActive !== undefined) {
+            whereClause.isActive = filters.isActive;
+        }
+
         return prisma.kurikulum.findMany({
+            where: whereClause,
             orderBy: { tahunMulai: 'desc' }
+        });
+    }
+
+    static async createKurikulum(data: { nama: string, tahunMulai: number, tahunSelesai?: number, isActive: boolean }) {
+        return prisma.kurikulum.create({
+            data
+        });
+    }
+
+    static async updateKurikulum(id: string, data: { nama: string, tahunMulai: number, tahunSelesai?: number, isActive: boolean }) {
+        return prisma.kurikulum.update({
+            where: { id },
+            data
+        });
+    }
+
+    static async deleteKurikulum(id: string) {
+        return prisma.kurikulum.delete({
+            where: { id }
         });
     }
 

@@ -247,7 +247,9 @@ const MataKuliahPage = () => {
                     <SelectContent>
                       <SelectItem value="all">Semua Kurikulum</SelectItem>
                       {kurikulumList.map((k) => (
-                        <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                        <SelectItem key={k.id} value={k.id}>
+                          {k.nama} {!k.isActive && "(Tidak Aktif)"}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -346,9 +348,13 @@ const MataKuliahPage = () => {
                             <SelectValue placeholder="Pilih Kurikulum" />
                           </SelectTrigger>
                           <SelectContent>
-                            {kurikulumList.map((k) => (
-                              <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
-                            ))}
+                            {kurikulumList
+                              .filter(k => k.isActive || k.id === formData.kurikulumId)
+                              .map((k) => (
+                                <SelectItem key={k.id} value={k.id}>
+                                  {k.nama} {!k.isActive && "(Tidak Aktif)"}
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -436,6 +442,7 @@ const MataKuliahPage = () => {
                     <TableHead>Nama MK</TableHead>
                     <TableHead>SKS</TableHead>
                     <TableHead>Semester</TableHead>
+                    <TableHead>Kurikulum</TableHead>
                     {showActions && <TableHead className="text-right">Aksi</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -468,6 +475,7 @@ const MataKuliahPage = () => {
                           <TableCell className="min-w-[200px]">{mk.namaMk}</TableCell>
                           <TableCell>{mk.sks}</TableCell>
                           <TableCell>Semester {mk.semester}</TableCell>
+                          <TableCell>{mk.kurikulum?.nama || "-"}</TableCell>
                           {showActions && (
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">

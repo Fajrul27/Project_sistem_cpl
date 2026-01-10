@@ -25,10 +25,10 @@ export const academicSchemas = {
         semester: z.coerce.number().int().positive(),
         deskripsi: z.string().optional(),
         programStudi: z.string().optional(), // Legacy Support
-        prodiId: commonSchema.uuid.optional(),
-        jenisMkId: commonSchema.uuid.optional(),
-        kurikulumId: commonSchema.uuid.optional(),
-        semesterId: commonSchema.uuid.optional(),
+        prodiId: commonSchema.uuid.nullable().optional(),
+        jenisMkId: commonSchema.uuid.nullable().optional(),
+        kurikulumId: commonSchema.uuid.nullable().optional(),
+        semesterId: commonSchema.uuid.nullable().optional(),
         isActive: z.boolean().optional()
     }),
 
@@ -37,8 +37,9 @@ export const academicSchemas = {
         kodeCpl: z.string().min(1),
         deskripsi: z.string().min(1),
         kategori: z.string().optional(), // Legacy
-        kategoriId: commonSchema.uuid.optional(),
-        prodiId: commonSchema.uuid.optional(),
+        kategoriId: commonSchema.uuid.nullable().optional(),
+        prodiId: commonSchema.uuid.nullable().optional(),
+        kurikulumId: commonSchema.uuid.nullable().optional(),
         isActive: z.boolean().optional()
     }),
 

@@ -32,6 +32,7 @@ export class ProfilLulusanService {
                 orderBy: { kode: 'asc' },
                 include: {
                     prodi: { select: { nama: true, fakultasId: true } },
+                    kurikulum: true,
                     cplMappings: { include: { cpl: true } }
                 },
                 skip: limit > 0 ? skip : undefined,
@@ -71,6 +72,7 @@ export class ProfilLulusanService {
                     deskripsi: validated.deskripsi,
                     targetKetercapaian: validated.targetKetercapaian,
                     prodiId: validated.prodiId,
+                    kurikulumId: validated.kurikulumId || null,
                     isActive: validated.isActive ?? true
                 }
             });
@@ -111,6 +113,7 @@ export class ProfilLulusanService {
                     deskripsi: validated.deskripsi,
                     targetKetercapaian: validated.targetKetercapaian,
                     prodiId: validated.prodiId,
+                    kurikulumId: validated.kurikulumId || null,
                     isActive: validated.isActive
                 }
             });

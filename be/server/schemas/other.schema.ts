@@ -10,6 +10,7 @@ export const otherSchemas = {
         deskripsi: z.string().optional(),
         targetKetercapaian: z.coerce.number().min(0).max(100).optional(),
         prodiId: commonSchema.uuid,
+        kurikulumId: commonSchema.uuid.optional(),
         isActive: z.boolean().optional(),
         cplIds: z.array(commonSchema.uuid).optional()
     }),

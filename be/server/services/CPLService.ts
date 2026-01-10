@@ -91,7 +91,7 @@ export class CPLService {
         const [data, total] = await Promise.all([
             prisma.cpl.findMany({
                 where,
-                include: { kategoriRef: true, prodi: true },
+                include: { kategoriRef: true, prodi: true, kurikulum: true },
                 orderBy: { kodeCpl: 'asc' },
                 skip: limit > 0 ? skip : undefined,
                 take: limit > 0 ? limit : undefined,
@@ -254,9 +254,10 @@ export class CPLService {
                 kategori,
                 kategoriId,
                 prodiId: finalProdiId,
+                kurikulumId: validated.kurikulumId || null,
                 createdBy: userId
             },
-            include: { kategoriRef: true, prodi: true }
+            include: { kategoriRef: true, prodi: true, kurikulum: true }
         });
     }
 
@@ -274,13 +275,13 @@ export class CPLService {
             }
         }
 
-        const updateData: any = { kodeCpl, deskripsi, kategori, kategoriId };
+        const updateData: any = { kodeCpl, deskripsi, kategori, kategoriId, kurikulumId: validated.kurikulumId || null };
         if (userRole === 'admin') updateData.prodiId = prodiId;
 
         return prisma.cpl.update({
             where: { id },
             data: updateData,
-            include: { kategoriRef: true, prodi: true }
+            include: { kategoriRef: true, prodi: true, kurikulum: true }
         });
     }
 

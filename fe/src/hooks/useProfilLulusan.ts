@@ -14,6 +14,8 @@ export interface ProfilLulusan {
     targetKetercapaian?: number;
     status?: string;
     cplMappings?: { cplId: string; cpl?: { kode: string } }[];
+    kurikulumId?: string;
+    kurikulum?: { id: string; nama: string };
 }
 
 export interface Prodi {
@@ -47,6 +49,7 @@ export const useProfilLulusan = () => {
     const [cplList, setCplList] = useState<CPL[]>([]);
     const [selectedFakultas, setSelectedFakultas] = useState<string>("");
     const [selectedProdi, setSelectedProdi] = useState<string>("");
+    const [kurikulumList, setKurikulumList] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchInitialData = useCallback(async () => {
@@ -72,8 +75,18 @@ export const useProfilLulusan = () => {
         } catch (error) {
             console.error("Error fetching initial data:", error);
             toast.error("Gagal memuat data awal");
+            toast.error("Gagal memuat data awal");
         }
     }, [role, profile, selectedProdi]);
+
+    const fetchKurikulum = useCallback(async () => {
+        try {
+            const result = await api.get('/kurikulum');
+            if (result.data) setKurikulumList(result.data);
+        } catch (error) {
+            console.error("Error fetching kurikulum:", error);
+        }
+    }, []);
 
     // Fetch Prodi when Fakultas changes (for Admin)
     useEffect(() => {
@@ -205,8 +218,9 @@ export const useProfilLulusan = () => {
     useEffect(() => {
         if (!roleLoading) {
             fetchInitialData();
+            fetchKurikulum();
         }
-    }, [roleLoading, fetchInitialData]);
+    }, [roleLoading, fetchInitialData, fetchKurikulum]);
 
     // Effect to fetch Profil and CPLs when selectedProdi changes OR searchTerm changes
     useEffect(() => {
@@ -290,6 +304,7 @@ export const useProfilLulusan = () => {
         prodiList,
         fakultasList,
         cplList,
+        kurikulumList,
         selectedFakultas,
         setSelectedFakultas,
         selectedProdi,
@@ -310,6 +325,7 @@ export const useProfilLulusan = () => {
         setSearchTerm: handleSetSearchTerm,
         searchBy,
         setSearchBy,
-        fetchProfilLulusan
+        fetchProfilLulusan,
+        fetchKurikulum
     };
 };

@@ -114,12 +114,15 @@ model Cpl {
   profilLulusanMappings  ProfilLulusanCpl[]
   targetCPL              TargetCPL[]
   tindakLanjutCPL        TindakLanjutCPL[]
+  kurikulumId            String?                  @map("kurikulum_id")
+  kurikulum              Kurikulum?               @relation(fields: [kurikulumId], references: [id])
 
   @@index([kodeCpl])
   @@index([kategori])
   @@index([kategoriId])
   @@index([prodiId])
   @@index([isActive])
+  @@index([kurikulumId])
   @@index([createdBy], map: "cpl_created_by_fkey")
   @@map("cpl")
 }
@@ -514,6 +517,9 @@ model Kurikulum {
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
   mataKuliah   MataKuliah[]
+  cpl          Cpl[]
+  profilLulusan ProfilLulusan[]
+  angkatan     Angkatan[]
 
   @@map("kurikulum")
 }
@@ -607,8 +613,11 @@ model Angkatan {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   profiles  Profile[]
+  kurikulumId String?   @map("kurikulum_id")
+  kurikulum   Kurikulum? @relation(fields: [kurikulumId], references: [id])
 
   @@map("angkatan")
+  @@index([kurikulumId])
 }
 
 model Rubrik {
@@ -717,9 +726,12 @@ model ProfilLulusan {
   updatedAt   DateTime           @updatedAt @map("updated_at")
   prodi       Prodi              @relation(fields: [prodiId], references: [id], onDelete: Cascade)
   cplMappings ProfilLulusanCpl[]
+  kurikulumId String?            @map("kurikulum_id")
+  kurikulum   Kurikulum?         @relation(fields: [kurikulumId], references: [id])
 
   @@unique([prodiId, kode])
   @@index([prodiId])
+  @@index([kurikulumId])
   @@map("profil_lulusan")
 }
 

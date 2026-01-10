@@ -28,6 +28,7 @@ type FormData = {
   deskripsi: string;
   kategoriId: string;
   prodiId: string;
+  kurikulumId: string;
 };
 
 const CPLPage = () => {
@@ -40,11 +41,13 @@ const CPLPage = () => {
     kategoriList,
     fakultasList,
     prodiList,
+    kurikulumList,
     loading,
     fetchCPL,
     fetchKategori,
     fetchFakultas,
     fetchProdi,
+    fetchKurikulum,
     createCPL,
     updateCPL,
     deleteCPL,
@@ -120,6 +123,7 @@ const CPLPage = () => {
     deskripsi: "",
     kategoriId: "",
     prodiId: "",
+    kurikulumId: "",
   });
 
   // PL Mapping State
@@ -215,7 +219,8 @@ const CPLPage = () => {
     fetchKategori();
     fetchFakultas();
     fetchProdi();
-  }, [fetchCPL, fetchKategori, fetchFakultas, fetchProdi]);
+    fetchKurikulum();
+  }, [fetchCPL, fetchKategori, fetchFakultas, fetchProdi, fetchKurikulum]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -232,6 +237,7 @@ const CPLPage = () => {
         deskripsi: formData.deskripsi.trim(),
         kategoriId: formData.kategoriId,
         prodiId: formData.prodiId || null,
+        kurikulumId: formData.kurikulumId || null,
       };
 
       let success = false;
@@ -257,6 +263,7 @@ const CPLPage = () => {
       deskripsi: cpl.deskripsi,
       kategoriId: cpl.kategoriId || "",
       prodiId: cpl.prodiId || "",
+      kurikulumId: cpl.kurikulumId || "",
     });
     setDialogOpen(true);
   };
@@ -284,6 +291,7 @@ const CPLPage = () => {
       deskripsi: "",
       kategoriId: "",
       prodiId: "",
+      kurikulumId: "",
     });
     setEditingCPL(null);
   };
@@ -646,6 +654,26 @@ const CPLPage = () => {
                           </SelectContent>
                         </Select>
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="kurikulum">Kurikulum</Label>
+                        <Select
+                          value={formData.kurikulumId}
+                          onValueChange={(val) => setFormData({ ...formData, kurikulumId: val })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih Kurikulum" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {kurikulumList
+                              .filter(k => k.isActive || k.id === formData.kurikulumId)
+                              .map((k: any) => (
+                                <SelectItem key={k.id} value={k.id}>
+                                  {k.nama} {!k.isActive && "(Tidak Aktif)"}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="flex gap-2">
                         <Button
                           type="submit"
@@ -678,6 +706,7 @@ const CPLPage = () => {
                       <TableHead>Kode CPL</TableHead>
                       <TableHead>Deskripsi</TableHead>
                       <TableHead>Kategori</TableHead>
+                      <TableHead>Kurikulum</TableHead>
                       <TableHead>Program Studi</TableHead>
                       <TableHead className="text-right">Aksi</TableHead>
                     </TableRow>
@@ -691,6 +720,7 @@ const CPLPage = () => {
                         <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
                         <TableCell className="max-w-md">{cpl.deskripsi}</TableCell>
                         <TableCell>{cpl.kategoriRef?.nama || cpl.kategori}</TableCell>
+                        <TableCell>{cpl.kurikulum?.nama || '-'}</TableCell>
                         <TableCell>{cpl.prodi?.nama || '-'}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
