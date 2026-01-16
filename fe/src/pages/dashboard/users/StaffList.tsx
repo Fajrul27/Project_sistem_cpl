@@ -13,6 +13,7 @@ import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen
 import { Pagination } from "@/components/common/Pagination";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
@@ -179,6 +180,16 @@ export const StaffList = () => {
         loadUsers();
     }, [loadUsers]);
 
+    // Sync filters with new user form
+    useEffect(() => {
+        setNewUser(prev => ({
+            ...prev,
+            role: roleFilter,
+            fakultasId: facultyFilter === "all" ? "" : facultyFilter,
+            prodiId: programFilter === "all" ? "" : programFilter
+        }));
+    }, [roleFilter, facultyFilter, programFilter]);
+
     const selectedFakultas = fakultasList.find(f => f.id === newUser.fakultasId);
     const selectedEditFakultas = fakultasList.find(f => f.id === editData.fakultas);
     const selectedFacultyFilter = facultyFilter === "all" ? undefined : fakultasList.find(f => f.id === facultyFilter);
@@ -204,7 +215,7 @@ export const StaffList = () => {
                 newUser.role,
                 profilePayload
             );
-            toast.success("Staff berhasil dibuat");
+            toast.success(`Staff "${newUser.fullName}" berhasil dibuat`);
             setShowCreate(false);
             setNewUser({ fullName: "", email: "", password: "", role: "dosen", fakultasId: "", prodiId: "", identityNumber: "" });
             loadUsers();
@@ -231,7 +242,7 @@ export const StaffList = () => {
                     prodiId: editData.prodi || null
                 });
             }
-            toast.success("Staff updated");
+            toast.success(`Data staff "${editingUser?.profile?.namaLengkap || editingUser?.email || 'Unknown'}" berhasil diperbarui`);
             setEditingUser(null);
             loadUsers();
         } catch (err: any) {
@@ -347,9 +358,9 @@ export const StaffList = () => {
                                     <SelectContent>{roleOptions.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2"><Label>Nama</Label><Input value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} required /></div>
-                            <div className="space-y-2"><Label>Email</Label><Input type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required /></div>
-                            <div className="space-y-2"><Label>Password</Label><Input type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} required minLength={6} /></div>
+                            <div className="space-y-2"><RequiredLabel required>Nama</RequiredLabel><Input value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} required /></div>
+                            <div className="space-y-2"><RequiredLabel required>Email</RequiredLabel><Input type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required /></div>
+                            <div className="space-y-2"><RequiredLabel required>Password</RequiredLabel><Input type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} required minLength={6} /></div>
                             <div className="space-y-2"><Label>NIP/NIDN</Label><Input value={newUser.identityNumber} onChange={e => setNewUser({ ...newUser, identityNumber: e.target.value })} /></div>
                             {newUser.role !== 'admin' && (
                                 <>

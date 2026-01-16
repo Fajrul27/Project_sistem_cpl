@@ -13,6 +13,7 @@ import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen
 import { Pagination } from "@/components/common/Pagination";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
@@ -254,7 +255,7 @@ export const StudentList = () => {
                 profilePayload
             );
 
-            toast.success("Mahasiswa baru berhasil dibuat");
+            toast.success(`Mahasiswa "${newUser.fullName}" berhasil dibuat`);
             setNewUser({
                 fullName: "",
                 email: "",
@@ -311,7 +312,7 @@ export const StudentList = () => {
                 await updateProfile(editingUser.profileId, profilePayload);
             }
 
-            toast.success("Data berhasil diperbarui");
+            toast.success(`Data mahasiswa "${editingUser?.profile?.namaLengkap || editingUser?.email || 'Unknown'}" berhasil diperbarui`);
             setEditingUser(null);
             loadUsers();
         } catch (error: any) {
@@ -431,19 +432,19 @@ export const StudentList = () => {
                     <div className="mb-6 border rounded-lg p-4 bg-muted/30">
                         <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="space-y-2">
-                                <Label>Nama Lengkap</Label>
+                                <RequiredLabel required>Nama Lengkap</RequiredLabel>
                                 <Input value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} required />
                             </div>
                             <div className="space-y-2">
-                                <Label>Email</Label>
+                                <RequiredLabel required>Email</RequiredLabel>
                                 <Input type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required />
                             </div>
                             <div className="space-y-2">
-                                <Label>Password</Label>
+                                <RequiredLabel required>Password</RequiredLabel>
                                 <Input type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} required minLength={6} />
                             </div>
                             <div className="space-y-2">
-                                <Label>NIM</Label>
+                                <RequiredLabel required>NIM</RequiredLabel>
                                 <Input value={newUser.identityNumber} onChange={e => setNewUser({ ...newUser, identityNumber: e.target.value })} required />
                             </div>
 

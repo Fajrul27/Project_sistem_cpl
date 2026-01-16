@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Pencil, Trash2, Search, Building2, School } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -100,10 +101,10 @@ export default function FakultasPage() {
         try {
             if (editingFakultas) {
                 await updateFakultas(editingFakultas.id, fakultasForm);
-                toast.success('Fakultas berhasil diupdate');
+                toast.success(`Fakultas "${fakultasForm.nama}" (${fakultasForm.kode}) berhasil diupdate`);
             } else {
                 await createFakultas(fakultasForm);
-                toast.success('Fakultas berhasil dibuat');
+                toast.success(`Fakultas "${fakultasForm.nama}" (${fakultasForm.kode}) berhasil ditambahkan`);
             }
             setIsFakultasDialogOpen(false);
             setEditingFakultas(null);
@@ -146,10 +147,10 @@ export default function FakultasPage() {
         try {
             if (editingProdi) {
                 await updateProdi(editingProdi.id, prodiForm);
-                toast.success('Prodi berhasil diupdate');
+                toast.success(`Prodi "${prodiForm.nama}" (${prodiForm.jenjang}) berhasil diupdate`);
             } else {
                 await createProdi(prodiForm);
-                toast.success('Prodi berhasil dibuat');
+                toast.success(`Prodi "${prodiForm.nama}" (${prodiForm.jenjang}) berhasil ditambahkan`);
             }
             setIsProdiDialogOpen(false);
             setEditingProdi(null);
@@ -197,10 +198,10 @@ export default function FakultasPage() {
         try {
             if (editingJenjang) {
                 await updateJenjang(editingJenjang.id, jenjangForm);
-                toast.success('Jenjang berhasil diupdate');
+                toast.success(`Jenjang "${jenjangForm.nama}" berhasil diupdate`);
             } else {
                 await createJenjang(jenjangForm);
-                toast.success('Jenjang berhasil dibuat');
+                toast.success(`Jenjang "${jenjangForm.nama}" berhasil ditambahkan`);
             }
             setIsJenjangDialogOpen(false);
             setEditingJenjang(null);
@@ -559,21 +560,23 @@ export default function FakultasPage() {
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="fk-kode">Kode Fakultas</Label>
+                            <RequiredLabel htmlFor="fk-kode" required>Kode Fakultas</RequiredLabel>
                             <Input
                                 id="fk-kode"
                                 value={fakultasForm.kode}
                                 onChange={(e) => setFakultasForm({ ...fakultasForm, kode: e.target.value })}
                                 placeholder="Contoh: FT, FE"
+                                required
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="fk-nama">Nama Fakultas</Label>
+                            <RequiredLabel htmlFor="fk-nama" required>Nama Fakultas</RequiredLabel>
                             <Input
                                 id="fk-nama"
                                 value={fakultasForm.nama}
                                 onChange={(e) => setFakultasForm({ ...fakultasForm, nama: e.target.value })}
                                 placeholder="Contoh: Fakultas Teknik"
+                                required
                             />
                         </div>
                     </div>
@@ -596,19 +599,21 @@ export default function FakultasPage() {
                     <div className="space-y-4 py-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="pr-kode">Kode Prodi</Label>
+                                <RequiredLabel htmlFor="pr-kode" required>Kode Prodi</RequiredLabel>
                                 <Input
                                     id="pr-kode"
                                     value={prodiForm.kode}
                                     onChange={(e) => setProdiForm({ ...prodiForm, kode: e.target.value })}
                                     placeholder="Contoh: TI, SI"
+                                    required
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="pr-jenjang">Jenjang</Label>
+                                <RequiredLabel htmlFor="pr-jenjang" required>Jenjang</RequiredLabel>
                                 <Select
                                     value={prodiForm.jenjang}
                                     onValueChange={(val) => setProdiForm({ ...prodiForm, jenjang: val })}
+                                    required
                                 >
                                     <SelectTrigger id="pr-jenjang">
                                         <SelectValue placeholder="Pilih..." />
@@ -626,19 +631,21 @@ export default function FakultasPage() {
                             </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="pr-nama">Nama Prodi</Label>
+                            <RequiredLabel htmlFor="pr-nama" required>Nama Prodi</RequiredLabel>
                             <Input
                                 id="pr-nama"
                                 value={prodiForm.nama}
                                 onChange={(e) => setProdiForm({ ...prodiForm, nama: e.target.value })}
                                 placeholder="Contoh: Teknik Informatika"
+                                required
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="pr-fakultas">Fakultas</Label>
+                            <RequiredLabel htmlFor="pr-fakultas" required>Fakultas</RequiredLabel>
                             <Select
                                 value={prodiForm.fakultasId}
                                 onValueChange={(val) => setProdiForm({ ...prodiForm, fakultasId: val })}
+                                required
                             >
                                 <SelectTrigger id="pr-fakultas">
                                     <SelectValue placeholder="Pilih Fakultas" />
@@ -671,12 +678,13 @@ export default function FakultasPage() {
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="jj-nama">Nama Jenjang</Label>
+                            <RequiredLabel htmlFor="jj-nama" required>Nama Jenjang</RequiredLabel>
                             <Input
                                 id="jj-nama"
                                 value={jenjangForm.nama}
                                 onChange={(e) => setJenjangForm({ ...jenjangForm, nama: e.target.value })}
                                 placeholder="Contoh: S1"
+                                required
                             />
                         </div>
                         <div className="grid gap-2">

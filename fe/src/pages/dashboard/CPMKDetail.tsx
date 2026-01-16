@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -285,7 +286,7 @@ const CPMKDetailPage = () => {
                                 <Progress value={totalBobotMapping} className="w-full mt-2" />
                             </div>
                             {canEdit && (
-                                <Button size="sm" onClick={() => navigate(`/dashboard/cpmk?view=matrix&mkId=${cpmk.mataKuliahId}`)}>
+                                <Button size="sm" onClick={() => navigate(`/dashboard/cpmk?view=matrix&mkId=${cpmk.mataKuliahId}&cpmkId=${id}`)}>
                                     <Eye className="h-4 w-4 mr-2" />
                                     Lihat Mapping
                                 </Button>
@@ -387,7 +388,7 @@ const CPMKDetailPage = () => {
                                                     </Select>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label>Nama Teknik</Label>
+                                                    <RequiredLabel required>Nama Teknik</RequiredLabel>
                                                     <Input
                                                         value={teknikForm.namaTeknik}
                                                         onChange={(e) => setTeknikForm({ ...teknikForm, namaTeknik: e.target.value })}
@@ -396,7 +397,7 @@ const CPMKDetailPage = () => {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label>Bobot (%)</Label>
+                                                    <RequiredLabel required>Bobot (%)</RequiredLabel>
                                                     <Input
                                                         type="number"
                                                         min="0"
@@ -677,7 +678,7 @@ const CPMKDetailPage = () => {
                             </DialogHeader>
                             <form onSubmit={(e) => { e.preventDefault(); handleSaveSubCpmk(); }} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Kode Sub-CPMK</Label>
+                                    <RequiredLabel required>Kode Sub-CPMK</RequiredLabel>
                                     <Input
                                         value={subCpmkForm.kode}
                                         onChange={(e) => setSubCpmkForm({ ...subCpmkForm, kode: e.target.value })}
@@ -686,7 +687,7 @@ const CPMKDetailPage = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Deskripsi</Label>
+                                    <RequiredLabel required>Deskripsi</RequiredLabel>
                                     <Input
                                         value={subCpmkForm.deskripsi}
                                         onChange={(e) => setSubCpmkForm({ ...subCpmkForm, deskripsi: e.target.value })}
@@ -694,7 +695,7 @@ const CPMKDetailPage = () => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Bobot (%)</Label>
+                                    <RequiredLabel required>Bobot (%)</RequiredLabel>
                                     <Input
                                         type="number"
                                         min="0"

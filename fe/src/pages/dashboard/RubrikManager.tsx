@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { useRubrik } from "@/hooks/useRubrik";
 
@@ -72,19 +73,21 @@ export default function RubrikManager() {
                             <CardContent className="pt-6 space-y-4">
                                 <div className="flex flex-col sm:flex-row gap-4 items-start">
                                     <div className="w-full sm:flex-1 space-y-2">
-                                        <Label>Deskripsi Kriteria</Label>
+                                        <RequiredLabel required>Deskripsi Kriteria</RequiredLabel>
                                         <Textarea
                                             value={kriteria.deskripsi}
                                             onChange={e => updateKriteria(kIndex, 'deskripsi', e.target.value)}
                                             placeholder="Contoh: Kelengkapan analisis..."
+                                            required
                                         />
                                     </div>
                                     <div className="w-full sm:w-32 space-y-2">
-                                        <Label>Bobot (%)</Label>
+                                        <RequiredLabel required>Bobot (%)</RequiredLabel>
                                         <Input
                                             type="number"
                                             value={kriteria.bobot}
                                             onChange={e => updateKriteria(kIndex, 'bobot', parseFloat(e.target.value))}
+                                            required
                                         />
                                     </div>
                                     <div className="self-end sm:self-start pt-0 sm:pt-8">

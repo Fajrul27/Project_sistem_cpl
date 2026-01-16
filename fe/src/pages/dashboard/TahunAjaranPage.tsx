@@ -22,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, CheckCircle, XCircle } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 import {
@@ -218,7 +219,7 @@ export default function TahunAjaranPage({ isTabContent = false }: { isTabContent
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="nama">Nama Tahun Ajaran</Label>
+                            <RequiredLabel htmlFor="nama" required>Nama Tahun Ajaran</RequiredLabel>
                             <Input
                                 id="nama"
                                 placeholder="Contoh: 2025/2026 Ganjil"

@@ -20,6 +20,7 @@ import { LoadingSpinner, LoadingScreen } from "@/components/common/LoadingScreen
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { CPMKMatrixMapping } from "@/components/features/CPMKMatrixMapping";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 
 const CPMKPage = () => {
     const navigate = useNavigate();
@@ -47,11 +48,13 @@ const CPMKPage = () => {
     const [editingCpmk, setEditingCpmk] = useState<Cpmk | null>(null);
     const [searchParams] = useSearchParams();
     const [viewMode, setViewMode] = useState<"list" | "matrix">("list");
+    const [cpmkIdFromUrl, setCpmkIdFromUrl] = useState<string | null>(null);
 
     // Handle URL params for direct navigation to matrix view
     useEffect(() => {
         const viewParam = searchParams.get("view");
         const mkIdParam = searchParams.get("mkId");
+        const cpmkIdParam = searchParams.get("cpmkId");
 
         if (viewParam === "matrix") {
             setViewMode("matrix");
@@ -59,6 +62,10 @@ const CPMKPage = () => {
 
         if (mkIdParam) {
             setMataKuliahFilter(mkIdParam);
+        }
+
+        if (cpmkIdParam) {
+            setCpmkIdFromUrl(cpmkIdParam);
         }
     }, [searchParams, setMataKuliahFilter]);
 
@@ -374,7 +381,7 @@ const CPMKPage = () => {
                                             </DialogHeader>
                                             <form onSubmit={handleSubmit} className="space-y-4">
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="kodeCpmk">Kode CPMK</Label>
+                                                    <RequiredLabel htmlFor="kodeCpmk" required>Kode CPMK</RequiredLabel>
                                                     <Input
                                                         id="kodeCpmk"
                                                         placeholder="Contoh: CPMK 1"
@@ -672,6 +679,7 @@ const CPMKPage = () => {
                                             return selectedMK.mataKuliah?.prodiId || selectedMK.prodiId;
                                         })()}
                                         readOnly={role === 'dosen'}
+                                        onBack={cpmkIdFromUrl ? () => navigate(`/dashboard/cpmk/${cpmkIdFromUrl}`) : undefined}
                                     />
                                 ) : (
                                     <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed">

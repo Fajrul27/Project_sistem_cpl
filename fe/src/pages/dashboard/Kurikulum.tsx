@@ -40,6 +40,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 
@@ -114,7 +115,7 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
     const onAddSubmit = async (data: CreateKurikulumData) => {
         try {
             await createKurikulum(data);
-            toast.success("Kurikulum berhasil ditambahkan");
+            toast.success(`Kurikulum "${data.nama}" (${data.tahunMulai}) berhasil ditambahkan`);
             setIsAddDialogOpen(false);
             resetAdd();
             setIsDataChanged(!isDataChanged);
@@ -129,7 +130,7 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
 
         try {
             await updateKurikulum(selectedKurikulum.id, data);
-            toast.success("Kurikulum berhasil diperbarui");
+            toast.success(`Kurikulum "${data.nama}" berhasil diperbarui`);
             setIsEditDialogOpen(false);
             setSelectedKurikulum(null);
             setIsDataChanged(!isDataChanged);
@@ -209,7 +210,7 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
                                 </DialogHeader>
                                 <form onSubmit={handleSubmitAdd(onAddSubmit)} className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="nama">Nama Kurikulum</Label>
+                                        <RequiredLabel htmlFor="nama" required>Nama Kurikulum</RequiredLabel>
                                         <Input
                                             id="nama"
                                             placeholder="Contoh: Kurikulum 2024"
@@ -221,7 +222,7 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="tahunMulai">Tahun Mulai</Label>
+                                            <RequiredLabel htmlFor="tahunMulai" required>Tahun Mulai</RequiredLabel>
                                             <Input
                                                 id="tahunMulai"
                                                 type="number"
@@ -371,7 +372,7 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
                     </DialogHeader>
                     <form onSubmit={handleSubmitEdit(onEditSubmit)} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="edit-nama">Nama Kurikulum</Label>
+                            <RequiredLabel htmlFor="edit-nama" required>Nama Kurikulum</RequiredLabel>
                             <Input
                                 id="edit-nama"
                                 {...registerEdit("nama", { required: "Nama kurikulum wajib diisi" })}
@@ -382,7 +383,7 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="edit-tahunMulai">Tahun Mulai</Label>
+                                <RequiredLabel htmlFor="edit-tahunMulai" required>Tahun Mulai</RequiredLabel>
                                 <Input
                                     id="edit-tahunMulai"
                                     type="number"

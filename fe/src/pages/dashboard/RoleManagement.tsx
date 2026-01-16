@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Textarea } from "@/components/ui/textarea";
 import { Edit, Shield, GraduationCap, BookOpen, User, Crown, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -94,7 +95,7 @@ const RoleManagementPage = () => {
                 description: formData.description || null
             });
 
-            toast.success('Role berhasil diupdate');
+            toast.success(`Role "${formData.displayName}" berhasil diupdate`);
             setEditDialogOpen(false);
             fetchRoles();
         } catch (error) {
@@ -116,7 +117,7 @@ const RoleManagementPage = () => {
                 description: formData.description || null
             });
 
-            toast.success('Role baru berhasil dibuat');
+            toast.success(`Role "${formData.displayName}" berhasil dibuat`);
             setCreateDialogOpen(false);
             fetchRoles();
         } catch (error: any) {
@@ -250,7 +251,7 @@ const RoleManagementPage = () => {
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="displayName">Display Name</Label>
+                            <RequiredLabel htmlFor="displayName" required>Display Name</RequiredLabel>
                             <Input
                                 id="displayName"
                                 value={formData.displayName}
@@ -292,7 +293,7 @@ const RoleManagementPage = () => {
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Name (ID)</Label>
+                            <RequiredLabel htmlFor="name" required>Name (ID)</RequiredLabel>
                             <Input
                                 id="name"
                                 value={formData.name}
@@ -303,7 +304,7 @@ const RoleManagementPage = () => {
                             <p className="text-xs text-muted-foreground">Lowercase, alphanumeric dan underscore saja</p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="createDisplayName">Display Name</Label>
+                            <RequiredLabel htmlFor="createDisplayName" required>Display Name</RequiredLabel>
                             <Input
                                 id="createDisplayName"
                                 value={formData.displayName}

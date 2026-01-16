@@ -5,6 +5,7 @@ import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmation
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -295,8 +296,8 @@ const CPLPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.kodeCpl || !formData.deskripsi || !formData.kategoriId) {
-      toast.error("Semua field harus diisi");
+    if (!formData.kodeCpl || !formData.deskripsi || !formData.kategoriId || !formData.prodiId || !formData.kurikulumId) {
+      toast.error("Semua field wajib harus diisi");
       return;
     }
 
@@ -314,8 +315,14 @@ const CPLPage = () => {
       let success = false;
       if (editingCPL) {
         success = await updateCPL(editingCPL.id, payload);
+        if (success) {
+          toast.success(`CPL "${payload.kodeCpl}" berhasil diupdate`);
+        }
       } else {
         success = await createCPL(payload);
+        if (success) {
+          toast.success(`CPL "${payload.kodeCpl}" berhasil ditambahkan`);
+        }
       }
 
       if (success) {
@@ -442,83 +449,85 @@ const CPLPage = () => {
                     <span className="sm:hidden">Filter</span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-[280px] space-y-4">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium">Fakultas</Label>
-                    <Select
-                      value={cplFilters.fakultasFilter}
-                      onValueChange={handleFakultasChange}
-                    >
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue placeholder="Semua Fakultas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {fakultasList.map((f) => (
-                          <SelectItem key={f.id} value={f.id}>
-                            {f.nama}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {(canViewAll || role === 'kaprodi') && (
+                <PopoverContent align="end" className="w-[320px] space-y-4">
+                  <div className="space-y-3">
                     <div className="space-y-1">
-                      <Label className="text-xs font-medium">Program Studi</Label>
+                      <Label className="text-xs font-medium">Fakultas</Label>
                       <Select
-                        value={cplFilters.prodiFilter}
-                        onValueChange={handleProdiChange}
-                        disabled={!cplFilters.fakultasFilter && canViewAll}
+                        value={cplFilters.fakultasFilter}
+                        onValueChange={handleFakultasChange}
                       >
-                        <SelectTrigger className="w-full h-8 text-xs">
-                          <SelectValue placeholder="Semua program studi" />
+                        <SelectTrigger className="w-full h-9 pl-2">
+                          <SelectValue placeholder="Semua Fakultas" className="truncate" />
                         </SelectTrigger>
                         <SelectContent>
-                          {filterProdiOptions.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.nama}
+                          {fakultasList.map((f) => (
+                            <SelectItem key={f.id} value={f.id}>
+                              {f.nama}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  )}
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium">Kurikulum</Label>
-                    <Select
-                      value={cplFilters.kurikulumFilter}
-                      onValueChange={handleKurikulumChange}
-                    >
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue placeholder="Semua Kurikulum" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Semua Kurikulum</SelectItem>
-                        {kurikulumList.map((k) => (
-                          <SelectItem key={k.id} value={k.id}>
-                            {k.nama}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium">Kategori</Label>
-                    <Select
-                      value={cplFilters.kategoriFilter}
-                      onValueChange={handleKategoriChange}
-                    >
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue placeholder="Semua Kategori" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Semua Kategori</SelectItem>
-                        {kategoriList.map((k) => (
-                          <SelectItem key={k.id} value={k.nama}>
-                            {k.nama}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {(canViewAll || role === 'kaprodi') && (
+                      <div className="space-y-1">
+                        <Label className="text-xs font-medium">Program Studi</Label>
+                        <Select
+                          value={cplFilters.prodiFilter}
+                          onValueChange={handleProdiChange}
+                          disabled={!cplFilters.fakultasFilter && canViewAll}
+                        >
+                          <SelectTrigger className="w-full h-9 pl-2">
+                            <SelectValue placeholder="Semua program studi" className="truncate" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filterProdiOptions.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.nama}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Kurikulum</Label>
+                      <Select
+                        value={cplFilters.kurikulumFilter}
+                        onValueChange={handleKurikulumChange}
+                      >
+                        <SelectTrigger className="w-full h-9 pl-2">
+                          <SelectValue placeholder="Semua Kurikulum" className="truncate" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua Kurikulum</SelectItem>
+                          {kurikulumList.map((k) => (
+                            <SelectItem key={k.id} value={k.id}>
+                              {k.nama}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium">Kategori</Label>
+                      <Select
+                        value={cplFilters.kategoriFilter}
+                        onValueChange={handleKategoriChange}
+                      >
+                        <SelectTrigger className="w-full h-9 pl-2">
+                          <SelectValue placeholder="Semua Kategori" className="truncate" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua Kategori</SelectItem>
+                          {kategoriList.map((k) => (
+                            <SelectItem key={k.id} value={k.nama}>
+                              {k.nama}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -711,7 +720,7 @@ const CPLPage = () => {
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="kodeCpl">Kode CPL</Label>
+                        <RequiredLabel htmlFor="kodeCpl" required>Kode CPL</RequiredLabel>
                         <Input
                           id="kodeCpl"
                           placeholder="Contoh: CPL-01"
@@ -721,7 +730,7 @@ const CPLPage = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="deskripsi">Deskripsi</Label>
+                        <RequiredLabel htmlFor="deskripsi" required>Deskripsi</RequiredLabel>
                         <Textarea
                           id="deskripsi"
                           placeholder="Deskripsi CPL"
@@ -732,10 +741,11 @@ const CPLPage = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="kategori">Kategori</Label>
+                        <RequiredLabel htmlFor="kategori" required>Kategori</RequiredLabel>
                         <Select
                           value={formData.kategoriId}
                           onValueChange={(val) => setFormData({ ...formData, kategoriId: val })}
+                          required
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih Kategori" />
@@ -748,11 +758,12 @@ const CPLPage = () => {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="prodi">Program Studi</Label>
+                        <RequiredLabel htmlFor="prodi" required>Program Studi</RequiredLabel>
                         <Select
                           value={formData.prodiId}
                           onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
                           disabled={!canViewAll}
+                          required
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih Program Studi" />
@@ -767,10 +778,11 @@ const CPLPage = () => {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="kurikulum">Kurikulum</Label>
+                        <RequiredLabel htmlFor="kurikulum" required>Kurikulum</RequiredLabel>
                         <Select
                           value={formData.kurikulumId}
                           onValueChange={(val) => setFormData({ ...formData, kurikulumId: val })}
+                          required
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih Kurikulum" />

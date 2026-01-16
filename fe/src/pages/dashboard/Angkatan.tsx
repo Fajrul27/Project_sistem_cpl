@@ -38,6 +38,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -101,7 +102,7 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
     const handleCreate = async (data: AngkatanFormData) => {
         try {
             await createAngkatan(data);
-            toast.success("Angkatan berhasil ditambahkan");
+            toast.success(`Angkatan ${data.tahun} berhasil ditambahkan`);
             setIsAddDialogOpen(false);
             reset();
             fetchData();
@@ -114,7 +115,7 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
         if (!selectedAngkatan) return;
         try {
             await updateAngkatan(selectedAngkatan.id, data);
-            toast.success("Angkatan berhasil diperbarui");
+            toast.success(`Angkatan ${data.tahun} berhasil diperbarui`);
             setIsEditDialogOpen(false);
             setSelectedAngkatan(null);
             reset();
@@ -278,7 +279,7 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
                     </DialogHeader>
                     <form onSubmit={handleSubmit(handleCreate)} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="tahun">Tahun Angkatan</Label>
+                            <RequiredLabel htmlFor="tahun" required>Tahun Angkatan</RequiredLabel>
                             <Input
                                 id="tahun"
                                 type="number"
@@ -336,7 +337,7 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
                     </DialogHeader>
                     <form onSubmit={handleSubmit(handleEdit)} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="edit-tahun">Tahun Angkatan</Label>
+                            <RequiredLabel htmlFor="edit-tahun" required>Tahun Angkatan</RequiredLabel>
                             <Input
                                 id="edit-tahun"
                                 type="number"

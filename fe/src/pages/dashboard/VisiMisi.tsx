@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Plus, Trash2, Edit, Save } from "lucide-react";
 import {
@@ -183,12 +184,13 @@ export default function VisiMisiPage() {
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label>Teks {formData.tipe === 'visi' ? 'Visi' : 'Misi'}</Label>
+                                <RequiredLabel required>Teks {formData.tipe === 'visi' ? 'Visi' : 'Misi'}</RequiredLabel>
                                 <Textarea
                                     value={formData.teks}
                                     onChange={(e) => setFormData({ ...formData, teks: e.target.value })}
                                     rows={5}
                                     placeholder={`Masukkan bunyi ${formData.tipe}...`}
+                                    required
                                 />
                             </div>
                             {formData.tipe === 'misi' && (

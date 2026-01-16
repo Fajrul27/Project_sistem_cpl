@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/common/LoadingScreen";
 import { toast } from "sonner";
-import { Info, Save, AlertCircle, CheckCircle } from "lucide-react";
+import { Info, Save, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
@@ -20,6 +20,7 @@ interface MatrixProps {
     mataKuliahId: string;
     prodiId?: string;
     readOnly?: boolean;
+    onBack?: () => void;
 }
 
 interface CellData {
@@ -29,7 +30,7 @@ interface CellData {
     isDirty: boolean;
 }
 
-export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false }: MatrixProps) {
+export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onBack }: MatrixProps) {
     const [cpmks, setCpmks] = useState<any[]>([]);
     const [cpls, setCpls] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -185,190 +186,210 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false }: M
     if (cpmks.length === 0) return <div className="text-center p-8 text-muted-foreground border border-dashed rounded-lg">Tidak ada CPMK untuk mata kuliah ini.</div>;
 
     return (
-        <div className="space-y-4 animate-in fade-in duration-500">
-            {/* Legend & Help */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-100 dark:border-blue-900/50 gap-4">
-                <div className="flex items-start gap-3">
-                    <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                    <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                        <p className="font-semibold">Panduan Pengisian Matrix:</p>
-                        <ul className="list-disc pl-4 space-y-0.5 text-blue-700/80 dark:text-blue-300/80">
-                            <li>Klik kotak pertemuan untuk menghubungkan CPMK dengan CPL (Toggle).</li>
-                            <li>Masukkan bobot kontribusi (0-100%) pada kotak input yang muncul.</li>
-                            <li>Pastikan total bobot per baris (CPMK) berjumlah <span className="font-bold">100%</span>.</li>
-                            <li>Total baris akan berwarna <span className="text-green-600 dark:text-green-400 font-bold">Hijau</span> jika pas 100%, dan <span className="text-amber-600 dark:text-amber-400 font-bold">Kuning</span> jika belum.</li>
-                        </ul>
+        <div className="flex gap-6 relative animate-in fade-in duration-500">
+            {/* Fixed Back Button Sidebar */}
+            {onBack && (
+                <div className="hidden xl:block w-28 shrink-0 relative">
+                    <div className="fixed left-80 top-1/2 -translate-y-1/2 z-40">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="rounded-full shadow-lg bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 h-12 w-12 transition-all hover:scale-105"
+                            onClick={onBack}
+                            title="Kembali ke Detail CPMK"
+                        >
+                            <ArrowLeft className="h-6 w-6" />
+                        </Button>
                     </div>
                 </div>
-                {!readOnly && (
-                    <Button onClick={saveChanges} disabled={saving} className="shadow-sm">
-                        {saving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                        Simpan Semua Perubahan
-                    </Button>
-                )}
-            </div>
+            )}
 
-            <div className="border rounded-lg shadow-sm bg-background overflow-hidden relative">
-                <div className="overflow-x-auto max-h-[70vh]">
-                    <Table className="relative w-full border-collapse">
-                        <TableHeader className="sticky top-0 z-20 bg-background/95 backdrop-blur shadow-sm select-none">
-                            <TableRow className="hover:bg-transparent border-b">
-                                <TableHead className="w-[300px] min-w-[250px] sticky left-0 z-30 bg-background border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] py-4">
-                                    <div className="flex flex-col gap-1 px-2">
-                                        <span className="font-bold text-lg text-foreground">CPMK</span>
-                                        <span className="text-xs font-normal text-muted-foreground">Baris ini adalah CPMK</span>
-                                    </div>
-                                </TableHead>
-                                {cpls.map(cpl => (
-                                    <TableHead key={cpl.id} className="text-center min-w-[100px] py-4 border-r border-dashed border-border/50 last:border-r-0 align-bottom">
-                                        <TooltipProvider>
-                                            <Tooltip delayDuration={0}>
-                                                <TooltipTrigger asChild>
-                                                    <div className="flex flex-col items-center gap-2 cursor-help group">
-                                                        <span className="font-bold text-primary group-hover:underline decoration-dotted underline-offset-4">
-                                                            {cpl.kodeCpl}
-                                                        </span>
-                                                        <Badge variant="outline" className="text-[10px] font-normal px-1 h-5 hidden sm:flex border-border">
-                                                            CPL
-                                                        </Badge>
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent className="max-w-sm text-xs p-3">
-                                                    <p className="font-semibold mb-1">{cpl.kodeCpl}</p>
-                                                    {cpl.deskripsi}
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
+            {/* Main Content */}
+            <div className="flex-1 space-y-4">
+                {/* Legend & Help */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-100 dark:border-blue-900/50 gap-4">
+                    <div className="flex items-start gap-3">
+                        <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                        <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                            <p className="font-semibold">Panduan Pengisian Matrix:</p>
+                            <ul className="list-disc pl-4 space-y-0.5 text-blue-700/80 dark:text-blue-300/80">
+                                <li>Klik kotak pertemuan untuk menghubungkan CPMK dengan CPL (Toggle).</li>
+                                <li>Masukkan bobot kontribusi (0-100%) pada kotak input yang muncul.</li>
+                                <li>Pastikan total bobot per baris (CPMK) berjumlah <span className="font-bold">100%</span>.</li>
+                                <li>Total baris akan berwarna <span className="text-green-600 dark:text-green-400 font-bold">Hijau</span> jika pas 100%, dan <span className="text-amber-600 dark:text-amber-400 font-bold">Kuning</span> jika belum.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    {!readOnly && (
+                        <Button onClick={saveChanges} disabled={saving} className="shadow-sm">
+                            {saving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                            Simpan Semua Perubahan
+                        </Button>
+                    )}
+                </div>
+
+                <div className="border rounded-lg shadow-sm bg-background overflow-hidden relative">
+                    <div className="overflow-x-auto max-h-[70vh]">
+                        <Table className="relative w-full border-collapse">
+                            <TableHeader className="sticky top-0 z-20 bg-background/95 backdrop-blur shadow-sm select-none">
+                                <TableRow className="hover:bg-transparent border-b">
+                                    <TableHead className="w-[300px] min-w-[250px] sticky left-0 z-30 bg-background border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] py-4">
+                                        <div className="flex flex-col gap-1 px-2">
+                                            <span className="font-bold text-lg text-foreground">CPMK</span>
+                                            <span className="text-xs font-normal text-muted-foreground">Baris ini adalah CPMK</span>
+                                        </div>
                                     </TableHead>
-                                ))}
-                                <TableHead className="w-[100px] bg-background text-center font-bold border-l sticky right-0 z-20 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                                    Total
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {cpmks.map(cpmk => {
-                                const total = rowTotals[cpmk.id] || 0;
-                                const isValid = Math.abs(total - 100) < 0.1; // Float tolerance
-                                const isZero = total === 0;
+                                    {cpls.map(cpl => (
+                                        <TableHead key={cpl.id} className="text-center min-w-[100px] py-4 border-r border-dashed border-border/50 last:border-r-0 align-bottom">
+                                            <TooltipProvider>
+                                                <Tooltip delayDuration={0}>
+                                                    <TooltipTrigger asChild>
+                                                        <div className="flex flex-col items-center gap-2 cursor-help group">
+                                                            <span className="font-bold text-primary group-hover:underline decoration-dotted underline-offset-4">
+                                                                {cpl.kodeCpl}
+                                                            </span>
+                                                            <Badge variant="outline" className="text-[10px] font-normal px-1 h-5 hidden sm:flex border-border">
+                                                                CPL
+                                                            </Badge>
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent className="max-w-sm text-xs p-3">
+                                                        <p className="font-semibold mb-1">{cpl.kodeCpl}</p>
+                                                        {cpl.deskripsi}
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        </TableHead>
+                                    ))}
+                                    <TableHead className="w-[100px] bg-background text-center font-bold border-l sticky right-0 z-20 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                                        Total
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {cpmks.map(cpmk => {
+                                    const total = rowTotals[cpmk.id] || 0;
+                                    const isValid = Math.abs(total - 100) < 0.1; // Float tolerance
+                                    const isZero = total === 0;
 
-                                return (
-                                    <TableRow
-                                        key={cpmk.id}
-                                        className={cn(
-                                            "group transition-colors border-b hover:bg-transparent",
-                                            hoveredRow === cpmk.id ? "bg-muted/50" : ""
-                                        )}
-                                        onMouseEnter={() => setHoveredRow(cpmk.id)}
-                                        onMouseLeave={() => setHoveredRow(null)}
-                                    >
-                                        {/* Row Header (CPMK Info) */}
-                                        <TableCell className={cn(
-                                            "sticky left-0 z-10 bg-background border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] p-4 align-top transition-colors",
-                                            hoveredRow === cpmk.id ? "bg-muted/50" : ""
-                                        )}>
-                                            <div className="flex flex-col gap-1.5">
-                                                <div className="flex items-center justify-between">
-                                                    <Badge variant="secondary" className="font-bold hover:bg-secondary/80">
-                                                        {cpmk.kodeCpmk}
-                                                    </Badge>
-                                                    {isValid && <CheckCircle className="w-4 h-4 text-green-500" />}
-                                                </div>
-                                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                                    {cpmk.deskripsi}
-                                                </p>
-                                            </div>
-                                        </TableCell>
-
-                                        {/* Matrix Cells */}
-                                        {cpls.map(cpl => {
-                                            const cell = matrix[cpmk.id]?.[cpl.id] || { isMapped: false, bobot: 0 };
-                                            return (
-                                                <TableCell
-                                                    key={cpl.id}
-                                                    className={cn(
-                                                        "p-0 border-r border-dashed border-border/50 last:border-r-0 relative align-middle",
-                                                        !cell.isMapped ? (readOnly ? "cursor-default" : "hover:bg-muted/30 cursor-pointer") : "bg-primary/5 dark:bg-primary/10"
-                                                    )}
-                                                    onClick={() => !readOnly && !cell.isMapped && handleToggle(cpmk.id, cpl.id)}
-                                                >
-                                                    <div className="flex flex-col items-center justify-center w-full h-[70px] relative group/cell">
-                                                        {!cell.isMapped ? (
-                                                            <div className={`absolute inset-0 flex items-center justify-center text-muted-foreground/40 ${!readOnly && "group-hover/cell:text-primary"} transition-colors`}>
-                                                                <span className="text-2xl font-light select-none bg-muted/20 rounded-full w-8 h-8 flex items-center justify-center">+</span>
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                <div className="absolute inset-0 flex items-center justify-center p-2">
-                                                                    <div className="relative w-20">
-                                                                        <Input
-                                                                            type="number"
-                                                                            className="h-10 text-center text-base font-semibold bg-background border-input focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-sm pr-5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                                            value={cell.bobot}
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                            onChange={(e) => handleBobotChange(cpmk.id, cpl.id, e.target.value)}
-                                                                            onFocus={(e) => e.target.select()}
-                                                                            placeholder="0"
-                                                                            disabled={readOnly}
-                                                                        />
-                                                                        <span className="absolute right-2 top-2.5 text-xs text-muted-foreground pointer-events-none font-medium">%</span>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Unmap Button (X) - visible on hover */}
-                                                                {!readOnly && (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleToggle(cpmk.id, cpl.id);
-                                                                        }}
-                                                                        className="absolute top-1 right-1 opacity-0 group-hover/cell:opacity-100 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-md hover:bg-destructive/90 transition-all z-10"
-                                                                        title="Hapus Mapping"
-                                                                    >
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                                                                    </button>
-                                                                )}
-                                                            </>
-                                                        )}
+                                    return (
+                                        <TableRow
+                                            key={cpmk.id}
+                                            className={cn(
+                                                "group transition-colors border-b hover:bg-transparent",
+                                                hoveredRow === cpmk.id ? "bg-muted/50" : ""
+                                            )}
+                                            onMouseEnter={() => setHoveredRow(cpmk.id)}
+                                            onMouseLeave={() => setHoveredRow(null)}
+                                        >
+                                            {/* Row Header (CPMK Info) */}
+                                            <TableCell className={cn(
+                                                "sticky left-0 z-10 bg-background border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] p-4 align-top transition-colors",
+                                                hoveredRow === cpmk.id ? "bg-muted/50" : ""
+                                            )}>
+                                                <div className="flex flex-col gap-1.5">
+                                                    <div className="flex items-center justify-between">
+                                                        <Badge variant="secondary" className="font-bold hover:bg-secondary/80">
+                                                            {cpmk.kodeCpmk}
+                                                        </Badge>
+                                                        {isValid && <CheckCircle className="w-4 h-4 text-green-500" />}
                                                     </div>
-                                                </TableCell>
-                                            );
-                                        })}
-
-                                        {/* Row Total Validation */}
-                                        <TableCell className="sticky right-0 z-10 bg-background/95 backdrop-blur-sm border-l shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] p-4 text-center align-middle">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <div className={cn(
-                                                    "text-sm font-bold",
-                                                    isValid ? "text-green-600 dark:text-green-400" : isZero ? "text-muted-foreground" : "text-amber-600 dark:text-amber-400"
-                                                )}>
-                                                    {total.toFixed(0)}%
+                                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                                        {cpmk.deskripsi}
+                                                    </p>
                                                 </div>
-                                                <Progress
-                                                    value={total}
-                                                    className={cn("h-2 w-16",
-                                                        isValid ? "bg-green-100 dark:bg-green-950" : "bg-muted"
+                                            </TableCell>
+
+                                            {/* Matrix Cells */}
+                                            {cpls.map(cpl => {
+                                                const cell = matrix[cpmk.id]?.[cpl.id] || { isMapped: false, bobot: 0 };
+                                                return (
+                                                    <TableCell
+                                                        key={cpl.id}
+                                                        className={cn(
+                                                            "p-0 border-r border-dashed border-border/50 last:border-r-0 relative align-middle",
+                                                            !cell.isMapped ? (readOnly ? "cursor-default" : "hover:bg-muted/30 cursor-pointer") : "bg-primary/5 dark:bg-primary/10"
+                                                        )}
+                                                        onClick={() => !readOnly && !cell.isMapped && handleToggle(cpmk.id, cpl.id)}
+                                                    >
+                                                        <div className="flex flex-col items-center justify-center w-full h-[70px] relative group/cell">
+                                                            {!cell.isMapped ? (
+                                                                <div className={`absolute inset-0 flex items-center justify-center text-muted-foreground/40 ${!readOnly && "group-hover/cell:text-primary"} transition-colors`}>
+                                                                    <span className="text-2xl font-light select-none bg-muted/20 rounded-full w-8 h-8 flex items-center justify-center">+</span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="absolute inset-0 flex items-center justify-center p-2">
+                                                                        <div className="relative w-20">
+                                                                            <Input
+                                                                                type="number"
+                                                                                className="h-10 text-center text-base font-semibold bg-background border-input focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-sm pr-5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                                value={cell.bobot}
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                                onChange={(e) => handleBobotChange(cpmk.id, cpl.id, e.target.value)}
+                                                                                onFocus={(e) => e.target.select()}
+                                                                                placeholder="0"
+                                                                                disabled={readOnly}
+                                                                            />
+                                                                            <span className="absolute right-2 top-2.5 text-xs text-muted-foreground pointer-events-none font-medium">%</span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Unmap Button (X) - visible on hover */}
+                                                                    {!readOnly && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleToggle(cpmk.id, cpl.id);
+                                                                            }}
+                                                                            className="absolute top-1 right-1 opacity-0 group-hover/cell:opacity-100 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-md hover:bg-destructive/90 transition-all z-10"
+                                                                            title="Hapus Mapping"
+                                                                        >
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                                                        </button>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                );
+                                            })}
+
+                                            {/* Row Total Validation */}
+                                            <TableCell className="sticky right-0 z-10 bg-background/95 backdrop-blur-sm border-l shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] p-4 text-center align-middle">
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <div className={cn(
+                                                        "text-sm font-bold",
+                                                        isValid ? "text-green-600 dark:text-green-400" : isZero ? "text-muted-foreground" : "text-amber-600 dark:text-amber-400"
+                                                    )}>
+                                                        {total.toFixed(0)}%
+                                                    </div>
+                                                    <Progress
+                                                        value={total}
+                                                        className={cn("h-2 w-16",
+                                                            isValid ? "bg-green-100 dark:bg-green-950" : "bg-muted"
+                                                        )}
+                                                    />
+                                                    {!isValid && !isZero && (
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger>
+                                                                    <AlertCircle className="w-4 h-4 text-amber-500" />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    Total harus 100%
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
                                                     )}
-                                                />
-                                                {!isValid && !isZero && (
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger>
-                                                                <AlertCircle className="w-4 h-4 text-amber-500" />
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                Total harus 100%
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })}
-                        </TableBody>
-                    </Table>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </div>
             </div>
         </div>

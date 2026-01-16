@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -139,7 +140,7 @@ const Auth = () => {
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+                  <RequiredLabel htmlFor="login-email" required>Email</RequiredLabel>
                   <Input
                     id="login-email"
                     type="email"
@@ -151,7 +152,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
+                  <RequiredLabel htmlFor="login-password" required>Password</RequiredLabel>
                   <div className="relative">
                     <Input
                       id="login-password"
@@ -185,7 +186,7 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Nama Lengkap</Label>
+                  <RequiredLabel htmlFor="signup-name" required>Nama Lengkap</RequiredLabel>
                   <Input
                     id="signup-name"
                     type="text"
@@ -212,7 +213,7 @@ const Auth = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <RequiredLabel htmlFor="signup-email" required>Email</RequiredLabel>
                   <Input
                     id="signup-email"
                     type="email"
@@ -224,7 +225,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <RequiredLabel htmlFor="signup-password" required>Password</RequiredLabel>
                   <div className="relative">
                     <Input
                       id="signup-password"

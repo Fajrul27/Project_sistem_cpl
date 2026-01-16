@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
 import { Plus, Edit, Trash2, Search, SlidersHorizontal } from "lucide-react";
+import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePermission } from "@/contexts/PermissionContext";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
@@ -54,11 +56,25 @@ const MataKuliahPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validasi field required
+    if (!formData.kodeMk || !formData.namaMk || !formData.sks || !formData.prodiId || !formData.kurikulumId || !formData.jenisMkId || !formData.semesterId) {
+      toast.error("Semua field wajib harus diisi");
+      return;
+    }
+
+
+
     let success = false;
     if (editingMK) {
       success = await updateMataKuliah(editingMK.id, formData);
+      if (success) {
+        toast.success(`Mata Kuliah "${formData.kodeMk} - ${formData.namaMk}" berhasil diupdate`);
+      }
     } else {
       success = await createMataKuliah(formData);
+      if (success) {
+        toast.success(`Mata Kuliah "${formData.kodeMk} - ${formData.namaMk}" berhasil ditambahkan`);
+      }
     }
 
     if (success) {
@@ -300,7 +316,7 @@ const MataKuliahPage = () => {
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="kodeMk">Kode MK</Label>
+                      <RequiredLabel htmlFor="kodeMk" required>Kode MK</RequiredLabel>
                       <Input
                         id="kodeMk"
                         placeholder="Contoh: IF-101"
@@ -310,7 +326,7 @@ const MataKuliahPage = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="namaMk">Nama Mata Kuliah</Label>
+                      <RequiredLabel htmlFor="namaMk" required>Nama Mata Kuliah</RequiredLabel>
                       <Input
                         id="namaMk"
                         placeholder="Nama mata kuliah"
@@ -321,10 +337,11 @@ const MataKuliahPage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="prodi">Program Studi</Label>
+                      <RequiredLabel htmlFor="prodi" required>Program Studi</RequiredLabel>
                       <Select
                         value={formData.prodiId}
                         onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
+                        required
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih Program Studi" />
@@ -339,10 +356,11 @@ const MataKuliahPage = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="kurikulum">Kurikulum</Label>
+                        <RequiredLabel htmlFor="kurikulum" required>Kurikulum</RequiredLabel>
                         <Select
                           value={formData.kurikulumId}
                           onValueChange={(val) => setFormData({ ...formData, kurikulumId: val })}
+                          required
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih Kurikulum" />
@@ -359,10 +377,11 @@ const MataKuliahPage = () => {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="jenisMk">Jenis MK</Label>
+                        <RequiredLabel htmlFor="jenisMk" required>Jenis MK</RequiredLabel>
                         <Select
                           value={formData.jenisMkId}
                           onValueChange={(val) => setFormData({ ...formData, jenisMkId: val })}
+                          required
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih Jenis MK" />
@@ -378,7 +397,7 @@ const MataKuliahPage = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="sks">SKS</Label>
+                        <RequiredLabel htmlFor="sks" required>SKS</RequiredLabel>
                         <Input
                           id="sks"
                           type="number"
@@ -391,7 +410,7 @@ const MataKuliahPage = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="semester">Semester</Label>
+                        <RequiredLabel htmlFor="semester" required>Semester</RequiredLabel>
                         <Select
                           value={formData.semesterId}
                           onValueChange={(val) => {
@@ -402,6 +421,7 @@ const MataKuliahPage = () => {
                               semester: selected?.angka.toString() || "1"
                             });
                           }}
+                          required
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih Semester" />

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
@@ -70,10 +71,11 @@ const KaprodiDataSettings = () => {
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <Label>Fakultas</Label>
+                                    <RequiredLabel required>Fakultas</RequiredLabel>
                                     <Select
                                         value={formData.fakultasId}
                                         onValueChange={(val) => setFormData({ ...formData, fakultasId: val, prodiId: "", programStudi: "" })}
+                                        required
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Pilih Fakultas" />
@@ -87,7 +89,7 @@ const KaprodiDataSettings = () => {
                                 </div>
 
                                 <div>
-                                    <Label>Program Studi</Label>
+                                    <RequiredLabel required>Program Studi</RequiredLabel>
                                     <Select
                                         value={formData.prodiId}
                                         onValueChange={(val) => {
@@ -99,6 +101,7 @@ const KaprodiDataSettings = () => {
                                             });
                                         }}
                                         disabled={!formData.fakultasId}
+                                        required
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Pilih Program Studi" />
@@ -114,7 +117,7 @@ const KaprodiDataSettings = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <Label>Nama Kaprodi</Label>
+                                    <RequiredLabel required>Nama Kaprodi</RequiredLabel>
                                     <Popover open={openUserCombobox} onOpenChange={setOpenUserCombobox}>
                                         <PopoverTrigger asChild>
                                             <Button
@@ -180,11 +183,12 @@ const KaprodiDataSettings = () => {
                                 </div>
 
                                 <div>
-                                    <Label>NIDN/NIP Kaprodi</Label>
+                                    <RequiredLabel required>NIDN/NIP Kaprodi</RequiredLabel>
                                     <Input
                                         value={formData.nidnKaprodi}
                                         onChange={(e) => setFormData({ ...formData, nidnKaprodi: e.target.value })}
                                         placeholder="0123456789"
+                                        required
                                     />
                                 </div>
                             </div>

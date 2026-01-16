@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePermission } from "@/contexts/PermissionContext";
@@ -116,6 +117,12 @@ export default function ProfilLulusanPage() {
             // cplIds: selectedCpls // Removed
         };
 
+        // Validasi field required
+        if (!payload.kode || !payload.nama || !payload.kurikulumId) {
+            toast.error("Semua field wajib harus diisi");
+            return;
+        }
+
         if (!payload.prodiId) {
             toast.error("Prodi harus dipilih");
             return;
@@ -124,8 +131,14 @@ export default function ProfilLulusanPage() {
         let success = false;
         if (editingItem) {
             success = await updateProfil(editingItem.id, payload);
+            if (success) {
+                toast.success(`Profil "${payload.nama}" berhasil diupdate`);
+            }
         } else {
             success = await createProfil(payload);
+            if (success) {
+                toast.success(`Profil "${payload.nama}" (${payload.kode}) berhasil ditambahkan`);
+            }
         }
 
         if (success) {
@@ -464,23 +477,25 @@ export default function ProfilLulusanPage() {
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                             <div className="grid grid-cols-4 gap-4 items-center">
-                                <Label className="text-right">Kode</Label>
+                                <RequiredLabel className="text-right" required>Kode</RequiredLabel>
                                 <Input
                                     className="col-span-3"
                                     value={formData.kode}
                                     onChange={(e) => setFormData({ ...formData, kode: e.target.value })}
                                     placeholder="Contoh: PL-01"
+                                    required
                                 />
                             </div>
 
                             {role === "admin" && (
                                 <>
                                     <div className="grid grid-cols-4 gap-4 items-center">
-                                        <Label className="text-right">Fakultas</Label>
+                                        <RequiredLabel className="text-right" required>Fakultas</RequiredLabel>
                                         <div className="col-span-3">
                                             <Select
                                                 value={formData.fakultasId}
                                                 onValueChange={(val) => setFormData({ ...formData, fakultasId: val, prodiId: "" })}
+                                                required
                                             >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Pilih Fakultas" />
@@ -494,12 +509,13 @@ export default function ProfilLulusanPage() {
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-4 gap-4 items-center">
-                                        <Label className="text-right">Program Studi</Label>
+                                        <RequiredLabel className="text-right" required>Program Studi</RequiredLabel>
                                         <div className="col-span-3">
                                             <Select
                                                 value={formData.prodiId}
                                                 onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
                                                 disabled={!formData.fakultasId}
+                                                required
                                             >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Pilih Program Studi" />
@@ -516,11 +532,12 @@ export default function ProfilLulusanPage() {
                             )}
 
                             <div className="grid grid-cols-4 gap-4 items-center">
-                                <Label className="text-right">Kurikulum</Label>
+                                <RequiredLabel className="text-right" required>Kurikulum</RequiredLabel>
                                 <div className="col-span-3">
                                     <Select
                                         value={formData.kurikulumId}
                                         onValueChange={(val) => setFormData({ ...formData, kurikulumId: val })}
+                                        required
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Pilih Kurikulum" />
@@ -539,12 +556,13 @@ export default function ProfilLulusanPage() {
                             </div>
 
                             <div className="grid grid-cols-4 gap-4 items-center">
-                                <Label className="text-right">Nama Profil</Label>
+                                <RequiredLabel className="text-right" required>Nama Profil</RequiredLabel>
                                 <Input
                                     className="col-span-3"
                                     value={formData.nama}
                                     onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                                     placeholder="Contoh: Software Engineer"
+                                    required
                                 />
                             </div>
 
