@@ -6,12 +6,12 @@ import { TranskripService } from '../services/TranskripService.js';
 export const getTranskripCpmkByMahasiswa = async (req: Request, res: Response) => {
     try {
         const { mahasiswaId } = req.params;
-        const { semester, tahunAjaran } = req.query;
+        const { semester, tahunAjaranId } = req.query;
 
         const result = await TranskripService.getTranskripCpmk(
             mahasiswaId,
             semester && semester !== 'all' ? Number(semester) : undefined,
-            tahunAjaran && tahunAjaran !== 'all' ? String(tahunAjaran) : undefined
+            tahunAjaranId && tahunAjaranId !== 'all' ? String(tahunAjaranId) : undefined
         );
 
         res.json({
@@ -21,6 +21,6 @@ export const getTranskripCpmkByMahasiswa = async (req: Request, res: Response) =
     } catch (error: any) {
         console.error('Error fetching transkrip CPMK:', error);
         if (error.message === 'MAHASISWA_NOT_FOUND') return res.status(404).json({ success: false, error: 'Mahasiswa tidak ditemukan' });
-        res.status(500).json({ success: false, error: 'Internal server error' });
+        res.status(500).json({ success: false, error: error.message, stack: error.stack });
     }
 };

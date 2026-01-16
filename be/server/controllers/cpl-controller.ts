@@ -15,7 +15,8 @@ export const getAllCpl = async (req: Request, res: Response) => {
             page: page ? Number(page) : 1,
             limit: limit ? Number(limit) : 10,
             q: q as string,
-            kategori: (req.query.kategori as string)
+            kategori: (req.query.kategori as string),
+            kurikulumId: (req.query.kurikulumId as string)
         });
 
         res.json(result);

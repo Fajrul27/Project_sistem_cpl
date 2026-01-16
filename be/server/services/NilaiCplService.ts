@@ -46,7 +46,7 @@ export class NilaiCplService {
 
     static async createNilaiCpl(userId: string, data: any) {
         const validated = otherSchemas.nilaiCpl.parse(data);
-        const { mahasiswaId, cplId, mataKuliahId, nilai, semester, tahunAjaran } = validated;
+        const { mahasiswaId, cplId, mataKuliahId, nilai, semester, tahunAjaranId } = validated;
 
         return prisma.nilaiCpl.create({
             data: {
@@ -55,7 +55,7 @@ export class NilaiCplService {
                 mataKuliahId,
                 nilai: nilai,
                 semester: semester,
-                tahunAjaran: tahunAjaran || new Date().getFullYear() + "/" + (new Date().getFullYear() + 1),
+                tahunAjaranId,
                 createdBy: userId
             },
             include: {

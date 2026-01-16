@@ -123,7 +123,7 @@ export class EvaluasiCPLService {
             const whereNilai: any = {
                 mahasiswaId: { in: studentIds }
             };
-            if (tahunAjaran) whereNilai.tahunAjaran = tahunAjaran;
+            if (tahunAjaran) whereNilai.tahunAjaranId = tahunAjaran;
             if (semester) whereNilai.semester = semester;
 
 

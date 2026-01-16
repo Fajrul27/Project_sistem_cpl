@@ -7,7 +7,7 @@ export async function calculateNilaiCpmk(
     cpmkId: string,
     mataKuliahId: string,
     semester: number,
-    tahunAjaran: string
+    tahunAjaranId: string
 ) {
     try {
         // 1. Check if CPMK has Sub-CPMKs
@@ -44,7 +44,7 @@ export async function calculateNilaiCpmk(
                                 mahasiswaId,
                                 teknikPenilaianId: mapping.teknikPenilaianId,
                                 semester,
-                                tahunAjaran
+                                tahunAjaranId
                             }
                         });
 
@@ -77,11 +77,11 @@ export async function calculateNilaiCpmk(
                 if (totalBobotSub > 0) {
                     await prisma.nilaiSubCpmk.upsert({
                         where: {
-                            mahasiswaId_subCpmkId_semester_tahunAjaran: {
+                            mahasiswaId_subCpmkId_semester_tahunAjaranId: {
                                 mahasiswaId,
                                 subCpmkId: sub.id,
                                 semester,
-                                tahunAjaran
+                                tahunAjaranId
                             }
                         },
                         update: { nilai: nilaiSub, updatedAt: new Date() },
@@ -91,7 +91,7 @@ export async function calculateNilaiCpmk(
                             mataKuliahId,
                             nilai: nilaiSub,
                             semester,
-                            tahunAjaran
+                            tahunAjaranId
                         }
                     });
 
@@ -113,7 +113,7 @@ export async function calculateNilaiCpmk(
                         mahasiswaId,
                         teknikPenilaianId: teknik.id,
                         semester,
-                        tahunAjaran
+                        tahunAjaranId
                     }
                 });
 
@@ -138,11 +138,11 @@ export async function calculateNilaiCpmk(
         // Upsert NilaiCpmk
         await prisma.nilaiCpmk.upsert({
             where: {
-                mahasiswaId_cpmkId_semester_tahunAjaran: {
+                mahasiswaId_cpmkId_semester_tahunAjaranId: {
                     mahasiswaId,
                     cpmkId,
                     semester,
-                    tahunAjaran
+                    tahunAjaranId
                 }
             },
             update: {
@@ -156,12 +156,12 @@ export async function calculateNilaiCpmk(
                 mataKuliahId,
                 nilaiAkhir,
                 semester,
-                tahunAjaran
+                tahunAjaranId
             }
         });
 
         // Trigger calculation of CPL nilai
-        await calculateNilaiCplFromCpmk(mahasiswaId, mataKuliahId, semester, tahunAjaran);
+        await calculateNilaiCplFromCpmk(mahasiswaId, mataKuliahId, semester, tahunAjaranId);
 
     } catch (error) {
         console.error('Calculate nilai CPMK error:', error);
@@ -173,7 +173,7 @@ export async function calculateNilaiCplFromCpmk(
     mahasiswaId: string,
     mataKuliahId: string,
     semester: number,
-    tahunAjaran: string
+    tahunAjaranId: string
 ) {
     try {
 
@@ -186,7 +186,7 @@ export async function calculateNilaiCplFromCpmk(
                     where: {
                         mahasiswaId,
                         semester,
-                        tahunAjaran
+                        tahunAjaranId
                     }
                 }
             }
@@ -230,12 +230,12 @@ export async function calculateNilaiCplFromCpmk(
 
             const result = await prisma.nilaiCpl.upsert({
                 where: {
-                    mahasiswaId_cplId_mataKuliahId_semester_tahunAjaran: {
+                    mahasiswaId_cplId_mataKuliahId_semester_tahunAjaranId: {
                         mahasiswaId,
                         cplId,
                         mataKuliahId,
                         semester,
-                        tahunAjaran
+                        tahunAjaranId
                     }
                 },
                 update: {
@@ -248,7 +248,7 @@ export async function calculateNilaiCplFromCpmk(
                     mataKuliahId,
                     nilai: totalWeighted,
                     semester,
-                    tahunAjaran
+                    tahunAjaranId
                 }
             });
 
@@ -288,10 +288,10 @@ export async function recalculateCpmkBulk(cpmkId: string) {
             select: {
                 mahasiswaId: true,
                 semester: true,
-                tahunAjaran: true,
+                tahunAjaranId: true,
                 mataKuliahId: true
             },
-            distinct: ['mahasiswaId', 'semester', 'tahunAjaran']
+            distinct: ['mahasiswaId', 'semester', 'tahunAjaranId']
         });
 
 
@@ -301,7 +301,7 @@ export async function recalculateCpmkBulk(cpmkId: string) {
         for (let i = 0; i < grades.length; i += BATCH_SIZE) {
             const batch = grades.slice(i, i + BATCH_SIZE);
             await Promise.all(batch.map(g =>
-                calculateNilaiCpmk(g.mahasiswaId, cpmkId, g.mataKuliahId, g.semester, g.tahunAjaran)
+                calculateNilaiCpmk(g.mahasiswaId, cpmkId, g.mataKuliahId, g.semester, g.tahunAjaranId)
             ));
         }
 

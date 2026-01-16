@@ -7,6 +7,7 @@ import {
     Users,
     Settings,
     LayoutDashboard,
+    BookCheck,
 } from "lucide-react";
 import { type UserRole } from "@/hooks/useUserRole";
 
@@ -19,17 +20,30 @@ export const MENU_ITEMS = [
         resource: 'dashboard'
     },
     {
-        title: "Master Data & Perencanaan",
+        title: "Data Institusi",
         icon: Database,
+        roles: ["admin", "kaprodi"] as UserRole[], // Restricted to admins generally
+        items: [
+            { title: "Fakultas, Prodi & Jenjang", url: "/dashboard/fakultas", roles: ["admin"], resource: 'fakultas' },
+        ]
+    },
+    {
+        title: "Master Akademik",
+        icon: BookCheck,
+        roles: ["admin", "kaprodi", "dosen"] as UserRole[],
+        items: [
+            { title: "Tahun Ajaran, Kurikulum & Angkatan", url: "/dashboard/master-akademik", roles: ["admin", "kaprodi"], resource: 'tahun_ajaran' },
+        ]
+    },
+    {
+        title: "Perencanaan Pembelajaran",
+        icon: LayoutDashboard, // Or another suitable icon like GitBranch
         roles: ["admin", "kaprodi", "dosen", "mahasiswa"] as UserRole[],
         items: [
-            { title: "Data Fakultas dan Prodi", url: "/dashboard/fakultas", roles: ["admin"], resource: 'fakultas' },
-            { title: "Kurikulum", url: "/dashboard/kurikulum", icon: BookOpen, roles: ["admin", "kaprodi"], resource: 'kurikulum' },
             { title: "Visi & Misi", url: "/dashboard/visi-misi", roles: ["admin", "dosen", "kaprodi", "mahasiswa"], resource: 'visi_misi' },
             { title: "Profil Lulusan", url: "/dashboard/profil-lulusan", roles: ["admin", "dosen", "kaprodi", "mahasiswa"], resource: 'profil_lulusan' },
             { title: "CPL & Mapping PL - CPL", url: "/dashboard/cpl", roles: ["admin", "dosen", "kaprodi"], resource: 'cpl' },
             { title: "Mata Kuliah", url: "/dashboard/mata-kuliah", icon: BookOpen, roles: ["admin", "kaprodi", "dosen"], resource: 'mata_kuliah' },
-            { title: "Angkatan", url: "/dashboard/angkatan", roles: ["admin", "kaprodi"], resource: 'angkatan' },
         ]
     },
     {

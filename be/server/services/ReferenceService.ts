@@ -76,4 +76,15 @@ export class ReferenceService {
             orderBy: { nama: 'asc' }
         });
     }
+    static async getAllTahunAjaran(filters: { isActive?: boolean } = {}) {
+        const whereClause: any = {};
+        if (filters.isActive !== undefined) {
+            whereClause.isActive = filters.isActive;
+        }
+
+        return prisma.tahunAjaran.findMany({
+            where: whereClause,
+            orderBy: { nama: 'desc' }
+        });
+    }
 }

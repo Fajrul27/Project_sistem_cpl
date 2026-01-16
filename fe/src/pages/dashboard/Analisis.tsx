@@ -1,53 +1,130 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useAnalisis } from "@/hooks/useAnalisis";
+import { SlidersHorizontal, RotateCcw, Info } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 const AnalisisiPage = () => {
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const {
     cplData,
     radarData,
     distributionData,
     semester,
     setSemester,
-    loading
+    fakultasFilter,
+    setFakultasFilter,
+    prodiFilter,
+    setProdiFilter,
+    fakultasList,
+    prodiList,
+    loading,
+    resetFilters
   } = useAnalisis();
 
-  if (loading) {
-    return (
-      <DashboardPage title="Analisis CPL">
-        <LoadingScreen fullScreen={false} message="Memuat data analisis..." />
-      </DashboardPage>
-    );
-  }
+
+
+  const hasActiveFilters = semester !== "all" || fakultasFilter !== "all" || prodiFilter !== "all";
+
+  // Standard colors for distribution chart: Reversed to match Top (Green) -> Bottom (Red)
+  const chartColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#22c55e'];
+
+  const getLabel = (rangeName: string) => {
+    switch (rangeName) {
+      case '90-100': return 'Sangat Baik (A) (90-100)';
+      case '80-89': return 'Baik (B) (80-89)';
+      case '70-79': return 'Cukup (C) (70-79)';
+      case '60-69': return 'Kurang (D) (60-69)';
+      default: return 'Sangat Kurang (E) (<60)';
+    }
+  };
 
   return (
     <DashboardPage
       title="Analisis CPL"
       description="Visualisasi pencapaian pembelajaran"
-      actions={
-        <div className="w-48">
-          <Select value={semester} onValueChange={setSemester}>
-            <SelectTrigger>
-              <SelectValue placeholder="Pilih semester" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Semester</SelectItem>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                <SelectItem key={sem} value={sem.toString()}>
-                  Semester {sem}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      }
     >
       <div className="space-y-6">
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
+        {/* Filters Toolbar */}
+        <div className="flex items-center gap-2">
+          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <SlidersHorizontal className="h-4 w-4" />
+                Filter
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-[400px]">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Filter Data</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Sesuaikan tampilan data analisis
+                  </p>
+                </div>
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="semester">Semester</Label>
+                    <Select value={semester} onValueChange={setSemester}>
+                      <SelectTrigger id="semester" className="h-10">
+                        <SelectValue placeholder="Pilih Semester" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua</SelectItem>
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                          <SelectItem key={sem} value={sem.toString()}>Semester {sem}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="fakultas">Fakultas</Label>
+                    <Select value={fakultasFilter} onValueChange={setFakultasFilter}>
+                      <SelectTrigger id="fakultas" className="h-10">
+                        <SelectValue placeholder="Pilih Fakultas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua</SelectItem>
+                        {fakultasList.map((f) => (
+                          <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="prodi">Program Studi</Label>
+                    <Select value={prodiFilter} onValueChange={setProdiFilter}>
+                      <SelectTrigger id="prodi" className="h-10">
+                        <SelectValue placeholder="Pilih Prodi" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua</SelectItem>
+                        {prodiList.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {hasActiveFilters && (
+            <Button variant="outline" onClick={resetFilters} className="text-muted-foreground hover:text-foreground">
+              Reset Filter
+            </Button>
+          )}
+        </div>
+
+        <div className={`grid gap-6 md:grid-cols-2 transition-opacity duration-200 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+          <Card className="md:col-span-2">
             <CardHeader>
               <CardTitle>Rata-rata Nilai per CPL</CardTitle>
               <CardDescription>Pencapaian rata-rata setiap CPL</CardDescription>
@@ -82,9 +159,26 @@ const AnalisisiPage = () => {
                       backgroundColor: 'hsl(var(--card))',
                       borderColor: 'hsl(var(--border))',
                       borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      maxWidth: '400px',
+                      whiteSpace: 'normal'
                     }}
                     itemStyle={{ color: 'hsl(var(--foreground))' }}
+                    labelStyle={{
+                      fontWeight: 600,
+                      marginBottom: '0.5rem',
+                      color: 'hsl(var(--foreground))',
+                      whiteSpace: 'normal',
+                      lineHeight: '1.4'
+                    }}
+                    formatter={(value: number) => [value, 'Rata-rata Nilai']}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload.length > 0) {
+                        const desc = payload[0].payload.description;
+                        return `${label}: ${desc}`;
+                      }
+                      return label;
+                    }}
                   />
                   <Legend wrapperStyle={{ paddingTop: '20px' }} />
                   <Bar
@@ -104,7 +198,9 @@ const AnalisisiPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>Distribusi Nilai</CardTitle>
-              <CardDescription>Sebaran nilai mahasiswa</CardDescription>
+              <CardDescription>
+                Sebaran perolehan nilai CPL (Total {distributionData.reduce((acc, curr) => acc + curr.count, 0)} Data Evaluasi)
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -113,16 +209,15 @@ const AnalisisiPage = () => {
                     data={distributionData}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, count }) => `${name}: ${count}`}
+                    innerRadius={60}
                     outerRadius={80}
-                    fill="hsl(var(--primary))"
+                    paddingAngle={2}
                     dataKey="count"
-                    animationDuration={2000}
+                    animationDuration={1500}
                     animationEasing="ease-out"
                   >
                     {distributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'][index % 4]} />
+                      <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} stroke="hsl(var(--card))" strokeWidth={2} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -133,10 +228,32 @@ const AnalisisiPage = () => {
                       boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }}
                     itemStyle={{ color: 'hsl(var(--foreground))' }}
+                    formatter={(value, name, props) => {
+                      const rangeName = props.payload.range_name || props.payload.name;
+                      return [`${value} Data`, getLabel(rangeName)];
+                    }}
+                  />
+                  <Legend
+                    layout="vertical"
+                    verticalAlign="middle"
+                    align="right"
+                    formatter={(value, entry: any) => {
+                      const rangeName = entry.payload.range_name || entry.value;
+                      return <span className="text-xs font-medium ml-2 text-foreground">{getLabel(rangeName)} ({entry.payload.count})</span>;
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
+            <CardFooter className="flex-col items-start gap-2 text-sm text-muted-foreground border-t pt-4">
+              <div className="flex gap-2">
+                <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                <span className="text-xs">
+                  <strong>Cara membaca:</strong> Total data adalah akumulasi seluruh nilai CPL mahasiswa.
+                  Contoh: Jika 1 mahasiswa memiliki 10 CPL, maka terhitung 10 data nilai.
+                </span>
+              </div>
+            </CardFooter>
           </Card>
 
           <Card>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { api } from "@/lib/api";
+import { api, fetchTahunAjaranList } from "@/lib/api";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 
@@ -19,7 +19,16 @@ export function useKuesioner() {
 
     // Assuming current semester/year (should be fetched from system settings in real app)
     const currentSemester = profile?.semester || 1;
-    const currentTahunAjaran = "2024/2025 Ganjil";
+    const [currentTahunAjaranId, setCurrentTahunAjaranId] = useState<string>("");
+
+    useEffect(() => {
+        const fetchActiveTA = async () => {
+            const res = await fetchTahunAjaranList();
+            const active = res.data.find((t: any) => t.isActive);
+            if (active) setCurrentTahunAjaranId(active.id);
+        };
+        fetchActiveTA();
+    }, []);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -32,7 +41,7 @@ export function useKuesioner() {
             const existingRes = await api.get("/kuesioner/me", {
                 params: {
                     semester: currentSemester,
-                    tahunAjaran: currentTahunAjaran
+                    tahunAjaranId: currentTahunAjaranId
                 }
             });
 
@@ -60,7 +69,7 @@ export function useKuesioner() {
         } finally {
             setLoading(false);
         }
-    }, [currentSemester, currentTahunAjaran]);
+    }, [currentSemester, currentTahunAjaranId]);
 
     useEffect(() => {
         if (!roleLoading) {
@@ -84,7 +93,7 @@ export function useKuesioner() {
         try {
             const payload = {
                 semester: currentSemester,
-                tahunAjaran: currentTahunAjaran,
+                tahunAjaranId: currentTahunAjaranId,
                 nilai: Object.entries(responses).map(([cplId, nilai]) => ({
                     cplId,
                     nilai
@@ -110,7 +119,7 @@ export function useKuesioner() {
         submitting,
         hasSubmitted,
         currentSemester,
-        currentTahunAjaran,
+        currentTahunAjaranId,
         handleSliderChange,
         handleSubmit
     };

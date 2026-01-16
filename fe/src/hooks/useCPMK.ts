@@ -194,8 +194,20 @@ export function useCPMK() {
 
     // Reset page wrappers
     const handleSetSearchTerm = (val: string) => { setSearchTerm(val); setPage(1); };
-    const handleSetSelectedFakultas = (val: string) => { setSelectedFakultas(val); setPage(1); };
-    const handleSetSelectedProdi = (val: string) => { setSelectedProdi(val); setPage(1); };
+
+    const handleSetSelectedFakultas = (val: string) => {
+        setSelectedFakultas(val);
+        setSelectedProdi("all");
+        setMataKuliahFilter("all");
+        setPage(1);
+    };
+
+    const handleSetSelectedProdi = (val: string) => {
+        setSelectedProdi(val);
+        setMataKuliahFilter("all");
+        setPage(1);
+    };
+
     const handleSetMataKuliahFilter = (val: string) => { setMataKuliahFilter(val); setPage(1); };
 
     const resetFilters = () => {

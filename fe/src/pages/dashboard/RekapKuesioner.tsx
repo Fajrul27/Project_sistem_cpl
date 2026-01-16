@@ -16,6 +16,8 @@ import { SlidersHorizontal } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { usePermission } from "@/contexts/PermissionContext";
 import { useRekapKuesioner } from "@/hooks/useRekapKuesioner";
+import { useTahunAjaran } from "@/hooks/useTahunAjaran";
+import { useEffect } from "react";
 
 export default function RekapKuesionerPage() {
     const { can } = usePermission();
@@ -36,6 +38,15 @@ export default function RekapKuesionerPage() {
         resetFilters,
         isFiltered
     } = useRekapKuesioner();
+
+    const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
+
+    // Set default active Tahun Ajaran
+    useEffect(() => {
+        if (activeTahunAjaran && !tahunAjaran) {
+            setTahunAjaran(activeTahunAjaran.id);
+        }
+    }, [activeTahunAjaran]);
 
     if (!can('view', 'rekap_kuesioner')) {
         return (
@@ -112,9 +123,9 @@ export default function RekapKuesionerPage() {
                                         <SelectValue placeholder="Pilih Tahun Ajaran" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="2024/2025 Ganjil">2024/2025 Ganjil</SelectItem>
-                                        <SelectItem value="2023/2024 Genap">2023/2024 Genap</SelectItem>
-                                        <SelectItem value="2023/2024 Ganjil">2023/2024 Ganjil</SelectItem>
+                                        {tahunAjaranList.map(ta => (
+                                            <SelectItem key={ta.id} value={ta.id}>{ta.nama}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>

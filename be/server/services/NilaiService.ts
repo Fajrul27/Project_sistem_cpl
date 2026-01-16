@@ -5,10 +5,10 @@ import { UserService } from './UserService.js';
 import * as XLSX from 'xlsx';
 
 export class NilaiService {
-    static async getNilaiByMahasiswa(mahasiswaId: string, semester?: number, tahunAjaran?: string) {
+    static async getNilaiByMahasiswa(mahasiswaId: string, semester?: number, tahunAjaranId?: string) {
         const where: any = { mahasiswaId };
         if (semester) where.semester = semester;
-        if (tahunAjaran) where.tahunAjaran = tahunAjaran;
+        if (tahunAjaranId) where.tahunAjaranId = tahunAjaranId;
 
         return prisma.nilaiTeknikPenilaian.findMany({
             where,
@@ -20,16 +20,17 @@ export class NilaiService {
                         }
                     }
                 },
-                mataKuliah: true
+                mataKuliah: true,
+                tahunAjaranRef: true
             },
             orderBy: [
                 { semester: 'asc' },
-                { tahunAjaran: 'asc' }
+                { tahunAjaranRef: { nama: 'asc' } }
             ]
         });
     }
 
-    static async getNilaiByCpmk(cpmkId: string, mahasiswaId: string, semester?: number, tahunAjaran?: string) {
+    static async getNilaiByCpmk(cpmkId: string, mahasiswaId: string, semester?: number, tahunAjaranId?: string) {
         const teknikList = await prisma.teknikPenilaian.findMany({
             where: { cpmkId },
             orderBy: { createdAt: 'asc' }
@@ -42,7 +43,7 @@ export class NilaiService {
                     teknikPenilaianId: teknik.id
                 };
                 if (semester) where.semester = semester;
-                if (tahunAjaran) where.tahunAjaran = tahunAjaran;
+                if (tahunAjaranId) where.tahunAjaranId = tahunAjaranId;
 
                 const nilai = await prisma.nilaiTeknikPenilaian.findFirst({ where });
                 return {
@@ -53,10 +54,10 @@ export class NilaiService {
         );
     }
 
-    static async getNilaiByMataKuliah(mataKuliahId: string, semester?: number, tahunAjaran?: string) {
+    static async getNilaiByMataKuliah(mataKuliahId: string, semester?: number, tahunAjaranId?: string) {
         const where: any = { mataKuliahId };
         if (semester) where.semester = semester;
-        if (tahunAjaran) where.tahunAjaran = tahunAjaran;
+        if (tahunAjaranId) where.tahunAjaranId = tahunAjaranId;
 
         return prisma.nilaiTeknikPenilaian.findMany({
             where,
@@ -71,7 +72,7 @@ export class NilaiService {
 
     static async createOrUpdateNilai(data: any, userId: string) {
         const validated = gradingSchemas.nilaiSingle.parse(data);
-        const { mahasiswaId, teknikPenilaianId, mataKuliahId, nilai, semester, tahunAjaran, catatan, rubrikData } = validated;
+        const { mahasiswaId, teknikPenilaianId, mataKuliahId, nilai, semester, tahunAjaranId, catatan, rubrikData } = validated;
 
         const teknik = await prisma.teknikPenilaian.findUnique({
             where: { id: teknikPenilaianId },
@@ -86,11 +87,11 @@ export class NilaiService {
 
         const nilaiTeknik = await prisma.nilaiTeknikPenilaian.upsert({
             where: {
-                mahasiswaId_teknikPenilaianId_semester_tahunAjaran: {
+                mahasiswaId_teknikPenilaianId_semester_tahunAjaranId: {
                     mahasiswaId,
                     teknikPenilaianId,
                     semester: semester,
-                    tahunAjaran
+                    tahunAjaranId
                 }
             },
             update: {
@@ -104,7 +105,7 @@ export class NilaiService {
                 mataKuliahId,
                 nilai: nilai,
                 semester: semester,
-                tahunAjaran,
+                tahunAjaranId,
                 catatan: catatan?.trim() || null,
                 createdBy: userId
             },
@@ -121,7 +122,7 @@ export class NilaiService {
             });
         }
 
-        await calculateNilaiCpmk(mahasiswaId, teknik.cpmkId, mataKuliahId, semester, tahunAjaran);
+        await calculateNilaiCpmk(mahasiswaId, teknik.cpmkId, mataKuliahId, semester, tahunAjaranId);
 
         return nilaiTeknik;
     }
@@ -145,7 +146,7 @@ export class NilaiService {
 
         for (const entry of entries) {
             try {
-                const { mahasiswaId, teknikPenilaianId, mataKuliahId, nilai, semester, tahunAjaran } = entry;
+                const { mahasiswaId, teknikPenilaianId, mataKuliahId, nilai, semester, tahunAjaranId } = entry;
                 if (!mahasiswaId || !teknikPenilaianId || nilai === undefined) {
                     errors.push({ entry, error: 'Data tidak lengkap' });
                     continue;
@@ -179,11 +180,11 @@ export class NilaiService {
 
                 const nilaiTeknik = await prisma.nilaiTeknikPenilaian.upsert({
                     where: {
-                        mahasiswaId_teknikPenilaianId_semester_tahunAjaran: {
+                        mahasiswaId_teknikPenilaianId_semester_tahunAjaranId: {
                             mahasiswaId,
                             teknikPenilaianId,
                             semester: parseInt(semester),
-                            tahunAjaran
+                            tahunAjaranId
                         }
                     },
                     update: { nilai: nilaiNum, updatedAt: new Date() },
@@ -193,7 +194,7 @@ export class NilaiService {
                         mataKuliahId,
                         nilai: nilaiNum,
                         semester: parseInt(semester),
-                        tahunAjaran,
+                        tahunAjaranId,
                         createdBy: userId
                     }
                 });
@@ -209,7 +210,7 @@ export class NilaiService {
                 }
 
                 results.push(nilaiTeknik);
-                await calculateNilaiCpmk(mahasiswaId, teknikPenilaian.cpmkId, mataKuliahId, parseInt(semester), tahunAjaran);
+                await calculateNilaiCpmk(mahasiswaId, teknikPenilaian.cpmkId, mataKuliahId, parseInt(semester), tahunAjaranId);
 
             } catch (err: any) {
                 errors.push({ entry, error: err.message || 'Unknown error' });
@@ -250,7 +251,7 @@ export class NilaiService {
             existing.teknikPenilaian.cpmkId,
             existing.mataKuliahId,
             existing.semester,
-            existing.tahunAjaran
+            existing.tahunAjaranId
         );
 
         return updated;
@@ -276,11 +277,11 @@ export class NilaiService {
             existing.teknikPenilaian.cpmkId,
             existing.mataKuliahId,
             existing.semester,
-            existing.tahunAjaran
+            existing.tahunAjaranId
         );
     }
 
-    static async generateTemplate(mataKuliahId: string, kelasId?: string, userId?: string, userRole?: string, semester?: number, tahunAjaran?: string) {
+    static async generateTemplate(mataKuliahId: string, kelasId?: string, userId?: string, userRole?: string, semester?: number, tahunAjaranId?: string) {
         const mk = await prisma.mataKuliah.findUnique({ where: { id: mataKuliahId } });
         if (!mk) throw new Error('MK_NOT_FOUND');
 
@@ -336,12 +337,12 @@ export class NilaiService {
 
         const existingGradesMap = new Map<string, Map<string, number>>();
 
-        if (semester && tahunAjaran) {
+        if (semester && tahunAjaranId) {
             const grades = await prisma.nilaiTeknikPenilaian.findMany({
                 where: {
                     mataKuliahId,
                     semester,
-                    tahunAjaran,
+                    tahunAjaranId,
                     mahasiswaId: { in: mahasiswaData.map(m => m.id) }
                 }
             });
@@ -383,7 +384,7 @@ export class NilaiService {
         return { buffer: XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }), filename: `input_nilai_${sanitizedMkName}.xlsx` };
     }
 
-    static async importNilai(fileBuffer: Buffer, mataKuliahId: string, semester: number, tahunAjaran: string, userId: string) {
+    static async importNilai(fileBuffer: Buffer, mataKuliahId: string, semester: number, tahunAjaranId: string, userId: string) {
         const cpmkList = await prisma.cpmk.findMany({
             where: { mataKuliahId },
             include: { teknikPenilaian: true }
@@ -424,11 +425,11 @@ export class NilaiService {
                     if (!isNaN(nilai) && nilai >= 0 && nilai <= 100) {
                         await prisma.nilaiTeknikPenilaian.upsert({
                             where: {
-                                mahasiswaId_teknikPenilaianId_semester_tahunAjaran: {
+                                mahasiswaId_teknikPenilaianId_semester_tahunAjaranId: {
                                     mahasiswaId: mahasiswa.userId,
                                     teknikPenilaianId: teknikId,
                                     semester,
-                                    tahunAjaran
+                                    tahunAjaranId
                                 }
                             },
                             update: { nilai, updatedAt: new Date() },
@@ -438,7 +439,7 @@ export class NilaiService {
                                 mataKuliahId,
                                 nilai,
                                 semester,
-                                tahunAjaran,
+                                tahunAjaranId,
                                 createdBy: userId
                             }
                         });
@@ -453,7 +454,7 @@ export class NilaiService {
         // Trigger updates
         for (const cpmk of cpmkList) {
             for (const mId of processedStudentIds) {
-                await calculateNilaiCpmk(mId, cpmk.id, mataKuliahId, semester, tahunAjaran);
+                await calculateNilaiCpmk(mId, cpmk.id, mataKuliahId, semester, tahunAjaranId);
             }
         }
 

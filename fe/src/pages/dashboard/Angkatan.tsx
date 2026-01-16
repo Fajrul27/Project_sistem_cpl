@@ -51,7 +51,7 @@ interface AngkatanFormData {
     kurikulumId: string | null;
 }
 
-export default function AngkatanPage() {
+export default function AngkatanPage({ isTabContent = false }: { isTabContent?: boolean }) {
     const { can } = usePermission();
     const [angkatanList, setAngkatanList] = useState<Angkatan[]>([]);
     const [kurikulumList, setKurikulumList] = useState<Kurikulum[]>([]);
@@ -147,20 +147,31 @@ export default function AngkatanPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Data Angkatan</h1>
-                    <p className="text-muted-foreground">
-                        Kelola data angkatan dan kurikulum yang berlaku
-                    </p>
+            {!isTabContent ? (
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Data Angkatan</h1>
+                        <p className="text-muted-foreground">
+                            Kelola data angkatan dan kurikulum yang berlaku
+                        </p>
+                    </div>
+                    {canManage && (
+                        <Button onClick={() => { reset(); setIsAddDialogOpen(true); }}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Tambah Angkatan
+                        </Button>
+                    )}
                 </div>
-                {canManage && (
-                    <Button onClick={() => { reset(); setIsAddDialogOpen(true); }}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Tambah Angkatan
-                    </Button>
-                )}
-            </div>
+            ) : (
+                canManage && (
+                    <div className="flex justify-end mb-4">
+                        <Button onClick={() => { reset(); setIsAddDialogOpen(true); }}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Tambah Angkatan
+                        </Button>
+                    </div>
+                )
+            )}
 
             <Card>
                 <CardHeader>

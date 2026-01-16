@@ -39,6 +39,9 @@ export function useCPL() {
     const [kurikulumList, setKurikulumList] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const [kategoriFilter, setKategoriFilter] = useState<string>("all");
+    const [kurikulumFilter, setKurikulumFilter] = useState<string>("all");
+
     const fetchFakultas = useCallback(async () => {
         try {
             const result = await api.get('/references/fakultas');
@@ -85,12 +88,9 @@ export function useCPL() {
                 q: searchTerm
             };
 
-            // if (kategoriFilter !== "all") params.kategori = kategoriFilter; // Removed
             if (prodiFilter !== "all") params.prodiId = prodiFilter;
-            // Note: We might want to pass fakultasId if the backend supports it, 
-            // but usually selecting a Fakultas just filters the Prodi list.
-            // If we want to filter CPLs by Fakultas without selecting a Prodi, we'd need backend support.
-            // For now, we assume the user selects a Prodi.
+            if (kategoriFilter !== "all") params.kategori = kategoriFilter;
+            if (kurikulumFilter !== "all") params.kurikulumId = kurikulumFilter;
 
             const response = await api.get('/cpl', { params });
 
@@ -121,7 +121,7 @@ export function useCPL() {
         } finally {
             setLoading(false);
         }
-    }, [page, searchTerm, prodiFilter]);
+    }, [page, searchTerm, prodiFilter, kategoriFilter, kurikulumFilter]);
 
     useEffect(() => {
         fetchCPL();
@@ -149,6 +149,16 @@ export function useCPL() {
 
     const handleSetProdiFilter = (val: string) => {
         setProdiFilter(val);
+        setPage(1);
+    };
+
+    const handleSetKategoriFilter = (val: string) => {
+        setKategoriFilter(val);
+        setPage(1);
+    };
+
+    const handleSetKurikulumFilter = (val: string) => {
+        setKurikulumFilter(val);
         setPage(1);
     };
 
@@ -195,6 +205,8 @@ export function useCPL() {
     const resetFilters = () => {
         setFakultasFilter("");
         setProdiFilter("all");
+        setKategoriFilter("all");
+        setKurikulumFilter("all");
         setSearchTerm("");
         setPage(1);
     };
@@ -223,13 +235,17 @@ export function useCPL() {
         filters: {
             searchTerm,
             fakultasFilter,
-            prodiFilter
+            prodiFilter,
+            kategoriFilter,
+            kurikulumFilter
         },
 
         // Individual Setters
         setSearchTerm: handleSetSearchTerm,
         setFakultasFilter: handleSetFakultasFilter,
         setProdiFilter: handleSetProdiFilter,
+        setKategoriFilter: handleSetKategoriFilter,
+        setKurikulumFilter: handleSetKurikulumFilter,
         resetFilters,
 
         // Standardized Pagination Object

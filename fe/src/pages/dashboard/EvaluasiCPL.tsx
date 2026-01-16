@@ -16,8 +16,9 @@ import { useProdi } from "@/hooks/useProdi";
 import { useFakultas } from "@/hooks/useFakultas";
 import { useAngkatan } from "@/hooks/useAngkatan";
 import { useCPL } from "@/hooks/useCPL";
+import { useTahunAjaran } from "@/hooks/useTahunAjaran";
 import { useNavigate } from "react-router-dom"; // Added import
-import { CheckCircle, XCircle, AlertCircle, Save, ChevronDown, ChevronRight, TrendingUp, Edit } from "lucide-react"; // Added Edit
+import { CheckCircle, XCircle, AlertCircle, Save, ChevronDown, ChevronRight, TrendingUp, Edit, ChevronUp } from "lucide-react"; // Added Edit
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const EvaluasiCPLPage = () => {
@@ -31,6 +32,7 @@ const EvaluasiCPLPage = () => {
     const { fakultasList } = useFakultas();
     const { angkatanList } = useAngkatan();
     const { cplList, setProdiFilter } = useCPL();
+    const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
 
     const [activeTab, setActiveTab] = useState("evaluation");
     const [filters, setFilters] = useState({
@@ -55,6 +57,7 @@ const EvaluasiCPLPage = () => {
 
     // Expanded rows state
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+    const [isFilterExpanded, setIsFilterExpanded] = useState(true);
 
     const toggleRow = (cplId: string) => {
         const newExpanded = new Set(expandedRows);
@@ -71,6 +74,13 @@ const EvaluasiCPLPage = () => {
             setProdiFilter(filters.prodiId);
         }
     }, [filters.prodiId]);
+
+    // Set default active Tahun Ajaran
+    useEffect(() => {
+        if (activeTahunAjaran && !filters.tahunAjaran) {
+            setFilters(prev => ({ ...prev, tahunAjaran: activeTahunAjaran.id }));
+        }
+    }, [activeTahunAjaran]);
 
     useEffect(() => {
         if (filters.prodiId && filters.angkatan && filters.tahunAjaran) {
@@ -141,10 +151,13 @@ const EvaluasiCPLPage = () => {
             <div className="space-y-6">
                 {/* Filters */}
                 <Card className="border-l-4 border-l-primary">
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 cursor-pointer" onClick={() => setIsFilterExpanded(!isFilterExpanded)}>
                         <div className="flex justify-between items-start">
                             <div>
-                                <CardTitle className="text-base">Filter Data Evaluasi</CardTitle>
+                                <CardTitle className="text-base flex items-center gap-2">
+                                    Filter Data Evaluasi
+                                    {isFilterExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                </CardTitle>
                                 <CardDescription className="mt-1">
                                     Tentukan kelompok mahasiswa dan periode penilaian yang ingin dianalisis.
                                 </CardDescription>
@@ -152,7 +165,8 @@ const EvaluasiCPLPage = () => {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     setFilters({ fakultasId: "", prodiId: "", angkatan: "", tahunAjaran: "", semester: "all" });
                                     resetEvaluation();
                                 }}
@@ -162,118 +176,121 @@ const EvaluasiCPLPage = () => {
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Group 1: Cohort Selection */}
-                            <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">1</div>
-                                    <h4 className="font-semibold text-sm">Siapa yang dievaluasi?</h4>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs text-muted-foreground">Fakultas</Label>
-                                        <Select
-                                            value={filters.fakultasId}
-                                            onValueChange={(v) => setFilters({ ...filters, fakultasId: v, prodiId: "" })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Pilih Fakultas" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {fakultasList.map(f => (
-                                                    <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                    {isFilterExpanded && (
+                        <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Group 1: Cohort Selection */}
+                                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">1</div>
+                                        <h4 className="font-semibold text-sm">Siapa yang dievaluasi?</h4>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs text-muted-foreground">Program Studi</Label>
-                                        <Select
-                                            value={filters.prodiId}
-                                            onValueChange={(v) => setFilters({ ...filters, prodiId: v })}
-                                            disabled={!filters.fakultasId}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Pilih Prodi" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {prodiList
-                                                    .filter(p => p.id && p.id !== "" && (!filters.fakultasId || p.fakultasId === filters.fakultasId))
-                                                    .map(p => (
-                                                        <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs text-muted-foreground">Fakultas</Label>
+                                            <Select
+                                                value={filters.fakultasId}
+                                                onValueChange={(v) => setFilters({ ...filters, fakultasId: v, prodiId: "" })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Pilih Fakultas" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {fakultasList.map(f => (
+                                                        <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
                                                     ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs text-muted-foreground">Angkatan Mahasiswa</Label>
-                                        <Select
-                                            value={filters.angkatan}
-                                            onValueChange={(v) => setFilters({ ...filters, angkatan: v })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Pilih Angkatan" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {angkatanList.filter(a => a.tahun).map(a => (
-                                                    <SelectItem key={a.id} value={a.tahun.toString()}>{a.tahun}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs text-muted-foreground">Program Studi</Label>
+                                            <Select
+                                                value={filters.prodiId}
+                                                onValueChange={(v) => setFilters({ ...filters, prodiId: v })}
+                                                disabled={!filters.fakultasId}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Pilih Prodi" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {prodiList
+                                                        .filter(p => p.id && p.id !== "" && (!filters.fakultasId || p.fakultasId === filters.fakultasId))
+                                                        .map(p => (
+                                                            <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                                        ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs text-muted-foreground">Angkatan Mahasiswa</Label>
+                                            <Select
+                                                value={filters.angkatan}
+                                                onValueChange={(v) => setFilters({ ...filters, angkatan: v })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Pilih Angkatan" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {angkatanList.filter(a => a.tahun).map(a => (
+                                                        <SelectItem key={a.id} value={a.tahun.toString()}>{a.tahun}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Group 2: Time Period */}
-                            <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">2</div>
-                                    <h4 className="font-semibold text-sm">Periode Penilaian</h4>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs text-muted-foreground">Tahun Ajaran</Label>
-                                        <Select
-                                            value={filters.tahunAjaran}
-                                            onValueChange={(v) => setFilters({ ...filters, tahunAjaran: v })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Pilih Tahun Ajaran" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="2023/2024">2023/2024</SelectItem>
-                                                <SelectItem value="2024/2025">2024/2025</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                {/* Group 2: Time Period */}
+                                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">2</div>
+                                        <h4 className="font-semibold text-sm">Periode Penilaian</h4>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs text-muted-foreground">Semester (Opsional)</Label>
-                                        <Select
-                                            value={filters.semester}
-                                            onValueChange={(v) => setFilters({ ...filters, semester: v })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Semua Semester" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Semua Semester</SelectItem>
-                                                {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                                                    <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs text-muted-foreground">Tahun Ajaran</Label>
+                                            <Select
+                                                value={filters.tahunAjaran}
+                                                onValueChange={(v) => setFilters({ ...filters, tahunAjaran: v })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Pilih Tahun Ajaran" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {tahunAjaranList.map(ta => (
+                                                        <SelectItem key={ta.id} value={ta.id}>{ta.nama}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs text-muted-foreground">Semester (Opsional)</Label>
+                                            <Select
+                                                value={filters.semester}
+                                                onValueChange={(v) => setFilters({ ...filters, semester: v })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Semua Semester" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">Semua Semester</SelectItem>
+                                                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                                                        <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </CardContent>
+                        </CardContent>
+                    )}
                 </Card>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList>
                         <TabsTrigger value="evaluation">Evaluasi & Tindak Lanjut</TabsTrigger>
-                        <TabsTrigger value="target">Target CPL</TabsTrigger>
+                        <TabsTrigger value="target">Lihat Target</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="target">

@@ -4,16 +4,17 @@ import { EvaluasiCPLService } from '../services/EvaluasiCPLService.js';
 // Get Targets
 export const getTargets = async (req: Request, res: Response) => {
     try {
-        const { prodiId, angkatan, tahunAjaran, semester } = req.query;
+        const { prodiId, angkatan, tahunAjaran, tahunAjaranId, semester } = req.query;
+        const ta = (tahunAjaran || tahunAjaranId) as string;
 
-        if (!prodiId || !angkatan || !tahunAjaran) {
+        if (!prodiId || !angkatan || !ta) {
             return res.status(400).json({ error: 'Missing required params: prodiId, angkatan, tahunAjaran' });
         }
 
         const targets = await EvaluasiCPLService.getTargets({
             prodiId: prodiId as string,
             angkatan: angkatan as string,
-            tahunAjaran: tahunAjaran as string,
+            tahunAjaran: ta,
             semester: semester ? Number(semester) : undefined
         });
 
@@ -27,16 +28,17 @@ export const getTargets = async (req: Request, res: Response) => {
 // Upsert Targets
 export const upsertTargets = async (req: Request, res: Response) => {
     try {
-        const { prodiId, angkatan, tahunAjaran, semester, targets } = req.body;
+        const { prodiId, angkatan, tahunAjaran, tahunAjaranId, semester, targets } = req.body;
+        const ta = tahunAjaran || tahunAjaranId;
 
-        if (!prodiId || !angkatan || !tahunAjaran || !targets) {
+        if (!prodiId || !angkatan || !ta || !targets) {
             return res.status(400).json({ error: 'Missing required body params' });
         }
 
         const result = await EvaluasiCPLService.upsertTargets({
             prodiId,
             angkatan,
-            tahunAjaran,
+            tahunAjaran: ta,
             semester: semester ? Number(semester) : undefined,
             targets
         });
@@ -51,16 +53,17 @@ export const upsertTargets = async (req: Request, res: Response) => {
 // Get Evaluation
 export const getEvaluation = async (req: Request, res: Response) => {
     try {
-        const { prodiId, angkatan, tahunAjaran, semester } = req.query;
+        const { prodiId, angkatan, tahunAjaran, tahunAjaranId, semester } = req.query;
+        const ta = (tahunAjaran || tahunAjaranId) as string;
 
-        if (!prodiId || !angkatan || !tahunAjaran) {
+        if (!prodiId || !angkatan || !ta) {
             return res.status(400).json({ error: 'Missing required params: prodiId, angkatan, tahunAjaran' });
         }
 
         const result = await EvaluasiCPLService.getEvaluation({
             prodiId: prodiId as string,
             angkatan: angkatan as string,
-            tahunAjaran: tahunAjaran as string,
+            tahunAjaran: ta,
             semester: semester ? Number(semester) : undefined
         });
 

@@ -40,7 +40,7 @@ export const gradingSchemas = {
     // Kuesioner
     kuesioner: z.object({
         semester: z.coerce.number(),
-        tahunAjaran: z.string(),
+        tahunAjaranId: commonSchema.uuid,
         nilai: z.array(z.object({
             cplId: commonSchema.uuid,
             nilai: z.coerce.number().min(0).max(100)
@@ -55,7 +55,7 @@ export const gradingSchemas = {
         mataKuliahId: commonSchema.uuid,
         nilai: z.coerce.number().min(0).max(100),
         semester: z.coerce.number().positive(),
-        tahunAjaran: z.string().min(1),
+        tahunAjaranId: commonSchema.uuid,
         catatan: z.string().optional(),
         rubrikData: z.array(z.object({
             rubrikLevelId: commonSchema.uuid
@@ -66,7 +66,7 @@ export const gradingSchemas = {
     evaluasi: z.object({
         mataKuliahId: commonSchema.uuid,
         semester: z.coerce.number().positive(),
-        tahunAjaran: z.string().min(1),
+        tahunAjaranId: commonSchema.uuid,
         kendala: z.string().optional(),
         rencanaPerbaikan: z.string().min(1)
     })

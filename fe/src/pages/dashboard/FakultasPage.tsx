@@ -13,7 +13,8 @@ import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import {
     fetchFakultasList, createFakultas, updateFakultas, deleteFakultas,
-    fetchProdiList, createProdi, updateProdi, deleteProdi
+    fetchProdiList, createProdi, updateProdi, deleteProdi,
+    fetchJenjangList, createJenjang, updateJenjang, deleteJenjang
 } from '@/lib/api';
 
 export default function FakultasPage() {
@@ -35,10 +36,19 @@ export default function FakultasPage() {
     const [editingProdi, setEditingProdi] = useState<any>(null);
     const [prodiForm, setProdiForm] = useState({ kode: '', nama: '', jenjang: '', fakultasId: '' });
 
+    // Jenjang State
+    const [jenjangList, setJenjangList] = useState<any[]>([]);
+    const [jenjangLoading, setJenjangLoading] = useState(true);
+    const [jenjangSearch, setJenjangSearch] = useState('');
+    const [isJenjangDialogOpen, setIsJenjangDialogOpen] = useState(false);
+    const [editingJenjang, setEditingJenjang] = useState<any>(null);
+    const [jenjangForm, setJenjangForm] = useState({ nama: '', keterangan: '' });
+
     // Load Data
     useEffect(() => {
         loadFakultas();
         loadProdi();
+        loadJenjang();
     }, []);
 
     const loadFakultas = async () => {
@@ -64,6 +74,19 @@ export default function FakultasPage() {
             toast.error('Gagal memuat data Prodi');
         } finally {
             setProdiLoading(false);
+        }
+    };
+
+    const loadJenjang = async () => {
+        setJenjangLoading(true);
+        try {
+            const res = await fetchJenjangList();
+            setJenjangList(res.data || []);
+        } catch (error) {
+            console.error(error);
+            toast.error('Gagal memuat data Jenjang');
+        } finally {
+            setJenjangLoading(false);
         }
     };
 
@@ -158,10 +181,56 @@ export default function FakultasPage() {
         setProdiForm({
             kode: prodi.kode || '',
             nama: prodi.nama,
-            jenjang: prodi.jenjang || 'S1',
+            jenjang: prodi.jenjang || '',
             fakultasId: prodi.fakultasId
         });
         setIsProdiDialogOpen(true);
+    };
+
+    // Jenjang Operations
+    const handleSaveJenjang = async () => {
+        if (!jenjangForm.nama) {
+            toast.error('Mohon lengkapi data');
+            return;
+        }
+
+        try {
+            if (editingJenjang) {
+                await updateJenjang(editingJenjang.id, jenjangForm);
+                toast.success('Jenjang berhasil diupdate');
+            } else {
+                await createJenjang(jenjangForm);
+                toast.success('Jenjang berhasil dibuat');
+            }
+            setIsJenjangDialogOpen(false);
+            setEditingJenjang(null);
+            setJenjangForm({ nama: '', keterangan: '' });
+            loadJenjang();
+        } catch (error: any) {
+            toast.error(error.message || 'Gagal menyimpan jenjang');
+        }
+    };
+
+    const handleDeleteJenjang = async (id: string) => {
+        try {
+            await deleteJenjang(id);
+            toast.success('Jenjang berhasil dihapus');
+            loadJenjang();
+        } catch (error: any) {
+            toast.error(error.message || 'Gagal menghapus jenjang');
+        }
+    };
+
+    const openCreateJenjang = () => {
+        setEditingJenjang(null);
+        setJenjangForm({ nama: '', keterangan: '' });
+        setIsJenjangDialogOpen(true);
+    };
+
+    const openEditJenjang = (item: any) => {
+        setEditingJenjang(item);
+        setJenjangForm({ nama: item.nama, keterangan: item.keterangan || '' });
+        setIsJenjangDialogOpen(true);
     };
 
     // Filters
@@ -175,6 +244,10 @@ export default function FakultasPage() {
         (p.kode && p.kode.toLowerCase().includes(prodiSearch.toLowerCase()))
     );
 
+    const filteredJenjang = jenjangList.filter(j =>
+        j.nama.toLowerCase().includes(jenjangSearch.toLowerCase())
+    );
+
     return (
         <DashboardPage title="Data Fakultas & Prodi" description="Kelola data referensi fakultas dan program studi">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -186,6 +259,10 @@ export default function FakultasPage() {
                     <TabsTrigger value="prodi" className="flex items-center gap-2">
                         <School className="w-4 h-4" />
                         Data Prodi
+                    </TabsTrigger>
+                    <TabsTrigger value="jenjang" className="flex items-center gap-2">
+                        <School className="w-4 h-4" />
+                        Data Jenjang
                     </TabsTrigger>
                 </TabsList>
 
@@ -378,6 +455,97 @@ export default function FakultasPage() {
                         </CardContent>
                     </Card>
                 </TabsContent>
+
+                {/* JENJANG TAB */}
+                <TabsContent value="jenjang">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <div>
+                                <CardTitle>Data Jenjang Pendidikan</CardTitle>
+                                <CardDescription>Daftar jenjang (Strata) yang tersedia</CardDescription>
+                            </div>
+                            <Button onClick={openCreateJenjang}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Tambah Jenjang
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="mb-4">
+                                <div className="relative">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Cari jenjang..."
+                                        className="pl-8 max-w-sm"
+                                        value={jenjangSearch}
+                                        onChange={(e) => setJenjangSearch(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="border rounded-md">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Nama Jenjang</TableHead>
+                                            <TableHead>Keterangan</TableHead>
+                                            <TableHead className="text-right">Aksi</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {jenjangLoading ? (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
+                                                    Memuat data...
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : filteredJenjang.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
+                                                    Tidak ada data jenjang
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            filteredJenjang.map((jenjang) => (
+                                                <TableRow key={jenjang.id}>
+                                                    <TableCell className="font-medium">{jenjang.nama}</TableCell>
+                                                    <TableCell>{jenjang.keterangan || '-'}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button variant="ghost" size="icon" onClick={() => openEditJenjang(jenjang)}>
+                                                                <Pencil className="w-4 h-4" />
+                                                            </Button>
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>Hapus Jenjang?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            Apakah Anda yakin ingin menghapus jenjang <strong>{jenjang.nama}</strong>?
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                                        <AlertDialogAction className="bg-red-500 hover:bg-red-600" onClick={() => handleDeleteJenjang(jenjang.id)}>
+                                                                            Hapus
+                                                                        </AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
             </Tabs>
 
             {/* DIALOG FAKULTAS */}
@@ -446,11 +614,13 @@ export default function FakultasPage() {
                                         <SelectValue placeholder="Pilih..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="D3">D3</SelectItem>
-                                        <SelectItem value="D4">D4</SelectItem>
-                                        <SelectItem value="S1">S1</SelectItem>
-                                        <SelectItem value="S2">S2</SelectItem>
-                                        <SelectItem value="S3">S3</SelectItem>
+                                        {jenjangList.length > 0 ? (
+                                            jenjangList.map((j) => (
+                                                <SelectItem key={j.id} value={j.nama}>{j.nama}</SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="p-2 text-sm text-muted-foreground text-center">Data kosong</div>
+                                        )}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -486,6 +656,42 @@ export default function FakultasPage() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsProdiDialogOpen(false)}>Batal</Button>
                         <Button onClick={handleSaveProdi}>Simpan</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* DIALOG JENJANG */}
+            <Dialog open={isJenjangDialogOpen} onOpenChange={setIsJenjangDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{editingJenjang ? 'Edit Jenjang' : 'Tambah Jenjang'}</DialogTitle>
+                        <DialogDescription>
+                            Kelola data jenjang pendidikan.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="jj-nama">Nama Jenjang</Label>
+                            <Input
+                                id="jj-nama"
+                                value={jenjangForm.nama}
+                                onChange={(e) => setJenjangForm({ ...jenjangForm, nama: e.target.value })}
+                                placeholder="Contoh: S1"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="jj-ket">Keterangan</Label>
+                            <Input
+                                id="jj-ket"
+                                value={jenjangForm.keterangan}
+                                onChange={(e) => setJenjangForm({ ...jenjangForm, keterangan: e.target.value })}
+                                placeholder="Contoh: Sarjana"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsJenjangDialogOpen(false)}>Batal</Button>
+                        <Button onClick={handleSaveJenjang}>Simpan</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

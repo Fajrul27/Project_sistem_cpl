@@ -12,6 +12,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { RubrikDialog } from "@/components/features/RubrikDialog";
 import { RubrikGradingDialog } from "@/components/features/RubrikGradingDialog";
 import { useNilaiTeknik } from "@/hooks/useNilaiTeknik";
+import { useTahunAjaran } from "@/hooks/useTahunAjaran";
+import { useEffect } from "react";
 
 const InputNilaiTeknikPage = () => {
     const {
@@ -47,6 +49,15 @@ const InputNilaiTeknikPage = () => {
         downloadTemplate,
         importExcel
     } = useNilaiTeknik();
+
+    const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
+
+    // Set default active Tahun Ajaran
+    useEffect(() => {
+        if (activeTahunAjaran && !tahunAjaran) {
+            setTahunAjaran(activeTahunAjaran.id);
+        }
+    }, [activeTahunAjaran]);
 
     const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -117,11 +128,16 @@ const InputNilaiTeknikPage = () => {
 
                         <div className="space-y-2">
                             <Label>Tahun Ajaran</Label>
-                            <Input
-                                value={tahunAjaran}
-                                onChange={e => setTahunAjaran(e.target.value)}
-                                placeholder="2024/2025"
-                            />
+                            <Select value={tahunAjaran} onValueChange={setTahunAjaran}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih Tahun Ajaran" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {tahunAjaranList.map(ta => (
+                                        <SelectItem key={ta.id} value={ta.id}>{ta.nama}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </CardContent>
                 </Card>

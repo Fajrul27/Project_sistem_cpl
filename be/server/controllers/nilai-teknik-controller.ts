@@ -5,12 +5,12 @@ import { NilaiService } from '../services/NilaiService.js';
 export const getNilaiByMahasiswa = async (req: Request, res: Response) => {
     try {
         const { mahasiswaId } = req.params;
-        const { semester, tahunAjaran } = req.query;
+        const { semester, tahunAjaranId } = req.query;
 
         const nilaiTeknik = await NilaiService.getNilaiByMahasiswa(
             mahasiswaId,
             semester ? parseInt(semester as string) : undefined,
-            tahunAjaran as string
+            tahunAjaranId as string
         );
 
         res.json({ data: nilaiTeknik });
@@ -24,13 +24,13 @@ export const getNilaiByMahasiswa = async (req: Request, res: Response) => {
 export const getNilaiByCpmk = async (req: Request, res: Response) => {
     try {
         const { cpmkId, mahasiswaId } = req.params;
-        const { semester, tahunAjaran } = req.query;
+        const { semester, tahunAjaranId } = req.query;
 
         const nilaiTeknik = await NilaiService.getNilaiByCpmk(
             cpmkId,
             mahasiswaId,
             semester ? parseInt(semester as string) : undefined,
-            tahunAjaran as string
+            tahunAjaranId as string
         );
 
         res.json({ data: nilaiTeknik });
@@ -44,12 +44,12 @@ export const getNilaiByCpmk = async (req: Request, res: Response) => {
 export const getNilaiByMataKuliah = async (req: Request, res: Response) => {
     try {
         const { mataKuliahId } = req.params;
-        const { semester, tahunAjaran } = req.query;
+        const { semester, tahunAjaranId } = req.query;
 
         const nilaiTeknik = await NilaiService.getNilaiByMataKuliah(
             mataKuliahId,
             semester ? parseInt(semester as string) : undefined,
-            tahunAjaran as string
+            tahunAjaranId as string
         );
 
         res.json({ data: nilaiTeknik });
@@ -151,7 +151,7 @@ export const deleteNilai = async (req: Request, res: Response) => {
 export const generateTemplate = async (req: Request, res: Response) => {
     try {
         const { mataKuliahId } = req.params;
-        const { kelasId, semester, tahunAjaran } = req.query;
+        const { kelasId, semester, tahunAjaranId } = req.query;
         const userId = (req as any).userId;
         const userRole = (req as any).userRole;
 
@@ -161,7 +161,7 @@ export const generateTemplate = async (req: Request, res: Response) => {
             userId,
             userRole,
             semester ? parseInt(semester as string) : undefined,
-            tahunAjaran as string
+            tahunAjaranId as string
         );
 
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -178,10 +178,10 @@ export const generateTemplate = async (req: Request, res: Response) => {
 export const importNilai = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).userId;
-        const { mataKuliahId, semester, tahunAjaran } = req.body;
+        const { mataKuliahId, semester, tahunAjaranId } = req.body;
         const file = req.file;
 
-        if (!file || !mataKuliahId || !semester || !tahunAjaran) {
+        if (!file || !mataKuliahId || !semester || !tahunAjaranId) {
             return res.status(400).json({ error: 'File, mata kuliah, semester, dan tahun ajaran harus diisi' });
         }
 
@@ -189,7 +189,7 @@ export const importNilai = async (req: Request, res: Response) => {
             file.buffer,
             mataKuliahId,
             parseInt(semester),
-            tahunAjaran,
+            tahunAjaranId,
             userId
         );
 

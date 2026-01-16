@@ -35,12 +35,15 @@ import transkripProfilRoutes from './transkrip-profil.js';
 import roleAccessRoutes from './role-access.js';
 import evaluasiCplRoutes from './evaluasi-cpl.js';
 import defaultPermissionsRoutes from './default-permissions.js';
+import tahunAjaranRoutes from './tahun-ajaran.js';
+import jenjangRoutes from './jenjang.js';
 
 import rolesRoutes from './roles.js';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
+router.use('/jenjang', jenjangRoutes);
 router.use('/cpl', cplRoutes);
 router.use('/cpl-mata-kuliah', cplMappingRoutes);
 router.use('/mata-kuliah', mataKuliahRoutes);
@@ -76,6 +79,7 @@ router.use('/transkrip-profil', transkripProfilRoutes);
 router.use('/role-access', roleAccessRoutes);
 router.use('/evaluasi-cpl', evaluasiCplRoutes);
 router.use('/default-permissions', defaultPermissionsRoutes);
+router.use('/tahun-ajaran', tahunAjaranRoutes);
 
 router.use('/roles', rolesRoutes);
 

@@ -290,25 +290,26 @@ model NilaiCpl {
   mataKuliahId String     @map("mata_kuliah_id")
   nilai        Decimal    @db.Decimal(5, 2)
   semester     Int
-  semesterId   String?    @map("semester_id")
-  tahunAjaran  String     @map("tahun_ajaran")
-  catatan      String?    @db.Text
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  createdBy    String?    @map("created_by")
-  cpl          Cpl        @relation(fields: [cplId], references: [id], onDelete: Cascade)
-  creator      User?      @relation("NilaiCreatedBy", fields: [createdBy], references: [id])
-  mahasiswa    Profile    @relation("MahasiswaNilai", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
-  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
-  semesterRef  Semester?  @relation(fields: [semesterId], references: [id])
+  semesterId    String?      @map("semester_id")
+  tahunAjaranId String?       @map("tahun_ajaran_id")
+  catatan       String?      @db.Text
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  createdBy     String?      @map("created_by")
+  cpl           Cpl          @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  creator       User?        @relation("NilaiCreatedBy", fields: [createdBy], references: [id])
+  mahasiswa     Profile      @relation("MahasiswaNilai", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
+  mataKuliah    MataKuliah   @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  semesterRef   Semester?    @relation(fields: [semesterId], references: [id])
+  tahunAjaranRef TahunAjaran? @relation(fields: [tahunAjaranId], references: [id])
 
-  @@unique([mahasiswaId, cplId, mataKuliahId, semester, tahunAjaran])
+  @@unique([mahasiswaId, cplId, mataKuliahId, semester, tahunAjaranId])
   @@index([mahasiswaId])
   @@index([cplId])
   @@index([mataKuliahId])
   @@index([semester])
   @@index([semesterId])
-  @@index([tahunAjaran])
+  @@index([tahunAjaranId])
   @@index([createdBy], map: "nilai_cpl_created_by_fkey")
   @@map("nilai_cpl")
 }
@@ -321,7 +322,7 @@ model NilaiTeknikPenilaian {
   nilai             Decimal         @db.Decimal(5, 2)
   semester          Int
   semesterId        String?         @map("semester_id")
-  tahunAjaran       String          @map("tahun_ajaran")
+  tahunAjaranId     String?          @map("tahun_ajaran_id")
   catatan           String?         @db.Text
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime        @updatedAt @map("updated_at")
@@ -332,14 +333,15 @@ model NilaiTeknikPenilaian {
   mataKuliah        MataKuliah      @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
   semesterRef       Semester?       @relation(fields: [semesterId], references: [id])
   teknikPenilaian   TeknikPenilaian @relation(fields: [teknikPenilaianId], references: [id], onDelete: Cascade)
+  tahunAjaranRef    TahunAjaran?     @relation(fields: [tahunAjaranId], references: [id])
 
-  @@unique([mahasiswaId, teknikPenilaianId, semester, tahunAjaran])
+  @@unique([mahasiswaId, teknikPenilaianId, semester, tahunAjaranId])
   @@index([mahasiswaId])
   @@index([teknikPenilaianId])
   @@index([mataKuliahId])
   @@index([semester])
   @@index([semesterId])
-  @@index([tahunAjaran])
+  @@index([tahunAjaranId])
   @@index([createdBy], map: "nilai_teknik_penilaian_created_by_fkey")
   @@map("nilai_teknik_penilaian")
 }
@@ -352,21 +354,22 @@ model NilaiSubCpmk {
   nilai        Decimal    @db.Decimal(5, 2)
   semester     Int
   semesterId   String?    @map("semester_id")
-  tahunAjaran  String     @map("tahun_ajaran")
+  tahunAjaranId String?    @map("tahun_ajaran_id")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
   mahasiswa    Profile    @relation("MahasiswaNilaiSubCpmk", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
   mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
   semesterRef  Semester?  @relation(fields: [semesterId], references: [id])
   subCpmk      SubCpmk    @relation(fields: [subCpmkId], references: [id], onDelete: Cascade)
+  tahunAjaranRef TahunAjaran? @relation(fields: [tahunAjaranId], references: [id])
 
-  @@unique([mahasiswaId, subCpmkId, semester, tahunAjaran])
+  @@unique([mahasiswaId, subCpmkId, semester, tahunAjaranId])
   @@index([mahasiswaId])
   @@index([subCpmkId])
   @@index([mataKuliahId])
   @@index([semester])
   @@index([semesterId])
-  @@index([tahunAjaran])
+  @@index([tahunAjaranId])
   @@map("nilai_sub_cpmk")
 }
 
@@ -378,7 +381,7 @@ model NilaiCpmk {
   nilaiAkhir   Decimal    @map("nilai_akhir") @db.Decimal(5, 2)
   semester     Int
   semesterId   String?    @map("semester_id")
-  tahunAjaran  String     @map("tahun_ajaran")
+  tahunAjaranId String?    @map("tahun_ajaran_id")
   isCalculated Boolean    @default(true) @map("is_calculated")
   calculatedAt DateTime   @default(now()) @map("calculated_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
@@ -386,14 +389,15 @@ model NilaiCpmk {
   mahasiswa    Profile    @relation("MahasiswaNilaiCpmk", fields: [mahasiswaId], references: [userId], onDelete: Cascade)
   mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
   semesterRef  Semester?  @relation(fields: [semesterId], references: [id])
+  tahunAjaranRef TahunAjaran? @relation(fields: [tahunAjaranId], references: [id])
 
-  @@unique([mahasiswaId, cpmkId, semester, tahunAjaran])
+  @@unique([mahasiswaId, cpmkId, semester, tahunAjaranId])
   @@index([mahasiswaId])
   @@index([cpmkId])
   @@index([mataKuliahId])
   @@index([semester])
   @@index([semesterId])
-  @@index([tahunAjaran])
+  @@index([tahunAjaranId])
   @@map("nilai_cpmk")
 }
 
@@ -431,6 +435,18 @@ model AuditLog {
   @@index([tableName])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+
+model Jenjang {
+  id        String   @id @default(uuid())
+  nama      String   @unique // e.g., D3, S1, S2
+  keterangan String? @db.Text
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("jenjang")
 }
 
 model Fakultas {
@@ -471,6 +487,13 @@ model TahunAjaran {
   isActive  Boolean  @default(false) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  nilaiCpl               NilaiCpl[]
+  nilaiTeknik            NilaiTeknikPenilaian[]
+  nilaiSubCpmk           NilaiSubCpmk[]
+  nilaiCpmk              NilaiCpmk[]
+  evaluasiMataKuliah     EvaluasiMataKuliah[]
+  penilaianTidakLangsung PenilaianTidakLangsung[]
 
   @@map("tahun_ajaran")
 }
@@ -683,7 +706,7 @@ model EvaluasiMataKuliah {
   mataKuliahId     String     @map("mata_kuliah_id")
   dosenId          String     @map("dosen_id")
   semester         Int
-  tahunAjaran      String     @map("tahun_ajaran")
+  tahunAjaranId    String?     @map("tahun_ajaran_id")
   kendala          String?    @db.Text
   rencanaPerbaikan String?    @map("rencana_perbaikan") @db.Text
   status           String     @default("submitted")
@@ -692,10 +715,12 @@ model EvaluasiMataKuliah {
   updatedAt        DateTime   @updatedAt @map("updated_at")
   dosen            User       @relation(fields: [dosenId], references: [id])
   mataKuliah       MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  tahunAjaranRef   TahunAjaran? @relation(fields: [tahunAjaranId], references: [id])
 
-  @@unique([mataKuliahId, dosenId, semester, tahunAjaran])
+  @@unique([mataKuliahId, dosenId, semester, tahunAjaranId])
   @@index([mataKuliahId])
   @@index([dosenId])
+  @@index([tahunAjaranId])
   @@map("evaluasi_mata_kuliah")
 }
 
@@ -754,15 +779,17 @@ model PenilaianTidakLangsung {
   cplId       String   @map("cpl_id")
   nilai       Int
   semester    Int
-  tahunAjaran String   @map("tahun_ajaran")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  cpl         Cpl      @relation(fields: [cplId], references: [id], onDelete: Cascade)
-  mahasiswa   Profile  @relation(fields: [mahasiswaId], references: [userId], onDelete: Cascade)
+  tahunAjaranId String?   @map("tahun_ajaran_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  cpl           Cpl      @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  mahasiswa     Profile  @relation(fields: [mahasiswaId], references: [userId], onDelete: Cascade)
+  tahunAjaranRef TahunAjaran? @relation(fields: [tahunAjaranId], references: [id])
 
-  @@unique([mahasiswaId, cplId, semester, tahunAjaran])
+  @@unique([mahasiswaId, cplId, semester, tahunAjaranId])
   @@index([mahasiswaId])
   @@index([cplId])
+  @@index([tahunAjaranId])
   @@map("penilaian_tidak_langsung")
 }
 

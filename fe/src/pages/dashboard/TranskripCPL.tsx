@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn, getGradeLetter } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranskripCPL } from "@/hooks/useTranskripCPL";
+import { useTahunAjaran } from "@/hooks/useTahunAjaran";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
 
@@ -58,6 +59,15 @@ const TranskripCPLPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState("cpl");
     const [openCombobox, setOpenCombobox] = useState(false);
+
+    const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
+
+    // Set default active Tahun Ajaran
+    useEffect(() => {
+        if (activeTahunAjaran && tahunAjaran === 'all') {
+            setTahunAjaran(activeTahunAjaran.id);
+        }
+    }, [activeTahunAjaran]);
 
     // Sync tab with URL
     useEffect(() => {
@@ -284,9 +294,9 @@ const TranskripCPLPage = () => {
                                             <SelectTrigger><SelectValue placeholder="Pilih Tahun Ajaran" /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">Semua Periode</SelectItem>
-                                                <SelectItem value="2023/2024">2023/2024</SelectItem>
-                                                <SelectItem value="2024/2025">2024/2025</SelectItem>
-                                                <SelectItem value="2025/2026">2025/2026</SelectItem>
+                                                {tahunAjaranList.map(ta => (
+                                                    <SelectItem key={ta.id} value={ta.id}>{ta.nama}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </CardContent>
@@ -865,7 +875,7 @@ const TranskripCPLPage = () => {
                                     <thead>
                                         <tr className="bg-gray-100">
                                             <th className="border border-black p-1 w-8 text-center">NO</th>
-                                            <th className="border border-black p-1 text-left">MATA KULIAH</th>
+                                            <th className="border border-black p-1 text-center w-20">{activeTab === 'cpl' ? 'KODE CPL' : 'MATA KULIAH'}</th>
                                             <th className="border border-black p-1 text-left">{activeTab === 'cpl' ? 'CAPAIAN PEMBELAJARAN' : 'CPMK'}</th>
                                             <th className="border border-black p-1 w-12 text-center">NILAI</th>
                                             <th className="border border-black p-1 w-10 text-center">HURUF</th>

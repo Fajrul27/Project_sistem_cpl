@@ -49,9 +49,7 @@ export const useNilaiTeknik = () => {
     const [selectedMK, setSelectedMK] = useState<string>("");
     const [selectedKelas, setSelectedKelas] = useState<string>("");
     const [semester, setSemester] = useState<string>("1");
-    const [tahunAjaran, setTahunAjaran] = useState<string>(
-        `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`
-    );
+    const [tahunAjaran, setTahunAjaran] = useState<string>("");
 
     const [grades, setGrades] = useState<Record<string, number>>({}); // key: studentId_teknikId
     const [gradesMetadata, setGradesMetadata] = useState<Record<string, { updatedAt: string }>>({});
@@ -217,7 +215,7 @@ export const useNilaiTeknik = () => {
             // Fetch existing grades
             try {
                 const gradesData = await api.get(`/nilai-teknik/mata-kuliah/${mkId}`, {
-                    params: { semester, tahunAjaran }
+                    params: { semester, tahunAjaranId: tahunAjaran }
                 });
 
                 const existingGrades: Record<string, number> = {};
@@ -311,7 +309,7 @@ export const useNilaiTeknik = () => {
                     mataKuliahId: selectedMK,
                     nilai: value,
                     semester: parseInt(semester),
-                    tahunAjaran,
+                    tahunAjaranId: tahunAjaran,
                     rubrikData: rubrikGrades[key] // Include rubric data if available
                 };
             });
@@ -358,7 +356,7 @@ export const useNilaiTeknik = () => {
     const downloadTemplate = async () => {
         if (!selectedMK) return;
         try {
-            const response = await fetch(`${API_URL}/nilai-teknik/template/${selectedMK}?kelasId=${selectedKelas}&semester=${semester}&tahunAjaran=${encodeURIComponent(tahunAjaran)}`, {
+            const response = await fetch(`${API_URL}/nilai-teknik/template/${selectedMK}?kelasId=${selectedKelas}&semester=${semester}&tahunAjaranId=${encodeURIComponent(tahunAjaran)}`, {
                 credentials: 'include'
             });
 
@@ -389,7 +387,7 @@ export const useNilaiTeknik = () => {
         formData.append('file', file);
         formData.append('mataKuliahId', selectedMK);
         formData.append('semester', semester);
-        formData.append('tahunAjaran', tahunAjaran);
+        formData.append('tahunAjaranId', tahunAjaran);
 
         setLoading(true);
         try {

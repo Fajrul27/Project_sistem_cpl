@@ -278,16 +278,22 @@ export const StaffList = () => {
                 </div>
                 <div className="flex gap-2 items-center flex-wrap">
                     {/* Role Filter Toggles */}
-                    <div className="flex bg-muted p-1 rounded-lg overflow-x-auto max-w-[400px]">
-                        {roleOptions.map(opt => (
-                            <button
-                                key={opt.value}
-                                onClick={() => { setRoleFilter(opt.value); setPage(1); }}
-                                className={`px-3 py-1 text-xs rounded-md transition-all whitespace-nowrap ${roleFilter === opt.value ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                            >
-                                {opt.label}
-                            </button>
-                        ))}
+                    {/* Role Filter Dropdown */}
+                    <div className="w-[200px]">
+                        <Select value={roleFilter} onValueChange={(val) => { setRoleFilter(val); setPage(1); }}>
+                            <SelectTrigger className="h-9">
+                                <SelectValue placeholder="Pilih Role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {roleOptions
+                                    .filter(opt => opt.value.toLowerCase() !== 'mahasiswa')
+                                    .map(opt => (
+                                        <SelectItem key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </SelectItem>
+                                    ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="relative min-w-[150px]">
@@ -345,18 +351,22 @@ export const StaffList = () => {
                             <div className="space-y-2"><Label>Email</Label><Input type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required /></div>
                             <div className="space-y-2"><Label>Password</Label><Input type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} required minLength={6} /></div>
                             <div className="space-y-2"><Label>NIP/NIDN</Label><Input value={newUser.identityNumber} onChange={e => setNewUser({ ...newUser, identityNumber: e.target.value })} /></div>
-                            <div className="space-y-2"><Label>Fakultas</Label>
-                                <Select value={newUser.fakultasId} onValueChange={v => setNewUser({ ...newUser, fakultasId: v, prodiId: "" })}>
-                                    <SelectTrigger><SelectValue placeholder="Opsional..." /></SelectTrigger>
-                                    <SelectContent>{fakultasList.map(f => <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>)}</SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2"><Label>Prodi</Label>
-                                <Select value={newUser.prodiId} onValueChange={v => setNewUser({ ...newUser, prodiId: v })} disabled={!newUser.fakultasId}>
-                                    <SelectTrigger><SelectValue placeholder="Opsional..." /></SelectTrigger>
-                                    <SelectContent>{selectedFakultas?.prodi.map(p => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}</SelectContent>
-                                </Select>
-                            </div>
+                            {newUser.role !== 'admin' && (
+                                <>
+                                    <div className="space-y-2"><Label>Fakultas</Label>
+                                        <Select value={newUser.fakultasId} onValueChange={v => setNewUser({ ...newUser, fakultasId: v, prodiId: "" })}>
+                                            <SelectTrigger><SelectValue placeholder="Opsional..." /></SelectTrigger>
+                                            <SelectContent>{fakultasList.map(f => <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>)}</SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2"><Label>Prodi</Label>
+                                        <Select value={newUser.prodiId} onValueChange={v => setNewUser({ ...newUser, prodiId: v })} disabled={!newUser.fakultasId}>
+                                            <SelectTrigger><SelectValue placeholder="Opsional..." /></SelectTrigger>
+                                            <SelectContent>{selectedFakultas?.prodi.map(p => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}</SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
+                            )}
                             <div className="lg:col-span-4 flex justify-end mt-4"><Button type="submit" disabled={creating}>{creating ? "..." : "Simpan"}</Button></div>
                         </form>
                     </div>
@@ -427,7 +437,11 @@ export const StaffList = () => {
 
                 <Dialog open={!!editingUser} onOpenChange={open => !open && setEditingUser(null)}>
                     <DialogContent>
-                        <DialogHeader><DialogTitle>Edit Staff</DialogTitle></DialogHeader>
+                        <DialogHeader>
+                            <DialogTitle>
+                                Edit {roleOptions.find(r => r.value === editData.role)?.label || 'Pengguna'}
+                            </DialogTitle>
+                        </DialogHeader>
                         <div className="space-y-4">
                             <div className="space-y-2"><Label>Role</Label>
                                 <Select value={editData.role} onValueChange={v => setEditData({ ...editData, role: v })}>

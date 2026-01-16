@@ -5,12 +5,17 @@ import { TranskripService } from '../services/TranskripService.js';
 // Get CPL Analysis Charts
 export const getAnalysis = async (req: Request, res: Response) => {
     try {
-        const { semester } = req.query;
-        const result = await TranskripService.getAnalysis(semester ? Number(semester) : undefined);
+        const { semester, fakultasId, prodiId, angkatan } = req.query;
+        const result = await TranskripService.getAnalysis({
+            semester: semester ? Number(semester) : undefined,
+            fakultasId: String(fakultasId || ''),
+            prodiId: String(prodiId || ''),
+            angkatan: String(angkatan || '')
+        });
         res.json(result);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching analysis:', error);
-        res.status(500).json({ error: 'Gagal mengambil data analisis' });
+        res.status(500).json({ error: error.message, stack: error.stack });
     }
 };
 
@@ -18,12 +23,12 @@ export const getAnalysis = async (req: Request, res: Response) => {
 export const getTranskripByMahasiswa = async (req: Request, res: Response) => {
     try {
         const { mahasiswaId } = req.params;
-        const { semester, tahunAjaran } = req.query;
+        const { semester, tahunAjaranId } = req.query;
 
         const result = await TranskripService.getTranskripCpl(
             mahasiswaId,
             semester && semester !== 'all' ? Number(semester) : undefined,
-            tahunAjaran && tahunAjaran !== 'all' ? String(tahunAjaran) : undefined
+            tahunAjaranId && tahunAjaranId !== 'all' ? String(tahunAjaranId) : undefined
         );
 
         res.json({
@@ -35,7 +40,7 @@ export const getTranskripByMahasiswa = async (req: Request, res: Response) => {
         if (error.message === 'MAHASISWA_NOT_FOUND') {
             return res.status(404).json({ error: 'Mahasiswa tidak ditemukan' });
         }
-        res.status(500).json({ success: false, error: 'Internal server error' });
+        res.status(500).json({ success: false, error: error.message, stack: error.stack });
     }
 };
 

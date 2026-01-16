@@ -4,12 +4,12 @@ import { gradingSchemas } from '../schemas/grading.schema.js';
 import { Prisma } from '@prisma/client';
 
 export class KuesionerService {
-    static async getMyKuesioner(userId: string, semester: number, tahunAjaran: string) {
+    static async getMyKuesioner(userId: string, semester: number, tahunAjaranId: string) {
         return prisma.penilaianTidakLangsung.findMany({
             where: {
                 mahasiswaId: userId,
                 semester,
-                tahunAjaran
+                tahunAjaranId
             },
             include: { cpl: true }
         });
@@ -21,11 +21,11 @@ export class KuesionerService {
             validated.nilai.map(item =>
                 prisma.penilaianTidakLangsung.upsert({
                     where: {
-                        mahasiswaId_cplId_semester_tahunAjaran: {
+                        mahasiswaId_cplId_semester_tahunAjaranId: {
                             mahasiswaId: userId,
                             cplId: item.cplId,
                             semester: validated.semester,
-                            tahunAjaran: validated.tahunAjaran
+                            tahunAjaranId: validated.tahunAjaranId
                         }
                     },
                     update: { nilai: item.nilai },
@@ -33,7 +33,7 @@ export class KuesionerService {
                         mahasiswaId: userId,
                         cplId: item.cplId,
                         semester: validated.semester,
-                        tahunAjaran: validated.tahunAjaran,
+                        tahunAjaranId: validated.tahunAjaranId,
                         nilai: item.nilai
                     }
                 })
@@ -45,23 +45,16 @@ export class KuesionerService {
         userId: string,
         userRole: string,
         prodiId?: string,
-        tahunAjaran?: string,
+        tahunAjaranId?: string,
         semester?: string,
         fakultasId?: string
     }) {
-        const { userId, userRole, prodiId, tahunAjaran, semester, fakultasId } = params;
+        const { userId, userRole, prodiId, tahunAjaranId, semester, fakultasId } = params;
         const whereClause: Prisma.PenilaianTidakLangsungWhereInput = {};
 
-        // 1. Normalize and Apply Tahun Ajaran
-        if (tahunAjaran && tahunAjaran !== 'all') {
-            let ta = String(tahunAjaran).replace(/\+/g, ' ').trim();
-            // Fuzzy fix for known encoding issues
-            if (ta.includes('2024') && ta.includes('2025') && ta.toLowerCase().includes('ganjil')) {
-                ta = "2024/2025 Ganjil";
-            } else if (ta.includes('2023') && ta.includes('2024') && ta.toLowerCase().includes('genap')) {
-                ta = "2023/2024 Genap";
-            }
-            whereClause.tahunAjaran = ta;
+        // 1. Apply Tahun Ajaran
+        if (tahunAjaranId && tahunAjaranId !== 'all') {
+            whereClause.tahunAjaranId = tahunAjaranId;
         }
 
         // 2. Apply Semester

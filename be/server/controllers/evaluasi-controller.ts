@@ -5,12 +5,12 @@ import { EvaluasiService } from '../services/EvaluasiService.js';
 export const getEvaluasiByMataKuliah = async (req: Request, res: Response) => {
     try {
         const { mataKuliahId } = req.params;
-        const { semester, tahunAjaran } = req.query;
+        const { semester, tahunAjaranId } = req.query;
 
         const evaluasi = await EvaluasiService.getEvaluasiByMataKuliah(
             mataKuliahId,
             semester ? parseInt(semester as string) : undefined,
-            tahunAjaran as string
+            tahunAjaranId as string
         );
 
         res.json({ data: evaluasi });

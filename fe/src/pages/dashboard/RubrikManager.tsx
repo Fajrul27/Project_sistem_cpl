@@ -29,96 +29,110 @@ export default function RubrikManager() {
             title="Kelola Rubrik Penilaian"
             description={`Rubrik untuk CPMK: ${cpmkData?.kodeCpmk} - ${cpmkData?.mataKuliah?.namaMk}`}
         >
-            <div className="space-y-6 pb-20">
-                <Button variant="outline" onClick={() => navigate(-1)} className="mb-4">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Kembali
-                </Button>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Deskripsi Umum Rubrik</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Textarea
-                            placeholder="Deskripsi atau petunjuk umum penggunaan rubrik ini..."
-                            value={rubrik.deskripsi || ""}
-                            onChange={e => setRubrikDeskripsi(e.target.value)}
-                        />
-                    </CardContent>
-                </Card>
-
-                <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">Kriteria Penilaian</h3>
-                    <Button onClick={handleAddKriteria}>
-                        <Plus className="w-4 h-4 mr-2" /> Tambah Kriteria
-                    </Button>
+            <div className="flex gap-6 relative">
+                {/* Fixed Back Button Sidebar */}
+                <div className="hidden xl:block w-28 shrink-0 relative">
+                    <div className="fixed left-80 top-1/2 -translate-y-1/2 z-40">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="rounded-full shadow-lg bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 h-12 w-12 transition-all hover:scale-105"
+                            onClick={() => navigate(-1)}
+                            title="Kembali"
+                        >
+                            <ArrowLeft className="h-6 w-6" />
+                        </Button>
+                    </div>
                 </div>
 
-                {rubrik.kriteria.map((kriteria, kIndex) => (
-                    <Card key={kIndex} className="border-l-4 border-l-primary">
-                        <CardContent className="pt-6 space-y-4">
-                            <div className="flex flex-col sm:flex-row gap-4 items-start">
-                                <div className="w-full sm:flex-1 space-y-2">
-                                    <Label>Deskripsi Kriteria</Label>
-                                    <Textarea
-                                        value={kriteria.deskripsi}
-                                        onChange={e => updateKriteria(kIndex, 'deskripsi', e.target.value)}
-                                        placeholder="Contoh: Kelengkapan analisis..."
-                                    />
-                                </div>
-                                <div className="w-full sm:w-32 space-y-2">
-                                    <Label>Bobot (%)</Label>
-                                    <Input
-                                        type="number"
-                                        value={kriteria.bobot}
-                                        onChange={e => updateKriteria(kIndex, 'bobot', parseFloat(e.target.value))}
-                                    />
-                                </div>
-                                <div className="self-end sm:self-start pt-0 sm:pt-8">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-destructive"
-                                        onClick={() => handleRemoveKriteria(kIndex)}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </div>
+                <div className="flex-1 space-y-6 pb-20 min-w-0">
 
-                            <div className="bg-muted/30 p-4 rounded-lg">
-                                <Label className="mb-2 block">Level Penilaian (Skala)</Label>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    {kriteria.levels.map((level, lIndex) => (
-                                        <div key={lIndex} className="bg-card p-3 rounded border space-y-2">
-                                            <div className="flex justify-between">
-                                                <span className="font-bold text-sm">{level.label}</span>
-                                                <Input
-                                                    type="number"
-                                                    className="w-20 h-8 text-right"
-                                                    value={level.nilai}
-                                                    onChange={e => updateLevel(kIndex, lIndex, 'nilai', parseFloat(e.target.value))}
-                                                />
-                                            </div>
-                                            <Textarea
-                                                className="h-20 text-xs resize-none"
-                                                value={level.deskripsi}
-                                                onChange={e => updateLevel(kIndex, lIndex, 'deskripsi', e.target.value)}
-                                                placeholder="Deskripsi level..."
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Deskripsi Umum Rubrik</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Textarea
+                                placeholder="Deskripsi atau petunjuk umum penggunaan rubrik ini..."
+                                value={rubrik.deskripsi || ""}
+                                onChange={e => setRubrikDeskripsi(e.target.value)}
+                            />
                         </CardContent>
                     </Card>
-                ))}
 
-                {rubrik.kriteria.length === 0 && (
-                    <div className="text-center py-12 border rounded-lg border-dashed text-muted-foreground">
-                        Belum ada kriteria. Klik "Tambah Kriteria" untuk memulai.
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold">Kriteria Penilaian</h3>
+                        <Button onClick={handleAddKriteria}>
+                            <Plus className="w-4 h-4 mr-2" /> Tambah Kriteria
+                        </Button>
                     </div>
-                )}
+
+                    {rubrik.kriteria.map((kriteria, kIndex) => (
+                        <Card key={kIndex} className="border-l-4 border-l-primary">
+                            <CardContent className="pt-6 space-y-4">
+                                <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                    <div className="w-full sm:flex-1 space-y-2">
+                                        <Label>Deskripsi Kriteria</Label>
+                                        <Textarea
+                                            value={kriteria.deskripsi}
+                                            onChange={e => updateKriteria(kIndex, 'deskripsi', e.target.value)}
+                                            placeholder="Contoh: Kelengkapan analisis..."
+                                        />
+                                    </div>
+                                    <div className="w-full sm:w-32 space-y-2">
+                                        <Label>Bobot (%)</Label>
+                                        <Input
+                                            type="number"
+                                            value={kriteria.bobot}
+                                            onChange={e => updateKriteria(kIndex, 'bobot', parseFloat(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="self-end sm:self-start pt-0 sm:pt-8">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-destructive"
+                                            onClick={() => handleRemoveKriteria(kIndex)}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-muted/30 p-4 rounded-lg">
+                                    <Label className="mb-2 block">Level Penilaian (Skala)</Label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        {kriteria.levels.map((level, lIndex) => (
+                                            <div key={lIndex} className="bg-card p-3 rounded border space-y-2">
+                                                <div className="flex justify-between">
+                                                    <span className="font-bold text-sm">{level.label}</span>
+                                                    <Input
+                                                        type="number"
+                                                        className="w-20 h-8 text-right"
+                                                        value={level.nilai}
+                                                        onChange={e => updateLevel(kIndex, lIndex, 'nilai', parseFloat(e.target.value))}
+                                                    />
+                                                </div>
+                                                <Textarea
+                                                    className="h-20 text-xs resize-none"
+                                                    value={level.deskripsi}
+                                                    onChange={e => updateLevel(kIndex, lIndex, 'deskripsi', e.target.value)}
+                                                    placeholder="Deskripsi level..."
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+
+                    {rubrik.kriteria.length === 0 && (
+                        <div className="text-center py-12 border rounded-lg border-dashed text-muted-foreground">
+                            Belum ada kriteria. Klik "Tambah Kriteria" untuk memulai.
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Floating Save Button */}

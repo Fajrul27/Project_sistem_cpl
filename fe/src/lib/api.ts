@@ -233,7 +233,7 @@ export async function submitNilaiCpl(payload: {
   mataKuliahId: string;
   nilai: number;
   semester: number;
-  tahunAjaran: string;
+  tahunAjaranId: string;
 }) {
   return apiRequest('/nilai-cpl', {
     method: 'POST',
@@ -250,7 +250,7 @@ export async function fetchTranskripCPL(mahasiswaId: string) {
 export async function getTranskrip(mahasiswaId: string, semester?: string, tahunAjaran?: string) {
   const params = new URLSearchParams();
   if (semester && semester !== 'all') params.append('semester', semester);
-  if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaran', tahunAjaran);
+  if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaranId', tahunAjaran);
   return api.get(`/transkrip-cpl/${mahasiswaId}?${params.toString()}`);
 }
 
@@ -258,7 +258,7 @@ export async function getTranskrip(mahasiswaId: string, semester?: string, tahun
 export async function getTranskripCPMK(mahasiswaId: string, semester?: string, tahunAjaran?: string) {
   const params = new URLSearchParams();
   if (semester && semester !== 'all') params.append('semester', semester);
-  if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaran', tahunAjaran);
+  if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaranId', tahunAjaran);
   return api.get(`/transkrip-cpmk/${mahasiswaId}?${params.toString()}`);
 }
 
@@ -266,13 +266,18 @@ export async function getTranskripCPMK(mahasiswaId: string, semester?: string, t
 export async function getTranskripProfil(mahasiswaId: string, semester?: string, tahunAjaran?: string) {
   const params = new URLSearchParams();
   if (semester && semester !== 'all') params.append('semester', semester);
-  if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaran', tahunAjaran);
+  if (tahunAjaran && tahunAjaran !== 'all') params.append('tahunAjaranId', tahunAjaran);
   return api.get(`/transkrip-profil/mahasiswa/${mahasiswaId}?${params.toString()}`);
 }
 
 // Helper: fetch analysis data
-export async function fetchAnalisisCPL(semester?: string) {
-  const params = semester && semester !== "all" ? { semester } : {};
+export async function fetchAnalisisCPL(semester?: string, fakultasId?: string, prodiId?: string, angkatan?: string) {
+  const params: any = {};
+  if (semester && semester !== "all") params.semester = semester;
+  if (fakultasId && fakultasId !== "all") params.fakultasId = fakultasId;
+  if (prodiId && prodiId !== "all") params.prodiId = prodiId;
+  if (angkatan && angkatan !== "all") params.angkatan = angkatan;
+
   return api.get('/transkrip-cpl/analisis', { params });
 }
 
@@ -300,6 +305,11 @@ export async function fetchSemesters() {
 // Helper: fetch kelas
 export async function fetchKelas() {
   return api.get('/references/kelas');
+}
+
+// Helper: fetch tahun ajaran
+export async function fetchTahunAjaranList() {
+  return api.get('/references/tahun-ajaran');
 }
 
 // Helper: fetch prodi
@@ -337,6 +347,23 @@ export async function deleteFakultas(id: string) {
   return api.delete(`/fakultas/${id}`);
 }
 
+// Helper: fetch jenjang
+export async function fetchJenjangList() {
+  return api.get('/jenjang');
+}
+
+export async function createJenjang(data: any) {
+  return api.post('/jenjang', data);
+}
+
+export async function updateJenjang(id: string, data: any) {
+  return api.put(`/jenjang/${id}`, data);
+}
+
+export async function deleteJenjang(id: string) {
+  return api.delete(`/jenjang/${id}`);
+}
+
 // Helper: fetch angkatan
 export async function fetchAngkatanList() {
   return api.get('/angkatan');
@@ -359,7 +386,7 @@ export async function deleteRubrik(id: string) {
 export async function fetchEvaluasiMataKuliah(mataKuliahId: string, semester?: string, tahunAjaran?: string) {
   const params: any = {};
   if (semester) params.semester = semester;
-  if (tahunAjaran) params.tahunAjaran = tahunAjaran;
+  if (tahunAjaran) params.tahunAjaranId = tahunAjaran;
   return api.get(`/evaluasi/mata-kuliah/${mataKuliahId}`, { params });
 }
 

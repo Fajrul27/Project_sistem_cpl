@@ -5,9 +5,19 @@ import { calculateNilaiCplFromCpmk, calculateNilaiCpmk } from '../lib/calculatio
 export class TranskripService {
     // --- CPL Analysis & Transcript ---
 
-    static async getAnalysis(semester?: number) {
+    static async getAnalysis(filters: { semester?: number; fakultasId?: string; prodiId?: string; angkatan?: string }) {
         const where: any = {};
+        const { semester, fakultasId, prodiId, angkatan } = filters;
+
         if (semester) where.semester = semester;
+
+        // Relation filters for Mahasiswa
+        if (fakultasId || prodiId || angkatan) {
+            where.mahasiswa = {};
+            if (fakultasId) where.mahasiswa.fakultasId = fakultasId;
+            if (prodiId) where.mahasiswa.prodiId = prodiId;
+            if (angkatan) where.mahasiswa.angkatanRef = { tahun: parseInt(angkatan) };
+        }
 
         // 1. Get Average Score per CPL
         const aggregations = await prisma.nilaiCpl.groupBy({
@@ -16,70 +26,50 @@ export class TranskripService {
             where
         });
 
-        const cpls = await prisma.cpl.findMany({ select: { id: true, kodeCpl: true } });
-        const cplMap = new Map(cpls.map(c => [c.id, c.kodeCpl]));
+        const cpls = await prisma.cpl.findMany({ select: { id: true, kodeCpl: true, deskripsi: true } });
+        const cplMap = new Map(cpls.map(c => [c.id, { kode: c.kodeCpl, deskripsi: c.deskripsi }]));
 
-        const cplData = aggregations.map(agg => ({
-            name: cplMap.get(agg.cplId) || 'Unknown',
-            nilai: Number(agg._avg.nilai?.toFixed(2) || 0)
-        })).sort((a, b) => a.name.localeCompare(b.name));
+        const cplData = aggregations.map(agg => {
+            const cplInfo = cplMap.get(agg.cplId);
+            return {
+                name: cplInfo?.kode || 'Unknown',
+                description: cplInfo?.deskripsi || '-',
+                nilai: Number(agg._avg.nilai?.toFixed(2) || 0)
+            };
+        }).sort((a, b) => a.name.localeCompare(b.name));
 
         // 2. Get Distribution Data
-        const distributionRaw: any[] = semester
-            ? await prisma.$queryRaw`
-                SELECT
-                  CASE
-                    WHEN nilai >= 90 THEN '90-100'
-                    WHEN nilai >= 80 THEN '80-89'
-                    WHEN nilai >= 70 THEN '70-79'
-                    WHEN nilai >= 60 THEN '60-69'
-                    ELSE '0-59'
-                  END as range_name,
-                  COUNT(*) as count
-                FROM nilai_cpl
-                WHERE semester = ${semester}
-                GROUP BY
-                  CASE
-                    WHEN nilai >= 90 THEN '90-100'
-                    WHEN nilai >= 80 THEN '80-89'
-                    WHEN nilai >= 70 THEN '70-79'
-                    WHEN nilai >= 60 THEN '60-69'
-                    ELSE '0-59'
-                  END
-            `
-            : await prisma.$queryRaw`
-                SELECT
-                  CASE
-                    WHEN nilai >= 90 THEN '90-100'
-                    WHEN nilai >= 80 THEN '80-89'
-                    WHEN nilai >= 70 THEN '70-79'
-                    WHEN nilai >= 60 THEN '60-69'
-                    ELSE '0-59'
-                  END as range_name,
-                  COUNT(*) as count
-                FROM nilai_cpl
-                GROUP BY
-                  CASE
-                    WHEN nilai >= 90 THEN '90-100'
-                    WHEN nilai >= 80 THEN '80-89'
-                    WHEN nilai >= 70 THEN '70-79'
-                    WHEN nilai >= 60 THEN '60-69'
-                    ELSE '0-59'
-                  END
-            `;
+        // Note: queryRaw is harder to use with relation filters dynamically.
+        // We will fetch ALL aggregated values and do distribution in code or use findMany.
+        // Given potentially large data, let's use groupBy on nilai ranges if possible? No, we need custom buckets.
+        // Let's use aggregate/count with filtered findMany, or stick to queryRaw but we have to construct join manually.
+        // For Filter compatibility with Prisma Client and simplicity, let's use multiple count queries or fetch scalar list if not too big.
+        // Actually, 'group by bucket' is easiest in SQL.
+        // Let's verify if we can construct 'where' for Prisma queryRaw easily. It's complex.
+
+        // Alternative: Use `prisma.nilaiCpl.findMany` with select `nilai` and `where` and compute histogram in JS.
+        // This might be heavy if millions of rows. 
+        // Better: Use `count` with ranges. 5 queries.
 
         const ranges = [
-            { name: "0-59", min: 0, max: 59, count: 0 },
-            { name: "60-69", min: 60, max: 69, count: 0 },
-            { name: "70-79", min: 70, max: 79, count: 0 },
-            { name: "80-89", min: 80, max: 89, count: 0 },
-            { name: "90-100", min: 90, max: 100, count: 0 },
+            { name: "0-59", min: 0, max: 59 },
+            { name: "60-69", min: 60, max: 69 },
+            { name: "70-79", min: 70, max: 79 },
+            { name: "80-89", min: 80, max: 89 },
+            { name: "90-100", min: 90, max: 100 },
         ];
 
-        for (const row of distributionRaw) {
-            const range = ranges.find(r => r.name === row.range_name);
-            if (range) range.count = Number(row.count);
-        }
+        const distributionData = await Promise.all(
+            ranges.map(async (r) => {
+                const count = await prisma.nilaiCpl.count({
+                    where: {
+                        ...where,
+                        nilai: { gte: r.min, lte: r.max }
+                    }
+                });
+                return { ...r, count };
+            })
+        );
 
         // 3. Radar Data (Top 8)
         const radarData = [...cplData]
@@ -91,7 +81,7 @@ export class TranskripService {
                 fullMark: 100
             }));
 
-        return { cplData, distributionData: ranges, radarData };
+        return { cplData, distributionData, radarData };
     }
 
     static async getTranskripCpl(mahasiswaId: string, semester?: number, tahunAjaran?: string) {
@@ -116,14 +106,13 @@ export class TranskripService {
 
         const where: any = { mahasiswaId };
         if (semester) where.semester = semester;
-        if (tahunAjaran) where.tahunAjaran = tahunAjaran;
+        if (tahunAjaran) where.tahunAjaranId = tahunAjaran;
 
 
-        // PARALLEL FETCHING: Fetch unrelated data concurrently
-        const [nilaiCplList, nilaiTeknikList] = await Promise.all([
+        const [nilaiCplListRaw, nilaiTeknikList] = await Promise.all([
             prisma.nilaiCpl.findMany({
                 where,
-                include: { cpl: true, mataKuliah: true }
+                include: { cpl: true, mataKuliah: true, tahunAjaranRef: true }
             }),
             prisma.nilaiTeknikPenilaian.findMany({
                 where,
@@ -137,11 +126,15 @@ export class TranskripService {
                             }
                         }
                     },
-                    mataKuliah: true
+                    mataKuliah: true,
+                    tahunAjaranRef: true
                 },
-                orderBy: [{ tahunAjaran: 'desc' }, { semester: 'desc' }]
+                orderBy: [{ tahunAjaranRef: { nama: 'desc' } }, { semester: 'desc' }]
             })
         ]);
+
+        // Filter out orphan records (missing CPL or MataKuliah) to prevent crashes
+        const nilaiCplList = nilaiCplListRaw.filter(n => n.cpl && n.mataKuliah);
 
         const cplIds = [...new Set(nilaiCplList.map(n => n.cplId))];
         const mkIds = [...new Set(nilaiCplList.map(n => n.mataKuliahId))];
@@ -201,7 +194,9 @@ export class TranskripService {
             const status = avgScore >= minNilai ? 'tercapai' : 'belum_tercapai';
 
             const latest = nilaiList.sort((a, b) => {
-                if (a.tahunAjaran !== b.tahunAjaran) return a.tahunAjaran.localeCompare(b.tahunAjaran);
+                const taA = a.tahunAjaranRef?.nama || '';
+                const taB = b.tahunAjaranRef?.nama || '';
+                if (taA !== taB) return taA.localeCompare(taB);
                 return a.semester - b.semester;
             })[nilaiList.length - 1];
 
@@ -223,12 +218,12 @@ export class TranskripService {
                         namaMk: nt.mataKuliah?.namaMk
                     },
                     semester: nt.semester,
-                    tahunAjaran: nt.tahunAjaran
+                    tahunAjaran: nt.tahunAjaranRef?.nama || '-'
                 })),
                 nilaiAkhir: Number(avgScore.toFixed(2)),
                 status,
                 semesterTercapai: latest?.semester || 0,
-                tahunAjaran: latest?.tahunAjaran || '-'
+                tahunAjaran: latest?.tahunAjaranRef?.nama || '-'
             });
         }
 
@@ -266,7 +261,8 @@ export class TranskripService {
                     namaMk: nt.mataKuliah?.namaMk
                 },
                 semester: nt.semester,
-                tahunAjaran: nt.tahunAjaran
+
+                tahunAjaran: nt.tahunAjaranRef?.nama || '-'
             }))
         };
     }
@@ -274,19 +270,21 @@ export class TranskripService {
     static async calculateTranskrip(mahasiswaId: string) {
         const activeMks = await prisma.nilaiTeknikPenilaian.findMany({
             where: { mahasiswaId },
-            select: { mataKuliahId: true, semester: true, tahunAjaran: true },
-            distinct: ['mataKuliahId', 'semester', 'tahunAjaran']
+            select: { mataKuliahId: true, semester: true, tahunAjaranId: true },
+            distinct: ['mataKuliahId', 'semester', 'tahunAjaranId']
         });
 
         const cpmkMks = await prisma.nilaiCpmk.findMany({
             where: { mahasiswaId },
-            select: { mataKuliahId: true, semester: true, tahunAjaran: true },
-            distinct: ['mataKuliahId', 'semester', 'tahunAjaran']
+            select: { mataKuliahId: true, semester: true, tahunAjaranId: true },
+            distinct: ['mataKuliahId', 'semester', 'tahunAjaranId']
         });
 
-        const targets = [...activeMks, ...cpmkMks].filter((v, i, a) =>
-            a.findIndex(t => t.mataKuliahId === v.mataKuliahId && t.semester === v.semester && t.tahunAjaran === v.tahunAjaran) === i
-        );
+        const targets = [...activeMks, ...cpmkMks]
+            .filter((t): t is typeof t & { tahunAjaranId: string } => t.tahunAjaranId !== null)
+            .filter((v, i, a) =>
+                a.findIndex(t => t.mataKuliahId === v.mataKuliahId && t.semester === v.semester && t.tahunAjaranId === v.tahunAjaranId) === i
+            );
 
         let processed = 0;
 
@@ -297,11 +295,10 @@ export class TranskripService {
             await Promise.all(batch.map(async (target) => {
                 const cpmks = await prisma.cpmk.findMany({ where: { mataKuliahId: target.mataKuliahId } });
 
-                // Keep sub-tasks sequential per target to maintain logic dependency (CPL depends on CPMK)
                 for (const cpmk of cpmks) {
-                    await calculateNilaiCpmk(mahasiswaId, cpmk.id, target.mataKuliahId, target.semester, target.tahunAjaran);
+                    await calculateNilaiCpmk(mahasiswaId, cpmk.id, target.mataKuliahId, target.semester, target.tahunAjaranId as string);
                 }
-                await calculateNilaiCplFromCpmk(mahasiswaId, target.mataKuliahId, target.semester, target.tahunAjaran);
+                await calculateNilaiCplFromCpmk(mahasiswaId, target.mataKuliahId, target.semester, target.tahunAjaranId as string);
             }));
             processed += batch.length;
         }
@@ -320,17 +317,17 @@ export class TranskripService {
 
         const where: any = { mahasiswaId };
         if (semester) where.semester = semester;
-        if (tahunAjaran) where.tahunAjaran = tahunAjaran;
+        if (tahunAjaran) where.tahunAjaranId = tahunAjaran;
 
-        const nilaiCpmkList = await prisma.nilaiCpmk.findMany({
+        const nilaiCpmkList = (await prisma.nilaiCpmk.findMany({
             where,
-            include: { cpmk: true, mataKuliah: true },
+            include: { cpmk: true, mataKuliah: true, tahunAjaranRef: true },
             orderBy: [
                 { semester: 'asc' },
                 { mataKuliah: { kodeMk: 'asc' } },
                 { cpmk: { kodeCpmk: 'asc' } }
             ]
-        });
+        })).filter((item: any) => item.cpmk && item.mataKuliah);
 
         const transkrip = nilaiCpmkList.map((item: any) => ({
             id: item.id,
@@ -343,8 +340,9 @@ export class TranskripService {
                 namaMk: item.mataKuliah.namaMk,
                 sks: item.mataKuliah.sks,
                 semester: item.semester
+
             },
-            tahunAjaran: item.tahunAjaran
+            tahunAjaran: item.tahunAjaranRef?.nama || '-'
         }));
 
         return {
@@ -376,10 +374,10 @@ export class TranskripService {
             include: { cplMappings: { include: { cpl: true } } }
         });
 
-        const nilaiCplList = await prisma.nilaiCpl.findMany({
+        const nilaiCplList = (await prisma.nilaiCpl.findMany({
             where: { mahasiswaId },
             include: { mataKuliah: true }
-        });
+        })).filter(n => n.mataKuliah);
 
         const cplIds = [...new Set(nilaiCplList.map(n => n.cplId))];
         const mkIds = [...new Set(nilaiCplList.map(n => n.mataKuliahId))];
@@ -452,3 +450,4 @@ export class TranskripService {
         });
     }
 }
+

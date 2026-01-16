@@ -19,7 +19,7 @@ export function useRekapKuesioner() {
     const [loading, setLoading] = useState(true);
 
     // Filter States
-    const [tahunAjaran, setTahunAjaran] = useState("2024/2025 Ganjil");
+    const [tahunAjaran, setTahunAjaran] = useState<string>("");
     const [semester, setSemester] = useState<string>("all");
     const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
     const [selectedProdi, setSelectedProdi] = useState<string>("all");
@@ -51,7 +51,7 @@ export function useRekapKuesioner() {
         setLoading(true);
         try {
             const params: any = {
-                tahunAjaran
+                tahunAjaranId: tahunAjaran
             };
 
             if (semester !== 'all') {
@@ -111,10 +111,10 @@ export function useRekapKuesioner() {
         setSelectedFakultas("all");
         setSelectedProdi("all");
         setSemester("all");
-        setTahunAjaran("2024/2025 Ganjil");
+        setTahunAjaran("");
     };
 
-    const isFiltered = !(selectedFakultas === "all" && selectedProdi === "all" && semester === "all" && tahunAjaran === "2024/2025 Ganjil");
+    const isFiltered = !(selectedFakultas === "all" && selectedProdi === "all" && semester === "all" && !tahunAjaran);
 
     return {
         role,

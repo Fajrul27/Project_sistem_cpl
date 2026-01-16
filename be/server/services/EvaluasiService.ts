@@ -3,10 +3,10 @@ import { prisma } from '../lib/prisma.js';
 import { gradingSchemas } from '../schemas/grading.schema.js';
 
 export class EvaluasiService {
-    static async getEvaluasiByMataKuliah(mataKuliahId: string, semester?: number, tahunAjaran?: string) {
+    static async getEvaluasiByMataKuliah(mataKuliahId: string, semester?: number, tahunAjaranId?: string) {
         const where: any = { mataKuliahId };
         if (semester) where.semester = semester;
-        if (tahunAjaran) where.tahunAjaran = tahunAjaran;
+        if (tahunAjaranId) where.tahunAjaranId = tahunAjaranId;
 
         return prisma.evaluasiMataKuliah.findMany({
             where,
@@ -27,7 +27,7 @@ export class EvaluasiService {
 
     static async submitEvaluasi(userId: string, data: any) {
         const validated = gradingSchemas.evaluasi.parse(data);
-        const { mataKuliahId, semester, tahunAjaran, kendala, rencanaPerbaikan } = validated;
+        const { mataKuliahId, semester, tahunAjaranId, kendala, rencanaPerbaikan } = validated;
 
         // Manual upsert to avoid unique key naming issues
         const existing = await prisma.evaluasiMataKuliah.findFirst({
@@ -35,7 +35,7 @@ export class EvaluasiService {
                 mataKuliahId,
                 dosenId: userId,
                 semester,
-                tahunAjaran
+                tahunAjaranId
             }
         });
 
@@ -55,7 +55,7 @@ export class EvaluasiService {
                 mataKuliahId,
                 dosenId: userId,
                 semester,
-                tahunAjaran,
+                tahunAjaranId,
                 kendala,
                 rencanaPerbaikan
             }

@@ -53,7 +53,7 @@ import {
 } from "@/services/kurikulum";
 import { usePermission } from "@/contexts/PermissionContext";
 
-export default function KurikulumPage() {
+export default function KurikulumPage({ isTabContent = false }: { isTabContent?: boolean }) {
     const [kurikulumList, setKurikulumList] = useState<Kurikulum[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -175,12 +175,14 @@ export default function KurikulumPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">Kurikulum</h1>
-                <p className="text-muted-foreground">
-                    Kelola data kurikulum, termasuk tahun mulai dan status aktif.
-                </p>
-            </div>
+            {!isTabContent && (
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-3xl font-bold tracking-tight">Kurikulum</h1>
+                    <p className="text-muted-foreground">
+                        Kelola data kurikulum, termasuk tahun mulai dan status aktif.
+                    </p>
+                </div>
+            )}
 
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">

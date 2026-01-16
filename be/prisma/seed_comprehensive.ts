@@ -118,6 +118,27 @@ async function main() {
         create: { nama: 'Kurikulum 2024', tahunMulai: 2024, isActive: true }
     });
 
+    // 1b. Roles
+    const rolesList = ['admin', 'dosen', 'kaprodi', 'mahasiswa'];
+    for (const r of rolesList) {
+        await prisma.role.upsert({
+            where: { name: r },
+            update: {},
+            create: {
+                name: r,
+                displayName: r.charAt(0).toUpperCase() + r.slice(1),
+                isActive: true
+            }
+        });
+    }
+
+    // 1c. Tahun Ajaran
+    const tahunAjaran = await prisma.tahunAjaran.upsert({
+        where: { nama: '2024/2025 Ganjil' },
+        update: {},
+        create: { nama: '2024/2025 Ganjil', isActive: true }
+    });
+
     // Jenis MK
     const jenisMkList = ['Wajib', 'Pilihan', 'Wajib Universitas', 'Wajib Fakultas'];
     const jenisMkRefs = [];
@@ -137,7 +158,11 @@ async function main() {
             email: 'admin@university.ac.id',
             passwordHash: hashedPassword,
             emailVerified: true,
-            role: { create: { role: 'admin' } },
+            role: {
+                create: {
+                    role: { connect: { name: 'admin' } }
+                }
+            },
             profile: {
                 create: {
                     namaLengkap: 'Super Admin',
@@ -182,7 +207,11 @@ async function main() {
                         email,
                         passwordHash: hashedPassword,
                         emailVerified: true,
-                        role: { create: { role: 'dosen' } },
+                        role: {
+                            create: {
+                                role: { connect: { name: 'dosen' } }
+                            }
+                        },
                         profile: {
                             create: {
                                 namaLengkap: `Dosen ${i} ${prodiData.code}`,
@@ -209,10 +238,15 @@ async function main() {
                 }
             });
             // Update user role to kaprodi
-            await prisma.userRole.update({
-                where: { userId: dosens[0].id },
-                data: { role: 'kaprodi' }
-            });
+            const kaprodiUserRole = await prisma.userRole.findUnique({ where: { userId: dosens[0].id } });
+            if (kaprodiUserRole) {
+                await prisma.userRole.update({
+                    where: { id: kaprodiUserRole.id },
+                    data: {
+                        role: { connect: { name: 'kaprodi' } }
+                    }
+                });
+            }
 
 
             // 4. Create CPL (10 CPLs)
@@ -347,7 +381,11 @@ async function main() {
                                 email,
                                 passwordHash: hashedPassword,
                                 emailVerified: true,
-                                role: { create: { role: 'mahasiswa' } },
+                                role: {
+                                    create: {
+                                        role: { connect: { name: 'mahasiswa' } }
+                                    }
+                                },
                                 profile: {
                                     create: {
                                         namaLengkap: `Mahasiswa ${nim}`,
@@ -385,11 +423,11 @@ async function main() {
                                 const score = 70 + Math.random() * 30; // Random score 70-100
                                 await prisma.nilaiCpmk.upsert({
                                     where: {
-                                        mahasiswaId_cpmkId_semester_tahunAjaran: {
+                                        mahasiswaId_cpmkId_semester_tahunAjaranId: {
                                             mahasiswaId: student.id,
                                             cpmkId: cpmk.id,
                                             semester: mk.semester,
-                                            tahunAjaran: '2024/2025' // Simplified
+                                            tahunAjaranId: tahunAjaran.id
                                         }
                                     },
                                     update: {},
@@ -400,7 +438,7 @@ async function main() {
                                         nilaiAkhir: score,
                                         semester: mk.semester,
                                         semesterId: mk.semesterId,
-                                        tahunAjaran: '2024/2025',
+                                        tahunAjaranId: tahunAjaran.id,
                                         isCalculated: true
                                     }
                                 });
@@ -413,12 +451,12 @@ async function main() {
                                     const score = 75 + Math.random() * 25;
                                     await prisma.nilaiCpl.upsert({
                                         where: {
-                                            mahasiswaId_cplId_mataKuliahId_semester_tahunAjaran: {
+                                            mahasiswaId_cplId_mataKuliahId_semester_tahunAjaranId: {
                                                 mahasiswaId: student.id,
                                                 cplId: mkCpl.cplId,
                                                 mataKuliahId: mk.id,
                                                 semester: mk.semester,
-                                                tahunAjaran: '2024/2025'
+                                                tahunAjaranId: tahunAjaran.id
                                             }
                                         },
                                         update: {},
@@ -429,7 +467,7 @@ async function main() {
                                             nilai: score,
                                             semester: mk.semester,
                                             semesterId: mk.semesterId,
-                                            tahunAjaran: '2024/2025',
+                                            tahunAjaranId: tahunAjaran.id,
                                             createdBy: dosens[0].id
                                         }
                                     });

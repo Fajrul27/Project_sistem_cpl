@@ -11,6 +11,6 @@ export const getTranskripProfilByMahasiswa = async (req: Request, res: Response)
     } catch (error: any) {
         console.error('Error calculating profil lulusan attainment:', error);
         if (error.message === 'MAHASISWA_OR_PRODI_NOT_FOUND') return res.status(404).json({ error: 'Mahasiswa or Prodi not found' });
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: error.message, stack: error.stack });
     }
 };

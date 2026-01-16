@@ -42,8 +42,7 @@ import RoleManagementPage from "./pages/dashboard/RoleManagement";
 import EvaluasiCPLPage from "./pages/dashboard/EvaluasiCPL";
 import FakultasPage from "./pages/dashboard/FakultasPage";
 import ActivityLogPage from "./pages/dashboard/ActivityLog";
-import KurikulumPage from "./pages/dashboard/Kurikulum";
-import AngkatanPage from "./pages/dashboard/Angkatan";
+import MasterAkademikPage from "./pages/dashboard/MasterAkademikPage";
 
 
 
@@ -94,18 +93,10 @@ const App = () => (
                   }
                 />
                 <Route
-                  path="kurikulum"
+                  path="master-akademik"
                   element={
-                    <RequireRole roles={["admin", "kaprodi"]} resource="kurikulum">
-                      <KurikulumPage />
-                    </RequireRole>
-                  }
-                />
-                <Route
-                  path="angkatan"
-                  element={
-                    <RequireRole roles={["admin", "kaprodi"]} resource="angkatan">
-                      <AngkatanPage />
+                    <RequireRole roles={["admin", "kaprodi"]} resource="tahun_ajaran">
+                      <MasterAkademikPage />
                     </RequireRole>
                   }
                 />

@@ -34,6 +34,6 @@ export const otherSchemas = {
         mataKuliahId: commonSchema.uuid,
         nilai: z.coerce.number().min(0).max(100),
         semester: z.coerce.number().int().positive(),
-        tahunAjaran: z.string().optional()
+        tahunAjaranId: commonSchema.uuid
     })
 };

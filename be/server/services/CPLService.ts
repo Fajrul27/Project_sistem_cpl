@@ -9,6 +9,7 @@ interface GetCplParams {
     limit?: number;
     q?: string;
     kategori?: string;
+    kurikulumId?: string;
 }
 
 export class CPLService {
@@ -24,7 +25,7 @@ export class CPLService {
     // --- CPL Operations ---
 
     static async getAllCpl(params: GetCplParams) {
-        const { userId, userRole, prodiId, page = 1, limit = 10, q, kategori } = params;
+        const { userId, userRole, prodiId, page = 1, limit = 10, q, kategori, kurikulumId } = params;
         const where: any = { isActive: true };
 
         // Search Logic
@@ -47,6 +48,11 @@ export class CPLService {
                     ]
                 }
             ];
+        }
+
+        // Kurikulum Filter
+        if (kurikulumId && kurikulumId !== 'all') {
+            where.kurikulumId = kurikulumId;
         }
 
         // Access Control Logic
@@ -127,7 +133,7 @@ export class CPLService {
         // Fetch all grades for this CPL
         const nilaiList = await prisma.nilaiCpl.findMany({
             where: { cplId: id },
-            include: { mataKuliah: true }
+            include: { mataKuliah: true, tahunAjaranRef: true }
         });
 
         if (nilaiList.length === 0) {
@@ -152,7 +158,8 @@ export class CPLService {
         // Trend
         const semesterMap = new Map();
         nilaiList.forEach(n => {
-            const key = `${n.tahunAjaran} - Sem ${n.semester}`;
+            const taName = n.tahunAjaranRef?.nama || n.tahunAjaranId || 'Unknown';
+            const key = `${taName} - Sem ${n.semester}`;
             if (!semesterMap.has(key)) semesterMap.set(key, { sum: 0, count: 0, semester: key });
             const entry = semesterMap.get(key);
             entry.sum += Number(n.nilai);

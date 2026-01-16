@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { api } from "@/lib/api";
+import { api, fetchTahunAjaranList } from "@/lib/api";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePermission } from "@/contexts/PermissionContext";
@@ -9,7 +9,7 @@ export interface EvaluasiData {
     id?: string;
     mataKuliahId: string;
     semester: number;
-    tahunAjaran: string;
+    tahunAjaranId: string;
     kendala: string;
     rencanaPerbaikan: string;
     status: string;
@@ -32,16 +32,36 @@ export function useEvaluasiMK() {
 
     // Default current semester/year (should be dynamic in real app)
     const currentSemester = 1;
-    const currentTahunAjaran = "2024/2025";
+    const [currentTahunAjaranId, setCurrentTahunAjaranId] = useState<string>("");
+    const [currentTahunAjaran, setCurrentTahunAjaran] = useState<string>("");
+
+    useEffect(() => {
+        const fetchActiveTA = async () => {
+            const res = await fetchTahunAjaranList();
+            const active = res.data.find((t: any) => t.isActive);
+            if (active) {
+                setCurrentTahunAjaranId(active.id);
+                setCurrentTahunAjaran(active.nama);
+            }
+        };
+        fetchActiveTA();
+    }, []);
 
     const [evaluasi, setEvaluasi] = useState<EvaluasiData>({
         mataKuliahId: mataKuliahId || "",
         semester: currentSemester,
-        tahunAjaran: currentTahunAjaran,
+        tahunAjaranId: currentTahunAjaranId,
         kendala: "",
         rencanaPerbaikan: "",
         status: "submitted"
     });
+
+    // Update state when Active TA is loaded
+    useEffect(() => {
+        if (currentTahunAjaranId && !evaluasi.tahunAjaranId) {
+            setEvaluasi(prev => ({ ...prev, tahunAjaranId: currentTahunAjaranId }));
+        }
+    }, [currentTahunAjaranId]);
 
     const fetchData = useCallback(async () => {
         if (!mataKuliahId) return;
@@ -49,7 +69,7 @@ export function useEvaluasiMK() {
         setLoading(true);
         try {
             const res = await api.get(`/evaluasi/mata-kuliah/${mataKuliahId}`, {
-                params: { semester: currentSemester, tahunAjaran: currentTahunAjaran }
+                params: { semester: currentSemester, tahunAjaranId: currentTahunAjaranId }
             });
 
             if (res.data && res.data.length > 0) {
@@ -61,7 +81,7 @@ export function useEvaluasiMK() {
         } finally {
             setLoading(false);
         }
-    }, [mataKuliahId, currentSemester, currentTahunAjaran]);
+    }, [mataKuliahId, currentSemester, currentTahunAjaranId]);
 
     useEffect(() => {
         fetchData();
@@ -90,7 +110,7 @@ export function useEvaluasiMK() {
                 await api.post("/evaluasi", {
                     mataKuliahId,
                     semester: currentSemester,
-                    tahunAjaran: currentTahunAjaran,
+                    tahunAjaranId: currentTahunAjaranId,
                     kendala: evaluasi.kendala,
                     rencanaPerbaikan: evaluasi.rencanaPerbaikan
                 });
@@ -122,7 +142,8 @@ export function useEvaluasiMK() {
         isKaprodi,
         isDosen,
         currentSemester,
-        currentTahunAjaran,
+        currentTahunAjaranId,
+        currentTahunAjaran, // Now correctly returning the name
         mataKuliahId // Exported in case needed
     };
 }

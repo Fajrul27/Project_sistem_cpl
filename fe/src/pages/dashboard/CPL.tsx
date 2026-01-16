@@ -22,6 +22,7 @@ import { useProfilLulusan } from "@/hooks/useProfilLulusan";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEvaluasiCPL } from "@/hooks/useEvaluasiCPL";
 import { useAngkatan } from "@/hooks/useAngkatan";
+import { useTahunAjaran } from "@/hooks/useTahunAjaran";
 
 type FormData = {
   kodeCpl: string;
@@ -55,6 +56,8 @@ const CPLPage = () => {
     setSearchTerm: setCplSearchTerm,
     setFakultasFilter,
     setProdiFilter,
+    setKategoriFilter,
+    setKurikulumFilter,
     resetFilters,
     pagination
   } = useCPL();
@@ -74,6 +77,7 @@ const CPLPage = () => {
   } = useEvaluasiCPL();
 
   const { angkatanList } = useAngkatan();
+  const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
 
   const [targetFilters, setTargetFilters] = useState({
     angkatan: "",
@@ -95,6 +99,11 @@ const CPLPage = () => {
 
   // Fetch targets when filters change and view is 'target'
   useEffect(() => {
+    // Note: We use cplFilters.kurikulumFilter instead of targetFilters.tahunAjaran for cleaner logic
+    // But we need targetFilters.tahunAjaran to track the 'period' context if it differs,
+    // though we agreed they should be the same.
+    // Let's use targetFilters values for fetching targets, which are synced with UI.
+
     if (viewMode === "target" && cplFilters.prodiFilter && cplFilters.prodiFilter !== 'all' && targetFilters.angkatan && targetFilters.tahunAjaran) {
       fetchTargets({
         prodiId: cplFilters.prodiFilter,
@@ -137,7 +146,20 @@ const CPLPage = () => {
     setSearchBy
   } = useProfilLulusan();
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Helper to update URL params
+  const updateParams = (updates: Record<string, string | null>) => {
+    const newParams = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === "") {
+        newParams.delete(key);
+      } else {
+        newParams.set(key, value);
+      }
+    });
+    setSearchParams(newParams, { replace: true });
+  };
 
   // Switch searchBy mode based on view
   useEffect(() => {
@@ -165,12 +187,56 @@ const CPLPage = () => {
   }, [viewMode, setCplSearchTerm, setProfilSearchTerm]);
 
   const currentSearchTerm = viewMode === "matrix" ? profilSearchTerm : cplFilters.searchTerm;
+
   const handleSearchChange = (val: string) => {
     if (viewMode === "matrix") {
       setProfilSearchTerm(val);
     } else {
       setCplSearchTerm(val);
+      updateParams({ q: val });
     }
+  };
+
+  const handleFakultasChange = (val: string) => {
+    setFakultasFilter(val);
+    updateParams({ fakultasId: val, prodiId: null }); // Reset prodi in URL too
+  };
+
+  const handleProdiChange = (val: string) => {
+    setProdiFilter(val);
+    updateParams({ prodiId: val });
+  };
+
+  const handleKategoriChange = (val: string) => {
+    setKategoriFilter(val);
+    updateParams({ kategori: val });
+  };
+
+  const handleKurikulumChange = (val: string) => {
+    setKurikulumFilter(val);
+    updateParams({ kurikulumId: val });
+    // Also sync target filter if in target mode or intended to stay in sync
+    setTargetFilters(prev => ({ ...prev, tahunAjaran: val }));
+  };
+
+  const handleViewChange = (val: string) => {
+    const v = val as "list" | "matrix" | "target";
+    setViewMode(v);
+    updateParams({ view: v });
+  };
+
+  const handleResetFilters = () => {
+    resetFilters();
+    updateParams({
+      fakultasId: null,
+      prodiId: null,
+      q: null,
+      angkatan: null,
+      tahunAjaran: null,
+      kategori: null,
+      kurikulumId: null
+    });
+    setTargetFilters({ angkatan: "", tahunAjaran: "" });
   };
 
   // Handle URL params for navigation from other pages
@@ -178,11 +244,12 @@ const CPLPage = () => {
     const viewParam = searchParams.get("view");
     const fakultasIdParam = searchParams.get("fakultasId");
     const prodiIdParam = searchParams.get("prodiId");
+    const qParam = searchParams.get("q");
+    const kategoriParam = searchParams.get("kategori");
+    const kurikulumIdParam = searchParams.get("kurikulumId");
 
-    if (viewParam === "matrix" && viewMode !== "matrix") {
-      setViewMode("matrix");
-    } else if (viewParam === "target" && viewMode !== "target") {
-      setViewMode("target");
+    if (viewParam && (viewParam === "matrix" || viewParam === "target" || viewParam === "list") && viewMode !== viewParam) {
+      setViewMode(viewParam as any);
     }
 
     if (fakultasIdParam && cplFilters.fakultasFilter !== fakultasIdParam) {
@@ -190,29 +257,33 @@ const CPLPage = () => {
     }
 
     if (prodiIdParam && cplFilters.prodiFilter !== prodiIdParam) {
-      // Small delay to ensure fakultas is set first if needed...
       setProdiFilter(prodiIdParam);
     }
 
+    if (qParam && cplFilters.searchTerm !== qParam) {
+      setCplSearchTerm(qParam);
+    }
+
+    if (kategoriParam && cplFilters.kategoriFilter !== kategoriParam) {
+      setKategoriFilter(kategoriParam);
+    }
+
+    if (kurikulumIdParam && cplFilters.kurikulumFilter !== kurikulumIdParam) {
+      setKurikulumFilter(kurikulumIdParam);
+      setTargetFilters(prev => ({ ...prev, tahunAjaran: kurikulumIdParam }));
+    }
+
     const angkatanParam = searchParams.get("angkatan");
-    const tahunAjaranParam = searchParams.get("tahunAjaran");
+    // const tahunAjaranParam = searchParams.get("tahunAjaran"); // Now using kurikulumId for target too
 
-    if (angkatanParam || tahunAjaranParam) {
+    if (angkatanParam) {
       setTargetFilters(prev => {
-        const nextAngkatan = angkatanParam || prev.angkatan;
-        const nextTA = tahunAjaranParam || prev.tahunAjaran;
-
-        if (prev.angkatan === nextAngkatan && prev.tahunAjaran === nextTA) {
-          return prev;
-        }
-        return {
-          ...prev,
-          angkatan: nextAngkatan,
-          tahunAjaran: nextTA
-        };
+        if (prev.angkatan === angkatanParam) return prev;
+        return { ...prev, angkatan: angkatanParam };
       });
     }
-  }, [searchParams, viewMode, cplFilters.fakultasFilter, cplFilters.prodiFilter, setViewMode, setFakultasFilter, setProdiFilter]);
+  }, [searchParams, viewMode, cplFilters, setViewMode, setFakultasFilter, setProdiFilter, setCplSearchTerm, setKategoriFilter, setKurikulumFilter]);
+
 
   useEffect(() => {
     fetchCPL();
@@ -300,10 +371,10 @@ const CPLPage = () => {
   const canViewAll = can('view_all', 'cpl') || role === 'admin';
 
   // Use full lists for filter options now since we don't have all data client-side
-  const kategoriOptions = kategoriList.map(k => k.nama);
+  const kategoriOptions = kategoriList; // .map(k => k.nama); Use full object for SelectItem
   const filterProdiOptions = prodiList;
 
-  const hasActiveFilter = cplFilters.fakultasFilter !== "" || cplFilters.prodiFilter !== "all";
+  const hasActiveFilter = cplFilters.fakultasFilter !== "" || cplFilters.prodiFilter !== "all" || cplFilters.kategoriFilter !== "all" || cplFilters.kurikulumFilter !== "all";
 
   if (loading && cplList.length === 0) {
     return (
@@ -332,7 +403,7 @@ const CPLPage = () => {
         {/* View Mode Switcher */}
         <div className="flex items-center space-x-4 border-b pb-4">
 
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "list" | "matrix" | "target")} className="w-[500px]">
+          <Tabs value={viewMode} onValueChange={handleViewChange} className="w-[500px]">
             <TabsList>
               <TabsTrigger value="list" className="flex items-center gap-2">
                 <ListIcon className="w-4 h-4" /> Daftar CPL
@@ -371,12 +442,12 @@ const CPLPage = () => {
                     <span className="sm:hidden">Filter</span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-64 space-y-4">
+                <PopoverContent align="end" className="w-[280px] space-y-4">
                   <div className="space-y-1">
                     <Label className="text-xs font-medium">Fakultas</Label>
                     <Select
                       value={cplFilters.fakultasFilter}
-                      onValueChange={setFakultasFilter}
+                      onValueChange={handleFakultasChange}
                     >
                       <SelectTrigger className="w-full h-8 text-xs">
                         <SelectValue placeholder="Semua Fakultas" />
@@ -395,7 +466,7 @@ const CPLPage = () => {
                       <Label className="text-xs font-medium">Program Studi</Label>
                       <Select
                         value={cplFilters.prodiFilter}
-                        onValueChange={setProdiFilter}
+                        onValueChange={handleProdiChange}
                         disabled={!cplFilters.fakultasFilter && canViewAll}
                       >
                         <SelectTrigger className="w-full h-8 text-xs">
@@ -411,11 +482,49 @@ const CPLPage = () => {
                       </Select>
                     </div>
                   )}
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Kurikulum</Label>
+                    <Select
+                      value={cplFilters.kurikulumFilter}
+                      onValueChange={handleKurikulumChange}
+                    >
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Semua Kurikulum" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Kurikulum</SelectItem>
+                        {kurikulumList.map((k) => (
+                          <SelectItem key={k.id} value={k.id}>
+                            {k.nama}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium">Kategori</Label>
+                    <Select
+                      value={cplFilters.kategoriFilter}
+                      onValueChange={handleKategoriChange}
+                    >
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Semua Kategori" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua Kategori</SelectItem>
+                        {kategoriList.map((k) => (
+                          <SelectItem key={k.id} value={k.nama}>
+                            {k.nama}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </PopoverContent>
               </Popover>
               <Button
                 variant="outline"
-                onClick={resetFilters}
+                onClick={handleResetFilters}
                 disabled={!hasActiveFilter && currentSearchTerm === ""}
               >
                 Reset Filter
@@ -515,17 +624,20 @@ const CPLPage = () => {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Tahun Ajaran</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">Kurikulum</Label>
                   <Select
-                    value={targetFilters.tahunAjaran}
-                    onValueChange={(v) => setTargetFilters({ ...targetFilters, tahunAjaran: v })}
+                    value={cplFilters.kurikulumFilter}
+                    onValueChange={handleKurikulumChange}
                   >
                     <SelectTrigger className="h-9 bg-background">
-                      <SelectValue placeholder="Pilih Tahun Ajaran" />
+                      <SelectValue placeholder="Pilih Kurikulum" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="2023/2024">2023/2024</SelectItem>
-                      <SelectItem value="2024/2025">2024/2025</SelectItem>
+                      {kurikulumList
+                        .filter(k => k.isActive || k.id === targetFilters.tahunAjaran)
+                        .map(k => (
+                          <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>

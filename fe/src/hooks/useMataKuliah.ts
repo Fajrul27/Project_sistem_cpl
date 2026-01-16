@@ -100,10 +100,11 @@ export const useMataKuliah = () => {
             if (kurikulumRes.data) {
                 setKurikulumList(kurikulumRes.data);
                 // Set default filter to active curriculum if available (and currently 'all')
-                const activeKurikulum = kurikulumRes.data.find((k: any) => k.isActive);
-                if (activeKurikulum && kurikulumFilter === 'all') {
-                    setKurikulumFilter(activeKurikulum.id);
-                }
+                // Auto-selection removed to keep filter state neutral (gray button) by default
+                // const activeKurikulum = kurikulumRes.data.find((k: any) => k.isActive);
+                // if (activeKurikulum && kurikulumFilter === 'all') {
+                //     setKurikulumFilter(activeKurikulum.id);
+                // }
             }
             if (jenisMkRes.data) setJenisMkList(jenisMkRes.data);
             if (fakultasRes.data) setFakultasList(fakultasRes.data);

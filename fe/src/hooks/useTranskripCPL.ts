@@ -222,7 +222,7 @@ export function useTranskripCPL() {
         try {
             const params: any = {};
             if (semester !== 'all') params.semester = semester;
-            if (tahunAjaran !== 'all') params.tahunAjaran = tahunAjaran;
+            if (tahunAjaran !== 'all') params.tahunAjaranId = tahunAjaran;
 
             const result = await api.get(`/transkrip-cpl/${selectedMahasiswa}`, { params });
             setTranskripList(result.data?.transkrip || []);

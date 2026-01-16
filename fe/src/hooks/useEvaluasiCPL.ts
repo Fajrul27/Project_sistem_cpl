@@ -45,7 +45,9 @@ export function useEvaluasiCPL() {
     const fetchTargets = useCallback(async (params: { prodiId: string; angkatan: string; tahunAjaran: string; semester?: string }) => {
         setLoading(true);
         try {
-            const response = await api.get('/evaluasi-cpl/targets', { params });
+            const apiParams = { ...params, tahunAjaranId: params.tahunAjaran };
+            delete (apiParams as any).tahunAjaran;
+            const response = await api.get('/evaluasi-cpl/targets', { params: apiParams });
             setTargets(response.data || []);
         } catch (error: any) {
             toast.error("Gagal memuat target CPL");
@@ -58,7 +60,9 @@ export function useEvaluasiCPL() {
     const saveTargets = useCallback(async (payload: { prodiId: string; angkatan: string; tahunAjaran: string; semester?: string; targets: { cplId: string; target: number }[] }) => {
         setLoading(true);
         try {
-            await api.post('/evaluasi-cpl/targets', payload);
+            const apiPayload = { ...payload, tahunAjaranId: payload.tahunAjaran };
+            delete (apiPayload as any).tahunAjaran;
+            await api.post('/evaluasi-cpl/targets', apiPayload);
             toast.success("Target CPL berhasil disimpan");
             return true;
         } catch (error: any) {
@@ -73,7 +77,9 @@ export function useEvaluasiCPL() {
     const fetchEvaluation = useCallback(async (params: { prodiId: string; angkatan: string; tahunAjaran: string; semester?: string }) => {
         setLoading(true);
         try {
-            const response = await api.get('/evaluasi-cpl/evaluation', { params });
+            const apiParams = { ...params, tahunAjaranId: params.tahunAjaran };
+            delete (apiParams as any).tahunAjaran;
+            const response = await api.get('/evaluasi-cpl/evaluation', { params: apiParams });
             setEvaluation(response.evaluation || []);
             setSummary(response.summary || { totalCpl: 0, tercapai: 0, tidakTercapai: 0 });
         } catch (error: any) {

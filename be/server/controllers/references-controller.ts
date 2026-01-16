@@ -32,4 +32,20 @@ export const getAllFakultasRef = async (req: Request, res: Response) => {
         console.error('Get fakultas error:', error);
         res.status(500).json({ error: 'Gagal mengambil data fakultas' });
     }
+
+};
+
+// Get all Tahun Ajaran
+export const getAllTahunAjaran = async (req: Request, res: Response) => {
+    try {
+        const { isActive } = req.query;
+        // Parse boolean if it comes as string "true"/"false"
+        const isActiveBool = isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+
+        const tahunAjaran = await ReferenceService.getAllTahunAjaran({ isActive: isActiveBool });
+        res.json({ data: tahunAjaran });
+    } catch (error) {
+        console.error('Get tahun ajaran error:', error);
+        res.status(500).json({ error: 'Gagal mengambil data tahun ajaran' });
+    }
 };

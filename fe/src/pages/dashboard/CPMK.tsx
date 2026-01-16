@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,6 +158,69 @@ const CPMKPage = () => {
         filters.selectedProdi !== "all" ||
         filters.mataKuliahFilter !== "all";
 
+    const accessibleProdis = useMemo(() => {
+        let prodis = prodiList;
+
+        // 1. Filter by Role
+        if (role === 'kaprodi' && profile?.prodiId) {
+            prodis = prodiList.filter(p => p.id === profile.prodiId);
+        } else if (role === 'dosen') {
+            const taughtProdiIds = new Set(mataKuliahList
+                .map(mk => {
+                    const mkData = mk.mataKuliah || mk;
+                    return mkData.prodiId;
+                })
+                .filter(Boolean));
+
+            if (taughtProdiIds.size > 0) {
+                prodis = prodiList.filter(p => taughtProdiIds.has(p.id));
+            }
+        }
+
+        // 2. Filter by Selected Fakultas (Admin)
+        if (role === 'admin' && filters.selectedFakultas !== 'all') {
+            prodis = prodis.filter(p => p.fakultasId === filters.selectedFakultas);
+        }
+        return prodis;
+    }, [prodiList, role, profile, mataKuliahList, filters.selectedFakultas]);
+
+    const filteredMataKuliahList = useMemo(() => {
+        // If "all" prodi is selected (or none), limit by accessible prodis (which might be limited by Fakultas)
+        // If a specific prodi is selected, backend theoretically filters it, but useCPMK logic relies on fetchMataKuliah param.
+        // However, if we just changed Fakultas, selectedProdi is 'all', so fetchMataKuliah got 'all'.
+        // So we must filter client side.
+
+        let mks = mataKuliahList;
+
+        // If specific Prodi selected, filter by it (double check)
+        if (filters.selectedProdi !== 'all') {
+            mks = mks.filter(mk => {
+                const prodiId = mk.mataKuliah?.prodiId || mk.prodiId;
+                return prodiId === filters.selectedProdi;
+            });
+        } else {
+            // Filter by accessible prodis (which accounts for Fakultas)
+            const accessibleProdiIds = new Set(accessibleProdis.map(p => p.id));
+            mks = mks.filter(mk => {
+                const prodiId = mk.mataKuliah?.prodiId || mk.prodiId;
+                return accessibleProdiIds.has(prodiId);
+            });
+        }
+
+        return mks;
+    }, [mataKuliahList, filters.selectedProdi, accessibleProdis]);
+
+    // Helper to get unique MKs for dropdowns
+    const uniqueMataKuliahOptions = useMemo(() => {
+        return filteredMataKuliahList.reduce((acc: any[], current) => {
+            const id = current.mataKuliah?.id || current.id;
+            if (!acc.find(item => (item.mataKuliah?.id || item.id) === id)) {
+                acc.push(current);
+            }
+            return acc;
+        }, []);
+    }, [filteredMataKuliahList]);
+
     return (
         <DashboardPage
             title="Kelola CPMK & Mapping"
@@ -232,36 +295,11 @@ const CPMKPage = () => {
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">Semua Prodi</SelectItem>
-                                                {(() => {
-                                                    let accessibleProdis = prodiList;
-
-                                                    // 1. Filter by Role
-                                                    if (role === 'kaprodi' && profile?.prodiId) {
-                                                        accessibleProdis = prodiList.filter(p => p.id === profile.prodiId);
-                                                    } else if (role === 'dosen') {
-                                                        const taughtProdiIds = new Set(mataKuliahList
-                                                            .map(mk => {
-                                                                const mkData = mk.mataKuliah || mk;
-                                                                return mkData.prodiId;
-                                                            })
-                                                            .filter(Boolean));
-
-                                                        if (taughtProdiIds.size > 0) {
-                                                            accessibleProdis = prodiList.filter(p => taughtProdiIds.has(p.id));
-                                                        }
-                                                    }
-
-                                                    // 2. Filter by Selected Fakultas (Admin)
-                                                    if (role === 'admin' && filters.selectedFakultas !== 'all') {
-                                                        accessibleProdis = accessibleProdis.filter(p => p.fakultasId === filters.selectedFakultas);
-                                                    }
-
-                                                    return accessibleProdis.map((prodi) => (
-                                                        <SelectItem key={prodi.id} value={prodi.id}>
-                                                            {prodi.nama}
-                                                        </SelectItem>
-                                                    ));
-                                                })()}
+                                                {accessibleProdis.map((prodi) => (
+                                                    <SelectItem key={prodi.id} value={prodi.id}>
+                                                        {prodi.nama}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -278,27 +316,17 @@ const CPMKPage = () => {
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">Semua Mata Kuliah</SelectItem>
-                                                {(() => {
-                                                    const uniqueMK = mataKuliahList.reduce((acc: any[], current) => {
-                                                        const id = current.mataKuliah?.id || current.id;
-                                                        if (!acc.find(item => (item.mataKuliah?.id || item.id) === id)) {
-                                                            acc.push(current);
-                                                        }
-                                                        return acc;
-                                                    }, []);
+                                                {uniqueMataKuliahOptions.map((mk: any) => {
+                                                    const id = mk.mataKuliah?.id || mk.id;
+                                                    const nama = mk.mataKuliah?.namaMk || mk.namaMk;
+                                                    const semester = mk.mataKuliah?.semester || mk.semester;
 
-                                                    return uniqueMK.map((mk: any) => {
-                                                        const id = mk.mataKuliah?.id || mk.id;
-                                                        const nama = mk.mataKuliah?.namaMk || mk.namaMk;
-                                                        const semester = mk.mataKuliah?.semester || mk.semester;
-
-                                                        return (
-                                                            <SelectItem key={id} value={id}>
-                                                                {nama} {semester ? `(Semester ${semester})` : ''}
-                                                            </SelectItem>
-                                                        );
-                                                    });
-                                                })()}
+                                                    return (
+                                                        <SelectItem key={id} value={id}>
+                                                            {nama} {semester ? `(Semester ${semester})` : ''}
+                                                        </SelectItem>
+                                                    );
+                                                })}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -597,34 +625,11 @@ const CPMKPage = () => {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="all">Semua Prodi</SelectItem>
-                                                    {(() => {
-                                                        let accessibleProdis = prodiList;
-
-                                                        if (role === 'kaprodi' && profile?.prodiId) {
-                                                            accessibleProdis = prodiList.filter(p => p.id === profile.prodiId);
-                                                        } else if (role === 'dosen') {
-                                                            const taughtProdiIds = new Set(mataKuliahList
-                                                                .map(mk => {
-                                                                    const mkData = mk.mataKuliah || mk;
-                                                                    return mkData.prodiId;
-                                                                })
-                                                                .filter(Boolean));
-
-                                                            if (taughtProdiIds.size > 0) {
-                                                                accessibleProdis = prodiList.filter(p => taughtProdiIds.has(p.id));
-                                                            }
-                                                        }
-
-                                                        if (role === 'admin' && filters.selectedFakultas !== 'all') {
-                                                            accessibleProdis = accessibleProdis.filter(p => p.fakultasId === filters.selectedFakultas);
-                                                        }
-
-                                                        return accessibleProdis.map((prodi) => (
-                                                            <SelectItem key={prodi.id} value={prodi.id}>
-                                                                {prodi.nama}
-                                                            </SelectItem>
-                                                        ));
-                                                    })()}
+                                                    {accessibleProdis.map((prodi) => (
+                                                        <SelectItem key={prodi.id} value={prodi.id}>
+                                                            {prodi.nama}
+                                                        </SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -642,26 +647,16 @@ const CPMKPage = () => {
                                                 <SelectValue placeholder="Pilih Mata Kuliah untuk melihat mapping..." />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {(() => {
-                                                    const uniqueMK = mataKuliahList.reduce((acc: any[], current) => {
-                                                        const id = current.mataKuliah?.id || current.id;
-                                                        if (!acc.find(item => (item.mataKuliah?.id || item.id) === id)) {
-                                                            acc.push(current);
-                                                        }
-                                                        return acc;
-                                                    }, []);
-
-                                                    return uniqueMK.map((mk: any) => {
-                                                        const id = mk.mataKuliah?.id || mk.id;
-                                                        const nama = mk.mataKuliah?.namaMk || mk.namaMk;
-                                                        const semester = mk.mataKuliah?.semester || mk.semester;
-                                                        return (
-                                                            <SelectItem key={id} value={id}>
-                                                                {nama} {semester ? `(Semester ${semester})` : ''}
-                                                            </SelectItem>
-                                                        );
-                                                    });
-                                                })()}
+                                                {uniqueMataKuliahOptions.map((mk: any) => {
+                                                    const id = mk.mataKuliah?.id || mk.id;
+                                                    const nama = mk.mataKuliah?.namaMk || mk.namaMk;
+                                                    const semester = mk.mataKuliah?.semester || mk.semester;
+                                                    return (
+                                                        <SelectItem key={id} value={id}>
+                                                            {nama} {semester ? `(Semester ${semester})` : ''}
+                                                        </SelectItem>
+                                                    );
+                                                })}
                                             </SelectContent>
                                         </Select>
                                     </div>

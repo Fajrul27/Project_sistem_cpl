@@ -152,7 +152,7 @@ export function DashboardLayout({ children, title, description, actions }: Dashb
                     </p>
                   </div>
                 )}
-                <div className="animate-in fade-in duration-500">
+                <div className="">
                   {content}
                 </div>
               </div>
