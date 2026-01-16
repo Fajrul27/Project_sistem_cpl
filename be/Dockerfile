@@ -14,8 +14,8 @@ RUN npm install
 # Copy all project files
 COPY . .
 
-# Copy SQL dump for database seeding
-COPY sistem_cpl.sql /app/sistem_cpl.sql
+# SQL file is mounted via docker-compose, no need to COPY here
+# COPY sistem_cpl.sql /app/sistem_cpl.sql
 
 # Generate Prisma Client AFTER copying all files
 RUN npx prisma generate
