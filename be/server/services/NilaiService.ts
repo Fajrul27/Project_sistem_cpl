@@ -246,13 +246,15 @@ export class NilaiService {
             }
         });
 
-        await calculateNilaiCpmk(
-            existing.mahasiswaId,
-            existing.teknikPenilaian.cpmkId,
-            existing.mataKuliahId,
-            existing.semester,
-            existing.tahunAjaranId
-        );
+        if (existing.tahunAjaranId) {
+            await calculateNilaiCpmk(
+                existing.mahasiswaId,
+                existing.teknikPenilaian.cpmkId,
+                existing.mataKuliahId,
+                existing.semester,
+                existing.tahunAjaranId
+            );
+        }
 
         return updated;
     }
@@ -272,13 +274,15 @@ export class NilaiService {
 
         await prisma.nilaiTeknikPenilaian.delete({ where: { id } });
 
-        await calculateNilaiCpmk(
-            existing.mahasiswaId,
-            existing.teknikPenilaian.cpmkId,
-            existing.mataKuliahId,
-            existing.semester,
-            existing.tahunAjaranId
-        );
+        if (existing.tahunAjaranId) {
+            await calculateNilaiCpmk(
+                existing.mahasiswaId,
+                existing.teknikPenilaian.cpmkId,
+                existing.mataKuliahId,
+                existing.semester,
+                existing.tahunAjaranId
+            );
+        }
     }
 
     static async generateTemplate(mataKuliahId: string, kelasId?: string, userId?: string, userRole?: string, semester?: number, tahunAjaranId?: string) {

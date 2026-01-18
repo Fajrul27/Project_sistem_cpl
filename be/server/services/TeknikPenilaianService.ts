@@ -163,20 +163,22 @@ export class TeknikPenilaianService {
                 select: {
                     mahasiswaId: true,
                     semester: true,
-                    tahunAjaran: true
+                    tahunAjaranId: true
                 },
-                distinct: ['mahasiswaId', 'semester', 'tahunAjaran']
+                distinct: ['mahasiswaId', 'semester', 'tahunAjaranId']
             });
 
 
             for (const grade of affectedGrades) {
-                await calculateNilaiCpmk(
-                    grade.mahasiswaId,
-                    cpmkId,
-                    mataKuliahId,
-                    grade.semester,
-                    grade.tahunAjaran
-                );
+                if (grade.tahunAjaranId) {
+                    await calculateNilaiCpmk(
+                        grade.mahasiswaId,
+                        cpmkId,
+                        mataKuliahId,
+                        grade.semester,
+                        grade.tahunAjaranId
+                    );
+                }
             }
         } catch (error) {
             console.error('Recalculate batch error:', error);

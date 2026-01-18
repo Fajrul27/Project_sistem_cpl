@@ -59,7 +59,7 @@ export const getKuesionerStats = async (req: Request, res: Response) => {
             userRole,
             prodiId: prodiId as string,
             fakultasId: fakultasId as string,
-            tahunAjaran: tahunAjaran as string,
+            tahunAjaranId: tahunAjaran as string,
             semester: semester as string
         });
 

@@ -301,7 +301,7 @@ export async function recalculateCpmkBulk(cpmkId: string) {
         for (let i = 0; i < grades.length; i += BATCH_SIZE) {
             const batch = grades.slice(i, i + BATCH_SIZE);
             await Promise.all(batch.map(g =>
-                calculateNilaiCpmk(g.mahasiswaId, cpmkId, g.mataKuliahId, g.semester, g.tahunAjaranId)
+                g.tahunAjaranId ? calculateNilaiCpmk(g.mahasiswaId, cpmkId, g.mataKuliahId, g.semester, g.tahunAjaranId) : Promise.resolve()
             ));
         }
 

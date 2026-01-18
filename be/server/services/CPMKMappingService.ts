@@ -200,17 +200,19 @@ export class CPMKMappingService {
         try {
             const affectedGrades = await prisma.nilaiCpmk.findMany({
                 where: { cpmkId },
-                select: { mahasiswaId: true, semester: true, tahunAjaran: true },
-                distinct: ['mahasiswaId', 'semester', 'tahunAjaran']
+                select: { mahasiswaId: true, semester: true, tahunAjaranId: true },
+                distinct: ['mahasiswaId', 'semester', 'tahunAjaranId']
             });
 
             for (const grade of affectedGrades) {
-                await calculateNilaiCplFromCpmk(
-                    grade.mahasiswaId,
-                    mataKuliahId,
-                    grade.semester,
-                    grade.tahunAjaran
-                );
+                if (grade.tahunAjaranId) {
+                    await calculateNilaiCplFromCpmk(
+                        grade.mahasiswaId,
+                        mataKuliahId,
+                        grade.semester,
+                        grade.tahunAjaranId
+                    );
+                }
             }
         } catch (error) {
             console.error('Recalculate CPL batch error:', error);
