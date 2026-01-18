@@ -152,16 +152,23 @@ const Dashboard = () => {
       {canEdit && (
         <Card className="mb-6 animate-in fade-in slide-in-from-top-4">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Aksi Cepat</CardTitle>
+            <CardTitle className="text-base md:text-lg">Aksi Cepat</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-4">
-            <Button onClick={() => navigate('/dashboard/nilai-teknik')}>
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Input Nilai CPL
+          <CardContent className="flex flex-col sm:flex-row flex-wrap gap-3">
+            <Button
+              onClick={() => navigate('/dashboard/nilai-teknik')}
+              className="w-full sm:w-auto justify-start"
+            >
+              <BarChart3 className="mr-2 h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Input Nilai CPL</span>
             </Button>
-            <Button variant="outline" onClick={() => navigate('/dashboard/mata-kuliah')}>
-              <BookOpen className="mr-2 h-4 w-4" />
-              Mata Kuliah Saya
+            <Button
+              variant="outline"
+              onClick={() => navigate('/dashboard/mata-kuliah')}
+              className="w-full sm:w-auto justify-start"
+            >
+              <BookOpen className="mr-2 h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Mata Kuliah Saya</span>
             </Button>
           </CardContent>
         </Card>

@@ -62,7 +62,7 @@ export const DashboardFilterBar = ({ onFilterChange, filters = {}, role }: Dashb
     const hasActiveFilters = Object.values(filters).some(val => val !== "" && val !== undefined && val !== null);
 
     return (
-        <div className="flex flex-wrap items-center gap-4 p-4 bg-card rounded-lg border shadow-sm mb-6 animate-in fade-in slide-in-from-top-4">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 p-4 bg-card rounded-lg border shadow-sm mb-6 animate-in fade-in slide-in-from-top-4">
             <div className="flex items-center gap-2 text-muted-foreground">
                 <Filter className="h-4 w-4" />
                 <span className="text-sm font-medium">Filter:</span>
@@ -70,7 +70,7 @@ export const DashboardFilterBar = ({ onFilterChange, filters = {}, role }: Dashb
 
             {role === 'admin' && (
                 <Select value={filters.prodiId || ""} onValueChange={(val) => handleFilterChange("prodiId", val)}>
-                    <SelectTrigger className="w-[200px] h-9">
+                    <SelectTrigger className="w-full sm:w-[200px] h-9">
                         <SelectValue placeholder="Semua Program Studi">
                             {filters.prodiId && filters.prodiId !== "all"
                                 ? prodiOptions.find(p => p.id === filters.prodiId)?.nama
@@ -87,7 +87,7 @@ export const DashboardFilterBar = ({ onFilterChange, filters = {}, role }: Dashb
             )}
 
             <Select value={filters.semester ? filters.semester.toString() : ""} onValueChange={(val) => handleFilterChange("semester", val)}>
-                <SelectTrigger className="w-[140px] h-9">
+                <SelectTrigger className="w-full sm:w-[140px] h-9">
                     <SelectValue placeholder="Semester">
                         {filters.semester ? `Semester ${filters.semester}` : "Semester"}
                     </SelectValue>
@@ -100,7 +100,7 @@ export const DashboardFilterBar = ({ onFilterChange, filters = {}, role }: Dashb
             </Select>
 
             <Select value={filters.angkatan ? filters.angkatan.toString() : ""} onValueChange={(val) => handleFilterChange("angkatan", val)}>
-                <SelectTrigger className="w-[140px] h-9">
+                <SelectTrigger className="w-full sm:w-[140px] h-9">
                     <SelectValue placeholder="Angkatan">
                         {filters.angkatan ? filters.angkatan : "Angkatan"}
                     </SelectValue>
@@ -117,7 +117,7 @@ export const DashboardFilterBar = ({ onFilterChange, filters = {}, role }: Dashb
                     variant="outline"
                     size="sm"
                     onClick={clearFilters}
-                    className="ml-auto h-9 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    className="sm:ml-auto h-9 w-full sm:w-auto text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
                 >
                     <X className="h-4 w-4 mr-2" />
                     Reset Filter
