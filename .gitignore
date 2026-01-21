@@ -45,7 +45,7 @@ Thumbs.db
 # Local backups
 *.bak
 *.tmp
-
+git add.txt
 # Lock files (optional, jika sering konflik)
 # package-lock.json
 # yarn.lock
