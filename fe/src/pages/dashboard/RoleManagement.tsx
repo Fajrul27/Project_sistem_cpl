@@ -142,7 +142,7 @@ const RoleManagementPage = () => {
 
     const initializeDefaults = async () => {
         try {
-            await api.post('/roles/init');
+            await api.post('/roles/init', {});
             toast.success('Default role metadata berhasil diinisialisasi');
             fetchRoles();
         } catch (error) {

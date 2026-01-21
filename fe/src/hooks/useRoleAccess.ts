@@ -41,7 +41,7 @@ export const useRoleAccess = () => {
 
     const updatePermission = (role: string, resource: string, action: string, isEnabled: boolean) => {
         setPendingChanges(prev => prev.map(p =>
-            (p.role === role && p.resource === resource && p.action === action)
+            (p.roleId === role && p.resource === resource && p.action === action)
                 ? { ...p, isEnabled }
                 : p
         ));

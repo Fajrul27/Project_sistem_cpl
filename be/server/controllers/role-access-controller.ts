@@ -25,12 +25,8 @@ export const getPermissions = async (req: Request, res: Response) => {
 export const exportPermissions = async (req: Request, res: Response) => {
     try {
         const permissions = await prisma.rolePermission.findMany({
-            select: {
-                roleId: true,
-                role: { select: { name: true } },
-                resource: true,
-                action: true,
-                isEnabled: true
+            include: {
+                role: { select: { name: true } }
             },
             orderBy: [
                 { roleId: 'asc' },
@@ -39,9 +35,24 @@ export const exportPermissions = async (req: Request, res: Response) => {
             ]
         });
 
+        // Flatten the data for export
+        const exportData = {
+            exportDate: new Date().toISOString(),
+            permissions: permissions.map(p => ({
+                roleName: p.role.name,
+                resource: p.resource,
+                action: p.action,
+                isEnabled: p.isEnabled
+            }))
+        };
+
+        // Generate filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const filename = `hak-akses-role-${timestamp}.json`;
+
         res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', 'attachment; filename="role-permissions.json"');
-        res.json(permissions);
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.json(exportData);
     } catch (error) {
         console.error('Error exporting permissions:', error);
         res.status(500).json({ error: 'Gagal export permissions' });

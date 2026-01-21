@@ -86,11 +86,9 @@ export function AppSidebar() {
           : item.roles.includes(role as UserRole);
       });
 
-      // If user has access to group AND it has visible items, show it
-      // For the group header itself, we check if it has a resource (rare) or if at least one child is visible
-      // OR if the group itself has strict role requirements (fallback)
-      const isGroupVisible = (group.resource ? can('view', group.resource) : group.roles.includes(role as UserRole))
-        && visibleItems.length > 0;
+      // Show group only if it has visible items after permission filtering
+      // This ensures RBAC is properly enforced - don't fallback to role array
+      const isGroupVisible = visibleItems.length > 0;
 
       if (isGroupVisible) {
         return { ...group, items: visibleItems };

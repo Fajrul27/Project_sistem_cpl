@@ -6,17 +6,17 @@ import { KuesionerService } from '../services/KuesionerService.js';
 export const getMyKuesioner = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).userId;
-        const { semester, tahunAjaran } = req.query;
+        const { semester, tahunAjaranId } = req.query;
 
 
-        if (!semester || !tahunAjaran) {
-            return res.status(400).json({ error: 'Semester dan Tahun Ajaran wajib diisi' });
+        if (!semester) {
+            return res.status(400).json({ error: 'Semester wajib diisi' });
         }
 
         const data = await KuesionerService.getMyKuesioner(
             userId,
             Number(semester),
-            String(tahunAjaran)
+            tahunAjaranId ? String(tahunAjaranId) : undefined
         );
 
         res.json(data);

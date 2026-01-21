@@ -125,12 +125,15 @@ export class DashboardService {
             }
 
             // Calculate User Count for Dosen
-            customUserCount = await prisma.profile.count({
+            // Count unique students who have grades in courses taught by this dosen
+            const studentIdsInCourses = await prisma.nilaiCpl.findMany({
                 where: {
-                    user: { role: { role: { name: 'mahasiswa' } } },
-                    ...userFilter.profile
-                }
+                    mataKuliahId: { in: myMkIds }
+                },
+                distinct: ['mahasiswaId'],
+                select: { mahasiswaId: true }
             });
+            customUserCount = studentIdsInCourses.length;
         }
 
         // --- DATA FETCHING ---

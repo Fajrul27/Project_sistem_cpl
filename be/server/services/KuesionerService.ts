@@ -4,13 +4,18 @@ import { gradingSchemas } from '../schemas/grading.schema.js';
 import { Prisma } from '@prisma/client';
 
 export class KuesionerService {
-    static async getMyKuesioner(userId: string, semester: number, tahunAjaranId: string) {
+    static async getMyKuesioner(userId: string, semester: number, tahunAjaranId?: string) {
+        const where: any = {
+            mahasiswaId: userId,
+            semester
+        };
+
+        if (tahunAjaranId) {
+            where.tahunAjaranId = tahunAjaranId;
+        }
+
         return prisma.penilaianTidakLangsung.findMany({
-            where: {
-                mahasiswaId: userId,
-                semester,
-                tahunAjaranId
-            },
+            where,
             include: { cpl: true }
         });
     }

@@ -16,8 +16,13 @@ export const getPengampuByMataKuliah = async (req: Request, res: Response) => {
 // Get all assignments (with filters)
 export const getAllAssignments = async (req: Request, res: Response) => {
     try {
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
         const { prodiId, semester, fakultasId } = req.query;
+
         const filters = {
+            userId,
+            userRole,
             prodiId: prodiId as string,
             semester: semester ? Number(semester) : undefined,
             fakultasId: fakultasId as string

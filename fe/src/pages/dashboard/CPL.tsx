@@ -415,9 +415,11 @@ const CPLPage = () => {
               <TabsTrigger value="list" className="flex items-center gap-2">
                 <ListIcon className="w-4 h-4" /> Daftar CPL
               </TabsTrigger>
-              <TabsTrigger value="matrix" className="flex items-center gap-2">
-                <TableIcon className="w-4 h-4" /> Matrix Mapping
-              </TabsTrigger>
+              {(can('view', 'cpl') || role === 'admin') && (
+                <TabsTrigger value="matrix" className="flex items-center gap-2">
+                  <TableIcon className="w-4 h-4" /> Matrix Mapping
+                </TabsTrigger>
+              )}
               <TabsTrigger value="target" className="flex items-center gap-2">
                 <Target className="w-4 h-4" /> Target CPL
               </TabsTrigger>

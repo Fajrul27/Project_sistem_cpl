@@ -1,6 +1,5 @@
-
 import { Router } from 'express';
-import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { authMiddleware, requirePermission, requireRole } from '../middleware/auth.js';
 import {
   getDashboardStats,
   getDosenAnalysis,
@@ -10,14 +9,12 @@ import {
 const router = Router();
 
 // Get dashboard statistics
-router.get('/stats', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), getDashboardStats);
+router.get('/stats', authMiddleware, requirePermission('view', 'dashboard'), getDashboardStats);
 
-// Get Dosen Analysis
+// Get Dosen Analysis - for kaprodi/admin only (analytics feature)
 router.get('/dosen', authMiddleware, requireRole('admin', 'kaprodi'), getDosenAnalysis);
 
-// Get Student Evaluation
+// Get Student Evaluation - for kaprodi/admin only (analytics feature)
 router.get('/students', authMiddleware, requireRole('admin', 'kaprodi'), getStudentEvaluation);
 
 export default router;
-
-

@@ -242,9 +242,11 @@ const CPMKPage = () => {
                             <TabsTrigger value="list" className="flex items-center gap-2">
                                 <ListIcon className="w-4 h-4" /> Daftar CPMK
                             </TabsTrigger>
-                            <TabsTrigger value="matrix" className="flex items-center gap-2">
-                                <TableIcon className="w-4 h-4" /> Matrix Mapping
-                            </TabsTrigger>
+                            {canEdit && (
+                                <TabsTrigger value="matrix" className="flex items-center gap-2">
+                                    <TableIcon className="w-4 h-4" /> Matrix Mapping
+                                </TabsTrigger>
+                            )}
                         </TabsList>
                     </Tabs>
                 </div>

@@ -242,7 +242,7 @@ export const StaffList = () => {
                     prodiId: editData.prodi || null
                 });
             }
-            toast.success(`Data staff "${editingUser?.profile?.namaLengkap || editingUser?.email || 'Unknown'}" berhasil diperbarui`);
+            toast.success(`Data staff "${editingUser?.namaLengkap || editingUser?.email || 'Unknown'}" berhasil diperbarui`);
             setEditingUser(null);
             loadUsers();
         } catch (err: any) {

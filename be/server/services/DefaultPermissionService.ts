@@ -37,7 +37,7 @@ export class DefaultPermissionService {
             'nilai_teknik', 'kuesioner', 'dosen_pengampu', 'kaprodi_data', 'mahasiswa',
             'users', 'transkrip_cpl', 'analisis_cpl', 'evaluasi_cpl', 'rekap_kuesioner',
             'settings', 'evaluasi_mk', 'role_permissions', 'default_role_permissions', 'fakultas',
-            'roles', 'audit_log'
+            'roles', 'audit_log', 'tahun_ajaran'
         ];
 
         const actions = ['view', 'create', 'edit', 'delete', 'view_all', 'verify'];
@@ -51,22 +51,31 @@ export class DefaultPermissionService {
 
         const defaultPermissions: any[] = [];
 
-        // Helper logic (same as was in controller)
+        // Helper logic for system default permissions (auto-generated from database)
         const shouldHaveAccess = (role: string, resource: string, action: string): boolean => {
             // 1. ADMIN: Has access to EVERYTHING
             if (role === 'admin') return true;
 
             // 2. KAPRODI
             if (role === 'kaprodi') {
-                // Full Management Access (CRUD)
-                if (['visi_misi', 'profil_lulusan', 'cpl', 'mata_kuliah', 'cpmk', 'kaprodi_data', 'mahasiswa', 'evaluasi_cpl', 'analisis_cpl', 'evaluasi_mk', 'dosen_pengampu', 'nilai_teknik'].includes(resource)) {
-                    if (resource === 'evaluasi_mk' && action === 'verify') return true;
-                    if (action === 'view_all') return true;
-                    return ['view', 'create', 'edit', 'delete'].includes(action);
+                // Full CRUD + view_all access
+                if (['analisis_cpl', 'cpl', 'cpmk', 'dosen_pengampu', 'evaluasi_cpl', 'kaprodi_data', 'mahasiswa', 'mata_kuliah', 'nilai_teknik', 'profil_lulusan', 'tahun_ajaran', 'visi_misi'].includes(resource)) {
+                    return ['view', 'create', 'edit', 'delete', 'view_all'].includes(action);
                 }
-                // View Only Access
-                if (['dashboard', 'users', 'transkrip_cpl', 'rekap_kuesioner', 'settings', 'fakultas'].includes(resource)) {
-                    if (action === 'view_all') return resource === 'rekap_kuesioner' || resource === 'fakultas';
+                // Dashboard: edit, verify, view
+                if (resource === 'dashboard') {
+                    return ['edit', 'verify', 'view'].includes(action);
+                }
+                // Evaluasi MK: Full access including verify
+                if (resource === 'evaluasi_mk') {
+                    return ['view', 'create', 'edit', 'delete', 'verify', 'view_all'].includes(action);
+                }
+                // View + view_all only
+                if (['fakultas', 'rekap_kuesioner'].includes(resource)) {
+                    return ['view', 'view_all'].includes(action);
+                }
+                // View only
+                if (['settings', 'transkrip_cpl', 'users'].includes(resource)) {
                     return action === 'view';
                 }
                 return false;
@@ -74,14 +83,20 @@ export class DefaultPermissionService {
 
             // 3. DOSEN
             if (role === 'dosen') {
-                // Operational Access
-                if (['nilai_teknik', 'evaluasi_cpl', 'evaluasi_mk'].includes(resource)) {
-                    if (resource === 'evaluasi_mk') return ['view', 'edit', 'create'].includes(action);
-                    return true;
+                // Full CRUD access
+                if (['cpmk', 'nilai_teknik'].includes(resource)) {
+                    return ['view', 'create', 'edit', 'delete'].includes(action);
                 }
-                // View Only Access
-                if (['dashboard', 'visi_misi', 'profil_lulusan', 'cpl', 'mata_kuliah', 'cpmk', 'mahasiswa', 'transkrip_cpl', 'analisis_cpl', 'users', 'fakultas'].includes(resource)) {
-                    if (resource === 'fakultas' && action === 'view') return true;
+                // Create + view only for evaluasi_cpl
+                if (resource === 'evaluasi_cpl') {
+                    return ['view', 'create'].includes(action);
+                }
+                // Evaluasi MK: create, edit, view (no delete/verify)
+                if (resource === 'evaluasi_mk') {
+                    return ['view', 'create', 'edit'].includes(action);
+                }
+                // View only access
+                if (['analisis_cpl', 'cpl', 'dashboard', 'fakultas', 'mahasiswa', 'mata_kuliah', 'profil_lulusan', 'transkrip_cpl', 'visi_misi'].includes(resource)) {
                     return action === 'view';
                 }
                 return false;
@@ -89,12 +104,8 @@ export class DefaultPermissionService {
 
             // 4. MAHASISWA
             if (role === 'mahasiswa') {
-                // Input Kuesioner
-                if (resource === 'kuesioner') {
-                    return ['view', 'create', 'edit'].includes(action);
-                }
-                // View Only Access
-                if (['dashboard', 'visi_misi', 'profil_lulusan', 'transkrip_cpl', 'fakultas'].includes(resource)) {
+                // View only access
+                if (['dashboard', 'fakultas', 'kuesioner', 'mata_kuliah', 'profil_lulusan', 'transkrip_cpl', 'visi_misi'].includes(resource)) {
                     return action === 'view';
                 }
                 return false;
@@ -138,7 +149,7 @@ export class DefaultPermissionService {
             'nilai_teknik', 'transkrip_cpl', 'analisis_cpl', 'evaluasi_cpl', 'rekap_kuesioner',
             'dosen_pengampu', 'kaprodi_data', 'mahasiswa', 'users', 'fakultas',
             'roles', 'role_permissions', 'default_role_permissions',
-            'settings', 'evaluasi_mk', 'kuesioner'
+            'settings', 'evaluasi_mk', 'kuesioner', 'audit_log', 'tahun_ajaran'
         ];
         const ALL_ACTIONS = ['view', 'create', 'edit', 'delete', 'view_all', 'verify'];
 

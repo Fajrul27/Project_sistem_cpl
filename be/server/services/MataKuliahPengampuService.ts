@@ -35,11 +35,37 @@ export class MataKuliahPengampuService {
         });
     }
 
-    static async getAllAssignments(filters?: { prodiId?: string; semester?: number; fakultasId?: string }) {
+    static async getAllAssignments(filters?: {
+        userId?: string;
+        userRole?: string;
+        prodiId?: string;
+        semester?: number;
+        fakultasId?: string
+    }) {
         const where: any = {};
 
+        // Role-based filtering
+        if (filters?.userRole === 'dosen' && filters?.userId) {
+            // Dosen can only see their own assignments
+            where.dosenId = filters.userId;
+        } else if (filters?.userRole === 'kaprodi' && filters?.userId) {
+            // Kaprodi can only see assignments from their prodi
+            const profile = await prisma.profile.findUnique({
+                where: { userId: filters.userId },
+                select: { prodiId: true, programStudi: true }
+            });
+
+            if (profile?.prodiId) {
+                where.mataKuliah = { prodiId: profile.prodiId };
+            } else if (profile?.programStudi) {
+                where.mataKuliah = { programStudi: profile.programStudi };
+            }
+        }
+        // Admin has no restrictions
+
+        // Apply additional filters
         if (filters?.semester) {
-            where.mataKuliah = { semester: filters.semester };
+            where.mataKuliah = { ...where.mataKuliah, semester: filters.semester };
         }
 
         if (filters?.prodiId) {

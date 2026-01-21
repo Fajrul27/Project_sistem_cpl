@@ -62,6 +62,7 @@ export const PermissionProvider = ({ children }: { children: ReactNode }) => {
         );
 
         // Debug logging
+        console.log(`[Permission Check] role=${role}, resource=${resource}, action=${action}, found=${!!permission}, enabled=${permission?.isEnabled}`);
 
         return permission ? permission.isEnabled : false;
     }, [permissions, role]);
