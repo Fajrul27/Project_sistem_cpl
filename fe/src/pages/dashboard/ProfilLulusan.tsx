@@ -188,83 +188,91 @@ export default function ProfilLulusanPage() {
     };
 
     return (
-        <DashboardPage title="Profil Lulusan" description="Kelola profil karir yang diharapkan dari lulusan">
+        <DashboardPage
+            title="Profil Lulusan"
+            description={role === 'mahasiswa'
+                ? "Lihat profil karir yang diharapkan dari lulusan program studi Anda"
+                : "Kelola profil karir yang diharapkan dari lulusan"
+            }
+        >
             <div className="space-y-6">
-                {/* Filter and Search */}
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative flex-1 min-w-[220px] max-w-sm">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Cari profil atau program studi..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9"
-                        />
-                    </div>
-                    {role === "admin" && (
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={selectedProdi ? "default" : "outline"}
-                                    size="sm"
-                                    className="gap-2"
-                                >
-                                    <SlidersHorizontal className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Filter</span>
-                                    <span className="sm:hidden">Filter</span>
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent align="end" className="w-64 space-y-4">
-                                <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Fakultas</Label>
-                                    <Select value={selectedFakultas} onValueChange={(val) => {
-                                        setSelectedFakultas(val);
-                                        setSelectedProdi(""); // Reset Prodi when Fakultas changes
-                                    }}>
-                                        <SelectTrigger className="w-full h-8 text-xs">
-                                            <SelectValue placeholder="Semua Fakultas" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {fakultasList.map(f => (
-                                                <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs font-medium">Program Studi</Label>
-                                    <Select
-                                        value={selectedProdi}
-                                        onValueChange={setSelectedProdi}
-                                        disabled={!selectedFakultas}
+                {/* Filter and Search - Hidden for mahasiswa */}
+                {role !== 'mahasiswa' && (
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative flex-1 min-w-[220px] max-w-sm">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Cari profil atau program studi..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-9"
+                            />
+                        </div>
+                        {role === "admin" && (
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant={selectedProdi ? "default" : "outline"}
+                                        size="sm"
+                                        className="gap-2"
                                     >
-                                        <SelectTrigger className="w-full h-8 text-xs">
-                                            <SelectValue placeholder="Semua Program Studi" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {prodiList.map(p => (
-                                                <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                    )}
-                    <Button
-                        variant="outline"
-                        onClick={() => {
-                            setSearchTerm("");
-                            if (role === "admin") {
-                                setSelectedFakultas("");
-                                setSelectedProdi("");
-                            }
-                        }}
-                        disabled={!searchTerm && !selectedProdi && !selectedFakultas}
-                    >
-                        Reset Filter
-                    </Button>
-                </div>
+                                        <SlidersHorizontal className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Filter</span>
+                                        <span className="sm:hidden">Filter</span>
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent align="end" className="w-64 space-y-4">
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">Fakultas</Label>
+                                        <Select value={selectedFakultas} onValueChange={(val) => {
+                                            setSelectedFakultas(val);
+                                            setSelectedProdi(""); // Reset Prodi when Fakultas changes
+                                        }}>
+                                            <SelectTrigger className="w-full h-8 text-xs">
+                                                <SelectValue placeholder="Semua Fakultas" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {fakultasList.map(f => (
+                                                    <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">Program Studi</Label>
+                                        <Select
+                                            value={selectedProdi}
+                                            onValueChange={setSelectedProdi}
+                                            disabled={!selectedFakultas}
+                                        >
+                                            <SelectTrigger className="w-full h-8 text-xs">
+                                                <SelectValue placeholder="Semua Program Studi" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {prodiList.map(p => (
+                                                    <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        )}
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setSearchTerm("");
+                                if (role === "admin") {
+                                    setSelectedFakultas("");
+                                    setSelectedProdi("");
+                                }
+                            }}
+                            disabled={!searchTerm && !selectedProdi && !selectedFakultas}
+                        >
+                            Reset Filter
+                        </Button>
+                    </div>
+                )}
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
@@ -342,11 +350,6 @@ export default function ProfilLulusanPage() {
                                                                         Number(item.percentage || 0) >= Number(item.targetKetercapaian || 70) ? "text-green-600 font-bold" : "text-red-500 font-bold"
                                                                     }>
                                                                         {Number(item.percentage || 0) >= Number(item.targetKetercapaian || 70) ? "Tercapai" : "Belum Tercapai"}
-                                                                        <div className="text-[10px] text-gray-500 font-normal">
-                                                                            DEBUG: P:{item.percentage}({typeof item.percentage}) {'>='} T:{item.targetKetercapaian}({typeof item.targetKetercapaian})
-                                                                            <br />
-                                                                            Res: {Number(item.percentage || 0) >= Number(item.targetKetercapaian || 70) ? 'True' : 'False'}
-                                                                        </div>
                                                                     </span>
                                                                 </div>
                                                                 <Progress value={item.percentage || 0} className="h-2" />

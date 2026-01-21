@@ -9,7 +9,6 @@ import cookieParser from 'cookie-parser';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-console.log('DEBUG: DATABASE_URL is', process.env.DATABASE_URL);
 
 // Middleware
 const allowedOrigins = [
