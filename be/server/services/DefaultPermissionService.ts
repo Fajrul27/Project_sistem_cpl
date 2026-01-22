@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
+import { withoutAuditLog, getCurrentContext } from '../lib/context.js';
 
 const prisma = new PrismaClient();
+const basePrisma = new PrismaClient();
 
 export class DefaultPermissionService {
     // Get all default permissions
@@ -29,112 +31,138 @@ export class DefaultPermissionService {
 
     // Initialize defaults from hardcoded values (System Defaults)
     static async initializeFromHardcoded() {
-        // Clear existing defaults
-        await prisma.defaultRolePermission.deleteMany();
+        const userId = getCurrentContext()?.userId;
 
-        const resources = [
-            'dashboard', 'visi_misi', 'profil_lulusan', 'cpl', 'mata_kuliah', 'cpmk',
-            'nilai_teknik', 'kuesioner', 'dosen_pengampu', 'kaprodi_data', 'mahasiswa',
-            'users', 'transkrip_cpl', 'analisis_cpl', 'evaluasi_cpl', 'rekap_kuesioner',
-            'settings', 'evaluasi_mk', 'role_permissions', 'default_role_permissions', 'fakultas',
-            'roles', 'audit_log', 'tahun_ajaran'
-        ];
+        // Perform batch operations WITHOUT auto-logging
+        const count = await withoutAuditLog(async () => {
+            // Clear existing defaults
+            await prisma.defaultRolePermission.deleteMany();
 
-        const actions = ['view', 'create', 'edit', 'delete', 'view_all', 'verify'];
-        const targetRoles = ['admin', 'dosen', 'kaprodi', 'mahasiswa']; // Roles that have defaults
+            const resources = [
+                'dashboard', 'visi_misi', 'profil_lulusan', 'cpl', 'mata_kuliah', 'cpmk',
+                'nilai_teknik', 'kuesioner', 'dosen_pengampu', 'kaprodi_data', 'mahasiswa',
+                'users', 'transkrip_cpl', 'analisis_cpl', 'evaluasi_cpl', 'rekap_kuesioner',
+                'settings', 'evaluasi_mk', 'role_permissions', 'default_role_permissions', 'fakultas',
+                'roles', 'audit_log', 'tahun_ajaran'
+            ];
 
-        // Get Role IDs
-        const roles = await prisma.role.findMany({
-            where: { name: { in: targetRoles } }
+            const actions = ['view', 'create', 'edit', 'delete', 'view_all', 'verify'];
+            const targetRoles = ['admin', 'dosen', 'kaprodi', 'mahasiswa']; // Roles that have defaults
+
+            // Get Role IDs
+            const roles = await prisma.role.findMany({
+                where: { name: { in: targetRoles } }
+            });
+            const rolesMap = new Map(roles.map(r => [r.name, r.id]));
+
+            const defaultPermissions: any[] = [];
+
+            // Helper logic for system default permissions (auto-generated from database)
+            const shouldHaveAccess = (role: string, resource: string, action: string): boolean => {
+                // 1. ADMIN: Has access to EVERYTHING
+                if (role === 'admin') return true;
+
+                // 2. KAPRODI
+                if (role === 'kaprodi') {
+                    // Full CRUD + view_all access
+                    if (['analisis_cpl', 'cpl', 'cpmk', 'dosen_pengampu', 'evaluasi_cpl', 'kaprodi_data', 'mahasiswa', 'mata_kuliah', 'nilai_teknik', 'profil_lulusan', 'tahun_ajaran', 'visi_misi'].includes(resource)) {
+                        return ['view', 'create', 'edit', 'delete', 'view_all'].includes(action);
+                    }
+                    // Dashboard: edit, verify, view
+                    if (resource === 'dashboard') {
+                        return ['edit', 'verify', 'view'].includes(action);
+                    }
+                    // Evaluasi MK: Full access including verify
+                    if (resource === 'evaluasi_mk') {
+                        return ['view', 'create', 'edit', 'delete', 'verify', 'view_all'].includes(action);
+                    }
+                    // View + view_all only
+                    if (['fakultas', 'rekap_kuesioner'].includes(resource)) {
+                        return ['view', 'view_all'].includes(action);
+                    }
+                    // View only
+                    if (['settings', 'transkrip_cpl', 'users'].includes(resource)) {
+                        return action === 'view';
+                    }
+                    return false;
+                }
+
+                // 3. DOSEN
+                if (role === 'dosen') {
+                    // Full CRUD access
+                    if (['cpmk', 'nilai_teknik'].includes(resource)) {
+                        return ['view', 'create', 'edit', 'delete'].includes(action);
+                    }
+                    // Create + view only for evaluasi_cpl
+                    if (resource === 'evaluasi_cpl') {
+                        return ['view', 'create'].includes(action);
+                    }
+                    // Evaluasi MK: create, edit, view (no delete/verify)
+                    if (resource === 'evaluasi_mk') {
+                        return ['view', 'create', 'edit'].includes(action);
+                    }
+                    // View only access
+                    if (['analisis_cpl', 'cpl', 'dashboard', 'fakultas', 'mahasiswa', 'mata_kuliah', 'profil_lulusan', 'transkrip_cpl', 'visi_misi'].includes(resource)) {
+                        return action === 'view';
+                    }
+                    return false;
+                }
+
+                // 4. MAHASISWA
+                if (role === 'mahasiswa') {
+                    // View only access
+                    if (['dashboard', 'fakultas', 'kuesioner', 'mata_kuliah', 'profil_lulusan', 'transkrip_cpl', 'visi_misi'].includes(resource)) {
+                        return action === 'view';
+                    }
+                    return false;
+                }
+
+                return false;
+            };
+
+            for (const resource of resources) {
+                for (const roleName of targetRoles) {
+                    const roleId = rolesMap.get(roleName);
+                    if (!roleId) continue;
+
+                    for (const action of actions) {
+                        const isEnabled = shouldHaveAccess(roleName, resource, action);
+                        defaultPermissions.push({
+                            roleId,
+                            resource,
+                            action,
+                            isEnabled
+                        });
+                    }
+                }
+            }
+
+            if (defaultPermissions.length > 0) {
+                await prisma.defaultRolePermission.createMany({
+                    data: defaultPermissions,
+                    skipDuplicates: true
+                });
+            }
+
+            return defaultPermissions.length;
         });
-        const rolesMap = new Map(roles.map(r => [r.name, r.id]));
 
-        const defaultPermissions: any[] = [];
-
-        // Helper logic for system default permissions (auto-generated from database)
-        const shouldHaveAccess = (role: string, resource: string, action: string): boolean => {
-            // 1. ADMIN: Has access to EVERYTHING
-            if (role === 'admin') return true;
-
-            // 2. KAPRODI
-            if (role === 'kaprodi') {
-                // Full CRUD + view_all access
-                if (['analisis_cpl', 'cpl', 'cpmk', 'dosen_pengampu', 'evaluasi_cpl', 'kaprodi_data', 'mahasiswa', 'mata_kuliah', 'nilai_teknik', 'profil_lulusan', 'tahun_ajaran', 'visi_misi'].includes(resource)) {
-                    return ['view', 'create', 'edit', 'delete', 'view_all'].includes(action);
+        // Create single manual audit log entry
+        if (userId) {
+            await basePrisma.auditLog.create({
+                data: {
+                    userId,
+                    action: 'RESET_DEFAULTS',
+                    tableName: 'DefaultRolePermission',
+                    recordId: null,
+                    oldData: null,
+                    newData: JSON.stringify({
+                        message: `Reset ${count} default permissions ke sistem`,
+                        count
+                    }),
+                    ipAddress: 'unknown',
+                    userAgent: 'unknown'
                 }
-                // Dashboard: edit, verify, view
-                if (resource === 'dashboard') {
-                    return ['edit', 'verify', 'view'].includes(action);
-                }
-                // Evaluasi MK: Full access including verify
-                if (resource === 'evaluasi_mk') {
-                    return ['view', 'create', 'edit', 'delete', 'verify', 'view_all'].includes(action);
-                }
-                // View + view_all only
-                if (['fakultas', 'rekap_kuesioner'].includes(resource)) {
-                    return ['view', 'view_all'].includes(action);
-                }
-                // View only
-                if (['settings', 'transkrip_cpl', 'users'].includes(resource)) {
-                    return action === 'view';
-                }
-                return false;
-            }
-
-            // 3. DOSEN
-            if (role === 'dosen') {
-                // Full CRUD access
-                if (['cpmk', 'nilai_teknik'].includes(resource)) {
-                    return ['view', 'create', 'edit', 'delete'].includes(action);
-                }
-                // Create + view only for evaluasi_cpl
-                if (resource === 'evaluasi_cpl') {
-                    return ['view', 'create'].includes(action);
-                }
-                // Evaluasi MK: create, edit, view (no delete/verify)
-                if (resource === 'evaluasi_mk') {
-                    return ['view', 'create', 'edit'].includes(action);
-                }
-                // View only access
-                if (['analisis_cpl', 'cpl', 'dashboard', 'fakultas', 'mahasiswa', 'mata_kuliah', 'profil_lulusan', 'transkrip_cpl', 'visi_misi'].includes(resource)) {
-                    return action === 'view';
-                }
-                return false;
-            }
-
-            // 4. MAHASISWA
-            if (role === 'mahasiswa') {
-                // View only access
-                if (['dashboard', 'fakultas', 'kuesioner', 'mata_kuliah', 'profil_lulusan', 'transkrip_cpl', 'visi_misi'].includes(resource)) {
-                    return action === 'view';
-                }
-                return false;
-            }
-
-            return false;
-        };
-
-        for (const resource of resources) {
-            for (const roleName of targetRoles) {
-                const roleId = rolesMap.get(roleName);
-                if (!roleId) continue;
-
-                for (const action of actions) {
-                    const isEnabled = shouldHaveAccess(roleName, resource, action);
-                    defaultPermissions.push({
-                        roleId,
-                        resource,
-                        action,
-                        isEnabled
-                    });
-                }
-            }
-        }
-
-        if (defaultPermissions.length > 0) {
-            await prisma.defaultRolePermission.createMany({
-                data: defaultPermissions,
-                skipDuplicates: true
             });
         }
 

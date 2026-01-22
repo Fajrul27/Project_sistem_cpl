@@ -2,6 +2,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
 import { DefaultPermissionService } from '../services/DefaultPermissionService.js';
+import { withoutAuditLog, getCurrentContext } from '../lib/context.js';
+import { PrismaClient } from '@prisma/client';
 
 // Get all permissions
 export const getPermissions = async (req: Request, res: Response) => {
@@ -190,33 +192,58 @@ export const resetDefaultPermissions = async (req: Request, res: Response) => {
 // Initialize permissions (Helper)
 export const initializePermissions = async (req: Request, res: Response) => {
     try {
-        // Reuse logic from DefaultPermissionService to populate actual permissions based on defaults
+        const userId = getCurrentContext()?.userId;
+
         // 1. Ensure defaults are initialized (if not exist)
         let defaults = await DefaultPermissionService.getAllDefaults();
         if (defaults.length === 0) {
             defaults = await DefaultPermissionService.initializeFromHardcoded();
         }
 
-        // 2. Apply defaults to actual role permissions
-        let count = 0;
-        for (const defaultPerm of defaults) {
-            await prisma.rolePermission.upsert({
-                where: {
-                    roleId_resource_action: {
+        // 2. Apply defaults to actual role permissions WITHOUT auto-logging
+        const count = await withoutAuditLog(async () => {
+            let permissionCount = 0;
+            for (const defaultPerm of defaults) {
+                await prisma.rolePermission.upsert({
+                    where: {
+                        roleId_resource_action: {
+                            roleId: defaultPerm.roleId,
+                            resource: defaultPerm.resource,
+                            action: defaultPerm.action
+                        }
+                    },
+                    update: { isEnabled: defaultPerm.isEnabled },
+                    create: {
                         roleId: defaultPerm.roleId,
                         resource: defaultPerm.resource,
-                        action: defaultPerm.action
+                        action: defaultPerm.action,
+                        isEnabled: defaultPerm.isEnabled
                     }
-                },
-                update: { isEnabled: defaultPerm.isEnabled },
-                create: {
-                    roleId: defaultPerm.roleId,
-                    resource: defaultPerm.resource,
-                    action: defaultPerm.action,
-                    isEnabled: defaultPerm.isEnabled
+                });
+                permissionCount++;
+            }
+            return permissionCount;
+        });
+
+        // 3. Create single manual audit log
+        if (userId) {
+            const basePrisma = new PrismaClient();
+            await basePrisma.auditLog.create({
+                data: {
+                    userId,
+                    action: 'RESET_PERMISSIONS',
+                    tableName: 'RolePermission',
+                    recordId: null,
+                    oldData: null,
+                    newData: JSON.stringify({
+                        message: `Reset ${count} role permissions dari default`,
+                        count
+                    }),
+                    ipAddress: 'unknown',
+                    userAgent: 'unknown'
                 }
             });
-            count++;
+            await basePrisma.$disconnect();
         }
 
         res.json({ message: `Initialized ${count} permissions from default configuration` });
