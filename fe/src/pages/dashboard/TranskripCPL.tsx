@@ -138,7 +138,7 @@ const TranskripCPLPage = () => {
 
     const handlePrint = () => {
         const originalTitle = document.title;
-        const type = activeTab === 'cpl' ? 'Transkrip_CPL' : 'Transkrip_CPMK';
+        const type = activeTab === 'cpl' ? 'Transkrip_CPL' : 'Transkrip_Capaian_Makul';
         const rawName = selectedStudent?.profile?.namaLengkap || 'Mahasiswa';
         // Keep alphanumeric and underscores, remove others
         const nama = rawName.replace(/[^a-zA-Z0-9]/g, '_');
@@ -683,9 +683,9 @@ const TranskripCPLPage = () => {
                                         </CardHeader>
                                         <CardContent>
                                             {loading ? (
-                                                <LoadingScreen fullScreen={false} message="Memuat transkrip CPMK..." />
+                                                <LoadingScreen fullScreen={false} message="Memuat data transkrip Capaian Makul..." />
                                             ) : transkripCpmkList.length === 0 ? (
-                                                <div className="text-center py-12 text-muted-foreground"><FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>Belum ada data transkrip CPMK</p></div>
+                                                <div className="text-center py-12 text-muted-foreground"><FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>Belum ada data transkrip Capaian Makul</p></div>
                                             ) : (
                                                 <div className="overflow-x-auto">
                                                     <Table>
@@ -818,7 +818,7 @@ const TranskripCPLPage = () => {
                             <div className="border-b border-black mb-4"></div>
 
                             <h2 className="text-center text-base font-bold mb-4 uppercase">
-                                {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CPMK SEMENTARA'}
+                                {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CAPAIAN MATA KULIAH SEMENTARA'}
                             </h2>
 
                             {/* Student Info */}
