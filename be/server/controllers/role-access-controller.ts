@@ -46,9 +46,16 @@ export const exportPermissions = async (req: Request, res: Response) => {
             }))
         };
 
-        // Generate filename with timestamp
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        const filename = `hak-akses-role-${timestamp}.json`;
+        // Generate filename with readable timestamp (DD-MM-YYYY_HH-MM-SS)
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const timestamp = `${day}-${month}-${year}_${hours}-${minutes}-${seconds}`;
+        const filename = `hak-akses-role_${timestamp}.json`;
 
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

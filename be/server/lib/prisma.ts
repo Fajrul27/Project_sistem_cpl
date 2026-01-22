@@ -21,9 +21,10 @@ export const prisma = prismaClient.$extends({
         }
 
         const userId = context.getStore()?.userId;
+        const skipAuditLog = context.getStore()?.skipAuditLog;
 
-        // Only log modification operations
-        if (['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany', 'upsert'].includes(operation)) {
+        // Only log modification operations if skipAuditLog is not set
+        if (!skipAuditLog && ['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany', 'upsert'].includes(operation)) {
           try {
             let oldData = null;
             let recordId = null;
