@@ -176,24 +176,9 @@ const App = () => (
                     <ProfilLulusanPage />
                   </RequireRole>
                 } />
-                <Route path="kuesioner" element={
-                  <RequireRole roles={['mahasiswa']} resource="kuesioner">
-                    <KuesionerCplPage />
-                  </RequireRole>
-                } />
-                <Route path="rekap-kuesioner" element={
-                  <RequireRole roles={["admin", "kaprodi"]} resource="rekap_kuesioner">
-                    <RekapKuesionerPage />
-                  </RequireRole>
-                } />
                 <Route path="rubrik/:cpmkId" element={
                   <RequireRole roles={["admin", "kaprodi", "dosen"]} resource="cpmk">
                     <RubrikManager />
-                  </RequireRole>
-                } />
-                <Route path="evaluasi/:mataKuliahId" element={
-                  <RequireRole roles={["admin", "kaprodi", "dosen"]} resource="mata_kuliah">
-                    <EvaluasiMataKuliah />
                   </RequireRole>
                 } />
 

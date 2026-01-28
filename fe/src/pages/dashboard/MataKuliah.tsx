@@ -510,11 +510,11 @@ const MataKuliahPage = () => {
                                     <Edit className="h-4 w-4" />
                                   </Button>
                                 )}
-                                {can('edit', 'cpmk') && (
+                                {/* {can('edit', 'cpmk') && (
                                   <Button size="sm" variant="outline" onClick={() => navigate(`/dashboard/evaluasi/${mk.id}`)} title="Evaluasi / CQI">
                                     <SlidersHorizontal className="h-4 w-4" />
                                   </Button>
-                                )}
+                                )} */}
                                 {can('delete', 'mata_kuliah') && (
                                   <Button size="sm" variant="destructive" onClick={() => handleDelete(mk.id)}>
                                     <Trash2 className="h-4 w-4" />

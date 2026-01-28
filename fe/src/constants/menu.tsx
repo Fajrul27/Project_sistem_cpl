@@ -53,7 +53,6 @@ export const MENU_ITEMS = [
         items: [
             { title: "CPMK & Mapping CPMK - CPL", url: "/dashboard/cpmk", roles: ["admin", "dosen", "kaprodi"], resource: 'cpmk' },
             { title: "Input Nilai Teknik", url: "/dashboard/nilai-teknik", roles: ["admin", "kaprodi", "dosen"], resource: 'nilai_teknik' },
-            { title: "Isi Kuesioner CPL", url: "/dashboard/kuesioner", roles: ["mahasiswa"], resource: 'kuesioner' },
         ]
     },
     {
@@ -64,7 +63,6 @@ export const MENU_ITEMS = [
             { title: "Capaian Pembelajaran", url: "/dashboard/transkrip-cpl", roles: ["admin", "dosen", "kaprodi", "mahasiswa"], resource: 'transkrip_cpl' },
             { title: "Analisis CPL", url: "/dashboard/analisis", roles: ["admin", "dosen", "kaprodi"], resource: 'analisis_cpl' },
             { title: "Evaluasi CPL", url: "/dashboard/evaluasi-cpl", roles: ["admin", "kaprodi", "dosen"], resource: 'evaluasi_cpl' },
-            { title: "Rekap Kuesioner", url: "/dashboard/rekap-kuesioner", roles: ["admin", "kaprodi"], resource: 'rekap_kuesioner' },
         ]
     },
     {

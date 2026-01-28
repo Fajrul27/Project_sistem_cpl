@@ -131,132 +131,49 @@ const Auth = () => {
           <CardDescription>Pengukuran Capaian Pembelajaran Lulusan</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Daftar</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <RequiredLabel htmlFor="login-email" required>Email</RequiredLabel>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="nama@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="bg-card"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <RequiredLabel htmlFor="login-password" required>Password</RequiredLabel>
-                  <div className="relative">
-                    <Input
-                      id="login-password"
-                      type={showLoginPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="pr-10 bg-card"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowLoginPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                    >
-                      {showLoginPassword ? (
-                        <EyeOff className="h-4 w-4" aria-hidden="true" />
-                      ) : (
-                        <Eye className="h-4 w-4" aria-hidden="true" />
-                      )}
-                      <span className="sr-only">Toggle password visibility</span>
-                    </button>
-                  </div>
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Loading..." : "Login"}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <RequiredLabel htmlFor="signup-name" required>Nama Lengkap</RequiredLabel>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="Nama Lengkap"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    className="bg-card"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-prodi">Program Studi</Label>
-                  <Select value={selectedProdi} onValueChange={setSelectedProdi}>
-                    <SelectTrigger className="bg-card">
-                      <SelectValue placeholder="Pilih Program Studi" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {prodiList.map((prodi) => (
-                        <SelectItem key={prodi.id} value={prodi.id}>
-                          {prodi.nama}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <RequiredLabel htmlFor="signup-email" required>Email</RequiredLabel>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="nama@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="bg-card"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <RequiredLabel htmlFor="signup-password" required>Password</RequiredLabel>
-                  <div className="relative">
-                    <Input
-                      id="signup-password"
-                      type={showSignupPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="pr-10 bg-card"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowSignupPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                    >
-                      {showSignupPassword ? (
-                        <EyeOff className="h-4 w-4" aria-hidden="true" />
-                      ) : (
-                        <Eye className="h-4 w-4" aria-hidden="true" />
-                      )}
-                      <span className="sr-only">Toggle password visibility</span>
-                    </button>
-                  </div>
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Loading..." : "Daftar"}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <RequiredLabel htmlFor="login-email" required>Email</RequiredLabel>
+              <Input
+                id="login-email"
+                type="email"
+                placeholder="nama@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="bg-card"
+              />
+            </div>
+            <div className="space-y-2">
+              <RequiredLabel htmlFor="login-password" required>Password</RequiredLabel>
+              <div className="relative">
+                <Input
+                  id="login-password"
+                  type={showLoginPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pr-10 bg-card"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                >
+                  {showLoginPassword ? (
+                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Eye className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  <span className="sr-only">Toggle password visibility</span>
+                </button>
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Loading..." : "Login"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
