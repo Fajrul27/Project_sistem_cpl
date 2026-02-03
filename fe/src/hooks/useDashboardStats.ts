@@ -91,11 +91,10 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
 
     const fetchAdminDashboardData = useCallback(async () => {
         try {
-            const [statsRes, dosenRes, studentRes] = await Promise.all([
-                fetchDashboardStats(activeFilters),
-                (role === 'admin' || role === 'kaprodi') ? fetchDosenAnalysis(activeFilters.prodiId) : Promise.resolve({ data: [] }),
-                (role === 'admin' || role === 'kaprodi') ? fetchStudentEvaluation(activeFilters) : Promise.resolve({ data: [] })
-            ]);
+            // BEFORE OPTIMIZATION: Sequential API calls (slower)
+            const statsRes = await fetchDashboardStats(activeFilters);
+            const dosenRes = (role === 'admin' || role === 'kaprodi') ? await fetchDosenAnalysis(activeFilters.prodiId) : { data: [] };
+            const studentRes = (role === 'admin' || role === 'kaprodi') ? await fetchStudentEvaluation(activeFilters) : { data: [] };
 
             const data = statsRes.data;
 

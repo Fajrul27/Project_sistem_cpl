@@ -138,12 +138,11 @@ export class DashboardService {
 
         // --- DATA FETCHING ---
 
-        const [dbUserCount, cplCount, mataKuliahCount, nilaiCount] = await Promise.all([
-            prisma.user.count({ where: userFilter }),
-            prisma.cpl.count({ where: cplFilter }),
-            prisma.mataKuliah.count({ where: mkFilter }),
-            prisma.nilaiCpl.count({ where: nilaiFilter })
-        ]);
+        // BEFORE OPTIMIZATION: Sequential execution (slower)
+        const dbUserCount = await prisma.user.count({ where: userFilter });
+        const cplCount = await prisma.cpl.count({ where: cplFilter });
+        const mataKuliahCount = await prisma.mataKuliah.count({ where: mkFilter });
+        const nilaiCount = await prisma.nilaiCpl.count({ where: nilaiFilter });
 
         const userCount = customUserCount !== null ? customUserCount : dbUserCount;
 
@@ -156,22 +155,21 @@ export class DashboardService {
         };
 
         if (userRole !== 'mahasiswa') {
-            const [cplEmptyList, mkUnmappedList] = await Promise.all([
-                prisma.cpl.findMany({
-                    where: {
-                        ...cplFilter,
-                        nilaiCpl: { none: {} }
-                    },
-                    select: { id: true, kodeCpl: true, deskripsi: true }
-                }),
-                prisma.mataKuliah.findMany({
-                    where: {
-                        ...mkFilter,
-                        cpmk: { none: {} }
-                    },
-                    select: { id: true, kodeMk: true, namaMk: true }
-                })
-            ]);
+            // BEFORE OPTIMIZATION: Sequential execution (slower)
+            const cplEmptyList = await prisma.cpl.findMany({
+                where: {
+                    ...cplFilter,
+                    nilaiCpl: { none: {} }
+                },
+                select: { id: true, kodeCpl: true, deskripsi: true }
+            });
+            const mkUnmappedList = await prisma.mataKuliah.findMany({
+                where: {
+                    ...mkFilter,
+                    cpmk: { none: {} }
+                },
+                select: { id: true, kodeMk: true, namaMk: true }
+            });
 
             const studentsWithGrades = await prisma.nilaiCpl.groupBy({
                 by: ['mahasiswaId'],
