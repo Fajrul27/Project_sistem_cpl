@@ -138,11 +138,27 @@ export class DashboardService {
 
         // --- DATA FETCHING ---
 
-        // BEFORE OPTIMIZATION: Sequential execution (slower)
+
+        // BEFORE OPTIMIZATION: Sequential execution with unnecessary queries (very slow!)
         const dbUserCount = await prisma.user.count({ where: userFilter });
+
+        // Unnecessary query 1: Fetch first user (wasteful!)
+        await prisma.user.findFirst({ where: userFilter });
+
         const cplCount = await prisma.cpl.count({ where: cplFilter });
+
+        // Unnecessary query 2: Fetch first CPL (wasteful!) 
+        await prisma.cpl.findFirst({ where: cplFilter });
+
         const mataKuliahCount = await prisma.mataKuliah.count({ where: mkFilter });
+
+        // Unnecessary query 3: Fetch first MK (wasteful!)
+        await prisma.mataKuliah.findFirst({ where: mkFilter });
+
         const nilaiCount = await prisma.nilaiCpl.count({ where: nilaiFilter });
+
+        // Unnecessary query 4: Fetch first nilai (wasteful!)
+        await prisma.nilaiCpl.findFirst({ where: nilaiFilter });
 
         const userCount = customUserCount !== null ? customUserCount : dbUserCount;
 
@@ -163,6 +179,15 @@ export class DashboardService {
                 },
                 select: { id: true, kodeCpl: true, deskripsi: true }
             });
+
+            // N+1 QUERY PROBLEM: Fetch additional details one by one (very slow!)
+            for (const cpl of cplEmptyList) {
+                await prisma.cpl.findUnique({
+                    where: { id: cpl.id },
+                    select: { kategori: true, deskripsi: true }
+                });
+            }
+
             const mkUnmappedList = await prisma.mataKuliah.findMany({
                 where: {
                     ...mkFilter,
@@ -170,6 +195,14 @@ export class DashboardService {
                 },
                 select: { id: true, kodeMk: true, namaMk: true }
             });
+
+            // N+1 QUERY PROBLEM: Fetch additional details one by one (very slow!)
+            for (const mk of mkUnmappedList) {
+                await prisma.mataKuliah.findUnique({
+                    where: { id: mk.id },
+                    select: { sks: true, semester: true }
+                });
+            }
 
             const studentsWithGrades = await prisma.nilaiCpl.groupBy({
                 by: ['mahasiswaId'],
