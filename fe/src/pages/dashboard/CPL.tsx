@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, List as ListIcon, Table as TableIcon, ArrowLeft, Save, Target, RotateCcw } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, List as ListIcon, Table as TableIcon, ArrowLeft, Save, Target, RotateCcw, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePermission } from "@/contexts/PermissionContext";
@@ -68,6 +68,74 @@ const CPLPage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingCPL, setEditingCPL] = useState<CPL | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "matrix" | "target">("list");
+  const [importing, setImporting] = useState(false);
+
+  const handleExport = async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (cplFilters.prodiFilter !== 'all') queryParams.append('prodiId', cplFilters.prodiFilter);
+      if (cplFilters.kategoriFilter !== 'all') queryParams.append('kategori', cplFilters.kategoriFilter);
+      if (cplFilters.kurikulumFilter !== 'all') queryParams.append('kurikulumId', cplFilters.kurikulumFilter);
+
+      const API_URL = import.meta.env.VITE_API_URL;
+      const url = `${API_URL}/cpl/export/excel?${queryParams.toString()}`;
+
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Gagal export data');
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `cpl_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+
+      toast.success('Data CPL berhasil diexport');
+    } catch (error) {
+      toast.error('Gagal export data CPL');
+    }
+  };
+
+  const handleImportClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      setImporting(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const API_URL = import.meta.env.VITE_API_URL;
+        const response = await fetch(`${API_URL}/cpl/import/excel`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+        toast.success(result.message || 'Data berhasil diimport');
+        if (result.errors && result.errors.length > 0) {
+          result.errors.slice(0, 3).forEach((err: string) => toast.error(err));
+        }
+
+        window.location.reload();
+      } catch (error: any) {
+        toast.error(error.message || 'Gagal import data CPL');
+      } finally {
+        setImporting(false);
+      }
+    };
+    input.click();
+  };
 
   // Target CPL State
   const {
@@ -702,125 +770,137 @@ const CPLPage = () => {
                   Menampilkan <span className="font-medium">{cplList.length}</span> dari {pagination.totalItems} CPL
                 </CardDescription>
               </div>
-              {canEdit && (
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      onClick={() => { resetForm(); setDialogOpen(true); }}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Tambah CPL
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingCPL ? "Edit CPL" : "Tambah CPL Baru"}</DialogTitle>
-                      <DialogDescription>
-                        Isi form untuk {editingCPL ? "mengupdate" : "menambahkan"} data CPL
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div className="space-y-2">
-                        <RequiredLabel htmlFor="kodeCpl" required>Kode CPL</RequiredLabel>
-                        <Input
-                          id="kodeCpl"
-                          placeholder="Contoh: CPL-01"
-                          value={formData.kodeCpl}
-                          onChange={(e) => setFormData({ ...formData, kodeCpl: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <RequiredLabel htmlFor="deskripsi" required>Deskripsi</RequiredLabel>
-                        <Textarea
-                          id="deskripsi"
-                          placeholder="Deskripsi CPL"
-                          value={formData.deskripsi}
-                          onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                          required
-                          className="min-h-[100px]"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <RequiredLabel htmlFor="kategori" required>Kategori</RequiredLabel>
-                        <Select
-                          value={formData.kategoriId}
-                          onValueChange={(val) => setFormData({ ...formData, kategoriId: val })}
-                          required
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih Kategori" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {kategoriList.map((k) => (
-                              <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <RequiredLabel htmlFor="prodi" required>Program Studi</RequiredLabel>
-                        <Select
-                          value={formData.prodiId}
-                          onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
-                          disabled={!canViewAll}
-                          required
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih Program Studi" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {prodiList.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.nama} {p.kode ? `(${p.kode})` : ''}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <RequiredLabel htmlFor="kurikulum" required>Kurikulum</RequiredLabel>
-                        <Select
-                          value={formData.kurikulumId}
-                          onValueChange={(val) => setFormData({ ...formData, kurikulumId: val })}
-                          required
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih Kurikulum" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {kurikulumList
-                              .filter(k => k.isActive || k.id === formData.kurikulumId)
-                              .map((k: any) => (
-                                <SelectItem key={k.id} value={k.id}>
-                                  {k.nama} {!k.isActive && "(Tidak Aktif)"}
+              <div className="flex gap-2 flex-wrap">
+                <Button size="sm" variant="outline" onClick={handleExport} disabled={loading}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+                {canEdit && (
+                  <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    {importing ? 'Importing...' : 'Import'}
+                  </Button>
+                )}
+                {canEdit && (
+                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        onClick={() => { resetForm(); setDialogOpen(true); }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Tambah CPL
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{editingCPL ? "Edit CPL" : "Tambah CPL Baru"}</DialogTitle>
+                        <DialogDescription>
+                          Isi form untuk {editingCPL ? "mengupdate" : "menambahkan"} data CPL
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                          <RequiredLabel htmlFor="kodeCpl" required>Kode CPL</RequiredLabel>
+                          <Input
+                            id="kodeCpl"
+                            placeholder="Contoh: CPL-01"
+                            value={formData.kodeCpl}
+                            onChange={(e) => setFormData({ ...formData, kodeCpl: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <RequiredLabel htmlFor="deskripsi" required>Deskripsi</RequiredLabel>
+                          <Textarea
+                            id="deskripsi"
+                            placeholder="Deskripsi CPL"
+                            value={formData.deskripsi}
+                            onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                            required
+                            className="min-h-[100px]"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <RequiredLabel htmlFor="kategori" required>Kategori</RequiredLabel>
+                          <Select
+                            value={formData.kategoriId}
+                            onValueChange={(val) => setFormData({ ...formData, kategoriId: val })}
+                            required
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih Kategori" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {kategoriList.map((k) => (
+                                <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <RequiredLabel htmlFor="prodi" required>Program Studi</RequiredLabel>
+                          <Select
+                            value={formData.prodiId}
+                            onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
+                            disabled={!canViewAll}
+                            required
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih Program Studi" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {prodiList.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.nama} {p.kode ? `(${p.kode})` : ''}
                                 </SelectItem>
                               ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          type="submit"
-                          className="flex-1"
-                          disabled={submitting}
-                        >
-                          {submitting ? (
-                            <>
-                              <LoadingSpinner size="sm" className="mr-2" />
-                              {editingCPL ? "Memperbarui..." : "Menyimpan..."}
-                            </>
-                          ) : editingCPL ? "Update" : "Simpan"}
-                        </Button>
-                        <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                          Batal
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <RequiredLabel htmlFor="kurikulum" required>Kurikulum</RequiredLabel>
+                          <Select
+                            value={formData.kurikulumId}
+                            onValueChange={(val) => setFormData({ ...formData, kurikulumId: val })}
+                            required
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Pilih Kurikulum" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {kurikulumList
+                                .filter(k => k.isActive || k.id === formData.kurikulumId)
+                                .map((k: any) => (
+                                  <SelectItem key={k.id} value={k.id}>
+                                    {k.nama} {!k.isActive && "(Tidak Aktif)"}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="submit"
+                            className="flex-1"
+                            disabled={submitting}
+                          >
+                            {submitting ? (
+                              <>
+                                <LoadingSpinner size="sm" className="mr-2" />
+                                {editingCPL ? "Memperbarui..." : "Menyimpan..."}
+                              </>
+                            ) : editingCPL ? "Update" : "Simpan"}
+                          </Button>
+                          <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                            Batal
+                          </Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
             </CardHeader>
 
             <CardContent>

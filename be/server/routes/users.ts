@@ -1,13 +1,18 @@
 
 import { Router } from 'express';
 import { authMiddleware, requireRole, requirePermission } from '../middleware/auth.js';
+import multer from 'multer';
 import {
   getAllUsers,
   getUserById,
   updateUserRole,
   updateUser,
-  deleteUser
+  deleteUser,
+  exportMahasiswa,
+  importMahasiswa
 } from '../controllers/users-controller.js';
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 
@@ -36,5 +41,11 @@ router.put('/:id', authMiddleware, requirePermission('edit', 'users'), updateUse
 
 // Delete user (admin only -> dynamic)
 router.delete('/:id', authMiddleware, requirePermission('delete', 'users'), deleteUser);
+
+// Export Mahasiswa as Excel
+router.get('/export/mahasiswa', authMiddleware, requirePermission('view', 'mahasiswa'), exportMahasiswa);
+
+// Import Mahasiswa from Excel
+router.post('/import/mahasiswa', authMiddleware, requirePermission('edit', 'mahasiswa'), upload.single('file'), importMahasiswa);
 
 export default router;

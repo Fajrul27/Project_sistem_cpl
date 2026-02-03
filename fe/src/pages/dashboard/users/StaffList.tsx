@@ -8,14 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
 import { fetchAllUsers, createUserWithRole, updateUser, deleteUser, updateProfile, fetchFakultasList, api } from "@/lib/api";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, UserCircle, Download, Upload } from "lucide-react";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { Pagination } from "@/components/common/Pagination";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Label } from "@/components/ui/label";
 import { RequiredLabel } from "@/components/common/RequiredLabel";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useImpersonation } from "@/hooks/useImpersonation";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface UserRow {
     id: string;
@@ -99,6 +101,93 @@ export const StaffList = () => {
 
     const [savingEdit, setSavingEdit] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [importing, setImporting] = useState(false);
+
+    const handleExport = async () => {
+        try {
+            const queryParams = new URLSearchParams();
+            queryParams.append('role', roleFilter);
+            if (facultyFilter !== 'all') queryParams.append('fakultasId', facultyFilter);
+            if (programFilter !== 'all') queryParams.append('prodiId', programFilter);
+
+            const API_URL = import.meta.env.VITE_API_URL;
+            const url = `${API_URL}/users/export/staff?${queryParams.toString()}`;
+
+            const response = await fetch(url, { credentials: 'include' });
+            if (!response.ok) throw new Error('Gagal export data');
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `staff_${roleFilter}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+
+            toast.success('Data Staff berhasil diexport');
+        } catch (error) {
+            toast.error('Gagal export data Staff');
+        }
+    };
+
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.xls';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            setImporting(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const API_URL = import.meta.env.VITE_API_URL;
+                const response = await fetch(`${API_URL}/users/import/staff`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+                toast.success(result.message || 'Data berhasil diimport');
+                if (result.errors && result.errors.length > 0) {
+                    result.errors.slice(0, 3).forEach((err: string) => toast.error(err));
+                }
+
+                loadUsers();
+            } catch (error: any) {
+                toast.error(error.message || 'Gagal import data Staff');
+            } finally {
+                setImporting(false);
+            }
+        };
+        input.click();
+    };
+
+    // Login As Feature
+    const { loginAsUser, loading: loginAsLoading } = useImpersonation();
+    const { role: currentUserRole } = useUserRole();
+    const [loginAsConfirmOpen, setLoginAsConfirmOpen] = useState(false);
+    const [userToImpersonate, setUserToImpersonate] = useState<UserRow | null>(null);
+
+    const handleLoginAsClick = (user: UserRow) => {
+        setUserToImpersonate(user);
+        setLoginAsConfirmOpen(true);
+    };
+
+    const confirmLoginAs = async () => {
+        if (userToImpersonate) {
+            await loginAsUser(userToImpersonate.id);
+            setLoginAsConfirmOpen(false);
+            setUserToImpersonate(null);
+        }
+    };
 
     useEffect(() => {
         fetchFakultasList().then(res => {
@@ -288,6 +377,16 @@ export const StaffList = () => {
                     </CardDescription>
                 </div>
                 <div className="flex gap-2 items-center flex-wrap">
+                    {/* Export Button */}
+                    <Button size="sm" variant="outline" onClick={handleExport} disabled={loading} className="h-9">
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                    </Button>
+                    {/* Import Button */}
+                    <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing} className="h-9">
+                        <Upload className="h-4 w-4 mr-2" />
+                        {importing ? 'Importing...' : 'Import'}
+                    </Button>
                     {/* Role Filter Toggles */}
                     {/* Role Filter Dropdown */}
                     <div className="w-[200px]">
@@ -416,22 +515,35 @@ export const StaffList = () => {
                                                     : user.programStudi ? user.programStudi : user.fakultas ? user.fakultas : "-"}
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button size="sm" variant="outline" onClick={() => {
-                                                    setEditingUser(user);
-                                                    let fakId = "", prodiId = "";
-                                                    if (user.fakultas) {
-                                                        const f = fakultasList.find(x => x.nama === user.fakultas);
-                                                        if (f) { fakId = f.id; const p = f.prodi.find(x => x.nama === user.programStudi); if (p) prodiId = p.id; }
-                                                    }
-                                                    setEditData({
-                                                        fullName: user.namaLengkap || "",
-                                                        email: user.email,
-                                                        role: user.role,
-                                                        fakultas: fakId,
-                                                        prodi: prodiId,
-                                                        identityNumber: user.nip || ""
-                                                    });
-                                                }}>Kelola</Button>
+                                                <div className="flex justify-end gap-2">
+                                                    {currentUserRole === 'admin' && user.role !== 'admin' && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleLoginAsClick(user)}
+                                                            disabled={loginAsLoading}
+                                                            title="Login sebagai user ini"
+                                                        >
+                                                            <UserCircle className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    <Button size="sm" variant="outline" onClick={() => {
+                                                        setEditingUser(user);
+                                                        let fakId = "", prodiId = "";
+                                                        if (user.fakultas) {
+                                                            const f = fakultasList.find(x => x.nama === user.fakultas);
+                                                            if (f) { fakId = f.id; const p = f.prodi.find(x => x.nama === user.programStudi); if (p) prodiId = p.id; }
+                                                        }
+                                                        setEditData({
+                                                            fullName: user.namaLengkap || "",
+                                                            email: user.email,
+                                                            role: user.role,
+                                                            fakultas: fakId,
+                                                            prodi: prodiId,
+                                                            identityNumber: user.nip || ""
+                                                        });
+                                                    }}>Kelola</Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     )))}
@@ -492,6 +604,27 @@ export const StaffList = () => {
                     description={`Yakin ingin menghapus ${userToDelete?.namaLengkap || userToDelete?.email}?`}
                     loading={!!deletingId}
                 />
+
+                {/* Login As Confirmation Dialog */}
+                <Dialog open={loginAsConfirmOpen} onOpenChange={setLoginAsConfirmOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Konfirmasi Login Sebagai User</DialogTitle>
+                            <DialogDescription>
+                                Anda akan login sebagai <strong>{userToImpersonate?.namaLengkap || userToImpersonate?.email}</strong>.
+                                Anda dapat kembali ke akun admin kapan saja menggunakan tombol "Kembali ke Admin".
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setLoginAsConfirmOpen(false)}>
+                                Batal
+                            </Button>
+                            <Button onClick={confirmLoginAs} disabled={loginAsLoading}>
+                                {loginAsLoading ? 'Loading...' : 'Ya, Login Sebagai User Ini'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </CardContent>
         </Card >
     );

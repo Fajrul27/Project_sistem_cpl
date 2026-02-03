@@ -83,8 +83,9 @@ export interface User {
 }
 
 export function useTranskripCPL() {
-    const { role, userId, loading: roleLoading } = useUserRole();
+    const { role, userId, loading: roleLoading, profile } = useUserRole();
     const isMahasiswa = role === "mahasiswa";
+    const isDosen = role === "dosen" || role === "kaprodi";
 
     const [transkripList, setTranskripList] = useState<TranskripItem[]>([]);
     const [transkripCpmkList, setTranskripCpmkList] = useState<TranskripCpmkItem[]>([]);
@@ -149,12 +150,32 @@ export function useTranskripCPL() {
 
     // Watch Fakultas change to update Prodi list
     useEffect(() => {
-        if (selectedFakultas && selectedFakultas !== 'all') {
-            fetchProdiList(selectedFakultas).then(res => setProdiList(res.data || []));
-        } else {
-            fetchProdiList().then(res => setProdiList(res.data || []));
-        }
-    }, [selectedFakultas]);
+        const fetchProdi = async () => {
+            try {
+                let prodiData = [];
+                if (selectedFakultas && selectedFakultas !== 'all') {
+                    const res = await fetchProdiList(selectedFakultas);
+                    prodiData = res.data || [];
+                } else {
+                    const res = await fetchProdiList();
+                    prodiData = res.data || [];
+                }
+
+                // Filter prodi for dosen/kaprodi to only show their assigned prodi
+                if (isDosen && profile?.prodi?.id) {
+                    prodiData = prodiData.filter((p: any) => p.id === profile.prodi.id);
+                    // Auto-select dosen's prodi
+                    setSelectedProdi(profile.prodi.id);
+                }
+
+                setProdiList(prodiData);
+            } catch (error) {
+                console.error('Error fetching prodi:', error);
+                setProdiList([]);
+            }
+        };
+        fetchProdi();
+    }, [selectedFakultas, isDosen, profile]);
 
 
 
@@ -335,6 +356,7 @@ export function useTranskripCPL() {
         totalCurriculumCpl,
 
         // Roles
-        isMahasiswa
+        isMahasiswa,
+        isDosen
     };
 }

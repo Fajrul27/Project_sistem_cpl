@@ -1,14 +1,19 @@
 
 import { Router } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth.js';
+import multer from 'multer';
 import {
     getAllCpmk,
     getCpmkByMataKuliah,
     getCpmkById,
     createCpmk,
     updateCpmk,
-    deleteCpmk
+    deleteCpmk,
+    exportCpmk,
+    importCpmk
 } from '../controllers/cpmk-controller.js';
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 
@@ -29,5 +34,11 @@ router.put('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), upd
 
 // Delete CPMK (soft delete)
 router.delete('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), deleteCpmk);
+
+// Export CPMK as Excel
+router.get('/export/excel', authMiddleware, exportCpmk);
+
+// Import CPMK from Excel
+router.post('/import/excel', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), upload.single('file'), importCpmk);
 
 export default router;

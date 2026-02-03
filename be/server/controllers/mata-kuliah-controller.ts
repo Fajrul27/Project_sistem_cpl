@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { MataKuliahService } from '../services/MataKuliahService.js';
+import ExcelJS from 'exceljs';
+import { prisma } from '../lib/prisma.js';
 
 // Get all Mata Kuliah (filtered by access)
 // Get all Mata Kuliah (filtered by access)
@@ -143,5 +145,186 @@ export const deleteMataKuliah = async (req: Request, res: Response) => {
             return res.status(403).json({ error: 'Anda tidak memiliki akses untuk menghapus mata kuliah ini' });
         }
         res.status(500).json({ error: 'Gagal menghapus Mata Kuliah' });
+    }
+};
+
+// Export Mata Kuliah as Excel
+export const exportMataKuliah = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
+        const { semester, fakultasId, prodiId, kurikulumId } = req.query;
+
+        // Fetch all mata kuliah data (no pagination)
+        const result = await MataKuliahService.getAllMataKuliah({
+            userId,
+            userRole,
+            semester: semester as string,
+            fakultasId: fakultasId as string,
+            prodiId: prodiId as string,
+            kurikulumId: kurikulumId as string,
+            page: 1,
+            limit: -1, // Get all
+            q: ''
+        });
+
+        const mataKuliahList = result.data || [];
+
+        // Create Excel workbook
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Mata Kuliah');
+
+        // Define columns
+        worksheet.columns = [
+            { header: 'Kode MK', key: 'kodeMk', width: 15 },
+            { header: 'Nama MK', key: 'namaMk', width: 40 },
+            { header: 'SKS', key: 'sks', width: 8 },
+            { header: 'Semester', key: 'semester', width: 10 },
+            { header: 'Jenis MK', key: 'jenisMk', width: 20 },
+            { header: 'Program Studi', key: 'programStudi', width: 30 },
+            { header: 'Kurikulum', key: 'kurikulum', width: 20 }
+        ];
+
+        // Style header row
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Add data rows
+        mataKuliahList.forEach((mk: any) => {
+            worksheet.addRow({
+                kodeMk: mk.kodeMk,
+                namaMk: mk.namaMk,
+                sks: mk.sks,
+                semester: mk.semester,
+                jenisMk: mk.jenisMataKuliah?.nama || '',
+                programStudi: mk.prodi?.nama || '',
+                kurikulum: mk.kurikulum?.nama || ''
+            });
+        });
+
+        // Generate buffer
+        const buffer = await workbook.xlsx.writeBuffer();
+
+        // Create filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+        const filename = `mata_kuliah_${timestamp}.xlsx`;
+
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+
+    } catch (error) {
+        console.error('Export Mata Kuliah error:', error);
+        res.status(500).json({ error: 'Gagal export data Mata Kuliah' });
+    }
+};
+
+// Import Mata Kuliah from Excel
+export const importMataKuliah = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).userId;
+        const userRole = (req as any).userRole;
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).json({ error: 'File Excel harus diupload' });
+        }
+
+        // Read Excel file
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(file.buffer);
+        const worksheet = workbook.getWorksheet('Mata Kuliah');
+
+        if (!worksheet) {
+            return res.status(400).json({ error: 'Sheet "Mata Kuliah" tidak ditemukan dalam file Excel' });
+        }
+
+        const errors: string[] = [];
+        const successes: any[] = [];
+        let rowNumber = 1; // Start from header
+
+        // Process each row (skip header)
+        for (const row of worksheet.getSheetValues() as any[]) {
+            rowNumber++;
+            if (rowNumber === 2) continue; // Skip header row
+
+            if (!row || row.length === 0) continue; // Skip empty rows
+
+            const [, kodeMk, namaMk, sks, semester, jenisMk, programStudi, kurikulum] = row;
+
+            // Validate required fields
+            if (!kodeMk || !namaMk) {
+                errors.push(`Baris ${rowNumber}: Kode MK dan Nama MK harus diisi`);
+                continue;
+            }
+
+            try {
+                // Find references if needed
+                let jenisMkId, prodiId, kurikulumId;
+
+                if (jenisMk) {
+                    const jenisMkData = await prisma.jenisMataKuliah.findFirst({
+                        where: { nama: jenisMk as string }
+                    });
+                    jenisMkId = jenisMkData?.id;
+                }
+
+                if (programStudi) {
+                    const prodiData = await prisma.prodi.findFirst({
+                        where: { nama: programStudi as string }
+                    });
+                    prodiId = prodiData?.id;
+                }
+
+                if (kurikulum) {
+                    const kurikulumData = await prisma.kurikulum.findFirst({
+                        where: { nama: kurikulum as string }
+                    });
+                    kurikulumId = kurikulumData?.id;
+                }
+
+                // Check if mata kuliah exists
+                const existingMK = await prisma.mataKuliah.findFirst({
+                    where: { kodeMk: kodeMk as string, deletedAt: null }
+                });
+
+                const mkData = {
+                    kodeMk: kodeMk as string,
+                    namaMk: namaMk as string,
+                    sks: sks ? Number(sks) : undefined,
+                    semester: semester ? Number(semester) : undefined,
+                    jenisMataKuliahId: jenisMkId,
+                    prodiId,
+                    kurikulumId
+                };
+
+                if (existingMK) {
+                    // Update existing
+                    await MataKuliahService.updateMataKuliah(existingMK.id, mkData, userId, userRole);
+                    successes.push({ row: rowNumber, kodeMk, action: 'updated' });
+                } else {
+                    // Create new
+                    await MataKuliahService.createMataKuliah(mkData, userId, userRole);
+                    successes.push({ row: rowNumber, kodeMk, action: 'created' });
+                }
+
+            } catch (error: any) {
+                errors.push(`Baris ${rowNumber} (${kodeMk}): ${error.message || 'Gagal menyimpan data'}`);
+            }
+        }
+
+        res.json({
+            message: `Import selesai. ${successes.length} data berhasil diproses.`,
+            success: successes.length,
+            errors: errors.length > 0 ? errors : undefined
+        });
+
+    } catch (error) {
+        console.error('Import Mata Kuliah error:', error);
+        res.status(500).json({ error: 'Gagal import data Mata Kuliah' });
     }
 };

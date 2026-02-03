@@ -283,11 +283,6 @@ const InputNilaiTeknikPage = () => {
                                                                         disabled={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active'}
                                                                         title={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active' ? "CPMK belum divalidasi" : ""}
                                                                     />
-                                                                    {gradesMetadata[`${student.id}_${teknik.id}`]?.updatedAt && (
-                                                                        <div className="text-[10px] text-muted-foreground text-center mt-0.5">
-                                                                            {new Date(gradesMetadata[`${student.id}_${teknik.id}`].updatedAt).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })}
-                                                                        </div>
-                                                                    )}
                                                                     {(cpmk.statusValidasi === 'validated' || cpmk.statusValidasi === 'active') && (
                                                                         <Button
                                                                             variant="ghost"

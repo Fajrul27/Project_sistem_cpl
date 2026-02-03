@@ -1,6 +1,7 @@
 
 import { Router } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth.js';
+import multer from 'multer';
 import {
   getAllMataKuliah,
   getMataKuliahSemesters,
@@ -8,8 +9,12 @@ import {
   getMataKuliahKelas,
   createMataKuliah,
   updateMataKuliah,
-  deleteMataKuliah
+  deleteMataKuliah,
+  exportMataKuliah,
+  importMataKuliah
 } from '../controllers/mata-kuliah-controller.js';
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 
@@ -33,5 +38,11 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), updateMataKu
 
 // Delete Mata Kuliah (soft delete)
 router.delete('/:id', authMiddleware, requireRole('admin', 'kaprodi'), deleteMataKuliah);
+
+// Export Mata Kuliah as Excel
+router.get('/export/excel', authMiddleware, exportMataKuliah);
+
+// Import Mata Kuliah from Excel
+router.post('/import/excel', authMiddleware, requireRole('admin', 'kaprodi'), upload.single('file'), importMataKuliah);
 
 export default router;

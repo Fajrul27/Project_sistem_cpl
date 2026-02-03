@@ -175,4 +175,135 @@ export class AuthService {
             });
         }
     }
+
+    // Login As User (Admin Impersonation)
+    static async loginAsUser(adminUserId: string, targetUserId: string) {
+        // Verify admin user
+        const adminUser = await prisma.user.findUnique({
+            where: { id: adminUserId },
+            include: { role: { include: { role: true } } }
+        });
+
+        if (!adminUser || adminUser.role?.role?.name !== 'admin') {
+            throw new Error('UNAUTHORIZED: Only admin can use this feature');
+        }
+
+        // Get target user
+        const targetUser = await prisma.user.findUnique({
+            where: { id: targetUserId },
+            include: {
+                role: { include: { role: true } },
+                profile: {
+                    include: {
+                        kelasRef: true,
+                        prodi: { include: { fakultas: true } }
+                    }
+                }
+            }
+        });
+
+        if (!targetUser) {
+            throw new Error('Target user tidak ditemukan');
+        }
+
+        // Prevent impersonating other admins (optional security measure)
+        if (targetUser.role?.role?.name === 'admin') {
+            throw new Error('Cannot impersonate other admin users');
+        }
+
+        // Generate impersonation JWT token
+        const token = jwt.sign(
+            {
+                userId: targetUser.id,
+                email: targetUser.email,
+                role: targetUser.role?.role?.name || 'mahasiswa',
+                originalUserId: adminUserId, // Track original admin
+                isImpersonating: true
+            },
+            process.env.JWT_SECRET || 'your-secret-key',
+            { expiresIn: '7d' }
+        );
+
+        // Create session with impersonation flag
+        await prisma.session.create({
+            data: {
+                userId: targetUser.id,
+                token,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            }
+        });
+
+        return {
+            token,
+            user: {
+                id: targetUser.id,
+                email: targetUser.email,
+                role: targetUser.role?.role?.name || 'mahasiswa',
+                profile: targetUser.profile
+            },
+            originalAdmin: {
+                id: adminUser.id,
+                email: adminUser.email
+            },
+            isImpersonating: true
+        };
+    }
+
+    // Return to Admin (Exit Impersonation)
+    static async returnToAdmin(originalAdminId: string, currentToken: string) {
+        // Delete impersonation session
+        if (currentToken) {
+            await prisma.session.deleteMany({
+                where: { token: currentToken }
+            });
+        }
+
+        // Get admin user
+        const adminUser = await prisma.user.findUnique({
+            where: { id: originalAdminId },
+            include: {
+                role: { include: { role: true } },
+                profile: {
+                    include: {
+                        kelasRef: true,
+                        prodi: { include: { fakultas: true } }
+                    }
+                }
+            }
+        });
+
+        if (!adminUser) {
+            throw new Error('Admin user tidak ditemukan');
+        }
+
+        // Generate new admin token
+        const token = jwt.sign(
+            {
+                userId: adminUser.id,
+                email: adminUser.email,
+                role: adminUser.role?.role?.name || 'admin'
+            },
+            process.env.JWT_SECRET || 'your-secret-key',
+            { expiresIn: '7d' }
+        );
+
+        // Create new admin session
+        await prisma.session.create({
+            data: {
+                userId: adminUser.id,
+                token,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            }
+        });
+
+        return {
+            token,
+            user: {
+                id: adminUser.id,
+                email: adminUser.email,
+                role: adminUser.role?.role?.name || 'admin',
+                profile: adminUser.profile
+            }
+        };
+    }
 }

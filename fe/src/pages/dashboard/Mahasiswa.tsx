@@ -10,14 +10,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Search, TrendingUp, SlidersHorizontal } from "lucide-react";
+import { Search, TrendingUp, SlidersHorizontal, Download, Upload } from "lucide-react";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useMahasiswa, Profile } from "@/hooks/useMahasiswa";
 import { usePermission } from "@/contexts/PermissionContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { toast } from "sonner";
 
 const MahasiswaPage = () => {
   const { can } = usePermission();
+  const { role } = useUserRole();
   const {
     profiles,
     fakultasList,
@@ -40,7 +43,76 @@ const MahasiswaPage = () => {
     pagination
   } = useMahasiswa();
 
+  const [importing, setImporting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleExport = async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (filters.fakultasFilter !== 'all') queryParams.append('fakultasId', filters.fakultasFilter);
+      if (filters.prodiFilter !== 'all') queryParams.append('prodiId', filters.prodiFilter);
+      if (filters.semesterFilter !== 'all') queryParams.append('semester', filters.semesterFilter);
+      if (filters.kelasFilter !== 'all') queryParams.append('kelas', filters.kelasFilter);
+
+      const API_URL = import.meta.env.VITE_API_URL;
+      const url = `${API_URL}/users/export/mahasiswa?${queryParams.toString()}`;
+
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Gagal export data');
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `mahasiswa_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+
+      toast.success('Data Mahasiswa berhasil diexport');
+    } catch (error) {
+      toast.error('Gagal export data Mahasiswa');
+    }
+  };
+
+  const handleImportClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      setImporting(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const API_URL = import.meta.env.VITE_API_URL;
+        const response = await fetch(`${API_URL}/users/import/mahasiswa`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+        toast.success(result.message || 'Data berhasil diimport');
+        if (result.errors && result.errors.length > 0) {
+          result.errors.slice(0, 3).forEach((err: string) => toast.error(err));
+        }
+
+        window.location.reload();
+      } catch (error: any) {
+        toast.error(error.message || 'Gagal import data Mahasiswa');
+      } finally {
+        setImporting(false);
+      }
+    };
+    input.click();
+  };
 
   // Local state for debounced search
   const [localSearch, setLocalSearch] = useState(filters.searchTerm);
@@ -211,11 +283,25 @@ const MahasiswaPage = () => {
 
         {/* List Card */}
         <Card>
-          <CardHeader>
-            <CardTitle>Daftar Mahasiswa</CardTitle>
-            <CardDescription>
-              Menampilkan {profiles.length} mahasiswa terdaftar dari total {pagination?.totalItems || 0}
-            </CardDescription>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <CardTitle>Daftar Mahasiswa</CardTitle>
+              <CardDescription>
+                Menampilkan {profiles.length} mahasiswa terdaftar dari total {pagination?.totalItems || 0}
+              </CardDescription>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Button size="sm" variant="outline" onClick={handleExport} disabled={loading}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              {(role === 'admin' || role === 'kaprodi') && (
+                <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {importing ? 'Importing...' : 'Import'}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {loading && profiles.length === 0 ? (
@@ -256,14 +342,16 @@ const MahasiswaPage = () => {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleShowProgress(student)}
-                              >
-                                <TrendingUp className="h-4 w-4 mr-2" />
-                                Progress
-                              </Button>
+                              <div className="flex gap-2 justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleShowProgress(student)}
+                                >
+                                  <TrendingUp className="h-4 w-4 mr-2" />
+                                  Progress
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))

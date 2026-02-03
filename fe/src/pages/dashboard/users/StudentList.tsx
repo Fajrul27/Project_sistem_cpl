@@ -8,14 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
 import { fetchAllUsers, updateUserRole, createUserWithRole, updateUser, deleteUser, updateProfile, fetchKelas, fetchFakultasList, fetchAngkatanList } from "@/lib/api";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, UserCircle, Download, Upload } from "lucide-react";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { Pagination } from "@/components/common/Pagination";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Label } from "@/components/ui/label";
 import { RequiredLabel } from "@/components/common/RequiredLabel";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useImpersonation } from "@/hooks/useImpersonation";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface UserRow {
     id: string;
@@ -116,6 +118,94 @@ export const StudentList = () => {
 
     const [savingEdit, setSavingEdit] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [importing, setImporting] = useState(false);
+
+    const handleExport = async () => {
+        try {
+            const queryParams = new URLSearchParams();
+            if (facultyFilter !== 'all') queryParams.append('fakultasId', facultyFilter);
+            if (programFilter !== 'all') queryParams.append('prodiId', programFilter);
+            if (semesterFilter !== 'all') queryParams.append('semester', semesterFilter);
+            if (kelasFilter !== 'all') queryParams.append('kelasId', kelasFilter);
+
+            const API_URL = import.meta.env.VITE_API_URL;
+            const url = `${API_URL}/users/export/mahasiswa?${queryParams.toString()}`;
+
+            const response = await fetch(url, { credentials: 'include' });
+            if (!response.ok) throw new Error('Gagal export data');
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `mahasiswa_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+
+            toast.success('Data Mahasiswa berhasil diexport');
+        } catch (error) {
+            toast.error('Gagal export data Mahasiswa');
+        }
+    };
+
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.xls';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            setImporting(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const API_URL = import.meta.env.VITE_API_URL;
+                const response = await fetch(`${API_URL}/users/import/mahasiswa`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+                toast.success(result.message || 'Data berhasil diimport');
+                if (result.errors && result.errors.length > 0) {
+                    result.errors.slice(0, 3).forEach((err: string) => toast.error(err));
+                }
+
+                loadUsers();
+            } catch (error: any) {
+                toast.error(error.message || 'Gagal import data Mahasiswa');
+            } finally {
+                setImporting(false);
+            }
+        };
+        input.click();
+    };
+
+    // Login As Feature
+    const { loginAsUser, loading: loginAsLoading } = useImpersonation();
+    const { role: currentUserRole } = useUserRole();
+    const [loginAsConfirmOpen, setLoginAsConfirmOpen] = useState(false);
+    const [userToImpersonate, setUserToImpersonate] = useState<UserRow | null>(null);
+
+    const handleLoginAsClick = (user: UserRow) => {
+        setUserToImpersonate(user);
+        setLoginAsConfirmOpen(true);
+    };
+
+    const confirmLoginAs = async () => {
+        if (userToImpersonate) {
+            await loginAsUser(userToImpersonate.id);
+            setLoginAsConfirmOpen(false);
+            setUserToImpersonate(null);
+        }
+    };
 
     // Load References
     useEffect(() => {
@@ -312,7 +402,7 @@ export const StudentList = () => {
                 await updateProfile(editingUser.profileId, profilePayload);
             }
 
-            toast.success(`Data mahasiswa "${editingUser?.profile?.namaLengkap || editingUser?.email || 'Unknown'}" berhasil diperbarui`);
+            toast.success(`Data mahasiswa "${editingUser?.namaLengkap || editingUser?.email || 'Unknown'}" berhasil diperbarui`);
             setEditingUser(null);
             loadUsers();
         } catch (error: any) {
@@ -359,6 +449,15 @@ export const StudentList = () => {
                     </CardDescription>
                 </div>
                 <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={handleExport} disabled={loading} className="h-9">
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing} className="h-9">
+                        <Upload className="h-4 w-4 mr-2" />
+                        {importing ? 'Importing...' : 'Import'}
+                    </Button>
+
                     <div className="relative min-w-[200px]">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -527,30 +626,43 @@ export const StudentList = () => {
                                             <TableCell className="text-center">{user.semester}</TableCell>
                                             <TableCell className="text-center">{user.angkatan}</TableCell>
                                             <TableCell className="text-right">
-                                                <Button size="sm" variant="outline" onClick={() => {
-                                                    setEditingUser(user);
-                                                    let fakId = "", prodiId = "";
-                                                    if (user.fakultas) {
-                                                        const f = fakultasList.find(x => x.nama === user.fakultas);
-                                                        if (f) {
-                                                            fakId = f.id;
-                                                            const p = f.prodi.find(x => x.nama === user.programStudi);
-                                                            if (p) prodiId = p.id;
+                                                <div className="flex justify-end gap-2">
+                                                    {currentUserRole === 'admin' && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleLoginAsClick(user)}
+                                                            disabled={loginAsLoading}
+                                                            title="Login sebagai user ini"
+                                                        >
+                                                            <UserCircle className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    <Button size="sm" variant="outline" onClick={() => {
+                                                        setEditingUser(user);
+                                                        let fakId = "", prodiId = "";
+                                                        if (user.fakultas) {
+                                                            const f = fakultasList.find(x => x.nama === user.fakultas);
+                                                            if (f) {
+                                                                fakId = f.id;
+                                                                const p = f.prodi.find(x => x.nama === user.programStudi);
+                                                                if (p) prodiId = p.id;
+                                                            }
                                                         }
-                                                    }
-                                                    setEditData({
-                                                        fullName: user.namaLengkap || "",
-                                                        email: user.email,
-                                                        role: "mahasiswa",
-                                                        fakultas: fakId,
-                                                        prodi: prodiId,
-                                                        identityType: "mahasiswa",
-                                                        identityNumber: user.nim || "",
-                                                        semester: user.semester ? String(user.semester) : "",
-                                                        kelasId: user.kelasId || "",
-                                                        angkatanId: user.angkatanId || "",
-                                                    })
-                                                }}>Kelola</Button>
+                                                        setEditData({
+                                                            fullName: user.namaLengkap || "",
+                                                            email: user.email,
+                                                            role: "mahasiswa",
+                                                            fakultas: fakId,
+                                                            prodi: prodiId,
+                                                            identityType: "mahasiswa",
+                                                            identityNumber: user.nim || "",
+                                                            semester: user.semester ? String(user.semester) : "",
+                                                            kelasId: user.kelasId || "",
+                                                            angkatanId: user.angkatanId || "",
+                                                        })
+                                                    }}>Kelola</Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -615,6 +727,27 @@ export const StudentList = () => {
                 description={`Apakah Anda yakin ingin menghapus mahasiswa ${userToDelete?.namaLengkap || userToDelete?.email}? Data akan dihapus permanen.`}
                 loading={deletingId !== null}
             />
+
+            {/* Login As Confirmation Dialog */}
+            <Dialog open={loginAsConfirmOpen} onOpenChange={setLoginAsConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Konfirmasi Login Sebagai User</DialogTitle>
+                        <DialogDescription>
+                            Anda akan login sebagai <strong>{userToImpersonate?.namaLengkap || userToImpersonate?.email}</strong>.
+                            Anda dapat kembali ke akun admin kapan saja menggunakan tombol "Kembali ke Admin".
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setLoginAsConfirmOpen(false)}>
+                            Batal
+                        </Button>
+                        <Button onClick={confirmLoginAs} disabled={loginAsLoading}>
+                            {loginAsLoading ? 'Loading...' : 'Ya, Login Sebagai User Ini'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 };

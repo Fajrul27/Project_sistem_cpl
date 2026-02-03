@@ -33,6 +33,12 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     (req as any).userEmail = decoded.email;
     (req as any).userRole = decoded.role;
 
+    // Attach impersonation info if present
+    if (decoded.originalUserId) {
+      (req as any).originalUserId = decoded.originalUserId;
+      (req as any).isImpersonating = decoded.isImpersonating || false;
+    }
+
     // Run next middleware in the context of the user
     context.run({ userId: decoded.userId }, () => {
       next();

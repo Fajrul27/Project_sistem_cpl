@@ -106,3 +106,79 @@ export const logout = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Gagal logout' });
     }
 };
+
+// Login As User (Admin Impersonation)
+export const loginAsUser = async (req: Request, res: Response) => {
+    try {
+        const adminUserId = (req as any).userId;
+        const { userId: targetUserId } = req.params;
+
+        const result = await AuthService.loginAsUser(adminUserId, targetUserId);
+
+        // Set HttpOnly cookie with new token
+        res.cookie('token', result.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        res.json({
+            message: `Berhasil login sebagai ${result.user.email}`,
+            user: result.user,
+            originalAdmin: result.originalAdmin,
+            isImpersonating: result.isImpersonating,
+            token: result.token
+        });
+    } catch (error: any) {
+        console.error('Login as user error:', error);
+        
+        if (error.message === 'UNAUTHORIZED: Only admin can use this feature') {
+            return res.status(403).json({ error: 'Hanya admin yang dapat menggunakan fitur ini' });
+        }
+        if (error.message === 'Target user tidak ditemukan') {
+            return res.status(404).json({ error: error.message });
+        }
+        if (error.message === 'Cannot impersonate other admin users') {
+            return res.status(403).json({ error: 'Tidak dapat login sebagai admin lain' });
+        }
+        
+        res.status(500).json({ error: 'Gagal login sebagai user' });
+    }
+};
+
+// Return to Admin (Exit Impersonation)
+export const returnToAdmin = async (req: Request, res: Response) => {
+    try {
+        const originalAdminId = (req as any).originalUserId;
+        const currentToken = req.cookies.token || req.headers.authorization?.split(' ')[1];
+
+        if (!originalAdminId) {
+            return res.status(400).json({ error: 'Tidak dalam mode impersonation' });
+        }
+
+        const result = await AuthService.returnToAdmin(originalAdminId, currentToken);
+
+        // Set HttpOnly cookie with admin token
+        res.cookie('token', result.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        res.json({
+            message: 'Berhasil kembali ke akun admin',
+            user: result.user,
+            token: result.token
+        });
+    } catch (error: any) {
+        console.error('Return to admin error:', error);
+        
+        if (error.message === 'Admin user tidak ditemukan') {
+            return res.status(404).json({ error: error.message });
+        }
+        
+        res.status(500).json({ error: 'Gagal kembali ke akun admin' });
+    }
+};

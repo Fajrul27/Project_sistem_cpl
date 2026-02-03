@@ -45,6 +45,7 @@ const TranskripCPLPage = () => {
         totalCurriculumCpl,
 
         isMahasiswa,
+        isDosen,
         // Filter props
         selectedFakultas,
         setSelectedFakultas,
@@ -219,20 +220,23 @@ const TranskripCPLPage = () => {
                                                     <h4 className="font-medium leading-none">Filter Mahasiswa</h4>
                                                     <p className="text-sm text-muted-foreground">Filter daftar pencarian mahasiswa</p>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-sm font-medium">Fakultas</label>
-                                                    <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Semua Fakultas" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="all">Semua Fakultas</SelectItem>
-                                                            {fakultasList.map((f: any) => (
-                                                                <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
+                                                {/* Hide Fakultas filter for dosen/kaprodi */}
+                                                {!isDosen && (
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium">Fakultas</label>
+                                                        <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Semua Fakultas" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="all">Semua Fakultas</SelectItem>
+                                                                {fakultasList.map((f: any) => (
+                                                                    <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                )}
                                                 <div className="space-y-2">
                                                     <label className="text-sm font-medium">Program Studi</label>
                                                     <Select value={selectedProdi} onValueChange={setSelectedProdi}>
@@ -868,6 +872,244 @@ const TranskripCPLPage = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Analysis & Radar Chart for Print */}
+                            {activeTab === 'cpl' && validTranskripList.length > 0 && (() => {
+                                const sorted = [...validTranskripList].sort((a, b) => b.nilaiAkhir - a.nilaiAkhir);
+                                const highest = sorted[0];
+                                const lowest = sorted[sorted.length - 1];
+
+                                return (
+                                    <div className="mb-4 grid grid-cols-2 gap-3">
+                                        {/* Analysis Section */}
+                                        <div className="border border-black p-2">
+                                            <h3 className="text-xs font-bold mb-2">ANALISIS CAPAIAN</h3>
+                                            <div className="text-[9px] mb-2">
+                                                <div className="bg-green-50 p-2 mb-1.5 border border-green-200">
+                                                    <div className="font-semibold text-green-700">CPL Tertinggi</div>
+                                                    <div className="text-2xl font-bold text-green-800">{highest.nilaiAkhir.toFixed(2)}</div>
+                                                    <div className="font-medium">{highest.cpl.kodeCpl}</div>
+                                                    <div className="text-[8px] italic line-clamp-2">{highest.cpl.deskripsi}</div>
+                                                </div>
+                                                <div className="bg-red-50 p-2 border border-red-200">
+                                                    <div className="font-semibold text-red-700">CPL Terendah</div>
+                                                    <div className="text-2xl font-bold text-red-800">{lowest.nilaiAkhir.toFixed(2)}</div>
+                                                    <div className="font-medium">{lowest.cpl.kodeCpl}</div>
+                                                    <div className="text-[8px] italic line-clamp-2">{lowest.cpl.deskripsi}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Radar Chart Section */}
+                                        <div className="border border-black p-2">
+                                            <h3 className="text-xs font-bold mb-2">PETA RADAR CPL</h3>
+                                            <div className="text-[8px] text-center mb-1">Visualisasi Sebaran Capaian Lulusan</div>
+                                            <div className="relative" style={{ height: '140px' }}>
+                                                <svg viewBox="0 0 200 140" className="w-full h-full">
+                                                    {/* Create radar chart visualization */}
+                                                    {(() => {
+                                                        const data = validTranskripList.map(i => ({
+                                                            label: i.cpl.kodeCpl,
+                                                            value: Number(i.nilaiAkhir) || 0
+                                                        }));
+                                                        const numPoints = data.length;
+                                                        const centerX = 100;
+                                                        const centerY = 70;
+                                                        const radius = 50;
+
+                                                        // Calculate points for radar
+                                                        const points = data.map((item, idx) => {
+                                                            const angle = (Math.PI * 2 * idx) / numPoints - Math.PI / 2;
+                                                            const value = (item.value / 100) * radius;
+                                                            return {
+                                                                x: centerX + Math.cos(angle) * value,
+                                                                y: centerY + Math.sin(angle) * value,
+                                                                maxX: centerX + Math.cos(angle) * radius,
+                                                                maxY: centerY + Math.sin(angle) * radius,
+                                                                label: item.label,
+                                                                labelX: centerX + Math.cos(angle) * (radius + 15),
+                                                                labelY: centerY + Math.sin(angle) * (radius + 15)
+                                                            };
+                                                        });
+
+                                                        const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z';
+
+                                                        return (
+                                                            <>
+                                                                {/* Grid circles */}
+                                                                <circle cx={centerX} cy={centerY} r={radius * 0.25} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+                                                                <circle cx={centerX} cy={centerY} r={radius * 0.5} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+                                                                <circle cx={centerX} cy={centerY} r={radius * 0.75} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+                                                                <circle cx={centerX} cy={centerY} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+
+                                                                {/* Value indicators on circles */}
+                                                                <text x={centerX + radius * 0.25 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">25</text>
+                                                                <text x={centerX + radius * 0.5 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">50</text>
+                                                                <text x={centerX + radius * 0.75 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">75</text>
+                                                                <text x={centerX + radius + 2} y={centerY - 1} fontSize="5" fill="#6b7280" fontWeight="bold">100</text>
+                                                                <text x={centerX + 2} y={centerY - 1} fontSize="5" fill="#6b7280">0</text>
+
+                                                                {/* Grid lines */}
+                                                                {points.map((p, idx) => (
+                                                                    <line key={idx} x1={centerX} y1={centerY} x2={p.maxX} y2={p.maxY} stroke="#e5e7eb" strokeWidth="0.5" />
+                                                                ))}
+
+                                                                {/* Data polygon */}
+                                                                <path d={pathData} fill="#3b82f6" fillOpacity="0.4" stroke="#2563eb" strokeWidth="1.5" />
+
+                                                                {/* Labels */}
+                                                                {points.map((p, idx) => (
+                                                                    <text
+                                                                        key={idx}
+                                                                        x={p.labelX}
+                                                                        y={p.labelY}
+                                                                        fontSize="6"
+                                                                        textAnchor="middle"
+                                                                        alignmentBaseline="middle"
+                                                                        fontWeight="bold"
+                                                                    >
+                                                                        {p.label}
+                                                                    </text>
+                                                                ))}
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Analysis & Radar Chart for CPMK Print */}
+                            {activeTab === 'cpmk' && transkripCpmkList.length > 0 && (() => {
+                                // Aggregate CPMK data by Mata Kuliah
+                                const makulMap = new Map();
+                                transkripCpmkList.forEach(item => {
+                                    const key = item.mataKuliah.kodeMk;
+                                    if (!makulMap.has(key)) {
+                                        makulMap.set(key, {
+                                            kodeMk: key,
+                                            namaMk: item.mataKuliah.namaMk,
+                                            totalNilai: 0,
+                                            count: 0
+                                        });
+                                    }
+                                    const entry = makulMap.get(key);
+                                    entry.totalNilai += item.nilai;
+                                    entry.count += 1;
+                                });
+
+                                const makulList = Array.from(makulMap.values()).map((m: any) => ({
+                                    ...m,
+                                    average: m.totalNilai / m.count
+                                }));
+
+                                const sorted = makulList.sort((a: any, b: any) => b.average - a.average);
+                                const highest = sorted[0];
+                                const lowest = sorted[sorted.length - 1];
+
+                                const radarData = makulList.slice(0, 10).map((m: any) => ({
+                                    label: m.kodeMk,
+                                    value: m.average
+                                }));
+
+                                return (
+                                    <div className="mb-4 grid grid-cols-2 gap-3">
+                                        {/* Analysis Section */}
+                                        <div className="border border-black p-2">
+                                            <h3 className="text-xs font-bold mb-2">ANALISIS MATA KULIAH</h3>
+                                            <div className="text-[9px] mb-2">
+                                                <div className="bg-green-50 p-2 mb-1.5 border border-green-200">
+                                                    <div className="font-semibold text-green-700">Nilai Makul Tertinggi</div>
+                                                    <div className="text-2xl font-bold text-green-800">{highest.average.toFixed(2)}</div>
+                                                    <div className="font-medium">{highest.kodeMk}</div>
+                                                    <div className="text-[8px] italic line-clamp-2">{highest.namaMk}</div>
+                                                </div>
+                                                <div className="bg-red-50 p-2 border border-red-200">
+                                                    <div className="font-semibold text-red-700">Nilai Makul Terendah</div>
+                                                    <div className="text-2xl font-bold text-red-800">{lowest.average.toFixed(2)}</div>
+                                                    <div className="font-medium">{lowest.kodeMk}</div>
+                                                    <div className="text-[8px] italic line-clamp-2">{lowest.namaMk}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Radar Chart Section */}
+                                        <div className="border border-black p-2">
+                                            <h3 className="text-xs font-bold mb-2">PETA RADAR MATA KULIAH</h3>
+                                            <div className="text-[8px] text-center mb-1">Sebaran Rata-rata Nilai per MK (Sample 10 Data)</div>
+                                            <div className="relative" style={{ height: '140px' }}>
+                                                <svg viewBox="0 0 200 140" className="w-full h-full">
+                                                    {(() => {
+                                                        const numPoints = radarData.length;
+                                                        const centerX = 100;
+                                                        const centerY = 70;
+                                                        const radius = 50;
+
+                                                        // Calculate points for radar
+                                                        const points = radarData.map((item, idx) => {
+                                                            const angle = (Math.PI * 2 * idx) / numPoints - Math.PI / 2;
+                                                            const value = (item.value / 100) * radius;
+                                                            return {
+                                                                x: centerX + Math.cos(angle) * value,
+                                                                y: centerY + Math.sin(angle) * value,
+                                                                maxX: centerX + Math.cos(angle) * radius,
+                                                                maxY: centerY + Math.sin(angle) * radius,
+                                                                label: item.label,
+                                                                labelX: centerX + Math.cos(angle) * (radius + 15),
+                                                                labelY: centerY + Math.sin(angle) * (radius + 15)
+                                                            };
+                                                        });
+
+                                                        const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z';
+
+                                                        return (
+                                                            <>
+                                                                {/* Grid circles */}
+                                                                <circle cx={centerX} cy={centerY} r={radius * 0.25} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+                                                                <circle cx={centerX} cy={centerY} r={radius * 0.5} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+                                                                <circle cx={centerX} cy={centerY} r={radius * 0.75} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+                                                                <circle cx={centerX} cy={centerY} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+
+                                                                {/* Value indicators on circles */}
+                                                                <text x={centerX + radius * 0.25 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">25</text>
+                                                                <text x={centerX + radius * 0.5 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">50</text>
+                                                                <text x={centerX + radius * 0.75 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">75</text>
+                                                                <text x={centerX + radius + 2} y={centerY - 1} fontSize="5" fill="#6b7280" fontWeight="bold">100</text>
+                                                                <text x={centerX + 2} y={centerY - 1} fontSize="5" fill="#6b7280">0</text>
+
+                                                                {/* Grid lines */}
+                                                                {points.map((p, idx) => (
+                                                                    <line key={idx} x1={centerX} y1={centerY} x2={p.maxX} y2={p.maxY} stroke="#e5e7eb" strokeWidth="0.5" />
+                                                                ))}
+
+                                                                {/* Data polygon */}
+                                                                <path d={pathData} fill="#8b5cf6" fillOpacity="0.4" stroke="#7c3aed" strokeWidth="1.5" />
+
+                                                                {/* Labels */}
+                                                                {points.map((p, idx) => (
+                                                                    <text
+                                                                        key={idx}
+                                                                        x={p.labelX}
+                                                                        y={p.labelY}
+                                                                        fontSize="6"
+                                                                        textAnchor="middle"
+                                                                        alignmentBaseline="middle"
+                                                                        fontWeight="bold"
+                                                                    >
+                                                                        {p.label}
+                                                                    </text>
+                                                                ))}
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Table */}
                             <div className="mb-4">

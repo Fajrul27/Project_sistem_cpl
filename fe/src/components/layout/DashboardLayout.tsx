@@ -14,6 +14,10 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { DashboardNavbar } from "@/components/layout/DashboardNavbar";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useImpersonation } from "@/hooks/useImpersonation";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, LogOut } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DashboardLayoutProps {
   children?: ReactNode;
@@ -53,6 +57,7 @@ export function DashboardLayout({ children, title, description, actions }: Dashb
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { role } = useUserRole();
+  const { isImpersonating, originalAdmin, returnToAdmin, loading: impersonationLoading } = useImpersonation();
   const [pageMeta, setPageMeta] = useState<DashboardPageMeta>({
     title,
     description,
@@ -131,6 +136,30 @@ export function DashboardLayout({ children, title, description, actions }: Dashb
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Impersonation Banner */}
+            {isImpersonating && originalAdmin && (
+              <div className="print:hidden bg-warning border-b border-warning-foreground/20">
+                <Alert className="rounded-none border-0 bg-transparent items-start">
+                  <AlertCircle className="h-4 w-4 mt-0.5" />
+                  <AlertDescription className="flex items-center justify-between">
+                    <span className="text-sm">
+                      Anda sedang login sebagai user lain. Admin asli: <strong>{originalAdmin.email}</strong>
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={returnToAdmin}
+                      disabled={impersonationLoading}
+                      className="ml-4"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      {impersonationLoading ? 'Loading...' : 'Kembali ke Admin'}
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
             {/* Navbar */}
             <div className="print:hidden">
               <DashboardNavbar

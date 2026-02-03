@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, Search, Eye, SlidersHorizontal, Table as TableIcon, List as ListIcon } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Eye, SlidersHorizontal, Table as TableIcon, List as ListIcon, Download, Upload } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -46,6 +46,73 @@ const CPMKPage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingCpmk, setEditingCpmk] = useState<Cpmk | null>(null);
+    const [importing, setImporting] = useState(false);
+
+    const handleExport = async () => {
+        try {
+            const queryParams = new URLSearchParams();
+            if (filters.selectedProdi !== 'all') queryParams.append('prodiId', filters.selectedProdi);
+            if (filters.mataKuliahFilter !== 'all') queryParams.append('mataKuliahId', filters.mataKuliahFilter);
+
+            const API_URL = import.meta.env.VITE_API_URL;
+            const url = `${API_URL}/cpmk/export/excel?${queryParams.toString()}`;
+
+            const response = await fetch(url, { credentials: 'include' });
+            if (!response.ok) throw new Error('Gagal export data');
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `cpmk_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+
+            toast.success('Data CPMK berhasil diexport');
+        } catch (error) {
+            toast.error('Gagal export data CPMK');
+        }
+    };
+
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.xls';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            setImporting(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const API_URL = import.meta.env.VITE_API_URL;
+                const response = await fetch(`${API_URL}/cpmk/import/excel`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+                toast.success(result.message || 'Data berhasil diimport');
+                if (result.errors && result.errors.length > 0) {
+                    result.errors.slice(0, 3).forEach((err: string) => toast.error(err));
+                }
+
+                window.location.reload();
+            } catch (error: any) {
+                toast.error(error.message || 'Gagal import data CPMK');
+            } finally {
+                setImporting(false);
+            }
+        };
+        input.click();
+    };
     const [searchParams] = useSearchParams();
     const [viewMode, setViewMode] = useState<"list" | "matrix">("list");
     const [cpmkIdFromUrl, setCpmkIdFromUrl] = useState<string | null>(null);
@@ -363,93 +430,105 @@ const CPMKPage = () => {
                                         Menampilkan <span className="font-medium">{cpmkList.length}</span> dari {pagination.totalItems} CPMK
                                     </CardDescription>
                                 </div>
-                                {canEdit && (
-                                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button
-                                                size="sm"
-                                                onClick={() => { resetForm(); setDialogOpen(true); }}
-                                            >
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Tambah CPMK
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>{editingCpmk ? "Edit CPMK" : "Tambah CPMK Baru"}</DialogTitle>
-                                                <DialogDescription>
-                                                    Isi form untuk {editingCpmk ? "mengupdate" : "menambahkan"} data CPMK
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <form onSubmit={handleSubmit} className="space-y-4">
-                                                <div className="space-y-2">
-                                                    <RequiredLabel htmlFor="kodeCpmk" required>Kode CPMK</RequiredLabel>
-                                                    <Input
-                                                        id="kodeCpmk"
-                                                        placeholder="Contoh: CPMK 1"
-                                                        value={formData.kodeCpmk}
-                                                        onChange={(e) => setFormData({ ...formData, kodeCpmk: e.target.value })}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>Level Taksonomi (Opsional)</Label>
-                                                    <MultiTaxonomySelect
-                                                        value={formData.levelTaksonomi.join(',')}
-                                                        onChange={(levels) => setFormData({ ...formData, levelTaksonomi: levels })}
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="mataKuliah">Mata Kuliah</Label>
-                                                    <Select
-                                                        value={formData.mataKuliahId}
-                                                        onValueChange={(value) => setFormData({ ...formData, mataKuliahId: value })}
-                                                        disabled={!!editingCpmk}
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Pilih Mata Kuliah" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {mataKuliahList.map((mk) => {
-                                                                const id = mk.mataKuliah?.id || mk.id;
-                                                                const kode = mk.mataKuliah?.kodeMk || mk.kodeMk;
-                                                                const nama = mk.mataKuliah?.namaMk || mk.namaMk;
-                                                                return (
-                                                                    <SelectItem key={id} value={id}>
-                                                                        {kode} - {nama}
-                                                                    </SelectItem>
-                                                                );
-                                                            })}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="deskripsi">Deskripsi</Label>
-                                                    <Textarea
-                                                        id="deskripsi"
-                                                        placeholder="Deskripsi capaian pembelajaran"
-                                                        value={formData.deskripsi}
-                                                        onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                                                        rows={3}
-                                                    />
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <Button type="submit" className="flex-1" disabled={submitting}>
-                                                        {submitting ? (
-                                                            <>
-                                                                <LoadingSpinner size="sm" className="mr-2" />
-                                                                {editingCpmk ? "Memperbarui..." : "Menyimpan..."}
-                                                            </>
-                                                        ) : editingCpmk ? "Update" : "Simpan"}
-                                                    </Button>
-                                                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                                                        Batal
-                                                    </Button>
-                                                </div>
-                                            </form>
-                                        </DialogContent>
-                                    </Dialog>
-                                )}
+                                <div className="flex gap-2 flex-wrap">
+                                    <Button size="sm" variant="outline" onClick={handleExport} disabled={loading}>
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Export
+                                    </Button>
+                                    {canEdit && (
+                                        <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            {importing ? 'Importing...' : 'Import'}
+                                        </Button>
+                                    )}
+                                    {canEdit && (
+                                        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => { resetForm(); setDialogOpen(true); }}
+                                                >
+                                                    <Plus className="h-4 w-4 mr-2" />
+                                                    Tambah CPMK
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>{editingCpmk ? "Edit CPMK" : "Tambah CPMK Baru"}</DialogTitle>
+                                                    <DialogDescription>
+                                                        Isi form untuk {editingCpmk ? "mengupdate" : "menambahkan"} data CPMK
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <form onSubmit={handleSubmit} className="space-y-4">
+                                                    <div className="space-y-2">
+                                                        <RequiredLabel htmlFor="kodeCpmk" required>Kode CPMK</RequiredLabel>
+                                                        <Input
+                                                            id="kodeCpmk"
+                                                            placeholder="Contoh: CPMK 1"
+                                                            value={formData.kodeCpmk}
+                                                            onChange={(e) => setFormData({ ...formData, kodeCpmk: e.target.value })}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label>Level Taksonomi (Opsional)</Label>
+                                                        <MultiTaxonomySelect
+                                                            value={formData.levelTaksonomi.join(',')}
+                                                            onChange={(levels) => setFormData({ ...formData, levelTaksonomi: levels })}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="mataKuliah">Mata Kuliah</Label>
+                                                        <Select
+                                                            value={formData.mataKuliahId}
+                                                            onValueChange={(value) => setFormData({ ...formData, mataKuliahId: value })}
+                                                            disabled={!!editingCpmk}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Pilih Mata Kuliah" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {mataKuliahList.map((mk) => {
+                                                                    const id = mk.mataKuliah?.id || mk.id;
+                                                                    const kode = mk.mataKuliah?.kodeMk || mk.kodeMk;
+                                                                    const nama = mk.mataKuliah?.namaMk || mk.namaMk;
+                                                                    return (
+                                                                        <SelectItem key={id} value={id}>
+                                                                            {kode} - {nama}
+                                                                        </SelectItem>
+                                                                    );
+                                                                })}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="deskripsi">Deskripsi</Label>
+                                                        <Textarea
+                                                            id="deskripsi"
+                                                            placeholder="Deskripsi capaian pembelajaran"
+                                                            value={formData.deskripsi}
+                                                            onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                                                            rows={3}
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <Button type="submit" className="flex-1" disabled={submitting}>
+                                                            {submitting ? (
+                                                                <>
+                                                                    <LoadingSpinner size="sm" className="mr-2" />
+                                                                    {editingCpmk ? "Memperbarui..." : "Menyimpan..."}
+                                                                </>
+                                                            ) : editingCpmk ? "Update" : "Simpan"}
+                                                        </Button>
+                                                        <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                                                            Batal
+                                                        </Button>
+                                                    </div>
+                                                </form>
+                                            </DialogContent>
+                                        </Dialog>
+                                    )}
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="overflow-x-auto">
