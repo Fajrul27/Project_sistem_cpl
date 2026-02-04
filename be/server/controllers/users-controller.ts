@@ -191,10 +191,10 @@ export const importMahasiswa = async (req: Request, res: Response) => {
 
         const ExcelJS = (await import('exceljs')).default;
         const prisma = (await import('../lib/prisma.js')).prisma;
-        const bcrypt = (await import('bcrypt')).default;
+        const bcrypt = (await import('bcryptjs')).default;
 
         const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.load(file.buffer);
+        await workbook.xlsx.load(file.buffer as any);
         const worksheet = workbook.getWorksheet('Mahasiswa');
 
         if (!worksheet) {
@@ -261,8 +261,14 @@ export const importMahasiswa = async (req: Request, res: Response) => {
                     await prisma.user.create({
                         data: {
                             email: email as string,
-                            password: hashedPassword,
-                            role: 'mahasiswa',
+                            passwordHash: hashedPassword,
+                            role: {
+                                create: {
+                                    role: {
+                                        connect: { name: 'mahasiswa' }
+                                    }
+                                }
+                            },
                             profile: {
                                 create: {
                                     nim: nim as string,

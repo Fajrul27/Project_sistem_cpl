@@ -236,7 +236,7 @@ export const importMataKuliah = async (req: Request, res: Response) => {
 
         // Read Excel file
         const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.load(file.buffer);
+        await workbook.xlsx.load(file.buffer as any);
         const worksheet = workbook.getWorksheet('Mata Kuliah');
 
         if (!worksheet) {
@@ -289,7 +289,7 @@ export const importMataKuliah = async (req: Request, res: Response) => {
 
                 // Check if mata kuliah exists
                 const existingMK = await prisma.mataKuliah.findFirst({
-                    where: { kodeMk: kodeMk as string, deletedAt: null }
+                    where: { kodeMk: kodeMk as string }
                 });
 
                 const mkData = {

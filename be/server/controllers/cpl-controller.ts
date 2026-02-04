@@ -199,7 +199,7 @@ export const importCpl = async (req: Request, res: Response) => {
         }
 
         const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.load(file.buffer);
+        await workbook.xlsx.load(file.buffer as any);
         const worksheet = workbook.getWorksheet('CPL');
 
         if (!worksheet) {
@@ -240,7 +240,7 @@ export const importCpl = async (req: Request, res: Response) => {
                 }
 
                 const existingCPL = await prisma.cpl.findFirst({
-                    where: { kodeCpl: kodeCpl as string, deletedAt: null }
+                    where: { kodeCpl: kodeCpl as string }
                 });
 
                 const cplData = {

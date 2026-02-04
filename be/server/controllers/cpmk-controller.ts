@@ -221,7 +221,7 @@ export const importCpmk = async (req: Request, res: Response) => {
         const ExcelJS = (await import('exceljs')).default;
         const prisma = (await import('../lib/prisma.js')).prisma;
         const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.load(file.buffer);
+        await workbook.xlsx.load(file.buffer as any);
         const worksheet = workbook.getWorksheet('CPMK');
 
         if (!worksheet) {
@@ -248,7 +248,7 @@ export const importCpmk = async (req: Request, res: Response) => {
                 let mataKuliahId, levelTaksonomiId;
 
                 const mkData = await prisma.mataKuliah.findFirst({
-                    where: { namaMk: mataKuliah as string, deletedAt: null }
+                    where: { namaMk: mataKuliah as string }
                 });
                 mataKuliahId = mkData?.id;
 
@@ -259,13 +259,13 @@ export const importCpmk = async (req: Request, res: Response) => {
 
                 if (levelTaksonomi) {
                     const levelData = await prisma.levelTaksonomi.findFirst({
-                        where: { nama: levelTaksonomi as string }
+                        where: { kode: levelTaksonomi as string }
                     });
                     levelTaksonomiId = levelData?.id;
                 }
 
                 const existingCPMK = await prisma.cpmk.findFirst({
-                    where: { kodeCpmk: kodeCpmk as string, mataKuliahId, deletedAt: null }
+                    where: { kodeCpmk: kodeCpmk as string, mataKuliahId }
                 });
 
                 const cpmkData = {
