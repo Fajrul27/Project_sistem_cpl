@@ -55,9 +55,9 @@ export function useDosenPengampu() {
     const [semesterList, setSemesterList] = useState<any[]>([]);
 
     // Filters / Selection
-    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
-    const [selectedProdi, setSelectedProdi] = useState<string>("all");
-    const [selectedSemester, setSelectedSemester] = useState<string>("all");
+    const [selectedFakultas, setSelectedFakultas] = useState<string>("");
+    const [selectedProdi, setSelectedProdi] = useState<string>("");
+    const [selectedSemester, setSelectedSemester] = useState<string>("");
     const [selectedMk, setSelectedMk] = useState<string>("");
     const [selectedDosen, setSelectedDosen] = useState<string>("");
 
@@ -84,14 +84,14 @@ export function useDosenPengampu() {
 
     const fetchProdi = useCallback(async () => {
         try {
-            const fakultasId = selectedFakultas !== 'all' ? selectedFakultas : undefined;
+            const fakultasId = selectedFakultas !== 'all' && selectedFakultas !== "" ? selectedFakultas : undefined;
             const res = await fetchProdiList(fakultasId);
             setProdiList(res.data || []);
 
             // Reset selected Prodi if not valid for current fakultas (unless 'all')
-            if (selectedProdi !== 'all') {
+            if (selectedProdi !== 'all' && selectedProdi !== "") {
                 const exists = (res.data || []).find((p: any) => p.id === selectedProdi);
-                if (!exists) setSelectedProdi("all");
+                if (!exists) setSelectedProdi("");
             }
         } catch (error) {
             console.error("Error fetching prodi:", error);

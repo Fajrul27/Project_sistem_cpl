@@ -17,9 +17,10 @@ export function useAnalisis() {
     const [distributionData, setDistributionData] = useState<any[]>([]);
 
     // Filter State
-    const [semester, setSemester] = useState("all");
-    const [fakultasFilter, setFakultasFilter] = useState("all");
-    const [prodiFilter, setProdiFilter] = useState("all");
+    // Filter State
+    const [semester, setSemester] = useState("");
+    const [fakultasFilter, setFakultasFilter] = useState("");
+    const [prodiFilter, setProdiFilter] = useState("");
 
     // Lists for Filters
     const [fakultasList, setFakultasList] = useState<any[]>([]);
@@ -45,6 +46,15 @@ export function useAnalisis() {
     }, []);
 
     const fetchAnalysisData = useCallback(async () => {
+        // Enforce all filters are selected
+        if (!semester || !fakultasFilter || !prodiFilter || semester === 'all' || fakultasFilter === 'all' || prodiFilter === 'all') {
+            setCplData([]);
+            setRadarData([]);
+            setDistributionData([]);
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             const response = await fetchAnalisisCPL(semester, fakultasFilter, prodiFilter);
@@ -67,13 +77,13 @@ export function useAnalisis() {
     }, [fetchAnalysisData]);
 
     const resetFilters = () => {
-        setSemester("all");
-        setFakultasFilter("all");
-        setProdiFilter("all");
+        setSemester("");
+        setFakultasFilter("");
+        setProdiFilter("");
     };
 
     // Derived list for Prodi based on Fakultas selection
-    const filteredProdiList = fakultasFilter !== "all"
+    const filteredProdiList = fakultasFilter && fakultasFilter !== "all"
         ? prodiList.filter(p => p.fakultasId === fakultasFilter)
         : prodiList;
 

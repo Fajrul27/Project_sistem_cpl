@@ -30,7 +30,7 @@ const AnalisisiPage = () => {
 
 
 
-  const hasActiveFilters = semester !== "all" || fakultasFilter !== "all" || prodiFilter !== "all";
+  const isFilterComplete = semester && fakultasFilter && prodiFilter && semester !== 'all' && fakultasFilter !== 'all' && prodiFilter !== 'all';
 
   // Standard colors for distribution chart: Reversed to match Top (Green) -> Bottom (Red)
   const chartColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#22c55e'];
@@ -113,7 +113,7 @@ const AnalisisiPage = () => {
             </PopoverContent>
           </Popover>
 
-          {hasActiveFilters && (
+          {isFilterComplete && (
             <Button variant="outline" onClick={resetFilters} className="text-muted-foreground hover:text-foreground">
               Reset Filter
             </Button>
@@ -121,7 +121,7 @@ const AnalisisiPage = () => {
         </div>
 
         <div className={`grid gap-6 md:grid-cols-2 transition-opacity duration-200 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
-          {!hasActiveFilters ? (
+          {!isFilterComplete ? (
             <div className="md:col-span-2 py-12 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed rounded-lg bg-muted/30">
               <div className="p-4 rounded-full bg-muted">
                 <SlidersHorizontal className="w-8 h-8 text-muted-foreground" />
@@ -306,7 +306,7 @@ const AnalisisiPage = () => {
           )}
         </div>
 
-        {hasActiveFilters && (
+        {isFilterComplete && (
           <Card>
             <CardHeader>
               <CardTitle>Ringkasan Statistik</CardTitle>

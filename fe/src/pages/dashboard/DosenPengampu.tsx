@@ -8,6 +8,7 @@ import { Trash2, UserPlus } from "lucide-react";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { useDosenPengampu } from "@/hooks/useDosenPengampu";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const DosenPengampuPage = () => {
     const {
@@ -119,18 +120,17 @@ const DosenPengampuPage = () => {
                             <CardDescription>Pilih mata kuliah untuk dikelola</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Select value={selectedMk} onValueChange={setSelectedMk}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih Mata Kuliah" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {mataKuliahList.map((mk) => (
-                                        <SelectItem key={mk.id} value={mk.id}>
-                                            {mk.kodeMk} - {mk.namaMk}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <SearchableSelect
+                                value={selectedMk}
+                                onValueChange={setSelectedMk}
+                                options={mataKuliahList.map((mk) => ({
+                                    value: mk.id,
+                                    label: `${mk.kodeMk} - ${mk.namaMk}`
+                                }))}
+                                placeholder="Cari Mata Kuliah..."
+                                searchPlaceholder="Cari kode atau nama mata kuliah..."
+                                emptyMessage="Mata kuliah tidak ditemukan."
+                            />
                         </CardContent>
                     </Card>
 
@@ -143,18 +143,17 @@ const DosenPengampuPage = () => {
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium">Pilih Dosen</label>
-                                    <Select value={selectedDosen} onValueChange={setSelectedDosen}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Pilih Dosen" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {dosenList.map((dosen) => (
-                                                <SelectItem key={dosen.id} value={dosen.id}>
-                                                    {dosen.profile?.namaLengkap || dosen.email}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <SearchableSelect
+                                        value={selectedDosen}
+                                        onValueChange={setSelectedDosen}
+                                        options={dosenList.map((dosen) => ({
+                                            value: dosen.id,
+                                            label: dosen.profile?.namaLengkap || dosen.email
+                                        }))}
+                                        placeholder="Cari Dosen..."
+                                        searchPlaceholder="Cari nama atau NIP/NIDN..."
+                                        emptyMessage="Dosen tidak ditemukan."
+                                    />
                                 </div>
                                 <Button
                                     className="w-full"
