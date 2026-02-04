@@ -446,250 +446,250 @@ const MahasiswaPage = () => {
                     </Button>
                   </div>
                 )}
-              </>
-              )
-        }
-            </CardContent>
-    </Card>
 
-      {/* Progress Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Progress Capaian Pembelajaran</DialogTitle>
-            <DialogDescription>
-              Detail capaian CPL untuk {selectedStudent?.full_name} ({selectedStudent?.nim})
-            </DialogDescription>
-          </DialogHeader>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
-          {progressLoading ? (
-            <LoadingScreen fullScreen={false} message="Menghitung progress..." />
-          ) : studentProgress ? (
-            <div className="space-y-6 animate-in fade-in duration-500">
-              {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 shadow-sm">
-                  <CardContent className="pt-6 pb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-primary">Rata-rata CPL</span>
-                      <TrendingUp className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="text-3xl font-bold text-primary">
-                      {studentProgress.avgScore.toFixed(2)}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">Skala 0-100</p>
-                  </CardContent>
-                </Card>
+        {/* Progress Dialog */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Progress Capaian Pembelajaran</DialogTitle>
+              <DialogDescription>
+                Detail capaian CPL untuk {selectedStudent?.full_name} ({selectedStudent?.nim})
+              </DialogDescription>
+            </DialogHeader>
 
-                <Card className="bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 shadow-sm dark:from-green-900/10 dark:to-green-900/5 dark:border-green-800">
-                  <CardContent className="pt-6 pb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-green-700 dark:text-green-400">Total CPL</span>
-                      <div className="h-4 w-4 rounded-full bg-green-500/20" />
-                    </div>
-                    <div className="text-3xl font-bold text-green-700 dark:text-green-400">
-                      {studentProgress.completedCPL} <span className="text-lg font-normal text-muted-foreground">/ {studentProgress.totalCPL}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">CPL Terpenuhi (Nilai &ge; 70)</p>
-                  </CardContent>
-                </Card>
+            {progressLoading ? (
+              <LoadingScreen fullScreen={false} message="Menghitung progress..." />
+            ) : studentProgress ? (
+              <div className="space-y-6 animate-in fade-in duration-500">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 shadow-sm">
+                    <CardContent className="pt-6 pb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-primary">Rata-rata CPL</span>
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="text-3xl font-bold text-primary">
+                        {studentProgress.avgScore.toFixed(2)}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Skala 0-100</p>
+                    </CardContent>
+                  </Card>
 
+                  <Card className="bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 shadow-sm dark:from-green-900/10 dark:to-green-900/5 dark:border-green-800">
+                    <CardContent className="pt-6 pb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-green-700 dark:text-green-400">Total CPL</span>
+                        <div className="h-4 w-4 rounded-full bg-green-500/20" />
+                      </div>
+                      <div className="text-3xl font-bold text-green-700 dark:text-green-400">
+                        {studentProgress.completedCPL} <span className="text-lg font-normal text-muted-foreground">/ {studentProgress.totalCPL}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">CPL Terpenuhi (Nilai &ge; 70)</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-sm">
+                    <CardContent className="pt-6 pb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Persentase Kelulusan</span>
+                        <div className="h-4 w-4" />
+                      </div>
+                      <div className="text-3xl font-bold">
+                        {Math.round((studentProgress.completedCPL / (studentProgress.totalCPL || 1)) * 100)}%
+                      </div>
+                      <Progress
+                        value={(studentProgress.completedCPL / (studentProgress.totalCPL || 1)) * 100}
+                        className="h-2 mt-3 bg-secondary"
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Chart Section */}
                 <Card className="shadow-sm">
-                  <CardContent className="pt-6 pb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">Persentase Kelulusan</span>
-                      <div className="h-4 w-4" />
+                  <CardHeader>
+                    <CardTitle className="text-base font-semibold">Grafik Pencapaian CPL</CardTitle>
+                    <CardDescription>Visualisasi nilai rata-rata per Capaian Pembelajaran Lulusan</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="h-[350px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={studentProgress.cplDetails} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorCplProgress" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted/30" />
+                          <XAxis
+                            dataKey="kode"
+                            fontSize={11}
+                            tickLine={false}
+                            axisLine={false}
+                            dy={10}
+                            className="font-medium"
+                          />
+                          <YAxis
+                            domain={[0, 100]}
+                            fontSize={11}
+                            tickLine={false}
+                            axisLine={false}
+                            tickCount={6}
+                          />
+                          <Tooltip
+                            cursor={{ fill: 'hsl(var(--muted)/0.1)' }}
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="bg-popover border rounded-lg shadow-lg p-3 max-w-[300px] z-50">
+                                    <div className="flex items-center justify-between gap-4 mb-2">
+                                      <p className="font-bold text-sm text-foreground">{data.kode}</p>
+                                      <Badge variant={data.nilai >= 70 ? "default" : "destructive"} className="text-[10px] px-1.5 h-5">
+                                        {data.nilai >= 70 ? "Tercapai" : "Belum"}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mb-3 leading-relaxed border-b pb-2">
+                                      {data.deskripsi}
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs font-medium text-muted-foreground">Nilai Rata-rata:</span>
+                                      <span className="font-bold text-primary">{Number(data.nilai).toFixed(2)}</span>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Bar
+                            dataKey="nilai"
+                            fill="url(#colorCplProgress)"
+                            radius={[6, 6, 0, 0]}
+                            barSize={32}
+                            animationDuration={1500}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
-                    <div className="text-3xl font-bold">
-                      {Math.round((studentProgress.completedCPL / (studentProgress.totalCPL || 1)) * 100)}%
-                    </div>
-                    <Progress
-                      value={(studentProgress.completedCPL / (studentProgress.totalCPL || 1)) * 100}
-                      className="h-2 mt-3 bg-secondary"
-                    />
                   </CardContent>
                 </Card>
-              </div>
 
-              {/* Chart Section */}
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-base font-semibold">Grafik Pencapaian CPL</CardTitle>
-                  <CardDescription>Visualisasi nilai rata-rata per Capaian Pembelajaran Lulusan</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="h-[350px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={studentProgress.cplDetails} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorCplProgress" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted/30" />
-                        <XAxis
-                          dataKey="kode"
-                          fontSize={11}
-                          tickLine={false}
-                          axisLine={false}
-                          dy={10}
-                          className="font-medium"
-                        />
-                        <YAxis
-                          domain={[0, 100]}
-                          fontSize={11}
-                          tickLine={false}
-                          axisLine={false}
-                          tickCount={6}
-                        />
-                        <Tooltip
-                          cursor={{ fill: 'hsl(var(--muted)/0.1)' }}
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload;
-                              return (
-                                <div className="bg-popover border rounded-lg shadow-lg p-3 max-w-[300px] z-50">
-                                  <div className="flex items-center justify-between gap-4 mb-2">
-                                    <p className="font-bold text-sm text-foreground">{data.kode}</p>
-                                    <Badge variant={data.nilai >= 70 ? "default" : "destructive"} className="text-[10px] px-1.5 h-5">
-                                      {data.nilai >= 70 ? "Tercapai" : "Belum"}
-                                    </Badge>
+                {/* Analysis & Recommendations */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Strengths */}
+                  <Card className="shadow-sm border-l-4 border-l-green-500 bg-card">
+                    <CardHeader className="pb-3 border-b">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                        <div className="p-1.5 rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                          <TrendingUp className="h-4 w-4" />
+                        </div>
+                        Kompetensi Dominan (Highest)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        {studentProgress.cplDetails.some(c => c.nilai >= 80) ? (
+                          studentProgress.cplDetails
+                            .filter(c => c.nilai >= 80)
+                            .sort((a, b) => b.nilai - a.nilai)
+                            .slice(0, 3)
+                            .map(c => (
+                              <div key={c.id} className="flex gap-3">
+                                <div className="flex-shrink-0 mt-0.5">
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-bold">
+                                    {c.kode}
+                                  </Badge>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-foreground">
+                                      {c.nilai.toFixed(2)}
+                                    </span>
+                                    <span className="text-[10px] uppercase tracking-wider text-green-600 font-semibold bg-green-100 px-1.5 rounded-sm">
+                                      Tercapai
+                                    </span>
                                   </div>
-                                  <p className="text-xs text-muted-foreground mb-3 leading-relaxed border-b pb-2">
-                                    {data.deskripsi}
+                                  <p className="text-xs text-muted-foreground leading-relaxed">
+                                    {c.deskripsi}
                                   </p>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs font-medium text-muted-foreground">Nilai Rata-rata:</span>
-                                    <span className="font-bold text-primary">{Number(data.nilai).toFixed(2)}</span>
+                                </div>
+                              </div>
+                            ))
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                            <p className="text-sm">Tidak ada CPL dengan nilai &ge; 80.</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Improvements */}
+                  <Card className="shadow-sm border-l-4 border-l-orange-500 bg-card">
+                    <CardHeader className="pb-3 border-b">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                        <div className="p-1.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
+                          <SlidersHorizontal className="h-4 w-4" />
+                        </div>
+                        Identifikasi Kelemahan (Lowest)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        {studentProgress.cplDetails.some(c => c.nilai < 70) ? (
+                          studentProgress.cplDetails
+                            .filter(c => c.nilai < 70)
+                            .sort((a, b) => a.nilai - b.nilai) // Lowest first
+                            .slice(0, 3)
+                            .map(c => (
+                              <div key={c.id} className="flex gap-3">
+                                <div className="flex-shrink-0 mt-0.5">
+                                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 font-bold">
+                                    {c.kode}
+                                  </Badge>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-destructive">
+                                      {c.nilai.toFixed(2)}
+                                    </span>
+                                    <span className="text-[10px] uppercase tracking-wider text-orange-600 font-semibold bg-orange-100 px-1.5 rounded-sm">
+                                      Di Bawah Standar
+                                    </span>
                                   </div>
+                                  <p className="text-xs text-muted-foreground leading-relaxed">
+                                    {c.deskripsi}
+                                  </p>
                                 </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Bar
-                          dataKey="nilai"
-                          fill="url(#colorCplProgress)"
-                          radius={[6, 6, 0, 0]}
-                          barSize={32}
-                          animationDuration={1500}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Analysis & Recommendations */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Strengths */}
-                <Card className="shadow-sm border-l-4 border-l-green-500 bg-card">
-                  <CardHeader className="pb-3 border-b">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                      <div className="p-1.5 rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                        <TrendingUp className="h-4 w-4" />
+                              </div>
+                            ))
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground border border-dashed rounded-md bg-muted/5">
+                            <span className="text-green-600 font-medium text-sm mb-1">Status: Aman</span>
+                            <p className="text-xs">Seluruh capaian memenuhi ambang batas minimum (70.00).</p>
+                          </div>
+                        )}
                       </div>
-                      Kompetensi Dominan (Highest)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <div className="space-y-4">
-                      {studentProgress.cplDetails.some(c => c.nilai >= 80) ? (
-                        studentProgress.cplDetails
-                          .filter(c => c.nilai >= 80)
-                          .sort((a, b) => b.nilai - a.nilai)
-                          .slice(0, 3)
-                          .map(c => (
-                            <div key={c.id} className="flex gap-3">
-                              <div className="flex-shrink-0 mt-0.5">
-                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-bold">
-                                  {c.kode}
-                                </Badge>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-bold text-foreground">
-                                    {c.nilai.toFixed(2)}
-                                  </span>
-                                  <span className="text-[10px] uppercase tracking-wider text-green-600 font-semibold bg-green-100 px-1.5 rounded-sm">
-                                    Tercapai
-                                  </span>
-                                </div>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                  {c.deskripsi}
-                                </p>
-                              </div>
-                            </div>
-                          ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
-                          <p className="text-sm">Tidak ada CPL dengan nilai &ge; 80.</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Improvements */}
-                <Card className="shadow-sm border-l-4 border-l-orange-500 bg-card">
-                  <CardHeader className="pb-3 border-b">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                      <div className="p-1.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
-                        <SlidersHorizontal className="h-4 w-4" />
-                      </div>
-                      Identifikasi Kelemahan (Lowest)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <div className="space-y-4">
-                      {studentProgress.cplDetails.some(c => c.nilai < 70) ? (
-                        studentProgress.cplDetails
-                          .filter(c => c.nilai < 70)
-                          .sort((a, b) => a.nilai - b.nilai) // Lowest first
-                          .slice(0, 3)
-                          .map(c => (
-                            <div key={c.id} className="flex gap-3">
-                              <div className="flex-shrink-0 mt-0.5">
-                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 font-bold">
-                                  {c.kode}
-                                </Badge>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-bold text-destructive">
-                                    {c.nilai.toFixed(2)}
-                                  </span>
-                                  <span className="text-[10px] uppercase tracking-wider text-orange-600 font-semibold bg-orange-100 px-1.5 rounded-sm">
-                                    Di Bawah Standar
-                                  </span>
-                                </div>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                  {c.deskripsi}
-                                </p>
-                              </div>
-                            </div>
-                          ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground border border-dashed rounded-md bg-muted/5">
-                          <span className="text-green-600 font-medium text-sm mb-1">Status: Aman</span>
-                          <p className="text-xs">Seluruh capaian memenuhi ambang batas minimum (70.00).</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-16 text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed">
-              <p>Belum ada data nilai CPL yang tersedia.</p>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div >
+            ) : (
+              <div className="text-center py-16 text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed">
+                <p>Belum ada data nilai CPL yang tersedia.</p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div >
     </DashboardPage >
   );
 };

@@ -358,17 +358,16 @@ const MataKuliahPage = () => {
             >
               Reset Filter
             </Button>
-          </div >
-          </div >
+          </div>
         )}
 
         {(() => {
           const isFilterComplete = (() => {
             if (role === 'admin') {
-               return filters.fakultasFilter && filters.prodiFilter && filters.semesterFilter;
+              return filters.fakultasFilter && filters.prodiFilter && filters.semesterFilter;
             }
             if (role === 'dosen') {
-               return filters.semesterFilter;
+              return filters.semesterFilter;
             }
             // Kaprodi
             return filters.prodiFilter && filters.semesterFilter;
@@ -382,10 +381,10 @@ const MataKuliahPage = () => {
                     <SlidersHorizontal className="w-8 h-8 text-muted-foreground" />
                   </div>
                   <div className="space-y-2">
-                     <h3 className="font-semibold text-lg">Filter Data Diperlukan</h3>
-                     <p className="text-muted-foreground max-w-sm">
-                       Silakan pilih {role === 'admin' ? "Fakultas, Program Studi, dan " : (role !== 'dosen' ? "Program Studi dan " : "")}Semester untuk menampilkan data mata kuliah.
-                     </p>
+                    <h3 className="font-semibold text-lg">Filter Data Diperlukan</h3>
+                    <p className="text-muted-foreground max-w-sm">
+                      Silakan pilih {role === 'admin' ? "Fakultas, Program Studi, dan " : (role !== 'dosen' ? "Program Studi dan " : "")}Semester untuk menampilkan data mata kuliah.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
