@@ -60,10 +60,10 @@ export function useMahasiswa() {
 
     // Filters
     const [searchTerm, setSearchTerm] = useState("");
-    const [semesterFilter, setSemesterFilter] = useState<string>("all");
-    const [prodiFilter, setProdiFilter] = useState<string>("all");
-    const [kelasFilter, setKelasFilter] = useState<string>("all");
-    const [fakultasFilter, setFakultasFilter] = useState<string>("all");
+    const [semesterFilter, setSemesterFilter] = useState<string>("");
+    const [prodiFilter, setProdiFilter] = useState<string>("");
+    const [kelasFilter, setKelasFilter] = useState<string>("");
+    const [fakultasFilter, setFakultasFilter] = useState<string>("");
 
     // Student Progress & Details
     const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);

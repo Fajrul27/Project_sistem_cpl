@@ -270,10 +270,9 @@ const EvaluasiCPLPage = () => {
                                                 onValueChange={(v) => setFilters({ ...filters, semester: v })}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Semua Semester" />
+                                                    <SelectValue placeholder="Pilih Semester" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="all">Semua Semester</SelectItem>
                                                     {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
                                                         <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
                                                     ))}

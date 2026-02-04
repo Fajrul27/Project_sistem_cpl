@@ -20,9 +20,9 @@ export function useRekapKuesioner() {
 
     // Filter States
     const [tahunAjaran, setTahunAjaran] = useState<string>("");
-    const [semester, setSemester] = useState<string>("all");
-    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
-    const [selectedProdi, setSelectedProdi] = useState<string>("all");
+    const [semester, setSemester] = useState<string>("");
+    const [selectedFakultas, setSelectedFakultas] = useState<string>("");
+    const [selectedProdi, setSelectedProdi] = useState<string>("");
 
     // Data Lists
     const [fakultasList, setFakultasList] = useState<any[]>([]);
@@ -108,13 +108,13 @@ export function useRekapKuesioner() {
     }, [tahunAjaran, semester, selectedFakultas, selectedProdi, canView, fetchStats]);
 
     const resetFilters = () => {
-        setSelectedFakultas("all");
-        setSelectedProdi("all");
-        setSemester("all");
+        setSelectedFakultas("");
+        setSelectedProdi("");
+        setSemester("");
         setTahunAjaran("");
     };
 
-    const isFiltered = !(selectedFakultas === "all" && selectedProdi === "all" && semester === "all" && !tahunAjaran);
+    const isFiltered = !(selectedFakultas === "" && selectedProdi === "" && semester === "" && !tahunAjaran);
 
     return {
         role,

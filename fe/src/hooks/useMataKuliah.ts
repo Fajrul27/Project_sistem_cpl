@@ -70,10 +70,10 @@ export const useMataKuliah = () => {
 
     // Filter State
     const [searchTerm, setSearchTerm] = useState("");
-    const [semesterFilter, setSemesterFilter] = useState<string>("all");
-    const [fakultasFilter, setFakultasFilter] = useState<string>("all");
-    const [prodiFilter, setProdiFilter] = useState<string>("all");
-    const [kurikulumFilter, setKurikulumFilter] = useState<string>("all");
+    const [semesterFilter, setSemesterFilter] = useState<string>("");
+    const [fakultasFilter, setFakultasFilter] = useState<string>("");
+    const [prodiFilter, setProdiFilter] = useState<string>("");
+    const [kurikulumFilter, setKurikulumFilter] = useState<string>("");
 
     useEffect(() => {
         fetchMataKuliah();
@@ -249,10 +249,10 @@ export const useMataKuliah = () => {
     const handleSetKurikulumFilter = (val: string) => { kurikulumFilter !== val && setPage(1); setKurikulumFilter(val); };
 
     const resetFilters = () => {
-        setSemesterFilter("all");
-        setFakultasFilter("all");
-        setProdiFilter("all");
-        setKurikulumFilter("all");
+        setSemesterFilter("");
+        setFakultasFilter("");
+        setProdiFilter("");
+        setKurikulumFilter("");
         setSearchTerm("");
         setPage(1);
     };

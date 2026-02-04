@@ -97,16 +97,16 @@ export function useTranskripCPL() {
     const [kaprodiData, setKaprodiData] = useState<KaprodiData | null>(null);
     const [totalCurriculumCpl, setTotalCurriculumCpl] = useState<number>(0);
 
-    const [semester, setSemester] = useState<string>("all");
+    const [semester, setSemester] = useState<string>("");
 
     const [tahunAjaran, setTahunAjaran] = useState<string>("all");
 
     // Filter Filters
     const [fakultasList, setFakultasList] = useState<any[]>([]);
     const [prodiList, setProdiList] = useState<any[]>([]);
-    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
-    const [selectedProdi, setSelectedProdi] = useState<string>("all");
-    const [selectedSemester, setSelectedSemester] = useState<string>("all");
+    const [selectedFakultas, setSelectedFakultas] = useState<string>("");
+    const [selectedProdi, setSelectedProdi] = useState<string>("");
+    const [selectedSemester, setSelectedSemester] = useState<string>("");
 
     // Search state
     const [searchQuery, setSearchQuery] = useState("");

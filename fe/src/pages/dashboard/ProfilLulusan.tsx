@@ -22,6 +22,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import {
     Table,
@@ -33,6 +34,8 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { useProfilLulusan, ProfilLulusan } from "@/hooks/useProfilLulusan";
+import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function ProfilLulusanPage() {
     const navigate = useNavigate();
@@ -71,6 +74,44 @@ export default function ProfilLulusanPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<ProfilLulusan | null>(null);
     // const [selectedCpls, setSelectedCpls] = useState<string[]>([]); // Removed CPL mapping
+
+    // Detail View State
+    const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+    const [selectedProfilDetail, setSelectedProfilDetail] = useState<ProfilLulusan | null>(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [detailData, setDetailData] = useState<any[]>([]);
+
+    const handleViewDetail = async (profil: ProfilLulusan) => {
+        setSelectedProfilDetail(profil);
+        setDetailDialogOpen(true);
+        setDetailLoading(true);
+
+        try {
+            // Fetch transkrip CPL for the student
+            // We assume the user is a student here, so we use their ID.
+            if (!profile?.userId) return;
+
+            const res = await api.get(`/transkrip-cpl/${profile.userId}`);
+            const transkripCpl = res.data?.transkrip || [];
+
+            // Filter only CPLs that are in this Profil
+            // ProfilLulusan has cplMappings: { cplId: string }[]
+            // We need to match those CPL IDs with the transkrip result
+            const profilCplIds = profil.cplMappings?.map(m => m.cplId) || [];
+
+            const filteredDetails = transkripCpl.filter((item: any) =>
+                profilCplIds.includes(item.cplId)
+            );
+
+            setDetailData(filteredDetails);
+
+        } catch (error) {
+            console.error("Error fetching detail:", error);
+            toast.error("Gagal memuat detail kalkulasi");
+        } finally {
+            setDetailLoading(false);
+        }
+    };
 
     // Form State
     const [formData, setFormData] = useState({
@@ -229,7 +270,7 @@ export default function ProfilLulusanPage() {
                                             setSelectedProdi(""); // Reset Prodi when Fakultas changes
                                         }}>
                                             <SelectTrigger className="w-full h-8 text-xs">
-                                                <SelectValue placeholder="Semua Fakultas" />
+                                                <SelectValue placeholder="Pilih Fakultas" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {fakultasList.map(f => (
@@ -246,7 +287,7 @@ export default function ProfilLulusanPage() {
                                             disabled={!selectedFakultas}
                                         >
                                             <SelectTrigger className="w-full h-8 text-xs">
-                                                <SelectValue placeholder="Semua Program Studi" />
+                                                <SelectValue placeholder="Pilih Program Studi" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {prodiList.map(p => (
@@ -317,7 +358,7 @@ export default function ProfilLulusanPage() {
 
                                                 {role !== 'mahasiswa' && <TableHead className="w-[100px]">Target</TableHead>}
                                                 {role === "mahasiswa" && <TableHead className="w-[200px]">Ketercapaian</TableHead>}
-                                                {(role !== 'mahasiswa' || can('edit', 'profil_lulusan')) && <TableHead>Mapping CPL</TableHead>}
+                                                <TableHead>Capaian Pembelajaran</TableHead>
                                                 {(can('edit', 'profil_lulusan') || can('delete', 'profil_lulusan')) && <TableHead className="w-[100px] text-right">Aksi</TableHead>}
                                             </TableRow>
                                         </TableHeader>
@@ -356,17 +397,14 @@ export default function ProfilLulusanPage() {
                                                             </div>
                                                         </TableCell>
                                                     )}
-                                                    {(role !== 'mahasiswa' || can('edit', 'profil_lulusan')) && (
-                                                        <TableCell>
-                                                            <div className="flex items-center justify-center">
+                                                    <TableCell>
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            {/* Admin/Dosen: Link to CPL Matrix */}
+                                                            {(role !== 'mahasiswa' || can('edit', 'profil_lulusan')) && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
                                                                     onClick={() => {
-                                                                        // Determine fakultasId. If admin selected one, use it.
-                                                                        // If not, we might need to rely on the item's prodi -> fakultas relation if available,
-                                                                        // or just pass prodiId and hope CPL page handles it (it might need fakultasId for filter logic).
-                                                                        // For now, let's pass selectedFakultas if available.
                                                                         const targetFakultasId = selectedFakultas;
                                                                         navigate(`/dashboard/cpl?view=matrix&fakultasId=${targetFakultasId}&prodiId=${item.prodiId}`, {
                                                                             state: {
@@ -384,9 +422,22 @@ export default function ProfilLulusanPage() {
                                                                 >
                                                                     <Eye className="w-4 h-4 text-blue-600" />
                                                                 </Button>
-                                                            </div>
-                                                        </TableCell>
-                                                    )}
+                                                            )}
+
+                                                            {/* Mahasiswa: View Calculation Detail */}
+                                                            {role === "mahasiswa" && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() => handleViewDetail(item)}
+                                                                    title="Lihat Detail Kalkulasi"
+                                                                >
+                                                                    <Eye className="w-4 h-4 text-primary" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+
                                                     {(can('edit', 'profil_lulusan') || can('delete', 'profil_lulusan')) && (
                                                         <TableCell className="text-right">
                                                             <div className="flex justify-end gap-2">
@@ -596,6 +647,76 @@ export default function ProfilLulusanPage() {
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
                             <Button onClick={handleSave}><Save className="w-4 h-4 mr-2" /> Simpan</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Detail View Dialog */}
+                <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+                    <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+                        <DialogHeader>
+                            <DialogTitle>Detail Kalkulasi Profil Lulusan</DialogTitle>
+                            <DialogDescription>
+                                {selectedProfilDetail?.kode} - {selectedProfilDetail?.nama}
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="flex-1 overflow-auto pr-2">
+                            {detailLoading ? (
+                                <div className="flex justify-center py-8">
+                                    <LoadingSpinner size="lg" />
+                                </div>
+                            ) : detailData.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    Tidak ada data detail untuk profil ini.
+                                </div>
+                            ) : (
+                                <Accordion type="multiple" className="w-full space-y-2">
+                                    {detailData.map((item, index) => (
+                                        <AccordionItem key={index} value={`item-${index}`} className="border rounded-md px-4">
+                                            <AccordionTrigger className="hover:no-underline">
+                                                <div className="flex flex-1 items-center justify-between mr-4 text-left">
+                                                    <div className="space-y-1">
+                                                        <div className="font-semibold text-sm">{item.cpl.kodeCpl}</div>
+                                                        <div className="text-xs text-muted-foreground line-clamp-1">{item.cpl.deskripsi}</div>
+                                                    </div>
+                                                    <Badge variant={Number(item.nilaiAkhir) >= 70 ? "default" : "secondary"}>
+                                                        {Number(item.nilaiAkhir).toFixed(2)}
+                                                    </Badge>
+                                                </div>
+                                            </AccordionTrigger>
+                                            <AccordionContent className="pt-2">
+                                                <div className="rounded-md bg-muted/30 p-3">
+                                                    <p className="text-xs font-semibold mb-2 text-muted-foreground">Kontribusi Mata Kuliah:</p>
+                                                    {item.mataKuliahList && item.mataKuliahList.length > 0 ? (
+                                                        <div className="space-y-2">
+                                                            {item.mataKuliahList.map((mk: any, mkIdx: number) => (
+                                                                <div key={mkIdx} className="flex justify-between items-center text-sm border-b last:border-0 pb-2 last:pb-0">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-medium">{mk.mataKuliah?.kodeMk || mk.kodeMk} - {mk.mataKuliah?.namaMk || mk.namaMk}</span>
+                                                                        <span className="text-[10px] text-muted-foreground">
+                                                                            Semester {mk.mataKuliah?.semester || mk.semester} • {mk.mataKuliah?.sks || mk.sks} SKS
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="font-mono font-medium">
+                                                                        {mk.nilai ? mk.nilai.toFixed(2) : (mk.nilaiAkhir ? mk.nilaiAkhir.toFixed(2) : "-")}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-xs text-muted-foreground italic">Belum ada mata kuliah yang berkontribusi.</p>
+                                                    )}
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    ))}
+                                </Accordion>
+                            )}
+                        </div>
+
+                        <DialogFooter>
+                            <Button onClick={() => setDetailDialogOpen(false)}>Tutup</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

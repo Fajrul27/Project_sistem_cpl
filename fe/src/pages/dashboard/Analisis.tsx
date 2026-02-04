@@ -76,7 +76,6 @@ const AnalisisiPage = () => {
                         <SelectValue placeholder="Pilih Semester" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Semua</SelectItem>
                         {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
                           <SelectItem key={sem} value={sem.toString()}>Semester {sem}</SelectItem>
                         ))}
@@ -90,7 +89,6 @@ const AnalisisiPage = () => {
                         <SelectValue placeholder="Pilih Fakultas" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Semua</SelectItem>
                         {fakultasList.map((f) => (
                           <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
                         ))}
@@ -104,7 +102,6 @@ const AnalisisiPage = () => {
                         <SelectValue placeholder="Pilih Prodi" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Semua</SelectItem>
                         {prodiList.map((p) => (
                           <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
                         ))}
@@ -124,214 +121,234 @@ const AnalisisiPage = () => {
         </div>
 
         <div className={`grid gap-6 md:grid-cols-2 transition-opacity duration-200 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Rata-rata Nilai per CPL</CardTitle>
-              <CardDescription>Pencapaian rata-rata setiap CPL</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={cplData}>
-                  <defs>
-                    <linearGradient id="colorCplAnalisis" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" vertical={false} />
-                  <XAxis
-                    dataKey="name"
-                    className="text-xs font-medium"
-                    tickLine={false}
-                    axisLine={false}
-                    dy={10}
-                  />
-                  <YAxis
-                    domain={[0, 100]}
-                    className="text-xs font-medium"
-                    tickLine={false}
-                    axisLine={false}
-                    dx={-10}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      borderColor: 'hsl(var(--border))',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                      maxWidth: '400px',
-                      whiteSpace: 'normal'
-                    }}
-                    itemStyle={{ color: 'hsl(var(--foreground))' }}
-                    labelStyle={{
-                      fontWeight: 600,
-                      marginBottom: '0.5rem',
-                      color: 'hsl(var(--foreground))',
-                      whiteSpace: 'normal',
-                      lineHeight: '1.4'
-                    }}
-                    formatter={(value: number) => [value, 'Rata-rata Nilai']}
-                    labelFormatter={(label, payload) => {
-                      if (payload && payload.length > 0) {
-                        const desc = payload[0].payload.description;
-                        return `${label}: ${desc}`;
-                      }
-                      return label;
-                    }}
-                  />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Bar
-                    dataKey="nilai"
-                    fill="url(#colorCplAnalisis)"
-                    name="Rata-rata Nilai"
-                    radius={[6, 6, 0, 0]}
-                    animationDuration={2000}
-                    animationEasing="ease-out"
-                    barSize={40}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribusi Nilai</CardTitle>
-              <CardDescription>
-                Sebaran perolehan nilai CPL (Total {distributionData.reduce((acc, curr) => acc + curr.count, 0)} Data Evaluasi)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={distributionData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    dataKey="count"
-                    animationDuration={1500}
-                    animationEasing="ease-out"
-                  >
-                    {distributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} stroke="hsl(var(--card))" strokeWidth={2} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      borderColor: 'hsl(var(--border))',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}
-                    itemStyle={{ color: 'hsl(var(--foreground))' }}
-                    formatter={(value, name, props) => {
-                      const rangeName = props.payload.range_name || props.payload.name;
-                      return [`${value} Data`, getLabel(rangeName)];
-                    }}
-                  />
-                  <Legend
-                    layout="vertical"
-                    verticalAlign="middle"
-                    align="right"
-                    formatter={(value, entry: any) => {
-                      const rangeName = entry.payload.range_name || entry.value;
-                      return <span className="text-xs font-medium ml-2 text-foreground">{getLabel(rangeName)} ({entry.payload.count})</span>;
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-            <CardFooter className="flex-col items-start gap-2 text-sm text-muted-foreground border-t pt-4">
-              <div className="flex gap-2">
-                <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                <span className="text-xs">
-                  <strong>Cara membaca:</strong> Total data adalah akumulasi seluruh nilai CPL mahasiswa.
-                  Contoh: Jika 1 mahasiswa memiliki 10 CPL, maka terhitung 10 data nilai.
-                </span>
+          {!hasActiveFilters ? (
+            <div className="md:col-span-2 py-12 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed rounded-lg bg-muted/30">
+              <div className="p-4 rounded-full bg-muted">
+                <SlidersHorizontal className="w-8 h-8 text-muted-foreground" />
               </div>
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Radar Chart CPL</CardTitle>
-              <CardDescription>Visualisasi performa CPL (Top 8)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {radarData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <RadarChart data={radarData}>
-                    <PolarGrid stroke="hsl(var(--muted-foreground))" />
-                    <PolarAngleAxis dataKey="subject" />
-                    <PolarRadiusAxis domain={[0, 100]} />
-                    <Radar
-                      name="Nilai CPL"
-                      dataKey="nilai"
-                      stroke="hsl(var(--primary))"
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.6}
-                      animationDuration={2000}
-                      animationEasing="ease-out"
-                    />
-                    <Tooltip />
-                    <Legend />
-                  </RadarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[400px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                  <p className="text-muted-foreground">Belum ada data untuk radar chart</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Ringkasan Statistik</CardTitle>
-            <CardDescription>Data agregat pencapaian CPL</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">Total CPL</p>
-                <p className="text-2xl font-bold">{cplData.length}</p>
-              </div>
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">Rata-rata Keseluruhan</p>
-                <p className="text-2xl font-bold">
-                  {cplData.length > 0
-                    ? (
-                      cplData.reduce((sum, item) => sum + parseFloat(item.nilai), 0) /
-                      cplData.length
-                    ).toFixed(2)
-                    : 0}
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">Filter Data Diperlukan</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                  Silakan pilih Semester, Fakultas, atau Program Studi pada menu filter di atas untuk menampilkan data analisis.
                 </p>
-              </div>
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">CPL Tertinggi</p>
-                <p className="text-2xl font-bold">
-                  {cplData.length > 0
-                    ? Math.max(...cplData.map((item) => parseFloat(item.nilai))).toFixed(2)
-                    : 0}
-                </p>
-              </div>
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">CPL Terendah</p>
-                <p className="text-2xl font-bold">
-                  {cplData.length > 0
-                    ? Math.min(...cplData.map((item) => parseFloat(item.nilai))).toFixed(2)
-                    : 0}
-                </p>
+                <Button variant="outline" onClick={() => setIsFilterOpen(true)}>
+                  Buka Filter
+                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          ) : (
+            <>
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle>Rata-rata Nilai per CPL</CardTitle>
+                  <CardDescription>Pencapaian rata-rata setiap CPL</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={cplData}>
+                      <defs>
+                        <linearGradient id="colorCplAnalisis" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" vertical={false} />
+                      <XAxis
+                        dataKey="name"
+                        className="text-xs font-medium"
+                        tickLine={false}
+                        axisLine={false}
+                        dy={10}
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        className="text-xs font-medium"
+                        tickLine={false}
+                        axisLine={false}
+                        dx={-10}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          borderColor: 'hsl(var(--border))',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                          maxWidth: '400px',
+                          whiteSpace: 'normal'
+                        }}
+                        itemStyle={{ color: 'hsl(var(--foreground))' }}
+                        labelStyle={{
+                          fontWeight: 600,
+                          marginBottom: '0.5rem',
+                          color: 'hsl(var(--foreground))',
+                          whiteSpace: 'normal',
+                          lineHeight: '1.4'
+                        }}
+                        formatter={(value: number) => [value, 'Rata-rata Nilai']}
+                        labelFormatter={(label, payload) => {
+                          if (payload && payload.length > 0) {
+                            const desc = payload[0].payload.description;
+                            return `${label}: ${desc}`;
+                          }
+                          return label;
+                        }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                      <Bar
+                        dataKey="nilai"
+                        fill="url(#colorCplAnalisis)"
+                        name="Rata-rata Nilai"
+                        radius={[6, 6, 0, 0]}
+                        animationDuration={2000}
+                        animationEasing="ease-out"
+                        barSize={40}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Distribusi Nilai</CardTitle>
+                  <CardDescription>
+                    Sebaran perolehan nilai CPL (Total {distributionData.reduce((acc, curr) => acc + curr.count, 0)} Data Evaluasi)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={distributionData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="count"
+                        animationDuration={1500}
+                        animationEasing="ease-out"
+                      >
+                        {distributionData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} stroke="hsl(var(--card))" strokeWidth={2} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          borderColor: 'hsl(var(--border))',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }}
+                        itemStyle={{ color: 'hsl(var(--foreground))' }}
+                        formatter={(value, name, props) => {
+                          const rangeName = props.payload.range_name || props.payload.name;
+                          return [`${value} Data`, getLabel(rangeName)];
+                        }}
+                      />
+                      <Legend
+                        layout="vertical"
+                        verticalAlign="middle"
+                        align="right"
+                        formatter={(value, entry: any) => {
+                          const rangeName = entry.payload.range_name || entry.value;
+                          return <span className="text-xs font-medium ml-2 text-foreground">{getLabel(rangeName)} ({entry.payload.count})</span>;
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+                <CardFooter className="flex-col items-start gap-2 text-sm text-muted-foreground border-t pt-4">
+                  <div className="flex gap-2">
+                    <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span className="text-xs">
+                      <strong>Cara membaca:</strong> Total data adalah akumulasi seluruh nilai CPL mahasiswa.
+                      Contoh: Jika 1 mahasiswa memiliki 10 CPL, maka terhitung 10 data nilai.
+                    </span>
+                  </div>
+                </CardFooter>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Radar Chart CPL</CardTitle>
+                  <CardDescription>Visualisasi performa CPL (Top 8)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {radarData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={400}>
+                      <RadarChart data={radarData}>
+                        <PolarGrid stroke="hsl(var(--muted-foreground))" />
+                        <PolarAngleAxis dataKey="subject" />
+                        <PolarRadiusAxis domain={[0, 100]} />
+                        <Radar
+                          name="Nilai CPL"
+                          dataKey="nilai"
+                          stroke="hsl(var(--primary))"
+                          fill="hsl(var(--primary))"
+                          fillOpacity={0.6}
+                          animationDuration={2000}
+                          animationEasing="ease-out"
+                        />
+                        <Tooltip />
+                        <Legend />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[400px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
+                      <p className="text-muted-foreground">Belum ada data untuk radar chart</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
+
+        {hasActiveFilters && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Ringkasan Statistik</CardTitle>
+              <CardDescription>Data agregat pencapaian CPL</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Total CPL</p>
+                  <p className="text-2xl font-bold">{cplData.length}</p>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Rata-rata Keseluruhan</p>
+                  <p className="text-2xl font-bold">
+                    {cplData.length > 0
+                      ? (
+                        cplData.reduce((sum, item) => sum + parseFloat(item.nilai), 0) /
+                        cplData.length
+                      ).toFixed(2)
+                      : 0}
+                  </p>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">CPL Tertinggi</p>
+                  <p className="text-2xl font-bold">
+                    {cplData.length > 0
+                      ? Math.max(...cplData.map((item) => parseFloat(item.nilai))).toFixed(2)
+                      : 0}
+                  </p>
+                </div>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">CPL Terendah</p>
+                  <p className="text-2xl font-bold">
+                    {cplData.length > 0
+                      ? Math.min(...cplData.map((item) => parseFloat(item.nilai))).toFixed(2)
+                      : 0}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}      </div>
     </DashboardPage>
   );
 };

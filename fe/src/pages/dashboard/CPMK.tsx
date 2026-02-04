@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, Search, Eye, SlidersHorizontal, Table as TableIcon, List as ListIcon, Download, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Eye, SlidersHorizontal, Table as TableIcon, List as ListIcon, Download, Upload, Check, ChevronsUpDown } from "lucide-react";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -47,6 +56,7 @@ const CPMKPage = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingCpmk, setEditingCpmk] = useState<Cpmk | null>(null);
     const [importing, setImporting] = useState(false);
+    const [comboboxOpen, setComboboxOpen] = useState(false);
 
     const handleExport = async () => {
         try {
@@ -348,10 +358,9 @@ const CPMKPage = () => {
                                             <Label className="text-xs font-medium">Fakultas</Label>
                                             <Select value={filters.selectedFakultas} onValueChange={setSelectedFakultas}>
                                                 <SelectTrigger className="w-full h-8 text-xs">
-                                                    <SelectValue placeholder="Semua Fakultas" />
+                                                    <SelectValue placeholder="Pilih Fakultas" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="all">Semua Fakultas</SelectItem>
                                                     {fakultasList.map((fak) => (
                                                         <SelectItem key={fak.id} value={fak.id}>
                                                             {fak.nama}
@@ -367,10 +376,9 @@ const CPMKPage = () => {
                                         <Label className="text-xs font-medium">Program Studi</Label>
                                         <Select value={filters.selectedProdi} onValueChange={setSelectedProdi}>
                                             <SelectTrigger className="w-full h-8 text-xs">
-                                                <SelectValue placeholder="Semua Prodi" />
+                                                <SelectValue placeholder="Pilih Prodi" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="all">Semua Prodi</SelectItem>
                                                 {accessibleProdis.map((prodi) => (
                                                     <SelectItem key={prodi.id} value={prodi.id}>
                                                         {prodi.nama}
@@ -388,10 +396,9 @@ const CPMKPage = () => {
                                             onValueChange={setMataKuliahFilter}
                                         >
                                             <SelectTrigger className="w-full h-8 text-xs">
-                                                <SelectValue placeholder="Semua Mata Kuliah" />
+                                                <SelectValue placeholder="Pilih Mata Kuliah" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="all">Semua Mata Kuliah</SelectItem>
                                                 {uniqueMataKuliahOptions.map((mk: any) => {
                                                     const id = mk.mataKuliah?.id || mk.id;
                                                     const nama = mk.mataKuliah?.namaMk || mk.namaMk;
@@ -477,29 +484,58 @@ const CPMKPage = () => {
                                                             onChange={(levels) => setFormData({ ...formData, levelTaksonomi: levels })}
                                                         />
                                                     </div>
-                                                    <div className="space-y-2">
+                                                    <div className="space-y-2 flex flex-col">
                                                         <Label htmlFor="mataKuliah">Mata Kuliah</Label>
-                                                        <Select
-                                                            value={formData.mataKuliahId}
-                                                            onValueChange={(value) => setFormData({ ...formData, mataKuliahId: value })}
-                                                            disabled={!!editingCpmk}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Pilih Mata Kuliah" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {mataKuliahList.map((mk) => {
-                                                                    const id = mk.mataKuliah?.id || mk.id;
-                                                                    const kode = mk.mataKuliah?.kodeMk || mk.kodeMk;
-                                                                    const nama = mk.mataKuliah?.namaMk || mk.namaMk;
-                                                                    return (
-                                                                        <SelectItem key={id} value={id}>
-                                                                            {kode} - {nama}
-                                                                        </SelectItem>
-                                                                    );
-                                                                })}
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                                                            <PopoverTrigger asChild>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    role="combobox"
+                                                                    aria-expanded={comboboxOpen}
+                                                                    className="w-full justify-between"
+                                                                    disabled={!!editingCpmk}
+                                                                >
+                                                                    {formData.mataKuliahId
+                                                                        ? mataKuliahList.find((mk) => (mk.mataKuliah?.id || mk.id) === formData.mataKuliahId)?.mataKuliah?.namaMk ||
+                                                                        mataKuliahList.find((mk) => (mk.mataKuliah?.id || mk.id) === formData.mataKuliahId)?.namaMk
+                                                                        : "Pilih Mata Kuliah..."}
+                                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                </Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                                <Command>
+                                                                    <CommandInput placeholder="Cari mata kuliah..." />
+                                                                    <CommandList>
+                                                                        <CommandEmpty>Mata kuliah tidak ditemukan.</CommandEmpty>
+                                                                        <CommandGroup>
+                                                                            {mataKuliahList.map((mk) => {
+                                                                                const id = mk.mataKuliah?.id || mk.id;
+                                                                                const kode = mk.mataKuliah?.kodeMk || mk.kodeMk;
+                                                                                const nama = mk.mataKuliah?.namaMk || mk.namaMk;
+                                                                                return (
+                                                                                    <CommandItem
+                                                                                        key={id}
+                                                                                        value={`${kode} ${nama}`}
+                                                                                        onSelect={() => {
+                                                                                            setFormData({ ...formData, mataKuliahId: id === formData.mataKuliahId ? "" : id })
+                                                                                            setComboboxOpen(false)
+                                                                                        }}
+                                                                                    >
+                                                                                        <Check
+                                                                                            className={cn(
+                                                                                                "mr-2 h-4 w-4",
+                                                                                                formData.mataKuliahId === id ? "opacity-100" : "opacity-0"
+                                                                                            )}
+                                                                                        />
+                                                                                        {kode} - {nama}
+                                                                                    </CommandItem>
+                                                                                )
+                                                                            })}
+                                                                        </CommandGroup>
+                                                                    </CommandList>
+                                                                </Command>
+                                                            </PopoverContent>
+                                                        </Popover>
                                                     </div>
                                                     <div className="space-y-2">
                                                         <Label htmlFor="deskripsi">Deskripsi</Label>

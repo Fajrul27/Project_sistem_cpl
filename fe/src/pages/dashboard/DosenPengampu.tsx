@@ -77,14 +77,11 @@ const DosenPengampuPage = () => {
                                 <label className="text-sm font-medium">Fakultas</label>
                                 <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Semua Fakultas" />
+                                        <SelectValue placeholder="Pilih Fakultas" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Semua Fakultas</SelectItem>
-                                        {fakultasList.map((fak) => (
-                                            <SelectItem key={fak.id} value={fak.id}>
-                                                {fak.nama}
-                                            </SelectItem>
+                                        {fakultasList?.map((f: any) => (
+                                            <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -93,14 +90,11 @@ const DosenPengampuPage = () => {
                                 <label className="text-sm font-medium">Program Studi</label>
                                 <Select value={selectedProdi} onValueChange={setSelectedProdi}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Semua Program Studi" />
+                                        <SelectValue placeholder="Pilih Program Studi" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Semua Program Studi</SelectItem>
-                                        {prodiList.map((prodi) => (
-                                            <SelectItem key={prodi.id} value={prodi.id}>
-                                                {prodi.nama}
-                                            </SelectItem>
+                                        {prodiList?.map((p: any) => (
+                                            <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -109,15 +103,10 @@ const DosenPengampuPage = () => {
                                 <label className="text-sm font-medium">Semester</label>
                                 <Select value={selectedSemester} onValueChange={setSelectedSemester}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Semua Semester" />
+                                        <SelectValue placeholder="Pilih Semester" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Semua Semester</SelectItem>
-                                        {semesterList.map((sem) => (
-                                            <SelectItem key={sem.id} value={String(sem.angka)}>
-                                                Semester {sem.angka}
-                                            </SelectItem>
-                                        ))}
+                                        {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>

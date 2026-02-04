@@ -83,14 +83,11 @@ export default function RekapKuesionerPage() {
                                         <Label className="text-xs font-medium">Fakultas</Label>
                                         <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
                                             <SelectTrigger className="w-full h-8 text-xs">
-                                                <SelectValue placeholder="Semua Fakultas" />
+                                                <SelectValue placeholder="Pilih Fakultas" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="all">Semua Fakultas</SelectItem>
-                                                {fakultasList.map((fak) => (
-                                                    <SelectItem key={fak.id} value={fak.id}>
-                                                        {fak.nama}
-                                                    </SelectItem>
+                                                {fakultasList?.map((f: any) => (
+                                                    <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -100,14 +97,11 @@ export default function RekapKuesionerPage() {
                                         <Label className="text-xs font-medium">Program Studi</Label>
                                         <Select value={selectedProdi} onValueChange={setSelectedProdi}>
                                             <SelectTrigger className="w-full h-8 text-xs">
-                                                <SelectValue placeholder="Semua Prodi" />
+                                                <SelectValue placeholder="Pilih Prodi" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="all">Semua Prodi</SelectItem>
-                                                {prodiList.map((prodi) => (
-                                                    <SelectItem key={prodi.id} value={prodi.id}>
-                                                        {prodi.nama}
-                                                    </SelectItem>
+                                                {prodiList?.map((p: any) => (
+                                                    <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -134,15 +128,10 @@ export default function RekapKuesionerPage() {
                                 <Label className="text-xs font-medium">Semester</Label>
                                 <Select value={semester} onValueChange={setSemester}>
                                     <SelectTrigger className="w-full h-8 text-xs">
-                                        <SelectValue placeholder="Semua Semester" />
+                                        <SelectValue placeholder="Pilih Semester" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Semua Semester</SelectItem>
-                                        {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                                            <SelectItem key={sem} value={sem.toString()}>
-                                                Semester {sem}
-                                            </SelectItem>
-                                        ))}
+                                        {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -160,123 +149,153 @@ export default function RekapKuesionerPage() {
                     </Button>
                 </div>
 
-                {/* Chart */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Grafik Rata-Rata Penilaian per CPL</CardTitle>
-                        <CardDescription>
-                            {(role === 'admin' || can('view_all', 'rekap_kuesioner'))
-                                ? (selectedProdi !== 'all'
-                                    ? `Prodi: ${prodiList.find(p => p.id === selectedProdi)?.nama || 'Unknown'}`
-                                    : 'Semua Program Studi')
-                                : 'Program Studi Anda'
-                            }
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[400px]">
-                        {loading ? (
-                            <div className="h-full flex items-center justify-center">Memuat grafik...</div>
-                        ) : stats.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                    data={stats}
-                                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                                >
-                                    <defs>
-                                        <linearGradient id="colorCplRekap" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" vertical={false} />
-                                    <XAxis
-                                        dataKey="kodeCpl"
-                                        className="text-xs font-medium"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        dy={10}
-                                    />
-                                    <YAxis
-                                        domain={[0, 100]}
-                                        className="text-xs font-medium"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        dx={-10}
-                                    />
-                                    <Tooltip
-                                        cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--card))',
-                                            borderColor: 'hsl(var(--border))',
-                                            borderRadius: '8px',
-                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                                        }}
-                                        itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                    />
-                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                                    <Bar
-                                        dataKey="rataRata"
-                                        fill="url(#colorCplRekap)"
-                                        name="Rata-Rata Nilai"
-                                        radius={[6, 6, 0, 0]}
-                                        animationDuration={2000}
-                                        animationEasing="ease-out"
-                                        barSize={40}
-                                    />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="h-full flex items-center justify-center text-muted-foreground">
-                                Belum ada data kuesioner untuk periode ini.
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                {/* Empty State / Content */}
+                {(() => {
+                    const isAdminOrViewAll = role === 'admin' || can('view_all', 'rekap_kuesioner');
+                    const isFilterComplete = isAdminOrViewAll
+                        ? selectedFakultas && selectedProdi && semester
+                        : semester;
 
-                {/* Table */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Detail Hasil Penilaian</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Kode CPL</TableHead>
-                                    <TableHead>Deskripsi</TableHead>
-                                    <TableHead className="text-center">Jumlah Responden</TableHead>
-                                    <TableHead className="text-right">Rata-Rata Nilai</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-8">Memuat data...</TableCell>
-                                    </TableRow>
-                                ) : stats.length > 0 ? (
-                                    stats.map((item) => (
-                                        <TableRow key={item.cplId}>
-                                            <TableCell className="font-medium">{item.kodeCpl}</TableCell>
-                                            <TableCell className="min-w-[300px]">
-                                                {item.deskripsi}
-                                            </TableCell>
-                                            <TableCell className="text-center">{item.jumlahResponden}</TableCell>
-                                            <TableCell className="text-right font-bold">
-                                                {Number(item.rataRata).toFixed(2)}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                                            Tidak ada data.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                    if (!isFilterComplete) {
+                        return (
+                            <Card className="border-dashed">
+                                <CardContent className="flex flex-col items-center justify-center py-10 space-y-4 text-center">
+                                    <div className="p-4 bg-muted rounded-full">
+                                        <SlidersHorizontal className="w-8 h-8 text-muted-foreground" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h3 className="font-semibold text-lg">Filter Data Diperlukan</h3>
+                                        <p className="text-muted-foreground max-w-sm">
+                                            Silakan pilih {isAdminOrViewAll ? "Fakultas, Program Studi, dan " : ""}Semester untuk menampilkan data rekap kuesioner.
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        );
+                    }
+
+                    return (
+                        <>
+                            {/* Chart */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Grafik Rata-Rata Penilaian per CPL</CardTitle>
+                                    <CardDescription>
+                                        {(role === 'admin' || can('view_all', 'rekap_kuesioner'))
+                                            ? (selectedProdi !== 'all'
+                                                ? `Prodi: ${prodiList.find(p => p.id === selectedProdi)?.nama || 'Unknown'}`
+                                                : 'Semua Program Studi')
+                                            : 'Program Studi Anda'
+                                        }
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="h-[400px]">
+                                    {loading ? (
+                                        <div className="h-full flex items-center justify-center">Memuat grafik...</div>
+                                    ) : stats.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart
+                                                data={stats}
+                                                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                            >
+                                                <defs>
+                                                    <linearGradient id="colorCplRekap" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                                                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" vertical={false} />
+                                                <XAxis
+                                                    dataKey="kodeCpl"
+                                                    className="text-xs font-medium"
+                                                    tickLine={false}
+                                                    axisLine={false}
+                                                    dy={10}
+                                                />
+                                                <YAxis
+                                                    domain={[0, 100]}
+                                                    className="text-xs font-medium"
+                                                    tickLine={false}
+                                                    axisLine={false}
+                                                    dx={-10}
+                                                />
+                                                <Tooltip
+                                                    cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
+                                                    contentStyle={{
+                                                        backgroundColor: 'hsl(var(--card))',
+                                                        borderColor: 'hsl(var(--border))',
+                                                        borderRadius: '8px',
+                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                                    }}
+                                                    itemStyle={{ color: 'hsl(var(--foreground))' }}
+                                                />
+                                                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                                <Bar
+                                                    dataKey="rataRata"
+                                                    fill="url(#colorCplRekap)"
+                                                    name="Rata-Rata Nilai"
+                                                    radius={[6, 6, 0, 0]}
+                                                    animationDuration={2000}
+                                                    animationEasing="ease-out"
+                                                    barSize={40}
+                                                />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div className="h-full flex items-center justify-center text-muted-foreground">
+                                            Belum ada data kuesioner untuk periode ini.
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Table */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Detail Hasil Penilaian</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Kode CPL</TableHead>
+                                                <TableHead>Deskripsi</TableHead>
+                                                <TableHead className="text-center">Jumlah Responden</TableHead>
+                                                <TableHead className="text-right">Rata-Rata Nilai</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {loading ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={4} className="text-center py-8">Memuat data...</TableCell>
+                                                </TableRow>
+                                            ) : stats.length > 0 ? (
+                                                stats.map((item) => (
+                                                    <TableRow key={item.cplId}>
+                                                        <TableCell className="font-medium">{item.kodeCpl}</TableCell>
+                                                        <TableCell className="min-w-[300px]">
+                                                            {item.deskripsi}
+                                                        </TableCell>
+                                                        <TableCell className="text-center">{item.jumlahResponden}</TableCell>
+                                                        <TableCell className="text-right font-bold">
+                                                            {Number(item.rataRata).toFixed(2)}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                                        Tidak ada data.
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        </>
+                    );
+                })()}
             </div>
         </DashboardPage>
     );

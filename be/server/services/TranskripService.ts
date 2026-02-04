@@ -206,7 +206,8 @@ export class TranskripService {
                 mataKuliahList: nilaiList.map(n => ({
                     id: n.mataKuliah.id,
                     kodeMk: n.mataKuliah.kodeMk,
-                    namaMk: n.mataKuliah.namaMk
+                    namaMk: n.mataKuliah.namaMk,
+                    nilai: Number(n.nilai)
                 })),
                 // Include technical assessments that contributed to this CPL
                 penilaianTeknik: relatedTeknik.map(nt => ({
