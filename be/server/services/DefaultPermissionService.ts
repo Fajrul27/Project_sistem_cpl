@@ -65,8 +65,13 @@ export class DefaultPermissionService {
                 // 2. KAPRODI
                 if (role === 'kaprodi') {
                     // Full CRUD + view_all access
-                    if (['analisis_cpl', 'cpl', 'cpmk', 'dosen_pengampu', 'evaluasi_cpl', 'kaprodi_data', 'mahasiswa', 'mata_kuliah', 'nilai_teknik', 'profil_lulusan', 'tahun_ajaran', 'visi_misi'].includes(resource)) {
+                    // Full CRUD + view_all access
+                    if (['analisis_cpl', 'cpl', 'cpmk', 'dosen_pengampu', 'evaluasi_cpl', 'mahasiswa', 'mata_kuliah', 'nilai_teknik', 'profil_lulusan', 'visi_misi'].includes(resource)) {
                         return ['view', 'create', 'edit', 'delete', 'view_all'].includes(action);
+                    }
+                    // Tahun Ajaran: View only (Admin manages this)
+                    if (resource === 'tahun_ajaran') {
+                        return ['view', 'view_all'].includes(action);
                     }
                     // Dashboard: edit, verify, view
                     if (resource === 'dashboard') {
@@ -102,7 +107,7 @@ export class DefaultPermissionService {
                         return ['view', 'create', 'edit'].includes(action);
                     }
                     // View only access
-                    if (['analisis_cpl', 'cpl', 'dashboard', 'fakultas', 'mahasiswa', 'mata_kuliah', 'profil_lulusan', 'transkrip_cpl', 'visi_misi'].includes(resource)) {
+                    if (['analisis_cpl', 'cpl', 'dashboard', 'mahasiswa', 'mata_kuliah', 'profil_lulusan', 'transkrip_cpl', 'visi_misi'].includes(resource)) {
                         return action === 'view';
                     }
                     return false;
@@ -111,8 +116,13 @@ export class DefaultPermissionService {
                 // 4. MAHASISWA
                 if (role === 'mahasiswa') {
                     // View only access
-                    if (['dashboard', 'fakultas', 'kuesioner', 'mata_kuliah', 'profil_lulusan', 'transkrip_cpl', 'visi_misi'].includes(resource)) {
+                    // View only access
+                    if (['dashboard', 'mata_kuliah', 'profil_lulusan', 'transkrip_cpl', 'visi_misi'].includes(resource)) {
                         return action === 'view';
+                    }
+                    // Kuesioner: Fill (Create/Edit) + View
+                    if (resource === 'kuesioner') {
+                        return ['view', 'create', 'edit'].includes(action);
                     }
                     return false;
                 }

@@ -68,6 +68,12 @@ export function AppSidebar() {
     if (!role) return [];
 
     return menuStructure.map(group => {
+      // Enforce strict role check for the group itself if defined (e.g., "Data Institusi" only for Admin/Kaprodi)
+      // This is an additional safety layer on top of permissions.
+      if (group.roles && !group.roles.includes(role as UserRole)) {
+        return null;
+      }
+
       // If it's a single link (Dashboard)
       if (!group.items) {
         // If resource is defined, use permission check strictly. Otherwise fallback to roles.

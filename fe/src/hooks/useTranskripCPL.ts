@@ -97,7 +97,7 @@ export function useTranskripCPL() {
     const [kaprodiData, setKaprodiData] = useState<KaprodiData | null>(null);
     const [totalCurriculumCpl, setTotalCurriculumCpl] = useState<number>(0);
 
-    const [semester, setSemester] = useState<string>("");
+    const [semester, setSemester] = useState<string>("all");
 
     const [tahunAjaran, setTahunAjaran] = useState<string>("all");
 

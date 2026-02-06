@@ -203,12 +203,18 @@ export class TranskripService {
             transkrip.push({
                 cplId: cpl.id,
                 cpl: { ...cpl, kategori: cpl.kategoriRef?.nama || cpl.kategori },
-                mataKuliahList: nilaiList.map(n => ({
-                    id: n.mataKuliah.id,
-                    kodeMk: n.mataKuliah.kodeMk,
-                    namaMk: n.mataKuliah.namaMk,
-                    nilai: Number(n.nilai)
-                })),
+                mataKuliahList: nilaiList.map(n => {
+                    const key = `${cpl.id}-${n.mataKuliahId}`;
+                    return {
+                        id: n.mataKuliah.id,
+                        kodeMk: n.mataKuliah.kodeMk,
+                        namaMk: n.mataKuliah.namaMk,
+                        nilai: Number(n.nilai),
+                        sks: n.mataKuliah.sks,
+                        semester: n.mataKuliah.semester,
+                        bobot: weightMap.get(key) ?? 1 // Default to 1 to match calculation logic
+                    };
+                }),
                 // Include technical assessments that contributed to this CPL
                 penilaianTeknik: relatedTeknik.map(nt => ({
                     id: nt.id,

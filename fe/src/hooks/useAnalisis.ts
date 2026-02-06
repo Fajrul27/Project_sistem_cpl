@@ -3,7 +3,8 @@ import {
     fetchAnalisisCPL,
     fetchFakultasList,
     fetchProdiList,
-    fetchAngkatanList
+    fetchAngkatanList,
+    fetchJenjangList
 } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -17,13 +18,14 @@ export function useAnalisis() {
     const [distributionData, setDistributionData] = useState<any[]>([]);
 
     // Filter State
-    // Filter State
     const [semester, setSemester] = useState("");
     const [fakultasFilter, setFakultasFilter] = useState("");
+    const [jenjangFilter, setJenjangFilter] = useState("");
     const [prodiFilter, setProdiFilter] = useState("");
 
     // Lists for Filters
     const [fakultasList, setFakultasList] = useState<any[]>([]);
+    const [jenjangList, setJenjangList] = useState<any[]>([]);
     const [prodiList, setProdiList] = useState<any[]>([]);
 
     const [loading, setLoading] = useState(true);
@@ -32,11 +34,13 @@ export function useAnalisis() {
     useEffect(() => {
         const loadOptions = async () => {
             try {
-                const [fakultasRes, prodiRes] = await Promise.all([
+                const [fakultasRes, jenjangRes, prodiRes] = await Promise.all([
                     fetchFakultasList(),
+                    fetchJenjangList(),
                     fetchProdiList()
                 ]);
                 setFakultasList(fakultasRes.data || []);
+                setJenjangList(jenjangRes.data || []);
                 setProdiList(prodiRes.data || []);
             } catch (error) {
                 console.error("Error loading filter options", error);
@@ -79,13 +83,16 @@ export function useAnalisis() {
     const resetFilters = () => {
         setSemester("");
         setFakultasFilter("");
+        setJenjangFilter("");
         setProdiFilter("");
     };
 
-    // Derived list for Prodi based on Fakultas selection
-    const filteredProdiList = fakultasFilter && fakultasFilter !== "all"
-        ? prodiList.filter(p => p.fakultasId === fakultasFilter)
-        : prodiList;
+    // Derived list for Prodi based on Fakultas and Jenjang selection
+    const filteredProdiList = prodiList.filter(p => {
+        const matchFakultas = fakultasFilter && fakultasFilter !== "all" ? p.fakultasId === fakultasFilter : true;
+        const matchJenjang = jenjangFilter && jenjangFilter !== "all" ? p.jenjang === jenjangFilter : true;
+        return matchFakultas && matchJenjang;
+    });
 
     return {
         cplData,
@@ -95,9 +102,12 @@ export function useAnalisis() {
         setSemester,
         fakultasFilter,
         setFakultasFilter,
+        jenjangFilter,
+        setJenjangFilter,
         prodiFilter,
         setProdiFilter,
         fakultasList,
+        jenjangList,
         prodiList: filteredProdiList, // Return filtered list directly
         loading,
         resetFilters

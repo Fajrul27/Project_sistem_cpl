@@ -6,8 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { Printer, FileText, Check, ChevronsUpDown, Briefcase, Eye, Filter } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+
+import { Printer, FileText, Check, ChevronsUpDown, Briefcase, Eye, Filter, Info, ChevronDown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -15,11 +17,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn, getGradeLetter } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranskripCPL } from "@/hooks/useTranskripCPL";
-import { useTahunAjaran } from "@/hooks/useTahunAjaran";
+
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { api } from "@/lib/api";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 const TranskripCPLPage = () => {
@@ -35,10 +38,7 @@ const TranskripCPLPage = () => {
         selectedMahasiswa,
         setSelectedMahasiswa,
 
-        semester,
-        setSemester,
-        tahunAjaran,
-        setTahunAjaran,
+
         searchQuery,
         setSearchQuery,
         selectedStudent,
@@ -64,14 +64,9 @@ const TranskripCPLPage = () => {
     const [activeTab, setActiveTab] = useState("cpl");
     const [openCombobox, setOpenCombobox] = useState(false);
 
-    const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
 
-    // Set default active Tahun Ajaran
-    useEffect(() => {
-        if (activeTahunAjaran && tahunAjaran === 'all') {
-            setTahunAjaran(activeTahunAjaran.id);
-        }
-    }, [activeTahunAjaran]);
+
+
 
     // Sync tab with URL
     useEffect(() => {
@@ -208,40 +203,123 @@ const TranskripCPLPage = () => {
                                 <CardDescription>Cari mahasiswa berdasarkan Nama atau NIM</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="flex gap-2">
-                                    <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                                <div className="flex gap-2 items-center">
+                                    <Popover>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" role="combobox" aria-expanded={openCombobox} className="w-full justify-between">
-                                                {selectedMahasiswa ? mahasiswaList.find((mhs) => mhs.id === selectedMahasiswa)?.profile.namaLengkap : "Pilih Mahasiswa..."}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            <Button variant="outline" className="gap-2 relative h-10 w-auto px-3">
+                                                <Filter className="h-4 w-4" />
+                                                <span className="hidden sm:inline">Filter</span>
+                                                {(selectedFakultas || selectedProdi || selectedSemester) &&
+                                                    (selectedFakultas !== 'all' || selectedProdi !== 'all' || selectedSemester !== 'all') && (
+                                                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                                        </span>
+                                                    )}
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-[400px] p-0">
-                                            <Command shouldFilter={false}>
-                                                <CommandInput
-                                                    placeholder="Cari nama atau NIM..."
-                                                    value={searchQuery}
-                                                    onValueChange={setSearchQuery}
-                                                    className="focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 border-none focus:border-none ring-0 outline-none shadow-none !outline-none !border-none !ring-0 !shadow-none"
-                                                />
-                                                <CommandList>
-                                                    {searchLoading && <div className="py-6 text-center text-sm text-muted-foreground">Mencari...</div>}
-                                                    {!searchLoading && mahasiswaList.length === 0 && <CommandEmpty>Mahasiswa tidak ditemukan.</CommandEmpty>}
-                                                    <CommandGroup>
-                                                        {mahasiswaList.map((mhs) => (
-                                                            <CommandItem key={mhs.id} value={mhs.id} onSelect={(val) => { setSelectedMahasiswa(val === selectedMahasiswa ? "" : val); setOpenCombobox(false); }}>
-                                                                <Check className={cn("mr-2 h-4 w-4", selectedMahasiswa === mhs.id ? "opacity-100" : "opacity-0")} />
-                                                                <div className="flex flex-col">
-                                                                    <span>{mhs.profile.namaLengkap}</span>
-                                                                    <span className="text-xs text-muted-foreground">{mhs.profile.nim} - {mhs.profile.programStudi}</span>
-                                                                </div>
-                                                            </CommandItem>
-                                                        ))}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
+                                        <PopoverContent className="w-[300px]" align="start">
+                                            <div className="grid gap-4">
+                                                <div className="space-y-2">
+                                                    <h4 className="font-medium leading-none">Filter Pencarian</h4>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Filter daftar mahasiswa berdasarkan kriteria
+                                                    </p>
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="filter-fakultas">Fakultas</Label>
+                                                    <Select value={selectedFakultas || 'all'} onValueChange={setSelectedFakultas}>
+                                                        <SelectTrigger id="filter-fakultas">
+                                                            <SelectValue placeholder="Pilih Fakultas" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="all">Semua Fakultas</SelectItem>
+                                                            {fakultasList.map((f) => (
+                                                                <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="filter-prodi">Program Studi</Label>
+                                                    <Select value={selectedProdi || 'all'} onValueChange={setSelectedProdi}>
+                                                        <SelectTrigger id="filter-prodi">
+                                                            <SelectValue placeholder="Pilih Prodi" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="all">Semua Prodi</SelectItem>
+                                                            {prodiList.map((p) => (
+                                                                <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor="filter-semester">Semester</Label>
+                                                    <Select value={selectedSemester || 'all'} onValueChange={setSelectedSemester}>
+                                                        <SelectTrigger id="filter-semester">
+                                                            <SelectValue placeholder="Pilih Semester" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="all">Semua Semester</SelectItem>
+                                                            {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                                                                <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    onClick={() => {
+                                                        setSelectedFakultas('all');
+                                                        setSelectedProdi('all');
+                                                        setSelectedSemester('all');
+                                                    }}
+                                                    className="w-full text-muted-foreground hover:text-foreground"
+                                                >
+                                                    Reset Filter
+                                                </Button>
+                                            </div>
                                         </PopoverContent>
                                     </Popover>
+
+                                    <div className="flex-1">
+                                        <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" role="combobox" aria-expanded={openCombobox} className="w-full justify-between h-10">
+                                                    <span className={selectedMahasiswa ? "" : "text-muted-foreground"}>
+                                                        {selectedMahasiswa ? mahasiswaList.find((mhs) => mhs.id === selectedMahasiswa)?.profile.namaLengkap : "Cari mahasiswa..."}
+                                                    </span>
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[400px] p-0" align="start">
+                                                <Command shouldFilter={false}>
+                                                    <CommandInput
+                                                        placeholder="Ketik nama atau NIM..."
+                                                        value={searchQuery}
+                                                        onValueChange={setSearchQuery}
+                                                        className="focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 border-none focus:border-none ring-0 outline-none shadow-none !outline-none !border-none !ring-0 !shadow-none"
+                                                    />
+                                                    <CommandList>
+                                                        {searchLoading && <div className="py-6 text-center text-sm text-muted-foreground">Mencari...</div>}
+                                                        {!searchLoading && mahasiswaList.length === 0 && <CommandEmpty>Mahasiswa tidak ditemukan.</CommandEmpty>}
+                                                        <CommandGroup>
+                                                            {mahasiswaList.map((mhs) => (
+                                                                <CommandItem key={mhs.id} value={mhs.id} onSelect={(val) => { setSelectedMahasiswa(val === selectedMahasiswa ? "" : val); setOpenCombobox(false); }}>
+                                                                    <Check className={cn("mr-2 h-4 w-4", selectedMahasiswa === mhs.id ? "opacity-100" : "opacity-0")} />
+                                                                    <div className="flex flex-col">
+                                                                        <span>{mhs.profile.namaLengkap}</span>
+                                                                        <span className="text-xs text-muted-foreground">{mhs.profile.nim} - {mhs.profile.programStudi}</span>
+                                                                    </div>
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -251,494 +329,452 @@ const TranskripCPLPage = () => {
                 {
                     selectedStudent && (
                         <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Card>
-                                    <CardHeader className="pb-3"><CardTitle className="text-base">Filter Tahun Ajaran</CardTitle></CardHeader>
-                                    <CardContent>
-                                        <Select value={tahunAjaran} onValueChange={setTahunAjaran}>
-                                            <SelectTrigger><SelectValue placeholder="Pilih Tahun Ajaran" /></SelectTrigger>
-                                            <SelectContent>
-                                                {tahunAjaranList.map(ta => (
-                                                    <SelectItem key={ta.id} value={ta.id}>{ta.nama}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader className="pb-3"><CardTitle className="text-base">Filter Semester</CardTitle></CardHeader>
-                                    <CardContent>
-                                        <Select value={semester} onValueChange={setSemester}>
-                                            <SelectTrigger><SelectValue placeholder="Pilih Semester" /></SelectTrigger>
-                                            <SelectContent>
-                                                {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    </CardContent>
-                                </Card>
-                            </div>
+
 
                             {/* Empty Sate Check */}
-                            {(!semester || !tahunAjaran) ? (
-                                <Card className="mt-6 border-dashed">
-                                    <CardContent className="flex flex-col items-center justify-center py-10 space-y-4 text-center">
-                                        <div className="p-4 bg-muted rounded-full">
-                                            <Filter className="w-8 h-8 text-muted-foreground" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg">Filter Data Diperlukan</h3>
-                                            <p className="text-muted-foreground max-w-sm">
-                                                Silakan pilih Tahun Ajaran dan Semester untuk menampilkan data transkrip.
-                                            </p>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ) : (
-                                <>
-                                    <Tabs defaultValue="cpl" className="w-full" onValueChange={setActiveTab} value={activeTab}>
-                                        <TabsList className="grid w-full grid-cols-2 mb-4">
-                                            <TabsTrigger value="cpl">Capaian Lulusan (CPL)</TabsTrigger>
-                                            <TabsTrigger value="cpmk">Capaian Mata Kuliah (CPMK)</TabsTrigger>
-                                        </TabsList>
 
-                                        <TabsContent value="cpl" className="animate-in fade-in slide-in-from-top-4 duration-500">
+                            <Tabs defaultValue="cpl" className="w-full" onValueChange={setActiveTab} value={activeTab}>
+                                <TabsList className="grid w-full grid-cols-2 mb-4">
+                                    <TabsTrigger value="cpl">Capaian Lulusan (CPL)</TabsTrigger>
+                                    <TabsTrigger value="cpmk">Capaian Mata Kuliah (CPMK)</TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="cpl" className="animate-in fade-in slide-in-from-top-4 duration-500">
 
 
 
-                                            {/* CPL Chart & Analysis */}
-                                            <div className="grid gap-4 md:grid-cols-7 mb-6">
-                                                <Card className="md:col-span-3">
-                                                    <CardHeader>
-                                                        <CardTitle className="text-sm font-medium">Analisis Capaian</CardTitle>
-                                                        <CardDescription>CPL Tertinggi & Terendah</CardDescription>
-                                                    </CardHeader>
-                                                    <CardContent className="space-y-4">
-                                                        {validTranskripList.length > 0 ? (() => {
-                                                            const sorted = [...validTranskripList].sort((a, b) => b.nilaiAkhir - a.nilaiAkhir);
-                                                            const highest = sorted[0];
-                                                            const lowest = sorted[sorted.length - 1];
-                                                            return (
-                                                                <>
-                                                                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-900">
-                                                                        <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">CPL Tertinggi</div>
-                                                                        <div className="text-3xl font-bold text-green-700 dark:text-green-300">{highest.nilaiAkhir.toFixed(2)}</div>
-                                                                        <div className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">{highest.cpl.kodeCpl}</div>
-                                                                        <div className="text-[10px] text-green-600/80 dark:text-green-400/80 line-clamp-2 mt-1">{highest.cpl.deskripsi}</div>
-                                                                    </div>
-                                                                    <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-100 dark:border-red-900">
-                                                                        <div className="text-sm text-red-600 dark:text-red-400 font-medium mb-1">CPL Terendah</div>
-                                                                        <div className="text-3xl font-bold text-red-700 dark:text-red-300">{lowest.nilaiAkhir.toFixed(2)}</div>
-                                                                        <div className="text-xs text-red-600 dark:text-red-400 mt-1 font-medium">{lowest.cpl.kodeCpl}</div>
-                                                                        <div className="text-[10px] text-red-600/80 dark:text-red-400/80 line-clamp-2 mt-1">{lowest.cpl.deskripsi}</div>
-                                                                    </div>
-                                                                </>
-                                                            );
-                                                        })() : <div className="text-muted-foreground text-sm">Belum ada data</div>}
-                                                    </CardContent>
-                                                </Card>
-                                                <Card className="md:col-span-4">
-                                                    <CardHeader>
-                                                        <CardTitle className="text-sm font-medium">Peta Radar CPL</CardTitle>
-                                                        <CardDescription>Visualisasi sebaran capaian lulusan</CardDescription>
-                                                    </CardHeader>
-                                                    <CardContent>
-                                                        <div className="h-[300px] w-full">
-                                                            {validTranskripList.length > 0 ? (
-                                                                <ResponsiveContainer width="100%" height="100%">
-                                                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={validTranskripList.map(i => ({ subject: i.cpl.kodeCpl, A: Number(i.nilaiAkhir) || 0, fullMark: 100 }))}>
-                                                                        <PolarGrid stroke="#e5e7eb" />
-                                                                        <PolarAngleAxis dataKey="subject" tick={{ fill: 'currentColor', fontSize: 10 }} />
-                                                                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 10 }} />
-                                                                        <Radar name="Capaian" dataKey="A" stroke="#2563eb" fill="#3b82f6" fillOpacity={0.5} />
-                                                                        <Tooltip
-                                                                            contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                                            itemStyle={{ color: '#2563eb', fontWeight: 600 }}
-                                                                        />
-                                                                    </RadarChart>
-                                                                </ResponsiveContainer>
-                                                            ) : (
-                                                                <div className="flex h-full items-center justify-center text-muted-foreground">
-                                                                    Data tidak tersedia untuk visualisasi
-                                                                </div>
-                                                            )}
+                                    {/* CPL Chart & Analysis */}
+                                    <div className="grid gap-4 md:grid-cols-7 mb-6">
+                                        <Card className="md:col-span-3">
+                                            <CardHeader>
+                                                <CardTitle className="text-sm font-medium">Analisis Capaian</CardTitle>
+                                                <CardDescription>CPL Tertinggi & Terendah</CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                {validTranskripList.length > 0 ? (() => {
+                                                    const sorted = [...validTranskripList].sort((a, b) => b.nilaiAkhir - a.nilaiAkhir);
+                                                    const highest = sorted[0];
+                                                    const lowest = sorted[sorted.length - 1];
+                                                    return (
+                                                        <>
+                                                            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-900">
+                                                                <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">CPL Tertinggi</div>
+                                                                <div className="text-3xl font-bold text-green-700 dark:text-green-300">{highest.nilaiAkhir.toFixed(2)}</div>
+                                                                <div className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">{highest.cpl.kodeCpl}</div>
+                                                                <div className="text-[10px] text-green-600/80 dark:text-green-400/80 line-clamp-2 mt-1">{highest.cpl.deskripsi}</div>
+                                                            </div>
+                                                            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-100 dark:border-red-900">
+                                                                <div className="text-sm text-red-600 dark:text-red-400 font-medium mb-1">CPL Terendah</div>
+                                                                <div className="text-3xl font-bold text-red-700 dark:text-red-300">{lowest.nilaiAkhir.toFixed(2)}</div>
+                                                                <div className="text-xs text-red-600 dark:text-red-400 mt-1 font-medium">{lowest.cpl.kodeCpl}</div>
+                                                                <div className="text-[10px] text-red-600/80 dark:text-red-400/80 line-clamp-2 mt-1">{lowest.cpl.deskripsi}</div>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })() : <div className="text-muted-foreground text-sm">Belum ada data</div>}
+                                            </CardContent>
+                                        </Card>
+                                        <Card className="md:col-span-4">
+                                            <CardHeader>
+                                                <CardTitle className="text-sm font-medium">Peta Radar CPL</CardTitle>
+                                                <CardDescription>Visualisasi sebaran capaian lulusan</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="h-[300px] w-full">
+                                                    {validTranskripList.length > 0 ? (
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={validTranskripList.map(i => ({ subject: i.cpl.kodeCpl, A: Number(i.nilaiAkhir) || 0, fullMark: 100 }))}>
+                                                                <PolarGrid stroke="#e5e7eb" />
+                                                                <PolarAngleAxis dataKey="subject" tick={{ fill: 'currentColor', fontSize: 10 }} />
+                                                                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 10 }} />
+                                                                <Radar name="Capaian" dataKey="A" stroke="#2563eb" fill="#3b82f6" fillOpacity={0.5} />
+                                                                <Tooltip
+                                                                    contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                    itemStyle={{ color: '#2563eb', fontWeight: 600 }}
+                                                                />
+                                                            </RadarChart>
+                                                        </ResponsiveContainer>
+                                                    ) : (
+                                                        <div className="flex h-full items-center justify-center text-muted-foreground">
+                                                            Data tidak tersedia untuk visualisasi
                                                         </div>
-                                                    </CardContent>
-                                                </Card>
-                                            </div>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
 
-                                            {/* Profil Lulusan Section */}
-                                            <Card className="mb-6">
-                                                <CardHeader>
-                                                    <CardTitle className="text-sm font-medium">Daftar Profil Lulusan</CardTitle>
-                                                    <CardDescription>Menampilkan {profilLulusanList.length} dari {profilLulusanList.length} Profil Lulusan</CardDescription>
-                                                </CardHeader>
-                                                <CardContent>
+                                    {/* Profil Lulusan Section */}
+                                    <Card className="mb-6">
+                                        <CardHeader>
+                                            <CardTitle className="text-sm font-medium">Daftar Profil Lulusan</CardTitle>
+                                            <CardDescription>Menampilkan {profilLulusanList.length} dari {profilLulusanList.length} Profil Lulusan</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="w-[50px]">No</TableHead>
+                                                        <TableHead>Kode</TableHead>
+                                                        <TableHead>Nama Profil</TableHead>
+                                                        <TableHead>Deskripsi</TableHead>
+                                                        <TableHead>Ketercapaian</TableHead>
+                                                        <TableHead>Capaian Pembelajaran</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {profilLulusanList.length > 0 ? (
+                                                        profilLulusanList.map((profil, idx) => (
+                                                            <TableRow key={profil.id}>
+                                                                <TableCell>{idx + 1}</TableCell>
+                                                                <TableCell>{profil.kode}</TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400">
+                                                                            <Briefcase size={16} />
+                                                                        </div>
+                                                                        <span className="font-medium">{profil.nama}</span>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="max-w-xs text-xs text-muted-foreground line-clamp-2">{profil.deskripsi}</TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <div className="flex justify-between text-xs">
+                                                                            <span>{profil.percentage.toFixed(2)}%</span>
+                                                                            <span className={profil.percentage >= ((profil as any).targetKetercapaian || 70) ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
+                                                                                {profil.percentage >= ((profil as any).targetKetercapaian || 70) ? "Tercapai" : "Belum Tercapai"}
+                                                                            </span>
+                                                                        </div>
+                                                                        <Progress value={profil.percentage} className="h-2" />
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center justify-center">
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            onClick={() => handleViewDetail(profil)}
+                                                                            title="Lihat Detail Kalkulasi"
+                                                                        >
+                                                                            <Eye className="w-4 h-4 text-primary" />
+                                                                        </Button>
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))
+                                                    ) : (
+                                                        <TableRow>
+                                                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                                                Belum ada data profil lulusan
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
+                                        <CardHeader className="flex flex-row items-center justify-between">
+                                            <div>
+                                                <CardTitle>Capaian OBE</CardTitle>
+                                                <CardDescription>{selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}</CardDescription>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-4 w-4 mr-2" />Print</Button>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {loading ? (
+                                                <LoadingScreen fullScreen={false} message="Memuat data transkrip..." />
+                                            ) : validTranskripList.length === 0 ? (
+                                                <div className="text-center py-12 text-muted-foreground"><FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>Belum ada data transkrip CPL</p></div>
+                                            ) : (
+                                                <div className="overflow-x-auto">
                                                     <Table>
                                                         <TableHeader>
                                                             <TableRow>
-                                                                <TableHead className="w-[50px]">No</TableHead>
-                                                                <TableHead>Kode</TableHead>
-                                                                <TableHead>Nama Profil</TableHead>
+                                                                <TableHead>Kode CPL</TableHead>
                                                                 <TableHead>Deskripsi</TableHead>
-                                                                <TableHead>Ketercapaian</TableHead>
-                                                                <TableHead>Capaian Pembelajaran</TableHead>
+                                                                <TableHead>Kategori</TableHead>
+                                                                <TableHead className="text-right">Nilai</TableHead>
+                                                                <TableHead className="text-center">Huruf</TableHead>
+                                                                <TableHead className="text-center">Status</TableHead>
                                                             </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
-                                                            {profilLulusanList.length > 0 ? (
-                                                                profilLulusanList.map((profil, idx) => (
-                                                                    <TableRow key={profil.id}>
-                                                                        <TableCell>{idx + 1}</TableCell>
-                                                                        <TableCell>{profil.kode}</TableCell>
-                                                                        <TableCell>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400">
-                                                                                    <Briefcase size={16} />
-                                                                                </div>
-                                                                                <span className="font-medium">{profil.nama}</span>
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell className="max-w-xs text-xs text-muted-foreground line-clamp-2">{profil.deskripsi}</TableCell>
-                                                                        <TableCell>
-                                                                            <div className="flex flex-col gap-1">
-                                                                                <div className="flex justify-between text-xs">
-                                                                                    <span>{profil.percentage.toFixed(2)}%</span>
-                                                                                    <span className={profil.percentage >= ((profil as any).targetKetercapaian || 70) ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
-                                                                                        {profil.percentage >= ((profil as any).targetKetercapaian || 70) ? "Tercapai" : "Belum Tercapai"}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <Progress value={profil.percentage} className="h-2" />
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell>
-                                                                            <div className="flex items-center justify-center">
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    onClick={() => handleViewDetail(profil)}
-                                                                                    title="Lihat Detail Kalkulasi"
-                                                                                >
-                                                                                    <Eye className="w-4 h-4 text-primary" />
-                                                                                </Button>
-                                                                            </div>
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                ))
-                                                            ) : (
-                                                                <TableRow>
-                                                                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                                                        Belum ada data profil lulusan
+                                                            {validTranskripList.map((item, index) => (
+                                                                <TableRow key={index}>
+                                                                    <TableCell className="font-medium">{item.cpl.kodeCpl}</TableCell>
+                                                                    <TableCell className="max-w-md">{item.cpl.deskripsi}</TableCell>
+                                                                    <TableCell><Badge variant="outline">{item.cpl.kategori}</Badge></TableCell>
+                                                                    <TableCell className="text-right font-medium">{item.nilaiAkhir.toFixed(2)}</TableCell>
+                                                                    <TableCell className="text-center font-bold">{getGradeLetter(item.nilaiAkhir)}</TableCell>
+                                                                    <TableCell className="text-center">
+                                                                        {item.status === 'tercapai' ? <Badge className="bg-green-500">Tercapai</Badge> : <Badge variant="destructive">Belum Tercapai</Badge>}
                                                                     </TableCell>
                                                                 </TableRow>
-                                                            )}
+                                                            ))}
                                                         </TableBody>
                                                     </Table>
-                                                </CardContent>
-                                            </Card>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </TabsContent>
 
-                                            <Card>
-                                                <CardHeader className="flex flex-row items-center justify-between">
-                                                    <div>
-                                                        <CardTitle>Capaian OBE</CardTitle>
-                                                        <CardDescription>{selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}</CardDescription>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-4 w-4 mr-2" />Print</Button>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    {loading ? (
-                                                        <LoadingScreen fullScreen={false} message="Memuat data transkrip..." />
-                                                    ) : validTranskripList.length === 0 ? (
-                                                        <div className="text-center py-12 text-muted-foreground"><FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>Belum ada data transkrip CPL</p></div>
-                                                    ) : (
-                                                        <div className="overflow-x-auto">
-                                                            <Table>
-                                                                <TableHeader>
-                                                                    <TableRow>
-                                                                        <TableHead>Kode CPL</TableHead>
-                                                                        <TableHead>Deskripsi</TableHead>
-                                                                        <TableHead>Kategori</TableHead>
-                                                                        <TableHead className="text-right">Nilai</TableHead>
-                                                                        <TableHead className="text-center">Huruf</TableHead>
-                                                                        <TableHead className="text-center">Status</TableHead>
-                                                                    </TableRow>
-                                                                </TableHeader>
-                                                                <TableBody>
-                                                                    {validTranskripList.map((item, index) => (
-                                                                        <TableRow key={index}>
-                                                                            <TableCell className="font-medium">{item.cpl.kodeCpl}</TableCell>
-                                                                            <TableCell className="max-w-md">{item.cpl.deskripsi}</TableCell>
-                                                                            <TableCell><Badge variant="outline">{item.cpl.kategori}</Badge></TableCell>
-                                                                            <TableCell className="text-right font-medium">{item.nilaiAkhir.toFixed(2)}</TableCell>
-                                                                            <TableCell className="text-center font-bold">{getGradeLetter(item.nilaiAkhir)}</TableCell>
-                                                                            <TableCell className="text-center">
-                                                                                {item.status === 'tercapai' ? <Badge className="bg-green-500">Tercapai</Badge> : <Badge variant="destructive">Belum Tercapai</Badge>}
-                                                                            </TableCell>
-                                                                        </TableRow>
-                                                                    ))}
-                                                                </TableBody>
-                                                            </Table>
-                                                        </div>
-                                                    )}
-                                                </CardContent>
-                                            </Card>
-                                        </TabsContent>
+                                <TabsContent value="cpmk" className="animate-in fade-in slide-in-from-top-4 duration-500">
 
-                                        <TabsContent value="cpmk" className="animate-in fade-in slide-in-from-top-4 duration-500">
-
-                                            {/* CPMK Chart & Analysis */}
-                                            <div className="grid gap-4 md:grid-cols-7 mb-6">
-                                                <Card className="md:col-span-3">
-                                                    <CardHeader>
-                                                        <CardTitle className="text-sm font-medium">Analisis Mata Kuliah</CardTitle>
-                                                        <CardDescription>Nilai Mata Kuliah Tertinggi & Terendah</CardDescription>
-                                                    </CardHeader>
-                                                    <CardContent className="space-y-4">
-                                                        {transkripCpmkList.length > 0 ? (() => {
-                                                            // Aggregate CPMK data by Mata Kuliah
-                                                            const makulMap = new Map();
-                                                            transkripCpmkList.forEach(item => {
-                                                                const key = item.mataKuliah.kodeMk;
-                                                                if (!makulMap.has(key)) {
-                                                                    makulMap.set(key, {
-                                                                        kodeMk: key,
-                                                                        namaMk: item.mataKuliah.namaMk,
-                                                                        totalNilai: 0,
-                                                                        count: 0
-                                                                    });
-                                                                }
-                                                                const entry = makulMap.get(key);
-                                                                entry.totalNilai += item.nilai;
-                                                                entry.count += 1;
+                                    {/* CPMK Chart & Analysis */}
+                                    <div className="grid gap-4 md:grid-cols-7 mb-6">
+                                        <Card className="md:col-span-3">
+                                            <CardHeader>
+                                                <CardTitle className="text-sm font-medium">Analisis Mata Kuliah</CardTitle>
+                                                <CardDescription>Nilai Mata Kuliah Tertinggi & Terendah</CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                {transkripCpmkList.length > 0 ? (() => {
+                                                    // Aggregate CPMK data by Mata Kuliah
+                                                    const makulMap = new Map();
+                                                    transkripCpmkList.forEach(item => {
+                                                        const key = item.mataKuliah.kodeMk;
+                                                        if (!makulMap.has(key)) {
+                                                            makulMap.set(key, {
+                                                                kodeMk: key,
+                                                                namaMk: item.mataKuliah.namaMk,
+                                                                totalNilai: 0,
+                                                                count: 0
                                                             });
+                                                        }
+                                                        const entry = makulMap.get(key);
+                                                        entry.totalNilai += item.nilai;
+                                                        entry.count += 1;
+                                                    });
 
-                                                            const makulList = Array.from(makulMap.values()).map((m: any) => ({
-                                                                ...m,
-                                                                average: m.totalNilai / m.count
-                                                            }));
+                                                    const makulList = Array.from(makulMap.values()).map((m: any) => ({
+                                                        ...m,
+                                                        average: m.totalNilai / m.count
+                                                    }));
 
-                                                            const sorted = makulList.sort((a: any, b: any) => b.average - a.average);
-                                                            const highest = sorted[0];
-                                                            const lowest = sorted[sorted.length - 1];
+                                                    const sorted = makulList.sort((a: any, b: any) => b.average - a.average);
+                                                    const highest = sorted[0];
+                                                    const lowest = sorted[sorted.length - 1];
 
-                                                            return (
-                                                                <>
-                                                                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-900">
-                                                                        <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">Nilai Makul Tertinggi</div>
-                                                                        <div className="text-3xl font-bold text-green-700 dark:text-green-300">{highest.average.toFixed(2)}</div>
-                                                                        <div className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">{highest.kodeMk}</div>
-                                                                        <div className="text-[10px] text-green-600/80 dark:text-green-400/80 line-clamp-2 mt-1">{highest.namaMk}</div>
-                                                                    </div>
-                                                                    <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-100 dark:border-red-900">
-                                                                        <div className="text-sm text-red-600 dark:text-red-400 font-medium mb-1">Nilai Makul Terendah</div>
-                                                                        <div className="text-3xl font-bold text-red-700 dark:text-red-300">{lowest.average.toFixed(2)}</div>
-                                                                        <div className="text-xs text-red-600 dark:text-red-400 mt-1 font-medium">{lowest.kodeMk}</div>
-                                                                        <div className="text-[10px] text-red-600/80 dark:text-red-400/80 line-clamp-2 mt-1">{lowest.namaMk}</div>
-                                                                    </div>
-                                                                </>
-                                                            );
-                                                        })() : <div className="text-muted-foreground text-sm">Belum ada data</div>}
-                                                    </CardContent>
-                                                </Card>
-                                                <Card className="md:col-span-4">
-                                                    <CardHeader>
-                                                        <CardTitle className="text-sm font-medium">Peta Radar Mata Kuliah</CardTitle>
-                                                        <CardDescription>Sebaran rata-rata nilai per Mata Kuliah (Sample 10 Data)</CardDescription>
-                                                    </CardHeader>
-                                                    <CardContent>
-                                                        <div className="h-[300px] w-full">
-                                                            {transkripCpmkList.length > 0 ? (() => {
-                                                                const makulMap = new Map();
-                                                                transkripCpmkList.forEach(item => {
-                                                                    const key = item.mataKuliah.kodeMk;
-                                                                    if (!makulMap.has(key)) {
-                                                                        makulMap.set(key, {
-                                                                            subject: key,
-                                                                            totalNilai: 0,
-                                                                            count: 0
-                                                                        });
-                                                                    }
-                                                                    const entry = makulMap.get(key);
-                                                                    entry.totalNilai += item.nilai;
-                                                                    entry.count += 1;
+                                                    return (
+                                                        <>
+                                                            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-900">
+                                                                <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">Nilai Makul Tertinggi</div>
+                                                                <div className="text-3xl font-bold text-green-700 dark:text-green-300">{highest.average.toFixed(2)}</div>
+                                                                <div className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">{highest.kodeMk}</div>
+                                                                <div className="text-[10px] text-green-600/80 dark:text-green-400/80 line-clamp-2 mt-1">{highest.namaMk}</div>
+                                                            </div>
+                                                            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-100 dark:border-red-900">
+                                                                <div className="text-sm text-red-600 dark:text-red-400 font-medium mb-1">Nilai Makul Terendah</div>
+                                                                <div className="text-3xl font-bold text-red-700 dark:text-red-300">{lowest.average.toFixed(2)}</div>
+                                                                <div className="text-xs text-red-600 dark:text-red-400 mt-1 font-medium">{lowest.kodeMk}</div>
+                                                                <div className="text-[10px] text-red-600/80 dark:text-red-400/80 line-clamp-2 mt-1">{lowest.namaMk}</div>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })() : <div className="text-muted-foreground text-sm">Belum ada data</div>}
+                                            </CardContent>
+                                        </Card>
+                                        <Card className="md:col-span-4">
+                                            <CardHeader>
+                                                <CardTitle className="text-sm font-medium">Peta Radar Mata Kuliah</CardTitle>
+                                                <CardDescription>Sebaran rata-rata nilai per Mata Kuliah (Sample 10 Data)</CardDescription>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="h-[300px] w-full">
+                                                    {transkripCpmkList.length > 0 ? (() => {
+                                                        const makulMap = new Map();
+                                                        transkripCpmkList.forEach(item => {
+                                                            const key = item.mataKuliah.kodeMk;
+                                                            if (!makulMap.has(key)) {
+                                                                makulMap.set(key, {
+                                                                    subject: key,
+                                                                    totalNilai: 0,
+                                                                    count: 0
                                                                 });
+                                                            }
+                                                            const entry = makulMap.get(key);
+                                                            entry.totalNilai += item.nilai;
+                                                            entry.count += 1;
+                                                        });
 
-                                                                const radarData = Array.from(makulMap.values())
-                                                                    .map((m: any) => ({
-                                                                        subject: m.subject,
-                                                                        A: Number((m.totalNilai / m.count).toFixed(2)) || 0,
-                                                                        fullMark: 100
-                                                                    }))
-                                                                    .slice(0, 10);
+                                                        const radarData = Array.from(makulMap.values())
+                                                            .map((m: any) => ({
+                                                                subject: m.subject,
+                                                                A: Number((m.totalNilai / m.count).toFixed(2)) || 0,
+                                                                fullMark: 100
+                                                            }))
+                                                            .slice(0, 10);
 
-                                                                return (
-                                                                    <ResponsiveContainer width="100%" height="100%">
-                                                                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                                                                            <PolarGrid stroke="#e5e7eb" />
-                                                                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'currentColor', fontSize: 10 }} />
-                                                                            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 10 }} />
-                                                                            <Radar name="Rata-rata Nilai" dataKey="A" stroke="#8b5cf6" fill="#a78bfa" fillOpacity={0.5} />
-                                                                            <Tooltip
-                                                                                contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                                                itemStyle={{ color: '#8b5cf6', fontWeight: 600 }}
-                                                                            />
-                                                                        </RadarChart>
-                                                                    </ResponsiveContainer>
-                                                                );
-                                                            })() : (
+                                                        return (
+                                                            <ResponsiveContainer width="100%" height="100%">
+                                                                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                                                                    <PolarGrid stroke="#e5e7eb" />
+                                                                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'currentColor', fontSize: 10 }} />
+                                                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 10 }} />
+                                                                    <Radar name="Rata-rata Nilai" dataKey="A" stroke="#8b5cf6" fill="#a78bfa" fillOpacity={0.5} />
+                                                                    <Tooltip
+                                                                        contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                        itemStyle={{ color: '#8b5cf6', fontWeight: 600 }}
+                                                                    />
+                                                                </RadarChart>
+                                                            </ResponsiveContainer>
+                                                        );
+                                                    })() : (
 
-                                                                <div className="flex h-full items-center justify-center text-muted-foreground">
-                                                                    Data tidak tersedia untuk visualisasi
-                                                                </div>
-                                                            )}
+                                                        <div className="flex h-full items-center justify-center text-muted-foreground">
+                                                            Data tidak tersedia untuk visualisasi
                                                         </div>
-                                                    </CardContent>
-                                                </Card>
-                                            </div>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
 
-                                            {/* Profil Lulusan Section (Duplicated from CPL Tab) */}
-                                            <Card className="mb-6">
-                                                <CardHeader>
-                                                    <CardTitle className="text-sm font-medium">Daftar Profil Lulusan</CardTitle>
-                                                    <CardDescription>Menampilkan {profilLulusanList.length} dari {profilLulusanList.length} Profil Lulusan</CardDescription>
-                                                </CardHeader>
-                                                <CardContent>
+                                    {/* Profil Lulusan Section (Duplicated from CPL Tab) */}
+                                    <Card className="mb-6">
+                                        <CardHeader>
+                                            <CardTitle className="text-sm font-medium">Daftar Profil Lulusan</CardTitle>
+                                            <CardDescription>Menampilkan {profilLulusanList.length} dari {profilLulusanList.length} Profil Lulusan</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="w-[50px]">No</TableHead>
+                                                        <TableHead>Kode</TableHead>
+                                                        <TableHead>Nama Profil</TableHead>
+                                                        <TableHead>Deskripsi</TableHead>
+                                                        <TableHead className="w-[200px]">Ketercapaian</TableHead>
+                                                        <TableHead>Capaian Pembelajaran</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {profilLulusanList.length > 0 ? (
+                                                        profilLulusanList.map((profil, idx) => (
+                                                            <TableRow key={profil.id}>
+                                                                <TableCell>{idx + 1}</TableCell>
+                                                                <TableCell>{profil.kode}</TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400">
+                                                                            <Briefcase size={16} />
+                                                                        </div>
+                                                                        <span className="font-medium">{profil.nama}</span>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="max-w-xs text-xs text-muted-foreground line-clamp-2">{profil.deskripsi}</TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <div className="flex justify-between text-xs">
+                                                                            <span>{profil.percentage.toFixed(2)}%</span>
+                                                                            <span className={profil.percentage >= 80 ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
+                                                                                {profil.percentage >= 80 ? "Tercapai" : "Belum Tercapai"}
+                                                                            </span>
+                                                                        </div>
+                                                                        <Progress value={profil.percentage} className="h-2" />
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center justify-center">
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            onClick={() => handleViewDetail(profil)}
+                                                                            title="Lihat Detail Kalkulasi"
+                                                                        >
+                                                                            <Eye className="w-4 h-4 text-primary" />
+                                                                        </Button>
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))
+                                                    ) : (
+                                                        <TableRow>
+                                                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                                                Belum ada data profil lulusan
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
+                                        <CardHeader className="flex flex-row items-center justify-between">
+                                            <div>
+                                                <CardTitle>Capaian Makul</CardTitle>
+                                                <CardDescription>{selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}</CardDescription>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-4 w-4 mr-2" />Print</Button>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            {loading ? (
+                                                <LoadingScreen fullScreen={false} message="Memuat data transkrip Capaian Makul..." />
+                                            ) : transkripCpmkList.length === 0 ? (
+                                                <div className="text-center py-12 text-muted-foreground"><FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>Belum ada data transkrip Capaian Makul</p></div>
+                                            ) : (
+                                                <div className="overflow-x-auto">
                                                     <Table>
                                                         <TableHeader>
                                                             <TableRow>
-                                                                <TableHead className="w-[50px]">No</TableHead>
-                                                                <TableHead>Kode</TableHead>
-                                                                <TableHead>Nama Profil</TableHead>
-                                                                <TableHead>Deskripsi</TableHead>
-                                                                <TableHead className="w-[200px]">Ketercapaian</TableHead>
-                                                                <TableHead>Capaian Pembelajaran</TableHead>
+                                                                <TableHead>Mata Kuliah</TableHead>
+                                                                <TableHead>Kode CPMK</TableHead>
+                                                                <TableHead className="text-right">Nilai</TableHead>
+                                                                <TableHead className="text-center">Huruf</TableHead>
+                                                                <TableHead className="text-center">Status</TableHead>
                                                             </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
-                                                            {profilLulusanList.length > 0 ? (
-                                                                profilLulusanList.map((profil, idx) => (
-                                                                    <TableRow key={profil.id}>
-                                                                        <TableCell>{idx + 1}</TableCell>
-                                                                        <TableCell>{profil.kode}</TableCell>
-                                                                        <TableCell>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400">
-                                                                                    <Briefcase size={16} />
-                                                                                </div>
-                                                                                <span className="font-medium">{profil.nama}</span>
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell className="max-w-xs text-xs text-muted-foreground line-clamp-2">{profil.deskripsi}</TableCell>
-                                                                        <TableCell>
-                                                                            <div className="flex flex-col gap-1">
-                                                                                <div className="flex justify-between text-xs">
-                                                                                    <span>{profil.percentage.toFixed(2)}%</span>
-                                                                                    <span className={profil.percentage >= 80 ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
-                                                                                        {profil.percentage >= 80 ? "Tercapai" : "Belum Tercapai"}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <Progress value={profil.percentage} className="h-2" />
-                                                                            </div>
-                                                                        </TableCell>
-                                                                        <TableCell>
-                                                                            <div className="flex items-center justify-center">
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="icon"
-                                                                                    onClick={() => handleViewDetail(profil)}
-                                                                                    title="Lihat Detail Kalkulasi"
-                                                                                >
-                                                                                    <Eye className="w-4 h-4 text-primary" />
-                                                                                </Button>
-                                                                            </div>
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                ))
-                                                            ) : (
-                                                                <TableRow>
-                                                                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                                                        Belum ada data profil lulusan
+                                                            {processedCpmkList.map((item, index) => (
+                                                                <TableRow key={index} className={item.isLastInGroup ? "" : "border-b-0"}>
+                                                                    {item.rowSpan !== 0 && (
+                                                                        <>
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center font-medium">
+                                                                                {item.courseNumber}
+                                                                            </TableCell>
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r">
+                                                                                <div className="font-medium">{item.mataKuliah.kodeMk} - {item.mataKuliah.namaMk}</div>
+                                                                            </TableCell>
+                                                                        </>
+                                                                    )}
+                                                                    <TableCell className={item.isLastInGroup ? "" : "border-b-0"}>
+                                                                        <div className="font-medium">{item.kodeCpmk}</div>
+                                                                        <div className="text-xs text-muted-foreground mt-1">{item.deskripsi}</div>
                                                                     </TableCell>
+                                                                    {item.rowSpan !== 0 && (
+                                                                        <>
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-right font-medium">
+                                                                                {item.courseScore?.toFixed(2)}
+                                                                            </TableCell>
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center font-bold">
+                                                                                {getGradeLetter(item.courseScore || 0)}
+                                                                            </TableCell>
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center">
+                                                                                {item.courseScore && item.courseScore >= 70
+                                                                                    ? <Badge className="bg-green-500">Tercapai</Badge>
+                                                                                    : <Badge variant="destructive">Belum Tercapai</Badge>}
+                                                                            </TableCell>
+                                                                        </>
+                                                                    )}
                                                                 </TableRow>
-                                                            )}
+                                                            ))}
                                                         </TableBody>
                                                     </Table>
-                                                </CardContent>
-                                            </Card>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </TabsContent>
+                            </Tabs>
 
-                                            <Card>
-                                                <CardHeader className="flex flex-row items-center justify-between">
-                                                    <div>
-                                                        <CardTitle>Capaian Makul</CardTitle>
-                                                        <CardDescription>{selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}</CardDescription>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-4 w-4 mr-2" />Print</Button>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    {loading ? (
-                                                        <LoadingScreen fullScreen={false} message="Memuat data transkrip Capaian Makul..." />
-                                                    ) : transkripCpmkList.length === 0 ? (
-                                                        <div className="text-center py-12 text-muted-foreground"><FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>Belum ada data transkrip Capaian Makul</p></div>
-                                                    ) : (
-                                                        <div className="overflow-x-auto">
-                                                            <Table>
-                                                                <TableHeader>
-                                                                    <TableRow>
-                                                                        <TableHead>Mata Kuliah</TableHead>
-                                                                        <TableHead>Kode CPMK</TableHead>
-                                                                        <TableHead className="text-right">Nilai</TableHead>
-                                                                        <TableHead className="text-center">Huruf</TableHead>
-                                                                        <TableHead className="text-center">Status</TableHead>
-                                                                    </TableRow>
-                                                                </TableHeader>
-                                                                <TableBody>
-                                                                    {processedCpmkList.map((item, index) => (
-                                                                        <TableRow key={index} className={item.isLastInGroup ? "" : "border-b-0"}>
-                                                                            {item.rowSpan !== 0 && (
-                                                                                <>
-                                                                                    <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center font-medium">
-                                                                                        {item.courseNumber}
-                                                                                    </TableCell>
-                                                                                    <TableCell rowSpan={item.rowSpan} className="align-top border-r">
-                                                                                        <div className="font-medium">{item.mataKuliah.kodeMk} - {item.mataKuliah.namaMk}</div>
-                                                                                    </TableCell>
-                                                                                </>
-                                                                            )}
-                                                                            <TableCell className={item.isLastInGroup ? "" : "border-b-0"}>
-                                                                                <div className="font-medium">{item.kodeCpmk}</div>
-                                                                                <div className="text-xs text-muted-foreground mt-1">{item.deskripsi}</div>
-                                                                            </TableCell>
-                                                                            {item.rowSpan !== 0 && (
-                                                                                <>
-                                                                                    <TableCell rowSpan={item.rowSpan} className="align-top border-r text-right font-medium">
-                                                                                        {item.courseScore?.toFixed(2)}
-                                                                                    </TableCell>
-                                                                                    <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center font-bold">
-                                                                                        {getGradeLetter(item.courseScore || 0)}
-                                                                                    </TableCell>
-                                                                                    <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center">
-                                                                                        {item.courseScore && item.courseScore >= 70
-                                                                                            ? <Badge className="bg-green-500">Tercapai</Badge>
-                                                                                            : <Badge variant="destructive">Belum Tercapai</Badge>}
-                                                                                    </TableCell>
-                                                                                </>
-                                                                            )}
-                                                                        </TableRow>
-                                                                    ))}
-                                                                </TableBody>
-                                                            </Table>
-                                                        </div>
-                                                    )}
-                                                </CardContent>
-                                            </Card>
-                                        </TabsContent>
-                                    </Tabs>
-                                </>
-                            )
-                            }
                         </>
                     )
                 }
@@ -763,47 +799,123 @@ const TranskripCPLPage = () => {
                                     Tidak ada data detail untuk profil ini.
                                 </div>
                             ) : (
-                                <Accordion type="multiple" className="w-full space-y-2">
-                                    {detailData.map((item, index) => (
-                                        <AccordionItem key={index} value={`item-${index}`} className="border rounded-md px-4">
-                                            <AccordionTrigger className="hover:no-underline">
-                                                <div className="flex flex-1 items-center justify-between mr-4 text-left">
-                                                    <div className="space-y-1">
-                                                        <div className="font-semibold text-sm">{item.cpl.kodeCpl}</div>
-                                                        <div className="text-xs text-muted-foreground line-clamp-1">{item.cpl.deskripsi}</div>
+                                <div className="space-y-4">
+                                    <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-900/10 dark:border-blue-900/30 text-blue-800 dark:text-blue-300">
+                                        <Info className="h-4 w-4" />
+                                        <AlertTitle className="text-sm font-semibold mb-1">Informasi Perhitungan</AlertTitle>
+                                        <AlertDescription className="text-xs">
+                                            <p className="mb-2">
+                                                Nilai Profil Lulusan diperoleh dari rata-rata nilai seluruh CPL yang menyusun profil ini.
+                                                Setiap CPL memiliki bobot kontribusi yang sama terhadap nilai akhir profil.
+                                            </p>
+                                            <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded border border-blue-200 dark:border-blue-900/50 w-fit">
+                                                <div className="flex items-center gap-2 text-xs font-semibold">
+                                                    <span>Nilai PL = </span>
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="border-b border-black dark:border-white px-1">Σ Nilai CPL</span>
+                                                        <span>Jumlah CPL</span>
                                                     </div>
-                                                    <Badge variant={Number(item.nilaiAkhir) >= 70 ? "default" : "secondary"}>
-                                                        {Number(item.nilaiAkhir).toFixed(2)}
-                                                    </Badge>
                                                 </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent className="pt-2">
-                                                <div className="rounded-md bg-muted/30 p-3">
-                                                    <p className="text-xs font-semibold mb-2 text-muted-foreground">Kontribusi Mata Kuliah:</p>
-                                                    {item.mataKuliahList && item.mataKuliahList.length > 0 ? (
-                                                        <div className="space-y-2">
-                                                            {item.mataKuliahList.map((mk: any, mkIdx: number) => (
-                                                                <div key={mkIdx} className="flex justify-between items-center text-sm border-b last:border-0 pb-2 last:pb-0">
-                                                                    <div className="flex flex-col">
-                                                                        <span className="font-medium">{mk.mataKuliah?.kodeMk || mk.kodeMk} - {mk.mataKuliah?.namaMk || mk.namaMk}</span>
-                                                                        <span className="text-[10px] text-muted-foreground">
-                                                                            Semester {mk.mataKuliah?.semester || mk.semester} • {mk.mataKuliah?.sks || mk.sks} SKS
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="font-mono font-medium">
-                                                                        {mk.nilai ? mk.nilai.toFixed(2) : (mk.nilaiAkhir ? mk.nilaiAkhir.toFixed(2) : "-")}
+                                            </div>
+                                        </AlertDescription>
+                                    </Alert>
+
+                                    <Accordion type="multiple" className="w-full space-y-3">
+                                        {detailData.map((item, index) => {
+                                            const contributionValue = detailData.length > 0 ? (Number(item.nilaiAkhir) / detailData.length).toFixed(2) : "0.00";
+
+                                            return (
+                                                <AccordionItem key={index} value={`item-${index}`} className="border rounded-lg px-0 overflow-hidden shadow-sm">
+                                                    <AccordionTrigger className="hover:no-underline px-4 py-3 bg-card data-[state=open]:bg-muted/30">
+                                                        <div className="flex flex-1 items-center justify-between mr-4 text-left">
+                                                            <div className="space-y-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="font-bold text-sm">{item.cpl.kodeCpl}</span>
+                                                                    <Badge variant="outline" className="text-[10px] h-5 font-normal bg-blue-50 text-blue-700 border-blue-200">
+                                                                        Kontribusi: {(100 / detailData.length).toFixed(1)}%
+                                                                    </Badge>
+                                                                    <Badge variant="outline" className="text-[10px] h-5 font-normal bg-green-50 text-green-700 border-green-200">
+                                                                        +{contributionValue} ke Profil
+                                                                    </Badge>
+                                                                </div>
+                                                                <div className="text-xs text-muted-foreground line-clamp-1 max-w-[500px]">{item.cpl.deskripsi}</div>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Badge className={cn("text-sm h-7 px-3", Number(item.nilaiAkhir) >= 70 ? "bg-blue-600 hover:bg-blue-700" : "bg-amber-600 hover:bg-amber-700")}>
+                                                                    {Number(item.nilaiAkhir).toFixed(2)}
+                                                                </Badge>
+                                                            </div>
+                                                        </div>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="p-0 border-t">
+                                                        <div className="p-4 bg-muted/5 dark:bg-muted/10 space-y-4">
+                                                            {/* CPL Info Box */}
+                                                            <div className="border rounded-lg p-3 bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800">
+                                                                <div className="flex items-start gap-2 mb-2">
+                                                                    <Info className="w-3 h-3 mt-0.5 text-slate-500" />
+                                                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Kalkulasi Nilai CPL:</span>
+                                                                </div>
+                                                                <div className="bg-slate-200 dark:bg-slate-800 p-2 rounded flex justify-center">
+                                                                    <div className="flex items-center gap-2 text-[10px] sm:text-xs font-mono text-slate-700 dark:text-slate-300">
+                                                                        <span>Nilai CPL = </span>
+                                                                        <div className="flex flex-col items-center">
+                                                                            <span className="border-b border-slate-600 dark:border-slate-400 px-1">Σ (Nilai MK × SKS × Bobot)</span>
+                                                                            <span>Σ (SKS × Bobot)</span>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            ))}
+                                                            </div>
+
+                                                            {/* Mata Kuliah List */}
+                                                            <div className="space-y-2">
+
+                                                                {item.mataKuliahList && item.mataKuliahList.length > 0 ? (
+                                                                    <div className="grid gap-2">
+                                                                        {item.mataKuliahList.map((mk: any, mkIdx: number) => {
+                                                                            const nilai = mk.nilai || mk.nilaiAkhir || 0;
+                                                                            const isPassed = nilai >= 50;
+                                                                            return (
+                                                                                <div key={mkIdx} className={cn(
+                                                                                    "flex justify-between items-center p-3 rounded-lg border text-sm transition-colors",
+                                                                                    isPassed
+                                                                                        ? "bg-green-50/50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                                                                        : "bg-red-50/50 border-red-200 dark:bg-red-900/10 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                                )}>
+                                                                                    <div className="flex flex-col gap-0.5">
+                                                                                        <div className="font-medium text-foreground">
+                                                                                            {mk.mataKuliah?.kodeMk || mk.kodeMk} - {mk.mataKuliah?.namaMk || mk.namaMk}
+                                                                                        </div>
+                                                                                        <div className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                                                                                            <Badge variant="secondary" className="h-4 px-1 text-[9px] font-normal">Sem {mk.mataKuliah?.semester || mk.semester}</Badge>
+                                                                                            <span>•</span>
+                                                                                            <span>{mk.mataKuliah?.sks || mk.sks || 0} SKS</span>
+                                                                                            <span>•</span>
+                                                                                            <span>Bobot: {mk.bobot || 0}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <Badge className={cn(
+                                                                                        "font-mono h-6 w-14 justify-center text-xs",
+                                                                                        isPassed ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
+                                                                                    )}>
+                                                                                        {nilai.toFixed(2)}
+                                                                                    </Badge>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="p-4 text-center border-dashed border rounded-lg text-muted-foreground text-xs">
+                                                                        Belum ada mata kuliah yang berkontribusi.
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    ) : (
-                                                        <p className="text-xs text-muted-foreground italic">Belum ada mata kuliah yang berkontribusi.</p>
-                                                    )}
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    ))}
-                                </Accordion>
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                            );
+                                        })}
+                                    </Accordion>
+                                </div>
                             )}
                         </div>
 

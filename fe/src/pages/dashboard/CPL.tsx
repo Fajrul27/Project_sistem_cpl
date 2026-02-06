@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, List as ListIcon, Table as TableIcon, ArrowLeft, Save, Target, RotateCcw, Download, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, List as ListIcon, Table as TableIcon, ArrowLeft, Save, Target, RotateCcw, Download, Upload, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePermission } from "@/contexts/PermissionContext";
@@ -154,6 +154,7 @@ const CPLPage = () => {
   });
 
   const [targetInputs, setTargetInputs] = useState<Record<string, number>>({});
+  const [isTargetLocked, setIsTargetLocked] = useState(true);
 
   // Sync targets to inputs
   useEffect(() => {
@@ -622,10 +623,20 @@ const CPLPage = () => {
                   <CardTitle>Target Capaian Pembelajaran Lulusan</CardTitle>
                   <CardDescription>Tentukan target minimal pencapaian untuk setiap CPL</CardDescription>
                 </div>
-                <Button onClick={handleSaveTargets} disabled={loadingTargets || !cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Simpan Target
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant={isTargetLocked ? "outline" : "secondary"}
+                    onClick={() => setIsTargetLocked(!isTargetLocked)}
+                    className="gap-2"
+                  >
+                    {isTargetLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                    {isTargetLocked ? "Buka Kunci" : "Kunci Data"}
+                  </Button>
+                  <Button onClick={handleSaveTargets} disabled={loadingTargets || !cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan || isTargetLocked}>
+                    <Save className="w-4 h-4 mr-2" />
+                    Simpan Target
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -747,6 +758,7 @@ const CPLPage = () => {
                             type="number"
                             min="0"
                             max="100"
+                            disabled={isTargetLocked}
                             value={targetInputs[cpl.id] ?? 75}
                             onChange={(e) => setTargetInputs({
                               ...targetInputs,

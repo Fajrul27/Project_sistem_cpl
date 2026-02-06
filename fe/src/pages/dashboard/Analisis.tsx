@@ -20,9 +20,12 @@ const AnalisisiPage = () => {
     setSemester,
     fakultasFilter,
     setFakultasFilter,
+    jenjangFilter,
+    setJenjangFilter,
     prodiFilter,
     setProdiFilter,
     fakultasList,
+    jenjangList,
     prodiList,
     loading,
     resetFilters
@@ -30,10 +33,12 @@ const AnalisisiPage = () => {
 
 
 
-  const isFilterComplete = semester && fakultasFilter && prodiFilter && semester !== 'all' && fakultasFilter !== 'all' && prodiFilter !== 'all';
+  const isFilterComplete = semester && fakultasFilter && jenjangFilter && prodiFilter && semester !== 'all' && fakultasFilter !== 'all' && jenjangFilter !== 'all' && prodiFilter !== 'all';
 
   // Standard colors for distribution chart: Reversed to match Top (Green) -> Bottom (Red)
   const chartColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#22c55e'];
+
+  const totalData = distributionData.reduce((acc, curr) => acc + curr.count, 0);
 
   const getLabel = (rangeName: string) => {
     switch (rangeName) {
@@ -43,6 +48,19 @@ const AnalisisiPage = () => {
       case '60-69': return 'Kurang (D) (60-69)';
       default: return 'Sangat Kurang (E) (<60)';
     }
+  };
+
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-[10px] font-bold">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
   };
 
   return (
@@ -96,6 +114,19 @@ const AnalisisiPage = () => {
                     </Select>
                   </div>
                   <div className="grid gap-2">
+                    <Label htmlFor="jenjang">Jenjang</Label>
+                    <Select value={jenjangFilter} onValueChange={setJenjangFilter}>
+                      <SelectTrigger id="jenjang" className="h-10">
+                        <SelectValue placeholder="Pilih Jenjang" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jenjangList.map((j) => (
+                          <SelectItem key={j.id} value={j.nama}>{j.nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
                     <Label htmlFor="prodi">Program Studi</Label>
                     <Select value={prodiFilter} onValueChange={setProdiFilter}>
                       <SelectTrigger id="prodi" className="h-10">
@@ -129,7 +160,7 @@ const AnalisisiPage = () => {
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Filter Data Diperlukan</h3>
                 <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                  Silakan pilih Semester, Fakultas, atau Program Studi pada menu filter di atas untuk menampilkan data analisis.
+                  Silakan pilih Semester, Fakultas, Jenjang, atau Program Studi pada menu filter di atas untuk menampilkan data analisis.
                 </p>
                 <Button variant="outline" onClick={() => setIsFilterOpen(true)}>
                   Buka Filter
@@ -213,7 +244,7 @@ const AnalisisiPage = () => {
                 <CardHeader>
                   <CardTitle>Distribusi Nilai</CardTitle>
                   <CardDescription>
-                    Sebaran perolehan nilai CPL (Total {distributionData.reduce((acc, curr) => acc + curr.count, 0)} Data Evaluasi)
+                    Sebaran perolehan nilai CPL (Total {totalData} Data Evaluasi)
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -229,6 +260,8 @@ const AnalisisiPage = () => {
                         dataKey="count"
                         animationDuration={1500}
                         animationEasing="ease-out"
+                        label={renderCustomizedLabel}
+                        labelLine={false}
                       >
                         {distributionData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} stroke="hsl(var(--card))" strokeWidth={2} />
@@ -242,9 +275,10 @@ const AnalisisiPage = () => {
                           boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                         }}
                         itemStyle={{ color: 'hsl(var(--foreground))' }}
-                        formatter={(value, name, props) => {
+                        formatter={(value: any, name, props) => {
                           const rangeName = props.payload.range_name || props.payload.name;
-                          return [`${value} Data`, getLabel(rangeName)];
+                          const percent = totalData > 0 ? ((Number(value) / totalData) * 100).toFixed(1) : 0;
+                          return [`${value} Data (${percent}%)`, getLabel(rangeName)];
                         }}
                       />
                       <Legend
@@ -253,7 +287,8 @@ const AnalisisiPage = () => {
                         align="right"
                         formatter={(value, entry: any) => {
                           const rangeName = entry.payload.range_name || entry.value;
-                          return <span className="text-xs font-medium ml-2 text-foreground">{getLabel(rangeName)} ({entry.payload.count})</span>;
+                          const percent = totalData > 0 ? ((entry.payload.count / totalData) * 100).toFixed(1) : 0;
+                          return <span className="text-xs font-medium ml-2 text-foreground">{getLabel(rangeName)}: {percent}% ({entry.payload.count})</span>;
                         }}
                       />
                     </PieChart>
