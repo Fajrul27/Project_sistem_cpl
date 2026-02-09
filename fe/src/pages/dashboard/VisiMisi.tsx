@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { useVisiMisi } from "@/hooks/useVisiMisi";
 import { usePermission } from "@/contexts/PermissionContext";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 
 export default function VisiMisiPage() {
     const {
@@ -46,6 +47,18 @@ export default function VisiMisiPage() {
     return (
         <DashboardPage title="Visi & Misi Program Studi" description="Kelola Visi dan Misi sebagai landasan kurikulum OBE">
             <div className="space-y-6">
+                {canEdit && (
+                    <CollapsibleGuide title="Panduan Visi & Misi">
+                        <div className="space-y-3">
+                            <p>Visi dan Misi Program Studi merupakan fondasi utama dalam pengembangan kurikulum OBE. Seluruh Profil Lulusan dan CPL harus merujuk pada pernyataan ini.</p>
+                            <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                <li><strong>Visi Keilmuan:</strong> Gambaran ideal cita-cita prodi dalam pengembangan ilmu pengetahuan.</li>
+                                <li><strong>Misi:</strong> Langkah-langkah strategis yang dilakukan prodi untuk mencapai visinya.</li>
+                                <li><strong>Hubungan:</strong> Perubahan pada Visi/Misi sebaiknya diikuti dengan peninjauan kembali relevansi Profil Lulusan dan CPL.</li>
+                            </ul>
+                        </div>
+                    </CollapsibleGuide>
+                )}
                 {/* Filter Prodi (Admin Only) */}
                 {role === "admin" && (
                     <Card>

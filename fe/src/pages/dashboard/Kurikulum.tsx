@@ -43,6 +43,7 @@ import { Label } from "@/components/ui/label";
 import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 
 import {
     getAllKurikulum,
@@ -61,6 +62,7 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
     const [filterActive, setFilterActive] = useState(true); // Default to showing only active
     const [isDataChanged, setIsDataChanged] = useState(false);
     const { can } = usePermission();
+    const canManage = can('access', 'kaprodi') || can('access', 'admin');
 
     // Dialog states
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -183,6 +185,19 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
                         Kelola data kurikulum, termasuk tahun mulai dan status aktif.
                     </p>
                 </div>
+            )}
+
+            {canManage && (
+                <CollapsibleGuide title="Panduan Manajemen Kurikulum">
+                    <div className="space-y-3">
+                        <p>Kurikulum berfungsi sebagai wadah utama yang mengikat seluruh struktur akademik, mulai dari CPL, Mata Kuliah, hingga Profil Lulusan.</p>
+                        <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                            <li><strong>Status Aktif:</strong> Hanya kurikulum berstatus aktif yang dapat digunakan dalam proses pemetaan dan penilaian.</li>
+                            <li><strong>Tahun Mulai:</strong> Menentukan kapan angkatan mahasiswa mulai menggunakan kurikulum ini.</li>
+                            <li><strong>Binding:</strong> Hubungan antara angkatan mahasiswa dengan kurikulum tertentu diatur pada halaman <em>Master Angkatan</em>.</li>
+                        </ul>
+                    </div>
+                </CollapsibleGuide>
             )}
 
             <Card>

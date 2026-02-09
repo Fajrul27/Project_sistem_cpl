@@ -20,11 +20,13 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle, XCircle, Search, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Switch } from "@/components/ui/switch";
-import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { usePermission } from "@/contexts/PermissionContext";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -37,19 +39,22 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function TahunAjaranPage({ isTabContent = false }: { isTabContent?: boolean }) {
+    const { can } = usePermission();
+    const canManage = can('access', 'kaprodi') || can('access', 'admin');
     const {
         tahunAjaranList,
         loading,
         createTahunAjaran,
         updateTahunAjaran,
         deleteTahunAjaran,
-        setTahunAjaranActive
+        setTahunAjaranActive,
+        refresh: loadParams
     } = useTahunAjaran();
 
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<TahunAjaran | null>(null);
-    const [deleteId, setDeleteId] = useState<string | null>(null);
-
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
     const [formData, setFormData] = useState({
         nama: "",
         isActive: false
@@ -61,8 +66,11 @@ export default function TahunAjaranPage({ isTabContent = false }: { isTabContent
     };
 
     const handleOpenEdit = (item: TahunAjaran) => {
-        setFormData({ nama: item.nama, isActive: item.isActive });
         setEditingItem(item);
+        setFormData({
+            nama: item.nama,
+            isActive: item.isActive
+        });
     };
 
     const handleClose = () => {
@@ -73,181 +81,180 @@ export default function TahunAjaranPage({ isTabContent = false }: { isTabContent
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        let success = false;
-
         if (editingItem) {
-            success = await updateTahunAjaran(editingItem.id, formData);
+            const success = await updateTahunAjaran(editingItem.id, formData);
+            if (success) handleClose();
         } else {
-            success = await createTahunAjaran(formData);
-        }
-
-        if (success) {
-            handleClose();
+            const success = await createTahunAjaran(formData);
+            if (success) handleClose();
         }
     };
 
-    const handleDelete = async () => {
-        if (deleteId) {
-            await deleteTahunAjaran(deleteId);
-            setDeleteId(null);
-        }
-    };
-
-    const handleSetActive = async (item: TahunAjaran) => {
-        if (!item.isActive) {
-            await setTahunAjaranActive(item.id);
-        }
-    };
+    const filteredList = tahunAjaranList.filter(item =>
+        item.nama.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
         <div className="space-y-6">
             {!isTabContent && (
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Tahun Ajaran</h1>
-                        <p className="text-muted-foreground">
-                            Kelola data tahun ajaran akademik sistem.
-                        </p>
+                        <h1 className="text-2xl font-bold tracking-tight">Manajemen Tahun Ajaran</h1>
+                        <p className="text-muted-foreground">Kelola periode akademik aktif dalam sistem</p>
                     </div>
-                    <Button onClick={handleOpenAdd}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Tambah Tahun Ajaran
-                    </Button>
                 </div>
             )}
 
-            {isTabContent && (
-                <div className="flex justify-end mb-4">
-                    <Button onClick={handleOpenAdd}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Tambah Tahun Ajaran
-                    </Button>
-                </div>
+            {canManage && (
+                <CollapsibleGuide title="Panduan Manajemen Tahun Ajaran">
+                    <div className="space-y-3">
+                        <p>Tahun Ajaran merupakan periode akademik aktif di mana seluruh proses penilaian dan input KRS berlangsung.</p>
+                        <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                            <li><strong>Aktivasi:</strong> Hanya satu tahun ajaran yang dapat berstatus aktif dalam satu waktu.</li>
+                            <li><strong>Dampak:</strong> Perubahan tahun ajaran aktif akan langsung mempengaruhi filter default di seluruh sistem.</li>
+                        </ul>
+                    </div>
+                </CollapsibleGuide>
             )}
 
-            <div className="border rounded-lg">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nama Tahun Ajaran</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Aksi</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={3} className="h-24 text-center">
-                                    <div className="flex justify-center items-center">
-                                        <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                                        Loading...
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ) : tahunAjaranList.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={3} className="h-24 text-center">
-                                    Belum ada data tahun ajaran.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            tahunAjaranList.map((item) => (
-                                <TableRow key={item.id}>
-                                    <TableCell className="font-medium">{item.nama}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center space-x-2">
-                                            {item.isActive ? (
-                                                <Badge className="bg-green-500 hover:bg-green-600">
-                                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                                    Aktif
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="outline" className="text-muted-foreground">
-                                                    Tidak Aktif
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right space-x-2">
-                                        {!item.isActive && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleSetActive(item)}
-                                                title="Set sebagai aktif"
-                                            >
-                                                <CheckCircle className="h-4 w-4 text-muted-foreground hover:text-green-500" />
-                                            </Button>
-                                        )}
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleOpenEdit(item)}
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                            onClick={() => setDeleteId(item.id)}
-                                            disabled={item.isActive} // Prevent deleting active year safely
-                                            title={item.isActive ? "Tidak dapat menghapus tahun ajaran aktif" : "Hapus"}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </TableCell>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <div className="space-y-1">
+                        <CardTitle>Daftar Tahun Ajaran</CardTitle>
+                        <CardDescription>Total {filteredList.length} periode terdaftar</CardDescription>
+                    </div>
+                    {canManage && (
+                        <Button onClick={handleOpenAdd} size="sm">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Tambah Tahun
+                        </Button>
+                    )}
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center pb-4">
+                        <div className="relative flex-1 max-w-sm">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Cari tahun ajaran..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-8"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="rounded-md border overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Tahun Ajaran</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    {canManage && <TableHead className="text-right">Aksi</TableHead>}
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={canManage ? 3 : 2} className="h-24 text-center">
+                                            <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : filteredList.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={canManage ? 3 : 2} className="h-24 text-center text-muted-foreground">
+                                            Tidak ada data ditemukan.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    filteredList.map((item) => (
+                                        <TableRow key={item.id}>
+                                            <TableCell className="font-medium">{item.nama}</TableCell>
+                                            <TableCell>
+                                                {item.isActive ? (
+                                                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">
+                                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                                        Aktif
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="outline" className="text-muted-foreground">
+                                                        <XCircle className="w-3 h-3 mr-1" />
+                                                        Tidak Aktif
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+                                            {canManage && (
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-1">
+                                                        {!item.isActive && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => setTahunAjaranActive(item.id)}
+                                                                title="Aktifkan"
+                                                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                            >
+                                                                <CheckCircle className="w-4 h-4" />
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleOpenEdit(item)}
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setIsDeleting(item.id)}
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            )}
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Dialog Add/Edit */}
             <Dialog open={isAddOpen || !!editingItem} onOpenChange={(open) => !open && handleClose()}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>
-                            {editingItem ? "Edit Tahun Ajaran" : "Tambah Tahun Ajaran"}
-                        </DialogTitle>
+                        <DialogTitle>{editingItem ? "Edit Tahun Ajaran" : "Tambah Tahun Ajaran"}</DialogTitle>
                         <DialogDescription>
-                            {editingItem
-                                ? "Ubah detail tahun ajaran."
-                                : "Tambahkan tahun ajaran baru ke dalam sistem."}
+                            Pastikan format penamaan konsisten (contoh: 2023/2024 Ganjil)
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                         <div className="space-y-2">
                             <RequiredLabel htmlFor="nama" required>Nama Tahun Ajaran</RequiredLabel>
                             <Input
                                 id="nama"
-                                placeholder="Contoh: 2025/2026 Ganjil"
+                                placeholder="Contoh: 2023/2024 Ganjil"
                                 value={formData.nama}
                                 onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                                 required
-                                autoComplete="off"
                             />
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 pt-2">
                             <Switch
-                                id="isActive"
+                                id="status"
                                 checked={formData.isActive}
                                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                             />
-                            <Label htmlFor="isActive">Set sebagai Tahun Ajaran Aktif?</Label>
+                            <Label htmlFor="status">Setel sebagai Tahun Ajaran Aktif</Label>
                         </div>
-                        {formData.isActive && (
-                            <div className="text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
-                                Perhatian: Mengaktifkan tahun ajaran ini akan menonaktifkan tahun ajaran yang sedang berjalan.
-                            </div>
-                        )}
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={handleClose}>
-                                Batal
-                            </Button>
+                        <DialogFooter className="pt-4">
+                            <Button type="button" variant="outline" onClick={handleClose}>Batal</Button>
                             <Button type="submit">
-                                {editingItem ? "Simpan Perubahan" : "Tambah"}
+                                {editingItem ? "Update" : "Simpan"}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -255,19 +262,23 @@ export default function TahunAjaranPage({ isTabContent = false }: { isTabContent
             </Dialog>
 
             {/* Alert Delete */}
-            <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+            <AlertDialog open={!!isDeleting} onOpenChange={(open) => !open && setIsDeleting(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+                        <AlertDialogTitle>Hapus Tahun Ajaran?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Tindakan ini tidak dapat dibatalkan. Data tahun ajaran akan dihapus permanen.
-                            Pastikan tidak ada data penilaian yang terkait dengan tahun ajaran ini.
+                            Tindakan ini tidak dapat dibatalkan. Menghapus tahun ajaran dapat berdampak pada data KRS dan nilai yang terkait.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={handleDelete}
+                            onClick={async () => {
+                                if (isDeleting) {
+                                    await deleteTahunAjaran(isDeleting);
+                                    setIsDeleting(null);
+                                }
+                            }}
                             className="bg-red-500 hover:bg-red-600"
                         >
                             Hapus

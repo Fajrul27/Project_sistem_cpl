@@ -14,8 +14,30 @@ import { RubrikGradingDialog } from "@/components/features/RubrikGradingDialog";
 import { useNilaiTeknik } from "@/hooks/useNilaiTeknik";
 import { useTahunAjaran } from "@/hooks/useTahunAjaran";
 import { useEffect } from "react";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { usePermission } from "@/contexts/PermissionContext";
+
+import { ChevronsUpDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { useState } from "react";
 
 const InputNilaiTeknikPage = () => {
+    const { can } = usePermission();
+    const canManage = can('access', 'kaprodi') || can('access', 'admin');
+
     const {
         mkList,
         students,
@@ -47,8 +69,11 @@ const InputNilaiTeknikPage = () => {
         handleSaveGrading,
         handleSave,
         downloadTemplate,
-        importExcel
+        importExcel,
+
     } = useNilaiTeknik();
+
+    const [openMK, setOpenMK] = useState(false);
 
     const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
 
@@ -71,6 +96,19 @@ const InputNilaiTeknikPage = () => {
     return (
         <DashboardPage title="Input Nilai Teknik Penilaian" description="Input nilai berdasarkan teknik penilaian (Tugas, Kuis, dll)">
             <div className="space-y-6">
+                {canManage && (
+                    <CollapsibleGuide title="Panduan Input Nilai & Rubrik">
+                        <div className="space-y-3">
+                            <p>Sistem ini menggunakan teknik penilaian berbasis CPMK untuk memastikan evaluasi yang objektif dan terukur.</p>
+                            <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                <li><strong>Rubrik Penilaian:</strong> Gunakan tombol <Settings className="w-3 h-3 inline" /> untuk mengatur kriteria penilaian pada setiap CPMK sebelum menginput nilai.</li>
+                                <li><strong>Input Massal:</strong> Anda dapat mengunduh template Excel, mengisinya secara offline, dan mengunggahnya kembali ke sistem.</li>
+                                <li><strong>Grading Otomatis:</strong> Nilai akhir akan dihitung secara otomatis berdasarkan bobot teknik penilaian yang telah ditentukan di rencana asesmen.</li>
+                            </ul>
+                        </div>
+                    </CollapsibleGuide>
+                )}
+
 
                 <Card>
                     <CardHeader>
@@ -100,16 +138,49 @@ const InputNilaiTeknikPage = () => {
 
                         <div className="space-y-2">
                             <Label>Mata Kuliah</Label>
-                            <Select value={selectedMK} onValueChange={setSelectedMK}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih Mata Kuliah" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {mkList.map(mk => (
-                                        <SelectItem key={mk.id} value={mk.id}>{mk.kodeMk} - {mk.namaMk}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Popover open={openMK} onOpenChange={setOpenMK}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={openMK}
+                                        className="w-full justify-between font-normal"
+                                    >
+                                        {selectedMK
+                                            ? mkList.find((mk) => mk.id === selectedMK)?.kodeMk + " - " + mkList.find((mk) => mk.id === selectedMK)?.namaMk
+                                            : "Pilih Mata Kuliah..."}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Cari mata kuliah..." />
+                                        <CommandList>
+                                            <CommandEmpty>Mata kuliah tidak ditemukan.</CommandEmpty>
+                                            <CommandGroup>
+                                                {mkList.map((mk) => (
+                                                    <CommandItem
+                                                        key={mk.id}
+                                                        value={`${mk.kodeMk} ${mk.namaMk}`}
+                                                        onSelect={() => {
+                                                            setSelectedMK(mk.id === selectedMK ? "" : mk.id);
+                                                            setOpenMK(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                selectedMK === mk.id ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {mk.kodeMk} - {mk.namaMk}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </div>
 
                         <div className="space-y-2">

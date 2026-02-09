@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
 import { fetchAllUsers, updateUserRole, createUserWithRole, updateUser, deleteUser, updateProfile, fetchKelas, fetchFakultasList, fetchAngkatanList } from "@/lib/api";
-import { Search, SlidersHorizontal, UserCircle, Download, Upload } from "lucide-react";
+import { Search, SlidersHorizontal, UserCircle, Download, Upload, Plus } from "lucide-react";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { Pagination } from "@/components/common/Pagination";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
@@ -18,6 +18,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useImpersonation } from "@/hooks/useImpersonation";
 import { useUserRole } from "@/hooks/useUserRole";
+import { ImportResultDialog } from "@/components/common/ImportResultDialog";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { usePermission } from "@/contexts/PermissionContext";
+
 
 interface UserRow {
     id: string;
@@ -66,6 +70,9 @@ type ProdiOption = { id: string; nama: string; kode: string };
 type FakultasOption = { id: string; nama: string; kode: string; prodi: ProdiOption[] };
 
 export const StudentList = () => {
+    const { can } = usePermission();
+    const canManage = can('access', 'admin');
+    const { loginAsUser, isImpersonating, loading: loginAsLoading } = useImpersonation();
     const [users, setUsers] = useState<UserRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -84,6 +91,7 @@ export const StudentList = () => {
     const [programFilter, setProgramFilter] = useState<string>("all");
     const [semesterFilter, setSemesterFilter] = useState<string>("all");
     const [kelasFilter, setKelasFilter] = useState<string>("all");
+    const [importResult, setImportResult] = useState<{ successCount: number; errors?: string[] } | null>(null);
 
     const [showCreate, setShowCreate] = useState(false);
     const [editingUser, setEditingUser] = useState<UserRow | null>(null);
@@ -128,8 +136,7 @@ export const StudentList = () => {
             if (semesterFilter !== 'all') queryParams.append('semester', semesterFilter);
             if (kelasFilter !== 'all') queryParams.append('kelasId', kelasFilter);
 
-            const API_URL = import.meta.env.VITE_API_URL;
-            const url = `${API_URL}/users/export/mahasiswa?${queryParams.toString()}`;
+            const url = `/api/users/export/mahasiswa?${queryParams.toString()}`;
 
             const response = await fetch(url, { credentials: 'include' });
             if (!response.ok) throw new Error('Gagal export data');
@@ -163,19 +170,25 @@ export const StudentList = () => {
                 const formData = new FormData();
                 formData.append('file', file);
 
-                const API_URL = import.meta.env.VITE_API_URL;
-                const response = await fetch(`${API_URL}/users/import/mahasiswa`, {
+                const response = await fetch(`/api/users/import/mahasiswa`, {
                     method: 'POST',
                     credentials: 'include',
                     body: formData
                 });
 
                 const result = await response.json();
+
+                setImportResult({
+                    successCount: result.successCount || 0,
+                    errors: result.errors
+                });
+
                 if (!response.ok) throw new Error(result.error || 'Gagal import data');
 
-                toast.success(result.message || 'Data berhasil diimport');
                 if (result.errors && result.errors.length > 0) {
-                    result.errors.slice(0, 3).forEach((err: string) => toast.error(err));
+                    toast.warning(`Import selesai: ${result.successCount || 0} berhasil, ${result.errors.length} gagal.`);
+                } else {
+                    toast.success(result.message || 'Data berhasil diimport');
                 }
 
                 loadUsers();
@@ -188,8 +201,7 @@ export const StudentList = () => {
         input.click();
     };
 
-    // Login As Feature
-    const { loginAsUser, loading: loginAsLoading } = useImpersonation();
+
     const { role: currentUserRole } = useUserRole();
     const [loginAsConfirmOpen, setLoginAsConfirmOpen] = useState(false);
     const [userToImpersonate, setUserToImpersonate] = useState<UserRow | null>(null);
@@ -440,96 +452,273 @@ export const StudentList = () => {
     };
 
     return (
-        <Card>
-            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                    <CardTitle className="text-base md:text-lg">Daftar Mahasiswa</CardTitle>
-                    <CardDescription className="text-xs md:text-sm text-muted-foreground">
-                        Menampilkan <span className="font-medium">{totalItems}</span> mahasiswa
-                    </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={handleExport} disabled={loading} className="h-9">
-                        <Download className="h-4 w-4 mr-2" />
-                        Export
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing} className="h-9">
-                        <Upload className="h-4 w-4 mr-2" />
-                        {importing ? 'Importing...' : 'Import'}
-                    </Button>
-
-                    <div className="relative min-w-[200px]">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Cari..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9 h-9 text-sm"
-                        />
+        <div className="space-y-6">
+            {canManage && (
+                <CollapsibleGuide title="Panduan Manajemen Mahasiswa">
+                    <div className="space-y-3">
+                        <p>Halaman ini digunakan untuk mengelola data akun mahasiswa. Anda dapat menambahkan mahasiswa secara manual atau melakukan import massal.</p>
+                        <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                            <li><strong>Manual:</strong> Gunakan tombol "Tambah" untuk mengisi data mahasiswa satu per satu.</li>
+                            <li><strong>Import:</strong> Gunakan template Excel untuk mendaftarkan banyak mahasiswa sekaligus. Pastikan NIM unik.</li>
+                            <li><strong>Filter:</strong> Gunakan popover filter untuk mempersempit daftar berdasarkan fakultas, prodi, atau angkatan.</li>
+                        </ul>
                     </div>
+                </CollapsibleGuide>
+            )}
 
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant={hasActiveFilter ? "default" : "outline"} size="sm" className="h-9 gap-2">
-                                <SlidersHorizontal className="h-4 w-4" />
-                                <span className="hidden sm:inline">Filter</span>
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent align="end" className="w-80 space-y-4">
-                            <div className="grid grid-cols-1 gap-3">
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Fakultas</Label>
-                                    <Select value={facultyFilter} onValueChange={(val) => { setFacultyFilter(val); setProgramFilter("all"); }}>
-                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Semua" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Semua</SelectItem>
-                                            {fakultasList.map(f => <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>)}
-                                        </SelectContent>
+            <Card>
+                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="space-y-1">
+                        <CardTitle className="text-base md:text-lg">Daftar Mahasiswa</CardTitle>
+                        <CardDescription className="text-xs md:text-sm text-muted-foreground">
+                            Menampilkan <span className="font-medium">{totalItems}</span> mahasiswa
+                        </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={handleExport} disabled={loading} className="h-9">
+                            <Download className="h-4 w-4 mr-2" />
+                            Export
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing} className="h-9">
+                            <Upload className="h-4 w-4 mr-2" />
+                            {importing ? 'Importing...' : 'Import'}
+                        </Button>
+
+                        <div className="relative min-w-[200px]">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Cari..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-9 h-9 text-sm"
+                            />
+                        </div>
+
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant={hasActiveFilter ? "default" : "outline"} size="sm" className="h-9 gap-2">
+                                    <SlidersHorizontal className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Filter</span>
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-80 space-y-4">
+                                <div className="grid grid-cols-1 gap-3">
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Fakultas</Label>
+                                        <Select value={facultyFilter} onValueChange={(val) => { setFacultyFilter(val); setProgramFilter("all"); }}>
+                                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Semua" /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Semua</SelectItem>
+                                                {fakultasList.map(f => <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Program Studi</Label>
+                                        <Select value={programFilter} onValueChange={setProgramFilter} disabled={facultyFilter === "all" && programFilterOptions.length === 0}>
+                                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Semua" /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Semua</SelectItem>
+                                                {programFilterOptions.map(p => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Semester</Label>
+                                        <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+                                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Semua" /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Semua</SelectItem>
+                                                {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <SelectItem key={s} value={String(s)}>{s}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs">Kelas</Label>
+                                        <Select value={kelasFilter} onValueChange={setKelasFilter}>
+                                            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Semua" /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Semua</SelectItem>
+                                                {kelasList.map(k => <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+
+                        <Button size="sm" onClick={() => setShowCreate(true)} className="h-9">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Tambah
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+
+
+                    {loading && users.length === 0 ? (
+                        <LoadingScreen fullScreen={false} message="Memuat data mahasiswa..." />
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[50px]">No</TableHead>
+                                        <TableHead>Email</TableHead>
+                                        <TableHead>Nama</TableHead>
+                                        <TableHead>NIM</TableHead>
+                                        <TableHead>Prodi</TableHead>
+                                        <TableHead className="text-center">Sem</TableHead>
+                                        <TableHead className="text-center">Angk</TableHead>
+                                        <TableHead className="text-right">Aksi</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
+                                    {users.length === 0 ? (
+                                        <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Tidak ada data</TableCell></TableRow>
+                                    ) : (
+                                        users.map((user, index) => (
+                                            <TableRow key={user.id}>
+                                                <TableCell>{(page - 1) * limit + index + 1}</TableCell>
+                                                <TableCell className="font-mono text-xs">{user.email}</TableCell>
+                                                <TableCell>{user.namaLengkap}</TableCell>
+                                                <TableCell>{user.nim}</TableCell>
+                                                <TableCell className="text-xs">{user.programStudi}</TableCell>
+                                                <TableCell className="text-center">{user.semester}</TableCell>
+                                                <TableCell className="text-center">{user.angkatan}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        {currentUserRole === 'admin' && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => handleLoginAsClick(user)}
+                                                                disabled={loginAsLoading}
+                                                                title="Login sebagai user ini"
+                                                            >
+                                                                <UserCircle className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                        <Button size="sm" variant="outline" onClick={() => {
+                                                            setEditingUser(user);
+                                                            let fakId = "", prodiId = "";
+                                                            if (user.fakultas) {
+                                                                const f = fakultasList.find(x => x.nama === user.fakultas);
+                                                                if (f) {
+                                                                    fakId = f.id;
+                                                                    const p = f.prodi.find(x => x.nama === user.programStudi);
+                                                                    if (p) prodiId = p.id;
+                                                                }
+                                                            }
+                                                            setEditData({
+                                                                fullName: user.namaLengkap || "",
+                                                                email: user.email,
+                                                                role: "mahasiswa",
+                                                                fakultas: fakId,
+                                                                prodi: prodiId,
+                                                                identityType: "mahasiswa",
+                                                                identityNumber: user.nim || "",
+                                                                semester: user.semester ? String(user.semester) : "",
+                                                                kelasId: user.kelasId || "",
+                                                                angkatanId: user.angkatanId || "",
+                                                            })
+                                                        }}>Kelola</Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+
+                    <Dialog open={!!editingUser} onOpenChange={open => !open && setEditingUser(null)}>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>Edit Mahasiswa</DialogTitle></DialogHeader>
+                            <div className="space-y-4">
+                                <div className="space-y-2"><Label>Nama</Label><Input value={editData.fullName} onChange={e => setEditData({ ...editData, fullName: e.target.value })} /></div>
+                                <div className="space-y-2"><Label>Email</Label><Input value={editData.email} onChange={e => setEditData({ ...editData, email: e.target.value })} /></div>
+                                <div className="space-y-2"><Label>NIM</Label><Input value={editData.identityNumber} onChange={e => setEditData({ ...editData, identityNumber: e.target.value })} /></div>
+                                <div className="space-y-2"><Label>Fakultas</Label>
+                                    <Select value={editData.fakultas} onValueChange={v => setEditData({ ...editData, fakultas: v, prodi: "" })}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>{fakultasList.map(f => <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Program Studi</Label>
-                                    <Select value={programFilter} onValueChange={setProgramFilter} disabled={facultyFilter === "all" && programFilterOptions.length === 0}>
-                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Semua" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Semua</SelectItem>
-                                            {programFilterOptions.map(p => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}
-                                        </SelectContent>
+                                <div className="space-y-2"><Label>Prodi</Label>
+                                    <Select value={editData.prodi} onValueChange={v => setEditData({ ...editData, prodi: v })}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>{selectedEditFakultas?.prodi.map(p => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Semester</Label>
-                                    <Select value={semesterFilter} onValueChange={setSemesterFilter}>
-                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Semua" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Semua</SelectItem>
-                                            {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <SelectItem key={s} value={String(s)}>{s}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="space-y-2"><Label>Semester</Label><Input value={editData.semester} onChange={e => setEditData({ ...editData, semester: e.target.value })} /></div>
+                                    <div className="space-y-2"><Label>Kelas</Label>
+                                        <Select value={editData.kelasId} onValueChange={v => setEditData({ ...editData, kelasId: v })}>
+                                            <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
+                                            <SelectContent>{kelasList.map(k => <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>)}</SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2"><Label>Angkatan</Label>
+                                        <Select value={editData.angkatanId} onValueChange={v => setEditData({ ...editData, angkatanId: v })}>
+                                            <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
+                                            <SelectContent>{angkatanList.map(a => <SelectItem key={a.id} value={a.id}>{a.tahun}</SelectItem>)}</SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Kelas</Label>
-                                    <Select value={kelasFilter} onValueChange={setKelasFilter}>
-                                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Semua" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Semua</SelectItem>
-                                            {kelasList.map(k => <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
+                                <div className="flex justify-between pt-4">
+                                    <Button variant="destructive" onClick={() => editingUser && handleDeleteUser(editingUser)}>Hapus User</Button>
+                                    <Button onClick={handleSaveEdit}>{savingEdit ? "Menyimpan" : "Simpan"}</Button>
                                 </div>
                             </div>
-                        </PopoverContent>
-                    </Popover>
+                        </DialogContent>
+                    </Dialog>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={setPage}
+                    />
+                </CardContent>
+            </Card>
+            <DeleteConfirmationDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onConfirm={confirmDelete}
+                title="Hapus Mahasiswa"
+                description={`Apakah Anda yakin ingin menghapus mahasiswa ${userToDelete?.namaLengkap || userToDelete?.email}? Data akan dihapus permanen.`}
+                loading={deletingId !== null}
+            />
 
-                    <Button size="sm" onClick={() => setShowCreate(!showCreate)} className="h-9">
-                        {showCreate ? "Tutup" : "Tambah"}
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {showCreate && (
-                    <div className="mb-6 border rounded-lg p-4 bg-muted/30">
-                        <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Login As Confirmation Dialog */}
+            <Dialog open={loginAsConfirmOpen} onOpenChange={setLoginAsConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Konfirmasi Login Sebagai User</DialogTitle>
+                        <DialogDescription>
+                            Anda akan login sebagai <strong>{userToImpersonate?.namaLengkap || userToImpersonate?.email}</strong>.
+                            Anda dapat kembali ke akun admin kapan saja menggunakan tombol "Kembali ke Admin".
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setLoginAsConfirmOpen(false)}>
+                            Batal
+                        </Button>
+                        <Button onClick={confirmLoginAs} disabled={loginAsLoading}>
+                            {loginAsLoading ? 'Loading...' : 'Ya, Login Sebagai User Ini'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            {/* Create Student Dialog */}
+            <Dialog open={showCreate} onOpenChange={setShowCreate}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle>Tambah Mahasiswa Baru</DialogTitle>
+                        <DialogDescription>Isi detail akun mahasiswa di bawah ini.</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateUser} className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <RequiredLabel required>Nama Lengkap</RequiredLabel>
                                 <Input value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} required />
@@ -546,7 +735,9 @@ export const StudentList = () => {
                                 <RequiredLabel required>NIM</RequiredLabel>
                                 <Input value={newUser.identityNumber} onChange={e => setNewUser({ ...newUser, identityNumber: e.target.value })} required />
                             </div>
+                        </div>
 
+                        <div className="grid grid-cols-2 gap-4 border-t pt-4 mt-2">
                             <div className="space-y-2">
                                 <Label>Fakultas</Label>
                                 <Select value={newUser.fakultasId} onValueChange={v => setNewUser({ ...newUser, fakultasId: v, prodiId: "" })}>
@@ -587,167 +778,26 @@ export const StudentList = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
-
-                            <div className="lg:col-span-3 flex items-end justify-end">
-                                <Button type="submit" disabled={creating}>{creating ? "Menyimpan" : "Simpan"}</Button>
-                            </div>
-                        </form>
-                    </div>
-                )}
-
-                {loading && users.length === 0 ? (
-                    <LoadingScreen fullScreen={false} message="Memuat data mahasiswa..." />
-                ) : (
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[50px]">No</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Nama</TableHead>
-                                    <TableHead>NIM</TableHead>
-                                    <TableHead>Prodi</TableHead>
-                                    <TableHead className="text-center">Sem</TableHead>
-                                    <TableHead className="text-center">Angk</TableHead>
-                                    <TableHead className="text-right">Aksi</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
-                                {users.length === 0 ? (
-                                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Tidak ada data</TableCell></TableRow>
-                                ) : (
-                                    users.map((user, index) => (
-                                        <TableRow key={user.id}>
-                                            <TableCell>{(page - 1) * limit + index + 1}</TableCell>
-                                            <TableCell className="font-mono text-xs">{user.email}</TableCell>
-                                            <TableCell>{user.namaLengkap}</TableCell>
-                                            <TableCell>{user.nim}</TableCell>
-                                            <TableCell className="text-xs">{user.programStudi}</TableCell>
-                                            <TableCell className="text-center">{user.semester}</TableCell>
-                                            <TableCell className="text-center">{user.angkatan}</TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    {currentUserRole === 'admin' && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => handleLoginAsClick(user)}
-                                                            disabled={loginAsLoading}
-                                                            title="Login sebagai user ini"
-                                                        >
-                                                            <UserCircle className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                    <Button size="sm" variant="outline" onClick={() => {
-                                                        setEditingUser(user);
-                                                        let fakId = "", prodiId = "";
-                                                        if (user.fakultas) {
-                                                            const f = fakultasList.find(x => x.nama === user.fakultas);
-                                                            if (f) {
-                                                                fakId = f.id;
-                                                                const p = f.prodi.find(x => x.nama === user.programStudi);
-                                                                if (p) prodiId = p.id;
-                                                            }
-                                                        }
-                                                        setEditData({
-                                                            fullName: user.namaLengkap || "",
-                                                            email: user.email,
-                                                            role: "mahasiswa",
-                                                            fakultas: fakId,
-                                                            prodi: prodiId,
-                                                            identityType: "mahasiswa",
-                                                            identityNumber: user.nim || "",
-                                                            semester: user.semester ? String(user.semester) : "",
-                                                            kelasId: user.kelasId || "",
-                                                            angkatanId: user.angkatanId || "",
-                                                        })
-                                                    }}>Kelola</Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
-
-                <Dialog open={!!editingUser} onOpenChange={open => !open && setEditingUser(null)}>
-                    <DialogContent>
-                        <DialogHeader><DialogTitle>Edit Mahasiswa</DialogTitle></DialogHeader>
-                        <div className="space-y-4">
-                            <div className="space-y-2"><Label>Nama</Label><Input value={editData.fullName} onChange={e => setEditData({ ...editData, fullName: e.target.value })} /></div>
-                            <div className="space-y-2"><Label>Email</Label><Input value={editData.email} onChange={e => setEditData({ ...editData, email: e.target.value })} /></div>
-                            <div className="space-y-2"><Label>NIM</Label><Input value={editData.identityNumber} onChange={e => setEditData({ ...editData, identityNumber: e.target.value })} /></div>
-                            <div className="space-y-2"><Label>Fakultas</Label>
-                                <Select value={editData.fakultas} onValueChange={v => setEditData({ ...editData, fakultas: v, prodi: "" })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>{fakultasList.map(f => <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>)}</SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2"><Label>Prodi</Label>
-                                <Select value={editData.prodi} onValueChange={v => setEditData({ ...editData, prodi: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>{selectedEditFakultas?.prodi.map(p => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}</SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="space-y-2"><Label>Semester</Label><Input value={editData.semester} onChange={e => setEditData({ ...editData, semester: e.target.value })} /></div>
-                                <div className="space-y-2"><Label>Kelas</Label>
-                                    <Select value={editData.kelasId} onValueChange={v => setEditData({ ...editData, kelasId: v })}>
-                                        <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
-                                        <SelectContent>{kelasList.map(k => <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2"><Label>Angkatan</Label>
-                                    <Select value={editData.angkatanId} onValueChange={v => setEditData({ ...editData, angkatanId: v })}>
-                                        <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
-                                        <SelectContent>{angkatanList.map(a => <SelectItem key={a.id} value={a.id}>{a.tahun}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div className="flex justify-between pt-4">
-                                <Button variant="destructive" onClick={() => editingUser && handleDeleteUser(editingUser)}>Hapus User</Button>
-                                <Button onClick={handleSaveEdit}>{savingEdit ? "Menyimpan" : "Simpan"}</Button>
-                            </div>
                         </div>
-                    </DialogContent>
-                </Dialog>
-                <Pagination
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={setPage}
-                />
-            </CardContent>
-            <DeleteConfirmationDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-                onConfirm={confirmDelete}
-                title="Hapus Mahasiswa"
-                description={`Apakah Anda yakin ingin menghapus mahasiswa ${userToDelete?.namaLengkap || userToDelete?.email}? Data akan dihapus permanen.`}
-                loading={deletingId !== null}
-            />
 
-            {/* Login As Confirmation Dialog */}
-            <Dialog open={loginAsConfirmOpen} onOpenChange={setLoginAsConfirmOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Konfirmasi Login Sebagai User</DialogTitle>
-                        <DialogDescription>
-                            Anda akan login sebagai <strong>{userToImpersonate?.namaLengkap || userToImpersonate?.email}</strong>.
-                            Anda dapat kembali ke akun admin kapan saja menggunakan tombol "Kembali ke Admin".
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setLoginAsConfirmOpen(false)}>
-                            Batal
-                        </Button>
-                        <Button onClick={confirmLoginAs} disabled={loginAsLoading}>
-                            {loginAsLoading ? 'Loading...' : 'Ya, Login Sebagai User Ini'}
-                        </Button>
-                    </DialogFooter>
+                        <DialogFooter className="pt-4 border-t mt-4">
+                            <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>Batal</Button>
+                            <Button type="submit" disabled={creating}>
+                                {creating ? <LoadingSpinner size="sm" className="mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                                Simpan Mahasiswa
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
-        </Card>
+
+            <ImportResultDialog
+                open={!!importResult}
+                onOpenChange={(open) => !open && setImportResult(null)}
+                result={importResult}
+                title="Hasil Import Mahasiswa"
+                description="Proses import data mahasiswa telah selesai dengan rincian berikut."
+            />
+        </div>
     );
 };

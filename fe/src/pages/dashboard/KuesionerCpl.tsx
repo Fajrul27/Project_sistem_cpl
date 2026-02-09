@@ -1,5 +1,6 @@
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
@@ -16,7 +17,7 @@ export default function KuesionerCplPage() {
         submitting,
         hasSubmitted,
         currentSemester,
-        currentTahunAjaran,
+        currentTahunAjaranId,
         handleSliderChange,
         handleSubmit
     } = useKuesioner();
@@ -36,9 +37,20 @@ export default function KuesionerCplPage() {
     return (
         <DashboardPage title="Kuesioner CPL (Self-Assessment)" description="Evaluasi kemampuan diri Anda terhadap Capaian Pembelajaran Lulusan (CPL)">
             <div className="space-y-6">
+                <CollapsibleGuide title="Panduan Kuesioner Self-Assessment">
+                    <div className="space-y-3">
+                        <p>Kuesioner ini bertujuan untuk mengukur tingkat kepercayaan diri Anda (self-efficacy) terhadap pencapaian kompetensi lulusan.</p>
+                        <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                            <li><strong>Skala 0-100:</strong> 0 berarti sangat kurang, 50 berarti cukup, dan 100 berarti sangat baik/mahir.</li>
+                            <li><strong>Kerahasiaan:</strong> Penilaian ini digunakan oleh program studi untuk peningkatan kualitas kurikulum secara kolektif.</li>
+                            <li><strong>Kejujuran:</strong> Berikan nilai yang paling mendekati kemampuan Anda saat ini agar evaluasi program studi akurat.</li>
+                        </ul>
+                    </div>
+                </CollapsibleGuide>
+
                 <Card>
                     <CardHeader>
-                        <CardTitle>Penilaian Diri Semester {currentSemester} ({currentTahunAjaran})</CardTitle>
+                        <CardTitle>Penilaian Diri Semester {currentSemester} ({currentTahunAjaranId})</CardTitle>
                         <CardDescription>
                             Silakan nilai kemampuan diri Anda untuk setiap poin CPL berikut ini (Skala 0-100).
                             Jujurlah dalam menilai untuk bahan evaluasi prodi.

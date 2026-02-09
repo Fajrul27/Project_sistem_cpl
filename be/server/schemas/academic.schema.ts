@@ -60,5 +60,13 @@ export const academicSchemas = {
         deskripsi: z.string().min(1),
         bobot: z.number().min(0).max(100),
         cpmkId: commonSchema.uuid
+    }),
+
+    // KRS
+    krs: z.object({
+        mahasiswaId: commonSchema.uuid,
+        mataKuliahId: commonSchema.uuid,
+        semesterId: commonSchema.uuid,
+        tahunAjaranId: commonSchema.uuid
     })
 };

@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
-import { ArrowLeft, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useCPLDetail } from "@/hooks/useCPLDetailHook";
+import { FloatingBackButton } from "@/components/common/FloatingBackButton";
 
 const CPLDetailPage = () => {
   const {
@@ -47,24 +48,10 @@ const CPLDetailPage = () => {
       title={`Detail ${cpl.kodeCpl}`}
       description={cpl.deskripsi}
     >
-      <div className="flex gap-6 relative">
-        {/* Back Button Side Column - Placeholder for Fixed Button */}
-        <div className="hidden xl:block w-28 shrink-0 relative">
-          <div className="fixed left-80 top-1/2 -translate-y-1/2 z-40">
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full shadow-lg bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 h-12 w-12 transition-all hover:scale-105"
-              onClick={() => navigate(-1)}
-              title="Kembali"
-            >
-              <ArrowLeft className="h-6 w-6" />
-            </Button>
-          </div>
-        </div>
+      <FloatingBackButton>
+        <div className="space-y-6">
 
-        {/* Main Content Area */}
-        <div className="flex-1 space-y-6 min-w-0">
+
           {/* Overview Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -315,7 +302,7 @@ const CPLDetailPage = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </FloatingBackButton>
     </DashboardPage>
   );
 };

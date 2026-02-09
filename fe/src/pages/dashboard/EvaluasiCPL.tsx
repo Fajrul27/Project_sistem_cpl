@@ -20,9 +20,15 @@ import { useTahunAjaran } from "@/hooks/useTahunAjaran";
 import { useNavigate } from "react-router-dom"; // Added import
 import { CheckCircle, XCircle, AlertCircle, Save, ChevronDown, ChevronRight, TrendingUp, Edit, ChevronUp } from "lucide-react"; // Added Edit
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { usePermission } from "@/contexts/PermissionContext";
+
 
 const EvaluasiCPLPage = () => {
     const navigate = useNavigate();
+    const { can } = usePermission();
+    const canManage = can('access', 'kaprodi') || can('access', 'admin');
+
     const {
         loading, targets, evaluation, summary,
         fetchTargets, saveTargets, fetchEvaluation, saveTindakLanjut, resetEvaluation
@@ -149,6 +155,19 @@ const EvaluasiCPLPage = () => {
     return (
         <DashboardPage title="Evaluasi CPL & Tindak Lanjut OBE">
             <div className="space-y-6">
+                {canManage && (
+                    <CollapsibleGuide title="Panduan Evaluasi CPL">
+                        <div className="space-y-3">
+                            <p>Halaman evaluasi digunakan untuk memantau ketercapaian kompetensi lulusan (CPL) pada level angkatan/prodi secara kolektif.</p>
+                            <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                <li><strong>Grafik Radar:</strong> Visualisasi rata-rata nilai setiap CPL dibandingkan dengan target yang ditetapkan.</li>
+                                <li><strong>Target Ketercapaian:</strong> Gunakan tab <em>Set Target CPL</em> untuk menentukan ambang batas kelulusan per angkatan.</li>
+                                <li><strong>Tindak Lanjut:</strong> Klik tombol edit pada kolom 'Tindak Lanjut' untuk mencatat rencana perbaikan bagi CPL yang belum mencapai target.</li>
+                            </ul>
+                        </div>
+                    </CollapsibleGuide>
+                )}
+
                 {/* Filters */}
                 <Card className="border-l-4 border-l-primary">
                     <CardHeader className="pb-3 cursor-pointer" onClick={() => setIsFilterExpanded(!isFilterExpanded)}>

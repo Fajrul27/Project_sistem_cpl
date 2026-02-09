@@ -10,35 +10,45 @@ export async function calculateNilaiCpmk(
     tahunAjaranId: string
 ) {
     try {
-        // 1. Check if CPMK has Sub-CPMKs
+        // GRANULAR OBE LOGIC:
+        // 1. Calculate Sub-CPMK values from Assessment (Teknik Penilaian)
+        // 2. Calculate CPMK value from Sub-CPMKs
+
+        // Step 1: Get all Sub-CPMKs for this CPMK
         const cpmk = await prisma.cpmk.findUnique({
             where: { id: cpmkId },
             include: {
                 subCpmk: {
                     include: {
-                        asesmenMappings: true
+                        asesmenMappings: {
+                            include: { teknikPenilaian: true }
+                        }
                     }
                 },
-                teknikPenilaian: true // For simple mode fallback
+                // Fallback: If no Sub-CPMK, check direct Assessment Mapping (if any, typically via Sub-CPMK)
+                teknikPenilaian: true
             }
         });
 
         if (!cpmk) return;
 
-        let totalNilaiCpmk = 0;
-        let totalBobotCpmk = 0;
-        let hasCalculated = false;
+        let nilaiAkhirCpmk = 0;
 
-        // MODE A: Rigorous OBE (Has Sub-CPMKs)
+        // PATH A: Has Sub-CPMKs (Ideal OBE)
         if (cpmk.subCpmk && cpmk.subCpmk.length > 0) {
+            let totalBobotSubCpmk = 0;
+            let totalScoreSubCpmk = 0;
 
             for (const sub of cpmk.subCpmk) {
-                let nilaiSub = 0;
-                let totalBobotSub = 0;
+                // Calculate Score for this Sub-CPMK
+                let totalBobotAsesmen = 0;
+                let totalScoreAsesmen = 0;
 
-                // Calculate Nilai Sub-CPMK from Teknik Penilaian
-                if (sub.asesmenMappings && sub.asesmenMappings.length > 0) {
-                    for (const mapping of sub.asesmenMappings) {
+                // Get grades for assessments mapped to this Sub-CPMK
+                const asesmenMappings = sub.asesmenMappings;
+
+                if (asesmenMappings.length > 0) {
+                    for (const mapping of asesmenMappings) {
                         const nilaiTeknik = await prisma.nilaiTeknikPenilaian.findFirst({
                             where: {
                                 mahasiswaId,
@@ -49,32 +59,16 @@ export async function calculateNilaiCpmk(
                         });
 
                         if (nilaiTeknik) {
-                            nilaiSub += Number(nilaiTeknik.nilai) * Number(mapping.bobot);
-                            totalBobotSub += Number(mapping.bobot);
+                            const bobot = Number(mapping.bobot); // Weight of this assessment in this Sub-CPMK
+                            totalScoreAsesmen += Number(nilaiTeknik.nilai) * bobot;
+                            totalBobotAsesmen += bobot;
                         }
                     }
 
-                    // Normalize Sub-CPMK Score
-                    if (totalBobotSub > 0) {
-                        nilaiSub = (nilaiSub / totalBobotSub) * 100; // Assuming bobot is percentage-like or relative
-                        // If bobot in mapping is percentage (e.g. 50), totalBobotSub might be 100.
-                        // If totalBobotSub is 100, then division by 100 is correct? 
-                        // Wait, standard formula: Σ(nilai * bobot) / Σ(bobot). 
-                        // If bobot is 50, nilai is 80 -> 4000. Total bobot 50. 4000/50 = 80. Correct.
-                        nilaiSub = nilaiSub / 100 * totalBobotSub; // Revert previous line logic error
-                        nilaiSub = (nilaiSub / totalBobotSub); // This is just weighted average.
-                        // Let's stick to: Σ(nilai * bobot) / Σ(bobot)
-                        // Implementation above: nilaiSub += nilai * bobot.
-                        // So final: nilaiSub = nilaiSub / totalBobotSub.
-                    }
-                } else {
-                    // Fallback if no mappings (should not happen in rigorous mode, but maybe manual entry?)
-                    // For now, treat as 0 or skip
-                    continue;
-                }
+                    // Calculate Sub-CPMK Score
+                    const nilaiSub = totalBobotAsesmen > 0 ? totalScoreAsesmen / totalBobotAsesmen : 0;
 
-                // Save Nilai Sub-CPMK
-                if (totalBobotSub > 0) {
+                    // Persist Nilai Sub-CPMK
                     await prisma.nilaiSubCpmk.upsert({
                         where: {
                             mahasiswaId_subCpmkId_semester_tahunAjaranId: {
@@ -95,47 +89,52 @@ export async function calculateNilaiCpmk(
                         }
                     });
 
-                    // Add to CPMK Total
-                    totalNilaiCpmk += nilaiSub * Number(sub.bobot);
-                    totalBobotCpmk += Number(sub.bobot);
-                    hasCalculated = true;
+                    // Add to CPMK Calculation
+                    const bobotSub = Number(sub.bobot);
+                    totalScoreSubCpmk += nilaiSub * bobotSub;
+                    totalBobotSubCpmk += bobotSub;
                 }
             }
-        }
 
-        // MODE B: Simple OBE (Direct Teknik -> CPMK)
+            // Finalize CPMK Value
+            if (totalBobotSubCpmk > 0) {
+                nilaiAkhirCpmk = totalScoreSubCpmk / totalBobotSubCpmk;
+            }
+
+        }
+        // PATH B: No Sub-CPMKs, use Direct CPMK -> Teknik Penilaian (Simpler)
         else {
-            const teknikList = cpmk.teknikPenilaian;
+            const allTeknik = await prisma.teknikPenilaian.findMany({
+                where: { cpmkId: cpmkId }
+            });
 
-            for (const teknik of teknikList) {
-                const nilai = await prisma.nilaiTeknikPenilaian.findFirst({
-                    where: {
-                        mahasiswaId,
-                        teknikPenilaianId: teknik.id,
-                        semester,
-                        tahunAjaranId
+            if (allTeknik.length > 0) {
+                let totalScore = 0;
+                let totalWeight = 0;
+
+                for (const teknik of allTeknik) {
+                    const nilai = await prisma.nilaiTeknikPenilaian.findFirst({
+                        where: {
+                            mahasiswaId,
+                            teknikPenilaianId: teknik.id,
+                            semester,
+                            tahunAjaranId
+                        }
+                    });
+
+                    if (nilai) {
+                        totalScore += Number(nilai.nilai) * Number(teknik.bobotPersentase);
+                        totalWeight += Number(teknik.bobotPersentase);
                     }
-                });
+                }
 
-                if (nilai) {
-                    totalNilaiCpmk += Number(nilai.nilai) * Number(teknik.bobotPersentase);
-                    totalBobotCpmk += Number(teknik.bobotPersentase);
-                    hasCalculated = true;
+                if (totalWeight > 0) {
+                    nilaiAkhirCpmk = totalScore / totalWeight;
                 }
             }
         }
 
-        // Finalize CPMK Value
-        if (!hasCalculated && totalBobotCpmk === 0) {
-            // No data found
-            return;
-        }
-
-        const nilaiAkhir = totalBobotCpmk > 0 ? (totalNilaiCpmk / totalBobotCpmk) : 0;
-        // Note: If bobot is percentage (sum=100), division by 100 is implied if totalBobotCpmk is 100.
-        // The formula is generic weighted average.
-
-        // Upsert NilaiCpmk
+        // 4. Update NilaiCpmk
         await prisma.nilaiCpmk.upsert({
             where: {
                 mahasiswaId_cpmkId_semester_tahunAjaranId: {
@@ -146,7 +145,7 @@ export async function calculateNilaiCpmk(
                 }
             },
             update: {
-                nilaiAkhir,
+                nilaiAkhir: nilaiAkhirCpmk,
                 calculatedAt: new Date(),
                 updatedAt: new Date()
             },
@@ -154,13 +153,13 @@ export async function calculateNilaiCpmk(
                 mahasiswaId,
                 cpmkId,
                 mataKuliahId,
-                nilaiAkhir,
+                nilaiAkhir: nilaiAkhirCpmk,
                 semester,
                 tahunAjaranId
             }
         });
 
-        // Trigger calculation of CPL nilai
+        // 5. Trigger CPL Calculation
         await calculateNilaiCplFromCpmk(mahasiswaId, mataKuliahId, semester, tahunAjaranId);
 
     } catch (error) {

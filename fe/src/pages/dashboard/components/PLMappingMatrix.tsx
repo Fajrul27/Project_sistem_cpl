@@ -8,6 +8,7 @@ import { CPL } from "@/hooks/useCPL";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Save, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import {
   Tooltip,
   TooltipContent,
@@ -98,21 +99,28 @@ export const PLMappingMatrix = ({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
-      {/* Legend & Help */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-100 dark:border-blue-900/50 gap-4">
-        <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-          <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <p className="font-semibold">Panduan Mapping:</p>
-            <ul className="list-disc pl-4 space-y-0.5 text-blue-700/80 dark:text-blue-300/80">
-              <li>Klik kotak pertemuan untuk menghubungkan Profil Lulusan dengan CPL.</li>
-              <li>Tanda <span className="font-bold">Check</span> menandakan terhubung.</li>
-              {!readOnly && <li>Jangan lupa klik tombol <span className="font-bold">Simpan Semua Perubahan</span> setelah selesai.</li>}
-            </ul>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="flex-1">
+          {!readOnly && (
+            <CollapsibleGuide title="Panduan Mapping">
+              <div className="space-y-3">
+                <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                  <li>Klik kotak pertemuan untuk menghubungkan Profil Lulusan dengan CPL.</li>
+                  <li>Tanda <span className="font-bold">Check</span> menandakan terhubung.</li>
+                  {!readOnly && <li>Jangan lupa klik tombol <span className="font-bold">Simpan Semua Perubahan</span> setelah selesai.</li>}
+                </ul>
+              </div>
+            </CollapsibleGuide>
+          )}
         </div>
+
         {!readOnly && (
-          <Button onClick={handleBatchSave} disabled={saving || hasChanges.size === 0} className="shadow-sm">
+          <Button
+            onClick={handleBatchSave}
+            disabled={saving || hasChanges.size === 0}
+            size="sm"
+            className="shadow-sm h-10 shrink-0"
+          >
             {saving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
             Simpan Semua Perubahan
           </Button>
@@ -179,7 +187,7 @@ export const PLMappingMatrix = ({
                       >
                         <div className="flex flex-col items-center justify-center w-full h-[80px] relative group/cell">
                           <Checkbox
-                            checked={isChecked}
+                            checked={!!isChecked}
                             onCheckedChange={() => handleToggle(profil.id, cpl.id)}
                             disabled={readOnly}
                             className={`data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground scale-125 pointer-events-none ${readOnly ? 'opacity-50' : ''}`}

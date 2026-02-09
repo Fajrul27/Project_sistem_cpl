@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useCPMKDetail, CplMapping, TeknikPenilaian } from "@/hooks/useCPMKDetail";
+import { FloatingBackButton } from "@/components/common/FloatingBackButton";
 
 const CPMKDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -179,29 +180,16 @@ const CPMKDetailPage = () => {
         );
     }
 
+
+
     return (
         <DashboardPage
             title={`Detail CPMK: ${cpmk.kodeCpmk}`}
             description={`${cpmk.mataKuliah.kodeMk} - ${cpmk.mataKuliah.namaMk}`}
         >
-            <div className="flex gap-6 relative">
-                {/* Fixed Back Button Sidebar */}
-                <div className="hidden xl:block w-28 shrink-0 relative">
-                    <div className="fixed left-80 top-1/2 -translate-y-1/2 z-40">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="rounded-full shadow-lg bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 h-12 w-12 transition-all hover:scale-105"
-                            onClick={() => navigate('/dashboard/cpmk')}
-                            title="Kembali ke Daftar CPMK"
-                        >
-                            <ArrowLeft className="h-6 w-6" />
-                        </Button>
-                    </div>
-                </div>
-
+            <FloatingBackButton path="/dashboard/cpmk">
                 {/* Main Content */}
-                <div className="flex-1 space-y-6 min-w-0">
+                <div className="space-y-6 min-w-0">
 
                     {/* Info Cards */}
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -836,8 +824,8 @@ const CPMKDetailPage = () => {
                     </Dialog>
 
                 </div>
-            </div>
-        </DashboardPage>
+            </FloatingBackButton>
+        </DashboardPage >
     );
 };
 

@@ -38,11 +38,14 @@ import defaultPermissionsRoutes from './default-permissions.js';
 import tahunAjaranRoutes from './tahun-ajaran.js';
 import jenjangRoutes from './jenjang.js';
 
+import skalaNilaiRoutes from './skala-nilai.js';
 import rolesRoutes from './roles.js';
+import krsRoutes from './krs.js';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
+router.use('/skala-nilai', skalaNilaiRoutes);
 router.use('/jenjang', jenjangRoutes);
 router.use('/cpl', cplRoutes);
 router.use('/cpl-mata-kuliah', cplMappingRoutes);
@@ -82,5 +85,6 @@ router.use('/default-permissions', defaultPermissionsRoutes);
 router.use('/tahun-ajaran', tahunAjaranRoutes);
 
 router.use('/roles', rolesRoutes);
+router.use('/krs', krsRoutes);
 
 export default router;

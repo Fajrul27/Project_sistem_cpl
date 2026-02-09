@@ -15,12 +15,16 @@ import { Label } from "@/components/ui/label";
 import { SlidersHorizontal } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { usePermission } from "@/contexts/PermissionContext";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+
 import { useRekapKuesioner } from "@/hooks/useRekapKuesioner";
 import { useTahunAjaran } from "@/hooks/useTahunAjaran";
 import { useEffect } from "react";
 
 export default function RekapKuesionerPage() {
     const { can } = usePermission();
+    const canManage = can('access', 'kaprodi') || can('access', 'admin');
+
     const {
         role,
         stats,
@@ -63,6 +67,19 @@ export default function RekapKuesionerPage() {
     return (
         <DashboardPage title="Rekap Kuesioner CPL" description="Hasil Penilaian Tidak Langsung (Self-Assessment Mahasiswa)">
             <div className="space-y-6">
+                {canManage && (
+                    <CollapsibleGuide title="Panduan Rekap Kuesioner">
+                        <div className="space-y-3">
+                            <p>Hasil kuesioner merupakan data penilaian tidak langsung (indirect assessment) yang mencerminkan tingkat kepercayaan diri mahasiswa terhadap pencapaian CPL.</p>
+                            <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                <li><strong>Validasi:</strong> Gunakan data ini untuk mengonfirmasi hasil penilaian langsung (dari nilai mata kuliah).</li>
+                                <li><strong>Analisis Kesenjangan:</strong> Jika nilai langsung tinggi tapi kuesioner rendah (atau sebaliknya), hal ini mungkin mengindikasikan perlunya penyesuaian metode asesmen atau materi.</li>
+                                <li><strong>Responden:</strong> Pastikan jumlah responden mencukupi agar data bersifat representatif bagi populasi angkatan.</li>
+                            </ul>
+                        </div>
+                    </CollapsibleGuide>
+                )}
+
                 {/* Filters */}
                 <div className="flex gap-2">
                     <Popover>

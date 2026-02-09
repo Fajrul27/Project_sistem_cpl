@@ -45,6 +45,7 @@ import { Badge } from "@/components/ui/badge";
 import { usePermission } from "@/contexts/PermissionContext";
 import { Angkatan, getAllAngkatan, createAngkatan, updateAngkatan, deleteAngkatan } from "@/services/angkatan";
 import { Kurikulum, getAllKurikulum } from "@/services/kurikulum";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 
 interface AngkatanFormData {
     tahun: number;
@@ -61,6 +62,7 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [showArchived, setShowArchived] = useState(false);
     const [selectedAngkatan, setSelectedAngkatan] = useState<Angkatan | null>(null);
 
     const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<AngkatanFormData>({
@@ -94,10 +96,12 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
         fetchData();
     }, []);
 
-    const filteredAngkatan = angkatanList.filter(item =>
-        item.tahun.toString().includes(searchQuery) ||
-        item.kurikulum?.nama.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredAngkatan = angkatanList.filter(item => {
+        const matchesSearch = item.tahun.toString().includes(searchQuery) ||
+            item.kurikulum?.nama.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesFilter = showArchived ? true : item.isActive;
+        return matchesSearch && matchesFilter;
+    });
 
     const handleCreate = async (data: AngkatanFormData) => {
         try {
@@ -148,13 +152,35 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
 
     return (
         <div className="space-y-6">
-            {!isTabContent ? (
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Data Angkatan</h1>
-                        <p className="text-muted-foreground">
-                            Kelola data angkatan dan kurikulum yang berlaku
-                        </p>
+            {!isTabContent && (
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-3xl font-bold tracking-tight">Data Angkatan</h1>
+                    <p className="text-muted-foreground">
+                        Kelola data angkatan dan kurikulum yang berlaku
+                    </p>
+                </div>
+            )}
+
+            {canManage && (
+                <CollapsibleGuide title="Panduan Manajemen Angkatan">
+                    <div className="space-y-3">
+                        <p>Halaman ini digunakan untuk mendaftarkan angkatan mahasiswa dan menentukan kurikulum yang berlaku bagi angkatan tersebut.</p>
+                        <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                            <li><strong>Mapping Kurikulum:</strong> Memilih kurikulum akan menentukan kumpulan CPL dan Mata Kuliah yang harus ditempuh oleh angkatan tersebut.</li>
+                            <li><strong>Status Aktif:</strong> Angkatan non-aktif tidak akan muncul pada pilihan filter di halaman evaluasi atau input nilai.</li>
+                            <li><strong>Penyelarasan:</strong> Pastikan kurikulum yang dipilih sudah memiliki pemetaan CPL yang lengkap.</li>
+                        </ul>
+                    </div>
+                </CollapsibleGuide>
+            )}
+
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <div className="space-y-1">
+                        <CardTitle>Daftar Angkatan & Kurikulum</CardTitle>
+                        <CardDescription>
+                            Total {filteredAngkatan.length} angkatan terdaftar
+                        </CardDescription>
                     </div>
                     {canManage && (
                         <Button onClick={() => { reset(); setIsAddDialogOpen(true); }}>
@@ -162,27 +188,9 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
                             Tambah Angkatan
                         </Button>
                     )}
-                </div>
-            ) : (
-                canManage && (
-                    <div className="flex justify-end mb-4">
-                        <Button onClick={() => { reset(); setIsAddDialogOpen(true); }}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Tambah Angkatan
-                        </Button>
-                    </div>
-                )
-            )}
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Daftar Angkatan & Kurikulum</CardTitle>
-                    <CardDescription>
-                        Manajemen mapping angkatan ke kurikulum
-                    </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="mb-4 flex items-center gap-2">
+                    <div className="flex items-center justify-between mb-4">
                         <div className="relative flex-1 max-w-sm">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -191,6 +199,16 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Switch
+                                id="show-archived"
+                                checked={showArchived}
+                                onCheckedChange={setShowArchived}
+                            />
+                            <Label htmlFor="show-archived" className="text-sm font-medium">
+                                Tampilkan Arsip (Tidak Aktif)
+                            </Label>
                         </div>
                     </div>
 

@@ -8,6 +8,7 @@ export interface MataKuliah {
     kodeMk: string;
     namaMk: string;
     semester: number;
+    prodiId?: string;
 }
 
 
@@ -20,7 +21,10 @@ export interface Cpmk {
     mataKuliahId: string;
     mataKuliah: MataKuliah;
     cplMappings: any[];
-    teknikPenilaian: any[];
+    teknikPenilaian: {
+        id: string;
+        _count: { nilaiTeknik: number };
+    }[];
 }
 
 // Module-level cache
@@ -226,9 +230,9 @@ export function useCPMK() {
             Object.keys(cpmkCache).forEach(k => delete cpmkCache[k]);
             await fetchCpmk(true);
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving CPMK:', error);
-            toast.error("Gagal menyimpan CPMK");
+            toast.error(error.message || "Gagal menyimpan CPMK");
             return false;
         }
     };
@@ -241,9 +245,9 @@ export function useCPMK() {
             Object.keys(cpmkCache).forEach(k => delete cpmkCache[k]);
             await fetchCpmk(true);
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving CPMK:', error);
-            toast.error("Gagal menyimpan CPMK");
+            toast.error(error.message || "Gagal menyimpan CPMK");
             return false;
         }
     };
@@ -256,9 +260,9 @@ export function useCPMK() {
             Object.keys(cpmkCache).forEach(k => delete cpmkCache[k]);
             await fetchCpmk(true);
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting CPMK:', error);
-            toast.error("Gagal menghapus CPMK");
+            toast.error(error.message || "Gagal menghapus CPMK");
             return false;
         }
     };

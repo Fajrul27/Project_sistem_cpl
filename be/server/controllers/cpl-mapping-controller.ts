@@ -76,6 +76,24 @@ export const batchCreateMappings = async (req: Request, res: Response) => {
     }
 };
 
+export const batchUpdateWeights = async (req: Request, res: Response) => {
+    try {
+        const { mappings } = req.body;
+        const result = await CPLService.batchUpdateWeights(mappings);
+        res.json({
+            data: result,
+            message: 'Bobot berhasil diupdate'
+        });
+    } catch (error: any) {
+        console.error('Batch update weights error:', error);
+        if (error.message && error.message.includes('Total bobot')) {
+            return res.status(400).json({ error: error.message });
+        }
+        // Return actual error in dev/debug (or clean message) - helpful for USER diagnosis now
+        res.status(500).json({ error: error.message || 'Gagal update bobot' });
+    }
+};
+
 // Delete mapping
 export const deleteMapping = async (req: Request, res: Response) => {
     try {

@@ -65,7 +65,11 @@ export class CPMKService {
                 include: {
                     mataKuliah: { select: { id: true, kodeMk: true, namaMk: true, semester: true } },
                     cplMappings: { include: { cpl: { select: { id: true, kodeCpl: true, deskripsi: true } } } },
-                    teknikPenilaian: true,
+                    teknikPenilaian: {
+                        include: {
+                            _count: { select: { nilaiTeknik: true } }
+                        }
+                    },
                     levelTaksonomiRef: true,
                     creator: { select: { id: true, email: true, profile: { select: { namaLengkap: true } } } }
                 },
@@ -96,7 +100,11 @@ export class CPMKService {
             include: {
                 mataKuliah: { select: { id: true, kodeMk: true, namaMk: true } },
                 cplMappings: { include: { cpl: { select: { id: true, kodeCpl: true, deskripsi: true } } } },
-                teknikPenilaian: true,
+                teknikPenilaian: {
+                    include: {
+                        _count: { select: { nilaiTeknik: true } }
+                    }
+                },
                 levelTaksonomiRef: true
             },
             orderBy: { kodeCpmk: 'asc' }
@@ -112,7 +120,12 @@ export class CPMKService {
             include: {
                 mataKuliah: { select: { id: true, kodeMk: true, namaMk: true, semester: true, prodiId: true } },
                 cplMappings: { include: { cpl: { select: { id: true, kodeCpl: true, deskripsi: true, kategori: true } } } },
-                teknikPenilaian: { orderBy: { createdAt: 'asc' } },
+                teknikPenilaian: {
+                    orderBy: { createdAt: 'asc' },
+                    include: {
+                        _count: { select: { nilaiTeknik: true } }
+                    }
+                },
                 levelTaksonomiRef: true,
                 creator: { select: { id: true, email: true, profile: { select: { namaLengkap: true } } } }
             }

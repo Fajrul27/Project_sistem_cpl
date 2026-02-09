@@ -24,8 +24,14 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useKaprodiSettings } from "@/hooks/useKaprodiSettings";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { usePermission } from "@/contexts/PermissionContext";
+
 
 const KaprodiDataSettings = () => {
+    const { can } = usePermission();
+    const canManage = can('access', 'admin');
+
     const {
         kaprodiList,
         prodiList,
@@ -62,6 +68,19 @@ const KaprodiDataSettings = () => {
             description="Kelola data Ketua Program Studi untuk transkrip"
         >
             <div className="space-y-6">
+                {canManage && (
+                    <CollapsibleGuide title="Panduan Data Kaprodi">
+                        <div className="space-y-3">
+                            <p>Data ini digunakan untuk menampilkan tanda tangan Ketua Program Studi pada transkrip resmi (PDF).</p>
+                            <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                <li><strong>Pemilihan User:</strong> Cari user yang sudah terdaftar sebagai 'Kaprodi' untuk sinkronisasi data NIDN/NIP secara otomatis.</li>
+                                <li><strong>Nama & NIDN:</strong> Pastikan gelar akademik dan nomor identitas benar karena akan tercetak langsung pada dokumen resmi mahasiswa.</li>
+                                <li><strong>Satu Per Prodi:</strong> Sistem hanya menyimpan satu data kaprodi aktif per program studi.</li>
+                            </ul>
+                        </div>
+                    </CollapsibleGuide>
+                )}
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Tambah/Update Data Kaprodi</CardTitle>

@@ -8,6 +8,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@unique([email, token])
+  @@map("password_reset_tokens")
+}
+
 model User {
   id                 String                 @id @default(uuid())
   email              String                 @unique
@@ -79,6 +90,7 @@ model Profile {
   prodi                  Prodi?                   @relation(fields: [prodiId], references: [id])
   semesterRef            Semester?                @relation(fields: [semesterId], references: [id])
   user                   User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  krs                    Krs[]
 
   @@index([nim])
   @@index([nip])
@@ -156,6 +168,7 @@ model MataKuliah {
   nilaiCpmk    NilaiCpmk[]
   nilaiSubCpmk NilaiSubCpmk[]
   nilaiTeknik  NilaiTeknikPenilaian[]
+  krs          Krs[]
 
   @@index([kodeMk])
   @@index([semester])
@@ -494,6 +507,7 @@ model TahunAjaran {
   nilaiCpmk              NilaiCpmk[]
   evaluasiMataKuliah     EvaluasiMataKuliah[]
   penilaianTidakLangsung PenilaianTidakLangsung[]
+  krs                     Krs[]
 
   @@map("tahun_ajaran")
 }
@@ -614,6 +628,7 @@ model Semester {
   nilaiSubCpmk NilaiSubCpmk[]
   nilaiTeknik  NilaiTeknikPenilaian[]
   profiles     Profile[]
+  krs          Krs[]
 
   @@map("semester")
 }
@@ -879,4 +894,40 @@ model Role {
   defaultPermissions   DefaultRolePermission[]
 
   @@map("roles")
+}
+
+model SkalaNilai {
+  id        String   @id @default(uuid())
+  huruf     String   @unique
+  nilaiMin  Float    @map("nilai_min")
+  nilaiMax  Float    @map("nilai_max")
+  isLulus   Boolean  @default(true) @map("is_lulus")
+  isSystem  Boolean  @default(true) @map("is_system")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("skala_nilai")
+}
+
+model Krs {
+  id            String      @id @default(uuid())
+  mahasiswaId   String      @map("mahasiswa_id")
+  mataKuliahId  String      @map("mata_kuliah_id")
+  semesterId    String      @map("semester_id")
+  tahunAjaranId String      @map("tahun_ajaran_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  
+  mahasiswa     Profile     @relation(fields: [mahasiswaId], references: [userId], onDelete: Cascade)
+  mataKuliah    MataKuliah  @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  semester      Semester    @relation(fields: [semesterId], references: [id])
+  tahunAjaran   TahunAjaran @relation(fields: [tahunAjaranId], references: [id])
+
+  @@unique([mahasiswaId, mataKuliahId, semesterId, tahunAjaranId])
+  @@index([mahasiswaId])
+  @@index([mataKuliahId])
+  @@index([semesterId])
+  @@index([tahunAjaranId])
+  @@map("krs")
 }

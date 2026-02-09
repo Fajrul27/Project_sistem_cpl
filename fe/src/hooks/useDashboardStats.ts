@@ -90,12 +90,13 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
     }, [user]);
 
     const fetchAdminDashboardData = useCallback(async () => {
-        try {
-            // BEFORE OPTIMIZATION: Sequential API calls (slower)
-            const statsRes = await fetchDashboardStats(activeFilters);
-            const dosenRes = (role === 'admin' || role === 'kaprodi') ? await fetchDosenAnalysis(activeFilters.prodiId) : { data: [] };
-            const studentRes = (role === 'admin' || role === 'kaprodi') ? await fetchStudentEvaluation(activeFilters) : { data: [] };
+        // Prevent calling admin/dosen endpoints if user is mahasiswa
+        const normalizedRole = role?.toLowerCase();
+        if (!normalizedRole || normalizedRole === 'mahasiswa') return;
 
+        try {
+            // Stats call - only if it's not a student
+            const statsRes = await fetchDashboardStats(activeFilters);
             const data = statsRes.data;
 
             if (data) {
@@ -120,12 +121,27 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
                 setCompleteness(data.completeness || null);
             }
 
-            if (dosenRes.data) setDosenAnalysis(dosenRes.data);
-            if (studentRes.data) setStudentEvaluation(studentRes.data);
+            // Only fetch management data for admin or kaprodi roles
+            const isManager = normalizedRole === 'admin' || normalizedRole === 'kaprodi';
+
+            if (isManager) {
+                const [dosenRes, studentRes] = await Promise.all([
+                    fetchDosenAnalysis(activeFilters.prodiId).catch(() => ({ data: [] })),
+                    fetchStudentEvaluation(activeFilters).catch(() => ({ data: [] }))
+                ]);
+
+                if (dosenRes.data) setDosenAnalysis(dosenRes.data);
+                if (studentRes.data) setStudentEvaluation(studentRes.data);
+            }
 
         } catch (error: any) {
+            // Ignore 403 errors in the background or log them silently to avoid user-facing toast spam
+            if (error.message?.includes('403') || error.message?.toLowerCase().includes('forbidden')) {
+                console.warn("Dashboard permissions restricted for this role:", normalizedRole);
+                return;
+            }
             console.error("Error fetching dashboard data:", error);
-            toast.error("Gagal memuat data dashboard");
+            // toast.error("Gagal memuat data dashboard"); // Silent for background errors that might be expected for some roles
         } finally {
             setLoading(false);
         }
@@ -134,7 +150,8 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
     useEffect(() => {
         if (role) {
             setLoading(true);
-            if (role === 'mahasiswa') {
+            const normalizedRole = role.toLowerCase();
+            if (normalizedRole === 'mahasiswa') {
                 fetchStudentDashboardData();
             } else {
                 fetchAdminDashboardData();
@@ -156,6 +173,6 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
         completeness,
         dosenAnalysis,
         studentEvaluation,
-        refresh: role === 'mahasiswa' ? fetchStudentDashboardData : fetchAdminDashboardData
+        refresh: role?.toLowerCase() === 'mahasiswa' ? fetchStudentDashboardData : fetchAdminDashboardData
     };
 }

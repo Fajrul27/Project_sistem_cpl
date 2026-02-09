@@ -3,11 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Save, ArrowLeft, CheckCircle } from "lucide-react";
+import { Save, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useEvaluasiMK } from "@/hooks/useEvaluasiMK";
+import { FloatingBackButton } from "@/components/common/FloatingBackButton";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { usePermission } from "@/contexts/PermissionContext";
+
 
 export default function EvaluasiMataKuliah() {
+    const { can } = usePermission();
+    const canManage = can('access', 'kaprodi') || can('access', 'admin');
+
     const {
         evaluasi,
         setEvaluasi,
@@ -28,23 +35,21 @@ export default function EvaluasiMataKuliah() {
             title="Evaluasi Mata Kuliah (CQI)"
             description={`Evaluasi Akhir Semester & Rencana Perbaikan`}
         >
-            <div className="flex gap-6 relative">
-                {/* Back Button Side Column */}
-                <div className="hidden xl:block w-28 shrink-0 relative">
-                    <div className="fixed left-80 top-1/2 -translate-y-1/2 z-40">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="rounded-full shadow-lg bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 h-12 w-12 transition-all hover:scale-105"
-                            onClick={() => navigate(-1)}
-                            title="Kembali"
-                        >
-                            <ArrowLeft className="h-6 w-6" />
-                        </Button>
-                    </div>
-                </div>
+            <FloatingBackButton>
+                <div className="space-y-6 max-w-4xl pb-20">
+                    {canManage && (
+                        <CollapsibleGuide title="Panduan Evaluasi MK (CQI)">
+                            <div className="space-y-3">
+                                <p>Halaman ini digunakan oleh Dosen untuk merefleksikan proses pembelajaran dan oleh Kaprodi untuk memberikan feedback perbaikan.</p>
+                                <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                    <li><strong>Dosen:</strong> Mengisi kendala dan rencana perbaikan untuk mata kuliah yang diampu pada semester ini.</li>
+                                    <li><strong>Kaprodi:</strong> Memberikan feedback atau catatan atas rencana perbaikan yang diajukan oleh dosen.</li>
+                                    <li><strong>Siklus CQI:</strong> Data ini menjadi bagian penting dalam proses penjaminan mutu kurikulum (Continuous Quality Improvement).</li>
+                                </ul>
+                            </div>
+                        </CollapsibleGuide>
+                    )}
 
-                <div className="flex-1 space-y-6 max-w-4xl pb-20">
                     <div className="grid gap-6">
                         <Card>
                             <CardHeader>
@@ -117,7 +122,7 @@ export default function EvaluasiMataKuliah() {
                         )}
                     </div>
                 </div>
-            </div>
+            </FloatingBackButton>
 
             {/* Floating Save Button */}
             <div className="fixed bottom-6 right-6">

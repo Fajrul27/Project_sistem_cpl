@@ -19,39 +19,119 @@ export class TranskripService {
             if (angkatan) where.mahasiswa.angkatanRef = { tahun: parseInt(angkatan) };
         }
 
-        // 1. Get Average Score per CPL
-        const aggregations = await prisma.nilaiCpl.groupBy({
-            by: ['cplId'],
-            _avg: { nilai: true },
-            where
+        // 1. Get Average Score per CPL & Distribution
+        // Analysis Requirement: "How well are students achieving each CPL?" NOT "How high are course grades?"
+        // So we must calculate:
+        // A. For each Student x CPL: Calculate Weighted Average of contributing courses (filtering best score if retaken).
+        // B. Aggregate these Student-CPL scores for:
+        //    - Average CPL Score (Avg of all students' scores for that CPL)
+        //    - Distribution (Count of students in each grade range for that CPL, averaged across all CPLs or keeping CPL distinct? Usually per CPL).
+
+        // Step 1: Fetch all Raw Data
+        const rawData = await prisma.nilaiCpl.findMany({
+            where,
+            select: {
+                cplId: true,
+                mataKuliahId: true,
+                mahasiswaId: true,
+                nilai: true,
+                mataKuliah: { select: { sks: true } }
+            }
         });
 
-        const cpls = await prisma.cpl.findMany({ select: { id: true, kodeCpl: true, deskripsi: true } });
-        const cplMap = new Map(cpls.map(c => [c.id, { kode: c.kodeCpl, deskripsi: c.deskripsi }]));
+        // Step A: Deduplicate to find Best Score per (Mahasiswa, Mata Kuliah, CPL)
+        const bestScoreMap = new Map<string, typeof rawData[0]>();
 
-        const cplData = aggregations.map(agg => {
-            const cplInfo = cplMap.get(agg.cplId);
+        for (const r of rawData) {
+            const key = `${r.mahasiswaId}-${r.mataKuliahId}-${r.cplId}`;
+            const currentVal = Number(r.nilai);
+            if (!bestScoreMap.has(key) || currentVal > Number(bestScoreMap.get(key)!.nilai)) {
+                bestScoreMap.set(key, r);
+            }
+        }
+
+        // Step 2: Fetch Weights (CPL-MK mapping)
+        const allCplIds = [...new Set(rawData.map(r => r.cplId))];
+        const allMkIds = [...new Set(rawData.map(r => r.mataKuliahId))];
+
+        const weightMappings = await prisma.cplMataKuliah.findMany({
+            where: {
+                cplId: { in: allCplIds },
+                mataKuliahId: { in: allMkIds }
+            },
+            select: { cplId: true, mataKuliahId: true, bobotKontribusi: true }
+        });
+
+        const weightMap = new Map<string, number>();
+        for (const w of weightMappings) {
+            weightMap.set(`${w.cplId}-${w.mataKuliahId}`, Number(w.bobotKontribusi));
+        }
+
+        // Step 3: Calculate Student-CPL Score (Weighted Average)
+        const studentCplMap = new Map<string, { totalWeightedScore: number; totalWeight: number }>();
+
+        for (const record of bestScoreMap.values()) {
+            const studentCplKey = `${record.mahasiswaId}-${record.cplId}`;
+            const weightKey = `${record.cplId}-${record.mataKuliahId}`;
+
+            const bobot = weightMap.get(weightKey) ?? 1.0;
+            const sks = record.mataKuliah?.sks || 0;
+            const nilai = Number(record.nilai);
+
+            if (!studentCplMap.has(studentCplKey)) {
+                studentCplMap.set(studentCplKey, { totalWeightedScore: 0, totalWeight: 0 });
+            }
+
+            const entry = studentCplMap.get(studentCplKey)!;
+            entry.totalWeightedScore += nilai * bobot * sks;
+            entry.totalWeight += bobot * sks;
+        }
+
+        // Step 4: Aggregate per CPL
+        const cplScoresList = new Map<string, number[]>();
+
+        for (const [key, data] of studentCplMap.entries()) {
+            const cplId = key.split('-')[1];
+            const finalScore = data.totalWeight > 0 ? data.totalWeightedScore / data.totalWeight : 0;
+
+            if (!cplScoresList.has(cplId)) cplScoresList.set(cplId, []);
+            cplScoresList.get(cplId)!.push(finalScore);
+        }
+
+        const aggregations = [];
+        const allFinalScores: number[] = [];
+
+        for (const [cplId, scores] of cplScoresList.entries()) {
+            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+            aggregations.push({ cplId, _avg: { nilai: avg }, count: scores.length });
+            allFinalScores.push(...scores);
+        }
+
+        const cplWhere: any = { isActive: true };
+        if (prodiId) {
+            cplWhere.OR = [{ prodiId }, { prodiId: null }];
+        }
+
+        const cpls = await prisma.cpl.findMany({
+            where: cplWhere,
+            select: { id: true, kodeCpl: true, deskripsi: true }
+        });
+
+        const cplData = cpls.map(cpl => {
+            const scores = cplScoresList.get(cpl.id);
+            const avg = scores && scores.length > 0
+                ? scores.reduce((a, b) => a + b, 0) / scores.length
+                : 0;
+
             return {
-                name: cplInfo?.kode || 'Unknown',
-                description: cplInfo?.deskripsi || '-',
-                nilai: Number(agg._avg.nilai?.toFixed(2) || 0)
+                name: cpl.kodeCpl,
+                description: cpl.deskripsi,
+                nilai: Number(avg.toFixed(2))
             };
         }).sort((a, b) => a.name.localeCompare(b.name));
 
-        // 2. Get Distribution Data
-        // Note: queryRaw is harder to use with relation filters dynamically.
-        // We will fetch ALL aggregated values and do distribution in code or use findMany.
-        // Given potentially large data, let's use groupBy on nilai ranges if possible? No, we need custom buckets.
-        // Let's use aggregate/count with filtered findMany, or stick to queryRaw but we have to construct join manually.
-        // For Filter compatibility with Prisma Client and simplicity, let's use multiple count queries or fetch scalar list if not too big.
-        // Actually, 'group by bucket' is easiest in SQL.
-        // Let's verify if we can construct 'where' for Prisma queryRaw easily. It's complex.
-
-        // Alternative: Use `prisma.nilaiCpl.findMany` with select `nilai` and `where` and compute histogram in JS.
-        // This might be heavy if millions of rows. 
-        // Better: Use `count` with ranges. 5 queries.
-
-        const ranges = [
+        // Distribution of Student CPL Achievements (Not raw course grades)
+        const distributionRanges = [
             { name: "0-59", min: 0, max: 59 },
             { name: "60-69", min: 60, max: 69 },
             { name: "70-79", min: 70, max: 79 },
@@ -59,17 +139,10 @@ export class TranskripService {
             { name: "90-100", min: 90, max: 100 },
         ];
 
-        const distributionData = await Promise.all(
-            ranges.map(async (r) => {
-                const count = await prisma.nilaiCpl.count({
-                    where: {
-                        ...where,
-                        nilai: { gte: r.min, lte: r.max }
-                    }
-                });
-                return { ...r, count };
-            })
-        );
+        const distributionData = distributionRanges.map(r => {
+            const count = allFinalScores.filter(s => s >= r.min && s <= r.max).length;
+            return { ...r, count };
+        });
 
         // 3. Radar Data (Top 8)
         const radarData = [...cplData]
@@ -84,12 +157,25 @@ export class TranskripService {
         return { cplData, distributionData, radarData };
     }
 
+    // --- Helper: Get Grade from Scale ---
+    private static getGradeFromScale(score: number, scale: any[]): { huruf: string; isLulus: boolean } {
+        const found = scale.find(s => score >= s.nilaiMin);
+        if (found) return { huruf: found.huruf, isLulus: found.isLulus };
+        return { huruf: 'E', isLulus: false }; // Default fallback
+    }
+
     static async getTranskripCpl(mahasiswaId: string, semester?: number, tahunAjaran?: string) {
         const mahasiswa = await prisma.profile.findUnique({
             where: { userId: mahasiswaId },
             include: { prodi: true, angkatanRef: true }
         });
         if (!mahasiswa) throw new Error('MAHASISWA_NOT_FOUND');
+
+        // Fetch Active Grade Scale
+        const skalaNilaiList = await prisma.skalaNilai.findMany({
+            where: { isActive: true },
+            orderBy: { nilaiMin: 'desc' }
+        });
 
         const allCpls = await prisma.cpl.findMany({
             where: {
@@ -134,7 +220,26 @@ export class TranskripService {
         ]);
 
         // Filter out orphan records (missing CPL or MataKuliah) to prevent crashes
-        const nilaiCplList = nilaiCplListRaw.filter(n => n.cpl && n.mataKuliah);
+        const rawNilaiCplList = nilaiCplListRaw.filter(n => n.cpl && n.mataKuliah);
+
+        // BEST SCORE LOGIC:
+        // If a student retakes a course, we should only count the BEST attempt for CPL calculation.
+        // We group by CPL + Mata Kuliah and pick the highest score.
+        const bestNilaiMap = new Map<string, typeof rawNilaiCplList[0]>();
+
+        for (const record of rawNilaiCplList) {
+            const key = `${record.cplId}-${record.mataKuliahId}`;
+            if (!bestNilaiMap.has(key)) {
+                bestNilaiMap.set(key, record);
+            } else {
+                const existing = bestNilaiMap.get(key)!;
+                if (Number(record.nilai) > Number(existing.nilai)) {
+                    bestNilaiMap.set(key, record);
+                }
+            }
+        }
+
+        const nilaiCplList = Array.from(bestNilaiMap.values());
 
         const cplIds = [...new Set(nilaiCplList.map(n => n.cplId))];
         const mkIds = [...new Set(nilaiCplList.map(n => n.mataKuliahId))];
@@ -156,8 +261,6 @@ export class TranskripService {
         });
 
         const transkrip: any[] = [];
-        const minNilai = 70;
-
 
         // Get unique CPL IDs from nilai_cpl records
         const cplIdsWithNilai = Array.from(cplMap.keys());
@@ -191,7 +294,10 @@ export class TranskripService {
             }
 
             const avgScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 0;
-            const status = avgScore >= minNilai ? 'tercapai' : 'belum_tercapai';
+
+            // DYNAMIC GRADE CALCULATION
+            const gradeInfo = TranskripService.getGradeFromScale(avgScore, skalaNilaiList);
+            const status = gradeInfo.isLulus ? 'tercapai' : 'belum_tercapai';
 
             const latest = nilaiList.sort((a, b) => {
                 const taA = a.tahunAjaranRef?.nama || '';
@@ -228,6 +334,7 @@ export class TranskripService {
                     tahunAjaran: nt.tahunAjaranRef?.nama || '-'
                 })),
                 nilaiAkhir: Number(avgScore.toFixed(2)),
+                huruf: gradeInfo.huruf, // ADDED
                 status,
                 semesterTercapai: latest?.semester || 0,
                 tahunAjaran: latest?.tahunAjaranRef?.nama || '-'
@@ -242,17 +349,6 @@ export class TranskripService {
             avgScore: Number((transkrip.reduce((s, t) => s + t.nilaiAkhir, 0) / (transkrip.length || 1)).toFixed(2))
         };
         (stats as any).persentaseTercapai = stats.totalCpl > 0 ? Number(((stats.tercapai / stats.totalCpl) * 100).toFixed(2)) : 0;
-
-        /*
-        if (transkrip.length > 0) {
-                cplId: transkrip[0].cplId,
-                kodeCpl: transkrip[0].cpl?.kodeCpl,
-                nilaiAkhir: transkrip[0].nilaiAkhir,
-                status: transkrip[0].status,
-                mataKuliahCount: transkrip[0].mataKuliahList?.length
-            });
-        }
-        */
 
         return {
             mahasiswa,
@@ -322,6 +418,12 @@ export class TranskripService {
         });
         if (!mahasiswa) throw new Error('MAHASISWA_NOT_FOUND');
 
+        // Fetch Active Grade Scale
+        const skalaNilaiList = await prisma.skalaNilai.findMany({
+            where: { isActive: true },
+            orderBy: { nilaiMin: 'desc' }
+        });
+
         const where: any = { mahasiswaId };
         if (semester) where.semester = semester;
         if (tahunAjaran) where.tahunAjaranId = tahunAjaran;
@@ -336,21 +438,27 @@ export class TranskripService {
             ]
         })).filter((item: any) => item.cpmk && item.mataKuliah);
 
-        const transkrip = nilaiCpmkList.map((item: any) => ({
-            id: item.id,
-            kodeCpmk: item.cpmk.kodeCpmk,
-            deskripsi: item.cpmk.deskripsi,
-            nilai: Number(item.nilaiAkhir),
-            status: item.nilaiAkhir >= 70 ? 'tercapai' : 'belum_tercapai',
-            mataKuliah: {
-                kodeMk: item.mataKuliah.kodeMk,
-                namaMk: item.mataKuliah.namaMk,
-                sks: item.mataKuliah.sks,
-                semester: item.semester
+        const transkrip = nilaiCpmkList.map((item: any) => {
+            const nilaiAkhir = Number(item.nilaiAkhir);
+            const gradeInfo = TranskripService.getGradeFromScale(nilaiAkhir, skalaNilaiList);
 
-            },
-            tahunAjaran: item.tahunAjaranRef?.nama || '-'
-        }));
+            return {
+                id: item.id,
+                kodeCpmk: item.cpmk.kodeCpmk,
+                deskripsi: item.cpmk.deskripsi,
+                nilai: nilaiAkhir,
+                huruf: gradeInfo.huruf, // ADDED
+                status: gradeInfo.isLulus ? 'tercapai' : 'belum_tercapai',
+                mataKuliah: {
+                    kodeMk: item.mataKuliah.kodeMk,
+                    namaMk: item.mataKuliah.namaMk,
+                    sks: item.mataKuliah.sks,
+                    semester: item.semester
+
+                },
+                tahunAjaran: item.tahunAjaranRef?.nama || '-'
+            };
+        });
 
         return {
             mahasiswa: {
@@ -381,10 +489,27 @@ export class TranskripService {
             include: { cplMappings: { include: { cpl: true } } }
         });
 
-        const nilaiCplList = (await prisma.nilaiCpl.findMany({
+        const rawNilaiCplList = (await prisma.nilaiCpl.findMany({
             where: { mahasiswaId },
             include: { mataKuliah: true }
         })).filter(n => n.mataKuliah);
+
+        // BEST SCORE LOGIC:
+        // Pick best score per CPL-MataKuliah pair
+        const bestNilaiMap = new Map<string, typeof rawNilaiCplList[0]>();
+
+        for (const record of rawNilaiCplList) {
+            const key = `${record.cplId}-${record.mataKuliahId}`;
+            if (!bestNilaiMap.has(key)) {
+                bestNilaiMap.set(key, record);
+            } else {
+                const existing = bestNilaiMap.get(key)!;
+                if (Number(record.nilai) > Number(existing.nilai)) {
+                    bestNilaiMap.set(key, record);
+                }
+            }
+        }
+        const nilaiCplList = Array.from(bestNilaiMap.values());
 
         const cplIds = [...new Set(nilaiCplList.map(n => n.cplId))];
         const mkIds = [...new Set(nilaiCplList.map(n => n.mataKuliahId))];
@@ -457,4 +582,3 @@ export class TranskripService {
         });
     }
 }
-

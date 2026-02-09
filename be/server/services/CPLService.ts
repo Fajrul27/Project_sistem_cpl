@@ -15,8 +15,29 @@ interface GetCplParams {
 export class CPLService {
     // --- Helper ---
     static async getTotalBobotKontribusiMK(mataKuliahId: string): Promise<number> {
+        // Fetch MK to get its prodiId
+        const mk = await prisma.mataKuliah.findUnique({
+            where: { id: mataKuliahId },
+            select: { prodiId: true }
+        });
+
+        // Query mappings where CPL belongs to the same Prodi (or is general/no-prodi if strictness needed?)
+        // To be safe and support the "Sync" feature:
+        // We calculate total based on ALL mappings for now, BUT if we want to support
+        // "Ignore other prodi's CPLs", we should filter.
+        // However, standard OBE usually implies a MK contributes to ITS prodi's CPLs.
+
+        const whereClause: any = { mataKuliahId };
+
+        // Only sum weights from CPLs belonging to the same Prodi
+        if (mk?.prodiId) {
+            whereClause.cpl = {
+                prodiId: mk.prodiId
+            };
+        }
+
         const result = await prisma.cplMataKuliah.aggregate({
-            where: { mataKuliahId },
+            where: whereClause,
             _sum: { bobotKontribusi: true }
         });
         return Number(result._sum.bobotKontribusi || 0);
@@ -313,10 +334,14 @@ export class CPLService {
     // --- Mapping Operations ---
 
     static async getAllMappings() {
-        return prisma.cplMataKuliah.findMany({
+        const mappings = await prisma.cplMataKuliah.findMany({
             include: { cpl: true, mataKuliah: true },
             orderBy: { mataKuliah: { semester: 'asc' } }
         });
+        return mappings.map(m => ({
+            ...m,
+            bobotKontribusi: Number(m.bobotKontribusi)
+        }));
     }
 
     static async getMappingsByMataKuliah(mkId: string) {
@@ -326,7 +351,10 @@ export class CPLService {
         });
         const totalBobot = await this.getTotalBobotKontribusiMK(mkId);
         return {
-            data: mappings,
+            data: mappings.map(m => ({
+                ...m,
+                bobotKontribusi: Number(m.bobotKontribusi)
+            })),
             meta: {
                 totalBobotKontribusi: Number(totalBobot.toFixed(2)),
                 isValid: Math.abs(totalBobot - 1.0) < 0.01,
@@ -358,7 +386,10 @@ export class CPLService {
             throw new Error(`Total bobot kontribusi harus = 100%. Total saat ini: ${(newTotal * 100).toFixed(2)}%`);
         }
 
-        return mapping;
+        return {
+            ...mapping,
+            bobotKontribusi: Number(mapping.bobotKontribusi)
+        };
     }
 
     static async updateMapping(id: string, bobotKontribusi: any) {
@@ -379,11 +410,62 @@ export class CPLService {
             });
             throw new Error(`Total bobot kontribusi harus = 100%. Total saat ini: ${(newTotal * 100).toFixed(2)}%`);
         }
-        return mapping;
+        return {
+            ...mapping,
+            bobotKontribusi: Number(mapping.bobotKontribusi)
+        };
     }
 
     static async deleteMapping(id: string) {
         return prisma.cplMataKuliah.delete({ where: { id } });
+    }
+
+    static async batchUpdateWeights(mappings: { cplId: string, mataKuliahId: string, bobotKontribusi: any }[]) {
+        if (!Array.isArray(mappings)) throw new Error('Mappings must be an array');
+
+        return prisma.$transaction(async (tx) => {
+            const results = [];
+
+            for (const m of mappings) {
+                const val = parseFloat(m.bobotKontribusi);
+                // Upsert logic
+                const res = await tx.cplMataKuliah.upsert({
+                    where: {
+                        cplId_mataKuliahId: {
+                            cplId: m.cplId,
+                            mataKuliahId: m.mataKuliahId
+                        }
+                    },
+                    update: { bobotKontribusi: val },
+                    create: {
+                        cplId: m.cplId,
+                        mataKuliahId: m.mataKuliahId,
+                        bobotKontribusi: val || 1.0
+                    }
+                });
+                results.push(res);
+            }
+
+            // Verify totals
+            const affectedMkIds = [...new Set(mappings.map(m => m.mataKuliahId))];
+            for (const mkId of affectedMkIds) {
+                const result = await tx.cplMataKuliah.aggregate({
+                    where: { mataKuliahId: mkId },
+                    _sum: { bobotKontribusi: true }
+                });
+                const total = Number(result._sum.bobotKontribusi || 0);
+
+                // Allow small precision error
+                if (Math.abs(total - 1.0) > 0.01) {
+                    throw new Error(`Total bobot untuk Mata Kuliah (ID: ${mkId}) harus 1.00. Total saat ini: ${total.toFixed(2)}`);
+                }
+            }
+
+            return results.map(r => ({
+                ...r,
+                bobotKontribusi: Number(r.bobotKontribusi)
+            }));
+        });
     }
 
     static async batchCreateMappings(mappingData: any[]) {

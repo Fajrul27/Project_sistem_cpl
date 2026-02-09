@@ -197,7 +197,7 @@ export const useNilaiTeknik = () => {
 
     const fetchMataKuliahList = async (sem: string) => {
         try {
-            const result = await api.get('/mata-kuliah', { params: { semester: sem } });
+            const result = await api.get('/mata-kuliah', { params: { semester: sem, limit: -1 } });
             setMkList(result.data || []);
         } catch (error) {
             console.error('Error fetching mata kuliah:', error);

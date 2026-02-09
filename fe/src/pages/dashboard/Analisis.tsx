@@ -9,9 +9,15 @@ import { SlidersHorizontal, RotateCcw, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { usePermission } from "@/contexts/PermissionContext";
+
 
 const AnalisisiPage = () => {
+  const { can } = usePermission();
+  const canManage = can('access', 'kaprodi') || can('access', 'admin');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   const {
     cplData,
     radarData,
@@ -69,6 +75,19 @@ const AnalisisiPage = () => {
       description="Visualisasi pencapaian pembelajaran"
     >
       <div className="space-y-6">
+        {canManage && (
+          <CollapsibleGuide title="Panduan Analisis Capaian">
+            <div className="space-y-3">
+              <p>Halaman ini menyajikan statistik performa akademik secara agregat untuk membantu evaluasi kurikulum dan kualitas pembelajaran.</p>
+              <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                <li><strong>Rata-rata CPL:</strong> Melihat performa rata-rata mahasiswa pada setiap poin Capaian Pembelajaran Lulusan.</li>
+                <li><strong>Distribusi Nilai:</strong> Sebaran perolehan grade (A-E) untuk seluruh evaluasi yang telah dilakukan.</li>
+                <li><strong>Radar Chart:</strong> Visualisasi kekuatan dan kelemahan kompetensi secara holistik dalam satu tampilan.</li>
+              </ul>
+            </div>
+          </CollapsibleGuide>
+        )}
+
         {/* Filters Toolbar */}
         <div className="flex items-center gap-2">
           <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>

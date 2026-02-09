@@ -42,6 +42,7 @@ export const login = async (req: Request, res: Response) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
+            path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
@@ -97,7 +98,8 @@ export const logout = async (req: Request, res: Response) => {
         res.clearCookie('token', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax'
+            sameSite: 'lax',
+            path: '/'
         });
 
         res.json({ message: 'Logout berhasil' });
@@ -120,6 +122,7 @@ export const loginAsUser = async (req: Request, res: Response) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
+            path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
@@ -132,7 +135,7 @@ export const loginAsUser = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('Login as user error:', error);
-        
+
         if (error.message === 'UNAUTHORIZED: Only admin can use this feature') {
             return res.status(403).json({ error: 'Hanya admin yang dapat menggunakan fitur ini' });
         }
@@ -142,7 +145,7 @@ export const loginAsUser = async (req: Request, res: Response) => {
         if (error.message === 'Cannot impersonate other admin users') {
             return res.status(403).json({ error: 'Tidak dapat login sebagai admin lain' });
         }
-        
+
         res.status(500).json({ error: 'Gagal login sebagai user' });
     }
 };
@@ -164,6 +167,7 @@ export const returnToAdmin = async (req: Request, res: Response) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
+            path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
@@ -174,11 +178,77 @@ export const returnToAdmin = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('Return to admin error:', error);
-        
+
         if (error.message === 'Admin user tidak ditemukan') {
             return res.status(404).json({ error: error.message });
         }
-        
+
         res.status(500).json({ error: 'Gagal kembali ke akun admin' });
+    }
+};
+// Forgot Password
+export const forgotPassword = async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ error: 'Email wajib diisi' });
+        }
+
+        const result = await AuthService.forgotPassword(email);
+        res.json(result);
+    } catch (error: any) {
+        console.error('Forgot password error:', error);
+        if (error.message === 'Email tidak terdaftar') {
+            return res.status(404).json({ error: error.message });
+        }
+        res.status(500).json({ error: 'Gagal memproses permintaan reset password' });
+    }
+};
+
+// Verify Reset Code
+export const verifyResetCode = async (req: Request, res: Response) => {
+    try {
+        const { email, code } = req.body;
+        if (!email || !code) {
+            return res.status(400).json({ error: 'Email dan kode wajib diisi' });
+        }
+
+        const result = await AuthService.verifyResetCode(email, code);
+        res.json(result);
+    } catch (error: any) {
+        console.error('Verify code error:', error);
+        if (error.message === 'Kode verifikasi salah atau sudah kadaluarsa') {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: 'Gagal memverifikasi kode' });
+    }
+};
+
+// Reset Password
+export const resetPassword = async (req: Request, res: Response) => {
+    try {
+        const { email, code, newPassword } = req.body;
+        if (!email || !code || !newPassword) {
+            return res.status(400).json({ error: 'Data tidak lengkap' });
+        }
+
+        const result = await AuthService.resetPassword(email, code, newPassword);
+
+        // Set HttpOnly cookie for auto-login
+        res.cookie('token', (result as any).token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        res.json(result);
+    } catch (error: any) {
+        console.error('Reset password error:', error);
+        if (error.message === 'Kode verifikasi salah atau sudah kadaluarsa') {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: 'Gagal mereset password' });
     }
 };

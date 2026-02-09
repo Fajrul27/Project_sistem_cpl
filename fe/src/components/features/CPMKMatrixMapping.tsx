@@ -15,12 +15,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 
 interface MatrixProps {
     mataKuliahId: string;
     prodiId?: string;
     readOnly?: boolean;
     onBack?: () => void;
+    highlightCpmkId?: string | null;
 }
 
 interface CellData {
@@ -30,7 +32,7 @@ interface CellData {
     isDirty: boolean;
 }
 
-export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onBack }: MatrixProps) {
+export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onBack, highlightCpmkId }: MatrixProps) {
     const [cpmks, setCpmks] = useState<any[]>([]);
     const [cpls, setCpls] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -42,27 +44,113 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
         if (mataKuliahId) fetchData();
     }, [mataKuliahId, prodiId]);
 
+    // Scroll to highlighted CPMK when loaded
+    useEffect(() => {
+        if (!loading && highlightCpmkId) {
+            const element = document.getElementById(`cpmk-row-${highlightCpmkId}`);
+            if (element) {
+                setTimeout(() => {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            }
+        }
+    }, [loading, highlightCpmkId]);
+
     const fetchData = async () => {
         setLoading(true);
         try {
-            // Fetch CPMKs
+            console.log('[CPMKMatrixMapping] Fetching data with:', { mataKuliahId, prodiId });
+
+            // Step 1: Fetch Mata Kuliah details if prodiId is not provided
+            let effectiveProdiId = prodiId;
+
+            if (!effectiveProdiId && mataKuliahId) {
+                console.log('[CPMKMatrixMapping] ProdiId not provided, fetching mata kuliah details...');
+                try {
+                    const mkRes = await api.get(`/mata-kuliah/${mataKuliahId}`);
+                    const mkData = mkRes.data;
+                    effectiveProdiId = mkData.prodiId;
+                    console.log('[CPMKMatrixMapping] Fetched prodiId from mata kuliah:', effectiveProdiId);
+
+                    if (!effectiveProdiId) {
+                        toast.error("Mata kuliah tidak memiliki Program Studi yang valid");
+                        setLoading(false);
+                        return;
+                    }
+                } catch (mkError) {
+                    console.error('[CPMKMatrixMapping] Error fetching mata kuliah details:', mkError);
+                    toast.error("Gagal memuat informasi mata kuliah");
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            // Step 2: Fetch CPMKs filtered by mataKuliahId
+            console.log('[CPMKMatrixMapping] Fetching CPMKs with mataKuliahId:', mataKuliahId);
             const cpmkRes = await api.get('/cpmk', { params: { mataKuliahId, limit: 100 } });
             const cpmkData = cpmkRes.data.data || cpmkRes.data || [];
+            console.log('[CPMKMatrixMapping] Fetched CPMKs:', cpmkData.length, 'items');
 
             // Sort CPMK by code (CPMK-1, CPMK-2...)
             cpmkData.sort((a: any, b: any) => a.kodeCpmk.localeCompare(b.kodeCpmk, undefined, { numeric: true }));
             setCpmks(cpmkData);
 
-            // Fetch CPLs
-            const cplParams: any = { limit: 100 };
-            if (prodiId) cplParams.prodiId = prodiId;
+            // Step 3: Fetch CPLs filtered by prodiId
+            if (!effectiveProdiId) {
+                console.warn('[CPMKMatrixMapping] No prodiId available, cannot fetch CPLs');
+                toast.error("Program Studi tidak ditemukan untuk mata kuliah ini");
+                setLoading(false);
+                return;
+            }
+
+            console.log('[CPMKMatrixMapping] Fetching CPLs with prodiId:', effectiveProdiId);
+            const cplParams: any = { prodiId: effectiveProdiId, limit: 100 };
             const cplRes = await api.get('/cpl', { params: cplParams });
-            const cplData = cplRes.data.data || cplRes.data || [];
+            let cplData = cplRes.data.data || cplRes.data || [];
+            console.log('[CPMKMatrixMapping] Fetched CPLs:', cplData.length, 'items');
+
+            // Find missing CPLs that are mapped but not in the fetched list (e.g. from different prodi)
+            const mappedCplIds = new Set<string>();
+            cpmkData.forEach((cpmk: any) => {
+                if (cpmk.cplMappings) {
+                    cpmk.cplMappings.forEach((mapping: any) => {
+                        if (mapping.cplId) mappedCplIds.add(mapping.cplId);
+                    });
+                }
+            });
+
+            const fetchedCplIds = new Set(cplData.map((c: any) => c.id));
+            const missingCplIds = Array.from(mappedCplIds).filter(id => !fetchedCplIds.has(id));
+
+            if (missingCplIds.length > 0) {
+                console.log('[CPMKMatrixMapping] Found mapped CPLs not in prodi list:', missingCplIds);
+                try {
+                    const missingCplPromises = missingCplIds.map(id => api.get(`/cpl/${id}`).catch(() => null));
+                    const missingCplResponses = await Promise.all(missingCplPromises);
+
+                    const validMissingCpls = missingCplResponses
+                        .filter(res => res && res.data)
+                        .map(res => res!.data);
+
+                    if (validMissingCpls.length > 0) {
+                        console.log('[CPMKMatrixMapping] Added missing CPLs:', validMissingCpls.length);
+                        cplData = [...cplData, ...validMissingCpls];
+
+                        // Deduplicate just in case
+                        const uniqueCpls = new Map();
+                        cplData.forEach((c: any) => uniqueCpls.set(c.id, c));
+                        cplData = Array.from(uniqueCpls.values());
+                    }
+                } catch (err) {
+                    console.error('[CPMKMatrixMapping] Error fetching missing CPLs:', err);
+                }
+            }
+
             // Sort CPL by code 
             cplData.sort((a: any, b: any) => a.kodeCpl.localeCompare(b.kodeCpl, undefined, { numeric: true }));
             setCpls(cplData);
 
-            // Build Matrix
+            // Step 4: Build Matrix
             const initialMatrix: Record<string, Record<string, CellData>> = {};
             cpmkData.forEach((cpmk: any) => {
                 initialMatrix[cpmk.id] = {};
@@ -76,6 +164,7 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
                 });
                 if (cpmk.cplMappings) {
                     cpmk.cplMappings.forEach((mapping: any) => {
+                        // Ensure the CPL exists in our matrix columns (it should now)
                         if (initialMatrix[cpmk.id][mapping.cplId]) {
                             initialMatrix[cpmk.id][mapping.cplId] = {
                                 isMapped: true,
@@ -83,14 +172,18 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
                                 mappingId: mapping.id,
                                 isDirty: false
                             };
+                        } else {
+                            console.warn(`[CPMKMatrixMapping] Mapping found for CPL ${mapping.cplId} which is still missing from columns`);
                         }
                     });
                 }
             });
             setMatrix(initialMatrix);
 
+            console.log('[CPMKMatrixMapping] Matrix built successfully');
+
         } catch (error) {
-            console.error("Error loading matrix:", error);
+            console.error("[CPMKMatrixMapping] Error loading matrix:", error);
             toast.error("Gagal memuat data matrix");
         } finally {
             setLoading(false);
@@ -187,41 +280,33 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
 
     return (
         <div className="flex gap-6 relative animate-in fade-in duration-500">
-            {/* Fixed Back Button Sidebar */}
-            {onBack && (
-                <div className="hidden xl:block w-28 shrink-0 relative">
-                    <div className="fixed left-80 top-1/2 -translate-y-1/2 z-40">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="rounded-full shadow-lg bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 h-12 w-12 transition-all hover:scale-105"
-                            onClick={onBack}
-                            title="Kembali ke Detail CPMK"
-                        >
-                            <ArrowLeft className="h-6 w-6" />
-                        </Button>
-                    </div>
-                </div>
-            )}
+
 
             {/* Main Content */}
-            <div className="flex-1 space-y-4">
-                {/* Legend & Help */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-100 dark:border-blue-900/50 gap-4">
-                    <div className="flex items-start gap-3">
-                        <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                        <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                            <p className="font-semibold">Panduan Pengisian Matrix:</p>
-                            <ul className="list-disc pl-4 space-y-0.5 text-blue-700/80 dark:text-blue-300/80">
-                                <li>Klik kotak pertemuan untuk menghubungkan CPMK dengan CPL (Toggle).</li>
-                                <li>Masukkan bobot kontribusi (0-100%) pada kotak input yang muncul.</li>
-                                <li>Pastikan total bobot per baris (CPMK) berjumlah <span className="font-bold">100%</span>.</li>
-                                <li>Total baris akan berwarna <span className="text-green-600 dark:text-green-400 font-bold">Hijau</span> jika pas 100%, dan <span className="text-amber-600 dark:text-amber-400 font-bold">Kuning</span> jika belum.</li>
-                            </ul>
-                        </div>
-                    </div>
+            <div className="flex-1 space-y-4 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     {!readOnly && (
-                        <Button onClick={saveChanges} disabled={saving} className="shadow-sm">
+                        <div className="flex-1">
+                            <CollapsibleGuide title="Panduan Pengisian Matriks">
+                                <div className="space-y-3">
+                                    <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                        <li>Klik kotak pertemuan untuk menghubungkan CPMK dengan CPL (Toggle).</li>
+                                        <li>Masukkan bobot kontribusi (0-100%) pada kotak input yang muncul.</li>
+                                        <li>Pastikan total bobot per baris (CPMK) berjumlah <span className="font-bold">100%</span>.</li>
+                                        <li>Total baris akan berwarna <span className="text-green-600 dark:text-green-400 font-bold">Hijau</span> jika pas 100%, dan <span className="text-amber-600 dark:text-amber-400 font-bold">Kuning</span> jika belum.</li>
+                                    </ul>
+                                </div>
+                            </CollapsibleGuide>
+                        </div>
+                    )}
+
+                    {!readOnly && (
+                        <Button
+                            onClick={saveChanges}
+                            disabled={saving}
+                            size="sm"
+                            className="shadow-sm h-10 shrink-0"
+                        >
                             {saving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                             Simpan Semua Perubahan
                         </Button>
@@ -229,8 +314,8 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
                 </div>
 
                 <div className="border rounded-lg shadow-sm bg-background overflow-hidden relative">
-                    <div className="overflow-x-auto max-h-[70vh]">
-                        <Table className="relative w-full border-collapse">
+                    <div className="overflow-auto max-h-[70vh] relative">
+                        <table className="relative min-w-max w-full border-collapse caption-bottom text-sm">
                             <TableHeader className="sticky top-0 z-20 bg-background/95 backdrop-blur shadow-sm select-none">
                                 <TableRow className="hover:bg-transparent border-b">
                                     <TableHead className="w-[300px] min-w-[250px] sticky left-0 z-30 bg-background border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] py-4">
@@ -272,27 +357,39 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
                                     const isValid = Math.abs(total - 100) < 0.1; // Float tolerance
                                     const isZero = total === 0;
 
+                                    const isHighlighted = highlightCpmkId === cpmk.id;
                                     return (
                                         <TableRow
                                             key={cpmk.id}
+                                            id={`cpmk-row-${cpmk.id}`}
                                             className={cn(
-                                                "group transition-colors border-b hover:bg-transparent",
-                                                hoveredRow === cpmk.id ? "bg-muted/50" : ""
+                                                "group transition-all duration-300 border-b hover:bg-transparent",
+                                                hoveredRow === cpmk.id ? "bg-muted/50" : "",
+                                                isHighlighted ? "bg-blue-100 dark:bg-blue-900/30 border-l-[6px] border-l-blue-600 dark:border-l-blue-400" : ""
                                             )}
                                             onMouseEnter={() => setHoveredRow(cpmk.id)}
                                             onMouseLeave={() => setHoveredRow(null)}
                                         >
                                             {/* Row Header (CPMK Info) */}
                                             <TableCell className={cn(
-                                                "sticky left-0 z-10 bg-background border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] p-4 align-top transition-colors",
-                                                hoveredRow === cpmk.id ? "bg-muted/50" : ""
+                                                "sticky left-0 z-10 bg-background border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] p-4 align-top transition-all duration-300",
+                                                hoveredRow === cpmk.id ? "bg-muted" : "",
+                                                isHighlighted ? "bg-blue-100 dark:bg-blue-950" : ""
                                             )}>
                                                 <div className="flex flex-col gap-1.5">
                                                     <div className="flex items-center justify-between">
-                                                        <Badge variant="secondary" className="font-bold hover:bg-secondary/80">
+                                                        <Badge variant={isHighlighted ? "default" : "secondary"} className={cn(
+                                                            "font-bold text-sm",
+                                                            isHighlighted ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-secondary/80"
+                                                        )}>
                                                             {cpmk.kodeCpmk}
                                                         </Badge>
                                                         {isValid && <CheckCircle className="w-4 h-4 text-green-500" />}
+                                                        {isHighlighted && (
+                                                            <Badge variant="outline" className="text-xs border-blue-500 text-blue-600 dark:text-blue-400">
+                                                                Dipilih
+                                                            </Badge>
+                                                        )}
                                                     </div>
                                                     <p className="text-xs text-muted-foreground leading-relaxed">
                                                         {cpmk.deskripsi}
@@ -388,7 +485,7 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
                                     );
                                 })}
                             </TableBody>
-                        </Table>
+                        </table>
                     </div>
                 </div>
             </div>

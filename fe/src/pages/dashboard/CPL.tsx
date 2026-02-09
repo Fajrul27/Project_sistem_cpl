@@ -20,10 +20,14 @@ import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useCPL, CPL } from "@/hooks/useCPL";
 import { PLMappingMatrix } from "./components/PLMappingMatrix";
 import { useProfilLulusan } from "@/hooks/useProfilLulusan";
+import { FloatingBackButton } from "@/components/common/FloatingBackButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEvaluasiCPL } from "@/hooks/useEvaluasiCPL";
 import { useAngkatan } from "@/hooks/useAngkatan";
 import { useTahunAjaran } from "@/hooks/useTahunAjaran";
+import { ImportResultDialog } from "@/components/common/ImportResultDialog";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+
 
 type FormData = {
   kodeCpl: string;
@@ -38,6 +42,7 @@ const CPLPage = () => {
   const location = useLocation();
   const { role } = useUserRole();
   const { can } = usePermission();
+  const canManage = can('access', 'kaprodi') || can('access', 'admin');
   const {
     cplList, // Now filtered
     kategoriList,
@@ -67,8 +72,9 @@ const CPLPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingCPL, setEditingCPL] = useState<CPL | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "matrix" | "target">("list");
+  const [viewMode, setViewMode] = useState<"list" | "matrix" | "target" | "weight-matrix">("list");
   const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ successCount: number; errors?: string[] } | null>(null);
 
   const handleExport = async () => {
     try {
@@ -77,8 +83,7 @@ const CPLPage = () => {
       if (cplFilters.kategoriFilter !== 'all') queryParams.append('kategori', cplFilters.kategoriFilter);
       if (cplFilters.kurikulumFilter !== 'all') queryParams.append('kurikulumId', cplFilters.kurikulumFilter);
 
-      const API_URL = import.meta.env.VITE_API_URL;
-      const url = `${API_URL}/cpl/export/excel?${queryParams.toString()}`;
+      const url = `/api/cpl/export/excel?${queryParams.toString()}`;
 
       const response = await fetch(url, { credentials: 'include' });
       if (!response.ok) throw new Error('Gagal export data');
@@ -112,22 +117,28 @@ const CPLPage = () => {
         const formData = new FormData();
         formData.append('file', file);
 
-        const API_URL = import.meta.env.VITE_API_URL;
-        const response = await fetch(`${API_URL}/cpl/import/excel`, {
+        const response = await fetch(`/api/cpl/import/excel`, {
           method: 'POST',
           credentials: 'include',
           body: formData
         });
 
         const result = await response.json();
+
+        setImportResult({
+          successCount: result.successCount || 0,
+          errors: result.errors
+        });
+
         if (!response.ok) throw new Error(result.error || 'Gagal import data');
 
-        toast.success(result.message || 'Data berhasil diimport');
         if (result.errors && result.errors.length > 0) {
-          result.errors.slice(0, 3).forEach((err: string) => toast.error(err));
+          toast.warning(`Import selesai: ${result.successCount || 0} berhasil, ${result.errors.length} gagal.`);
+        } else {
+          toast.success(result.message || 'Data berhasil diimport');
         }
 
-        window.location.reload();
+        fetchCPL();
       } catch (error: any) {
         toast.error(error.message || 'Gagal import data CPL');
       } finally {
@@ -290,13 +301,14 @@ const CPLPage = () => {
   };
 
   const handleViewChange = (val: string) => {
-    const v = val as "list" | "matrix" | "target";
+    const v = val as "list" | "matrix" | "target" | "weight-matrix";
     setViewMode(v);
     updateParams({ view: v });
   };
 
   const handleResetFilters = () => {
     resetFilters();
+    setCplSearchTerm(""); // Also clear search term
     updateParams({
       fakultasId: null,
       prodiId: null,
@@ -318,27 +330,42 @@ const CPLPage = () => {
     const kategoriParam = searchParams.get("kategori");
     const kurikulumIdParam = searchParams.get("kurikulumId");
 
-    if (viewParam && (viewParam === "matrix" || viewParam === "target" || viewParam === "list") && viewMode !== viewParam) {
+    if (viewParam && (viewParam === "matrix" || viewParam === "target" || viewParam === "list" || viewParam === "weight-matrix") && viewMode !== viewParam) {
       setViewMode(viewParam as any);
     }
 
-    if (fakultasIdParam && cplFilters.fakultasFilter !== fakultasIdParam) {
+    // Reset fakultas filter if param is removed
+    if (!fakultasIdParam && cplFilters.fakultasFilter !== "") {
+      setFakultasFilter("");
+    } else if (fakultasIdParam && cplFilters.fakultasFilter !== fakultasIdParam) {
       setFakultasFilter(fakultasIdParam);
     }
 
-    if (prodiIdParam && cplFilters.prodiFilter !== prodiIdParam) {
+    // Reset prodi filter if param is removed
+    if (!prodiIdParam && cplFilters.prodiFilter !== "all") {
+      setProdiFilter("all");
+    } else if (prodiIdParam && cplFilters.prodiFilter !== prodiIdParam) {
       setProdiFilter(prodiIdParam);
     }
 
-    if (qParam && cplFilters.searchTerm !== qParam) {
+    // Reset search term if param is removed
+    if (!qParam && cplFilters.searchTerm !== "") {
+      setCplSearchTerm("");
+    } else if (qParam && cplFilters.searchTerm !== qParam) {
       setCplSearchTerm(qParam);
     }
 
-    if (kategoriParam && cplFilters.kategoriFilter !== kategoriParam) {
+    // Reset kategori filter if param is removed
+    if (!kategoriParam && cplFilters.kategoriFilter !== "all") {
+      setKategoriFilter("all");
+    } else if (kategoriParam && cplFilters.kategoriFilter !== kategoriParam) {
       setKategoriFilter(kategoriParam);
     }
 
-    if (kurikulumIdParam && cplFilters.kurikulumFilter !== kurikulumIdParam) {
+    // Reset kurikulum filter if param is removed
+    if (!kurikulumIdParam && cplFilters.kurikulumFilter !== "all") {
+      setKurikulumFilter("all");
+    } else if (kurikulumIdParam && cplFilters.kurikulumFilter !== kurikulumIdParam) {
       setKurikulumFilter(kurikulumIdParam);
       setTargetFilters(prev => ({ ...prev, tahunAjaran: kurikulumIdParam }));
     }
@@ -351,8 +378,10 @@ const CPLPage = () => {
         if (prev.angkatan === angkatanParam) return prev;
         return { ...prev, angkatan: angkatanParam };
       });
+    } else if (!angkatanParam && targetFilters.angkatan !== "") {
+      setTargetFilters(prev => ({ ...prev, angkatan: "" }));
     }
-  }, [searchParams, viewMode, cplFilters, setViewMode, setFakultasFilter, setProdiFilter, setCplSearchTerm, setKategoriFilter, setKurikulumFilter]);
+  }, [searchParams, viewMode, cplFilters, targetFilters.angkatan, setViewMode, setFakultasFilter, setProdiFilter, setCplSearchTerm, setKategoriFilter, setKurikulumFilter]);
 
 
   useEffect(() => {
@@ -450,201 +479,294 @@ const CPLPage = () => {
   const kategoriOptions = kategoriList; // .map(k => k.nama); Use full object for SelectItem
   const filterProdiOptions = prodiList;
 
-  const hasActiveFilter = cplFilters.fakultasFilter !== "" || cplFilters.prodiFilter !== "all" || cplFilters.kategoriFilter !== "all" || cplFilters.kurikulumFilter !== "all";
+
+  const hasActiveFilter = (cplFilters.fakultasFilter && cplFilters.fakultasFilter !== "all") ||
+    (cplFilters.prodiFilter && cplFilters.prodiFilter !== "all") ||
+    (cplFilters.kategoriFilter && cplFilters.kategoriFilter !== "all") ||
+    (cplFilters.kurikulumFilter && cplFilters.kurikulumFilter !== "all");
 
   if (loading && cplList.length === 0) {
     return (
       <DashboardPage title="Data CPL">
         <LoadingScreen fullScreen={false} message="Memuat data CPL..." />
-      </DashboardPage>
+
+      </DashboardPage >
     );
   }
 
   const showBackButton = location.state?.from === 'profil-lulusan';
 
-  const actions = showBackButton ? (
-    <Button variant="outline" size="sm" onClick={() => navigate('/dashboard/profil-lulusan', { state: { filters: location.state?.filters } })} className="gap-2">
-      <ArrowLeft className="w-4 h-4" /> Kembali
-    </Button>
-  ) : undefined;
+
 
   return (
     <DashboardPage
       title="Data CPL & Mapping"
       description="Kelola Capaian Pembelajaran Lulusan dan Mapping ke Profil Lulusan"
-      actions={actions}
+
     >
-      <div className="space-y-6">
-
-        {/* View Mode Switcher */}
-        <div className="flex items-center space-x-4 border-b pb-4">
-
-          <Tabs value={viewMode} onValueChange={handleViewChange} className="w-[500px]">
-            <TabsList>
-              <TabsTrigger value="list" className="flex items-center gap-2">
-                <ListIcon className="w-4 h-4" /> Daftar CPL
-              </TabsTrigger>
-              {(can('view', 'cpl') || role === 'admin') && (
-                <TabsTrigger value="matrix" className="flex items-center gap-2">
-                  <TableIcon className="w-4 h-4" /> Matrix Mapping
-                </TabsTrigger>
-              )}
-              <TabsTrigger value="target" className="flex items-center gap-2">
-                <Target className="w-4 h-4" /> Target CPL
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {viewMode !== 'target' && (
-            <>
-              <div className="relative flex-1 min-w-[220px] max-w-sm">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={viewMode === "matrix" ? "Cari Profil atau Program Studi..." : "Cari kode, deskripsi, atau kategori CPL..."}
-                  value={currentSearchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-9"
-                />
+      <FloatingBackButton
+        onClick={() => navigate('/dashboard/profil-lulusan', { state: { filters: location.state?.filters } })}
+        hideBackButton={!showBackButton}
+      >
+        <div className="space-y-6">
+          {canManage && (
+            <CollapsibleGuide title="Panduan Manajemen CPL & Mapping">
+              <div className="space-y-3">
+                <p>Halaman ini digunakan untuk mengelola Capaian Pembelajaran Lulusan (CPL) dan menghubungkannya dengan Profil Lulusan serta menetapkan target pencapaian.</p>
+                <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                  <li><strong>Matrix Profil:</strong> Gunakan tab ini untuk memetakan CPL mana saja yang mendukung setiap Profil Lulusan.</li>
+                  <li><strong>Target CPL:</strong> Tetapkan target minimal untuk setiap angkatan agar evaluasi ketercapaian dapat diukur.</li>
+                  <li><strong>Import CPL:</strong> Pastikan kolom <strong>Kode CPL, Deskripsi, Kategori, Prodi,</strong> dan <strong>Kurikulum</strong> sesuai dengan data master saat melakukan import massal.</li>
+                </ul>
               </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={hasActiveFilter ? "default" : "outline"}
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <SlidersHorizontal className="h-4 w-4" />
-                    <span className="hidden sm:inline">Filter</span>
-                    <span className="sm:hidden">Filter</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-[320px] space-y-4">
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-medium">Fakultas</Label>
-                      <Select
-                        value={cplFilters.fakultasFilter}
-                        onValueChange={handleFakultasChange}
-                      >
-                        <SelectTrigger className="w-full h-9 pl-2">
-                          <SelectValue placeholder="Semua Fakultas" className="truncate" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {fakultasList.map((f) => (
-                            <SelectItem key={f.id} value={f.id}>
-                              {f.nama}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {(canViewAll || role === 'kaprodi') && (
-                      <div className="space-y-1">
-                        <Label className="text-xs font-medium">Program Studi</Label>
+            </CollapsibleGuide>
+          )}
+
+          {/* View Mode Switcher */}
+          <div className="flex items-center space-x-4 border-b pb-4">
+
+            <Tabs value={viewMode} onValueChange={handleViewChange} className="w-[500px]">
+              <TabsList>
+                <TabsTrigger value="list" className="flex items-center gap-2">
+                  <ListIcon className="w-4 h-4" /> Daftar CPL
+                </TabsTrigger>
+                {(can('view', 'cpl') || role === 'admin') && (
+                  <TabsTrigger value="matrix" className="flex items-center gap-2">
+                    <TableIcon className="w-4 h-4" /> Matrix Profil
+                  </TabsTrigger>
+                )}
+
+                <TabsTrigger value="target" className="flex items-center gap-2">
+                  <Target className="w-4 h-4" /> Target CPL
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {viewMode !== 'target' && (
+              <>
+                <div className="relative flex-1 min-w-[220px] max-w-sm">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={viewMode === "matrix" ? "Cari Profil atau Program Studi..." : "Cari kode, deskripsi, atau kategori CPL..."}
+                    value={currentSearchTerm}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={hasActiveFilter ? "default" : "outline"}
+                      size="sm"
+                      className="gap-2"
+                    >
+                      <SlidersHorizontal className="h-4 w-4" />
+                      <span className="hidden sm:inline">Filter</span>
+                      <span className="sm:hidden">Filter</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-80 p-4">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Fakultas</Label>
                         <Select
-                          value={cplFilters.prodiFilter}
-                          onValueChange={handleProdiChange}
-                          disabled={!cplFilters.fakultasFilter && canViewAll}
+                          value={cplFilters.fakultasFilter}
+                          onValueChange={handleFakultasChange}
                         >
-                          <SelectTrigger className="w-full h-9 pl-2">
-                            <SelectValue placeholder="Semua program studi" className="truncate" />
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Semua Fakultas" />
                           </SelectTrigger>
                           <SelectContent>
-                            {filterProdiOptions.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.nama}
-                              </SelectItem>
+                            <SelectItem value="all">Semua Fakultas</SelectItem>
+                            {fakultasList.map((f) => (
+                              <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
-                    )}
-                    <div className="space-y-1">
-                      <Label className="text-xs font-medium">Kurikulum</Label>
-                      <Select
-                        value={cplFilters.kurikulumFilter}
-                        onValueChange={handleKurikulumChange}
-                      >
-                        <SelectTrigger className="w-full h-9 pl-2">
-                          <SelectValue placeholder="Semua Kurikulum" className="truncate" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Semua Kurikulum</SelectItem>
-                          {kurikulumList.map((k) => (
-                            <SelectItem key={k.id} value={k.id}>
-                              {k.nama}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {(canViewAll || role === 'kaprodi') && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Program Studi</Label>
+                          <Select
+                            value={cplFilters.prodiFilter}
+                            onValueChange={handleProdiChange}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Semua Program Studi" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Semua Program Studi</SelectItem>
+                              {filterProdiOptions.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Kurikulum</Label>
+                        <Select
+                          value={cplFilters.kurikulumFilter}
+                          onValueChange={handleKurikulumChange}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Semua Kurikulum" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Semua Kurikulum</SelectItem>
+                            {kurikulumList.map((k) => (
+                              <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Kategori</Label>
+                        <Select
+                          value={cplFilters.kategoriFilter}
+                          onValueChange={handleKategoriChange}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Semua Kategori" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Semua Kategori</SelectItem>
+                            {kategoriList.map((k) => (
+                              <SelectItem key={k.id} value={k.nama}>{k.nama}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-medium">Kategori</Label>
-                      <Select
-                        value={cplFilters.kategoriFilter}
-                        onValueChange={handleKategoriChange}
-                      >
-                        <SelectTrigger className="w-full h-9 pl-2">
-                          <SelectValue placeholder="Semua Kategori" className="truncate" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Semua Kategori</SelectItem>
-                          {kategoriList.map((k) => (
-                            <SelectItem key={k.id} value={k.nama}>
-                              {k.nama}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-              <Button
-                variant="outline"
-                onClick={handleResetFilters}
-                disabled={!hasActiveFilter && currentSearchTerm === ""}
-              >
-                Reset Filter
-              </Button>
-            </>
-          )}
-        </div>
-
-
-
-        {viewMode === "target" ? (
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Target Capaian Pembelajaran Lulusan</CardTitle>
-                  <CardDescription>Tentukan target minimal pencapaian untuk setiap CPL</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant={isTargetLocked ? "outline" : "secondary"}
-                    onClick={() => setIsTargetLocked(!isTargetLocked)}
-                    className="gap-2"
-                  >
-                    {isTargetLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                    {isTargetLocked ? "Buka Kunci" : "Kunci Data"}
-                  </Button>
-                  <Button onClick={handleSaveTargets} disabled={loadingTargets || !cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan || isTargetLocked}>
-                    <Save className="w-4 h-4 mr-2" />
-                    Simpan Target
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="relative grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 pt-10 bg-muted/30 rounded-lg border">
+                  </PopoverContent>
+                </Popover>
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="absolute top-2 right-2 h-8 px-3 text-xs"
+                  onClick={handleResetFilters}
+                  disabled={!hasActiveFilter && currentSearchTerm === ""}
+                >
+                  Reset Filter
+                </Button>
+              </>
+            )}
+          </div>
+
+
+
+          {viewMode === "target" ? (
+            <>
+              {/* Search and Filter Controls */}
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <div className="relative flex-1 min-w-[220px] max-w-sm">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Cari kode, deskripsi, atau kategori CPL..."
+                    value={cplFilters.searchTerm}
+                    onChange={(e) => setCplSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant={(cplFilters.fakultasFilter && cplFilters.fakultasFilter !== 'all') ||
+                        (cplFilters.prodiFilter && cplFilters.prodiFilter !== 'all') ||
+                        (cplFilters.kurikulumFilter && cplFilters.kurikulumFilter !== 'all') ||
+                        targetFilters.angkatan ? "default" : "outline"}
+                      className="gap-2"
+                    >
+                      <SlidersHorizontal className="h-4 w-4" />
+                      Filter
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-80 p-4" onClick={(e) => e.stopPropagation()}>
+                    <div className="space-y-4">
+                      {canViewAll && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Fakultas</Label>
+                          <Select
+                            value={cplFilters.fakultasFilter}
+                            onValueChange={setFakultasFilter}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Semua Fakultas" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Semua Fakultas</SelectItem>
+                              {fakultasList.map((f) => (
+                                <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Program Studi</Label>
+                        <Select
+                          value={cplFilters.prodiFilter}
+                          onValueChange={setProdiFilter}
+                          disabled={!canViewAll && role !== 'kaprodi'}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Semua Program Studi" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Semua Program Studi</SelectItem>
+                            {filterProdiOptions.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Kurikulum</Label>
+                        <Select
+                          value={cplFilters.kurikulumFilter}
+                          onValueChange={handleKurikulumChange}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Semua Kurikulum" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Semua Kurikulum</SelectItem>
+                            {kurikulumList
+                              .filter(k => k.isActive || k.id === targetFilters.tahunAjaran)
+                              .map(k => (
+                                <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Angkatan</Label>
+                        <Select
+                          value={targetFilters.angkatan}
+                          onValueChange={(v) => setTargetFilters({ ...targetFilters, angkatan: v })}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Pilih Angkatan" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {angkatanList.filter(a => a.tahun).map(a => (
+                              <SelectItem key={a.id} value={a.tahun.toString()}>{a.tahun}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => {
                     resetFilters();
                     setTargetFilters({
@@ -652,423 +774,389 @@ const CPLPage = () => {
                       tahunAjaran: ""
                     });
                   }}
-                  title="Reset Filter"
+                  disabled={
+                    (!cplFilters.fakultasFilter || cplFilters.fakultasFilter === 'all') &&
+                    (!cplFilters.prodiFilter || cplFilters.prodiFilter === 'all') &&
+                    (!cplFilters.kurikulumFilter || cplFilters.kurikulumFilter === 'all') &&
+                    !targetFilters.angkatan &&
+                    cplFilters.searchTerm === ""
+                  }
                 >
-                  <RotateCcw className="w-3 h-3 mr-1" /> Reset Filter
+                  Reset Filter
                 </Button>
-
-                {/* Fakultas Filter */}
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Fakultas</Label>
-                  <Select
-                    value={cplFilters.fakultasFilter}
-                    onValueChange={setFakultasFilter}
-                  >
-                    <SelectTrigger className="w-full h-9 bg-background">
-                      <SelectValue placeholder="Semua Fakultas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {fakultasList.map((f) => (
-                        <SelectItem key={f.id} value={f.id}>
-                          {f.nama}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Prodi Filter */}
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Program Studi</Label>
-                  <Select
-                    value={cplFilters.prodiFilter}
-                    onValueChange={setProdiFilter}
-                    disabled={!canViewAll && role !== 'kaprodi'}
-                  >
-                    <SelectTrigger className="w-full h-9 bg-background">
-                      <SelectValue placeholder="Semua Prodi" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filterProdiOptions.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.nama}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Angkatan</Label>
-                  <Select
-                    value={targetFilters.angkatan}
-                    onValueChange={(v) => setTargetFilters({ ...targetFilters, angkatan: v })}
-                  >
-                    <SelectTrigger className="h-9 bg-background">
-                      <SelectValue placeholder="Pilih Angkatan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {angkatanList.filter(a => a.tahun).map(a => (
-                        <SelectItem key={a.id} value={a.tahun.toString()}>{a.tahun}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Kurikulum</Label>
-                  <Select
-                    value={cplFilters.kurikulumFilter}
-                    onValueChange={handleKurikulumChange}
-                  >
-                    <SelectTrigger className="h-9 bg-background">
-                      <SelectValue placeholder="Pilih Kurikulum" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {kurikulumList
-                        .filter(k => k.isActive || k.id === targetFilters.tahunAjaran)
-                        .map(k => (
-                          <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
-              {(!cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan) ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Silakan pilih Program Studi dan Angkatan terlebih dahulu
-                </div>
-              ) : loadingTargets ? (
-                <LoadingScreen fullScreen={false} />
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">Kode CPL</TableHead>
-                      <TableHead>Deskripsi</TableHead>
-                      <TableHead className="w-[150px]">Target (%)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cplList.map(cpl => (
-                      <TableRow key={cpl.id}>
-                        <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
-                        <TableCell>{cpl.deskripsi}</TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            disabled={isTargetLocked}
-                            value={targetInputs[cpl.id] ?? 75}
-                            onChange={(e) => setTargetInputs({
-                              ...targetInputs,
-                              [cpl.id]: parseFloat(e.target.value)
-                            })}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        ) : viewMode === "list" ? (
-          <Card>
-            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-base md:text-lg">Daftar CPL</CardTitle>
-                <CardDescription className="text-xs md:text-sm text-muted-foreground">
-                  Menampilkan <span className="font-medium">{cplList.length}</span> dari {pagination.totalItems} CPL
-                </CardDescription>
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                <Button size="sm" variant="outline" onClick={handleExport} disabled={loading}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-                {canEdit && (
-                  <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    {importing ? 'Importing...' : 'Import'}
-                  </Button>
-                )}
-                {canEdit && (
-                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Target Capaian Pembelajaran Lulusan</CardTitle>
+                      <CardDescription>Tentukan target minimal pencapaian untuk setiap CPL</CardDescription>
+                    </div>
+                    <div className="flex gap-2">
                       <Button
-                        size="sm"
-                        onClick={() => { resetForm(); setDialogOpen(true); }}
+                        variant={isTargetLocked ? "outline" : "secondary"}
+                        onClick={() => setIsTargetLocked(!isTargetLocked)}
+                        className="gap-2"
                       >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Tambah CPL
+                        {isTargetLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                        {isTargetLocked ? "Buka Kunci" : "Kunci Data"}
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{editingCPL ? "Edit CPL" : "Tambah CPL Baru"}</DialogTitle>
-                        <DialogDescription>
-                          Isi form untuk {editingCPL ? "mengupdate" : "menambahkan"} data CPL
-                        </DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                          <RequiredLabel htmlFor="kodeCpl" required>Kode CPL</RequiredLabel>
-                          <Input
-                            id="kodeCpl"
-                            placeholder="Contoh: CPL-01"
-                            value={formData.kodeCpl}
-                            onChange={(e) => setFormData({ ...formData, kodeCpl: e.target.value })}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <RequiredLabel htmlFor="deskripsi" required>Deskripsi</RequiredLabel>
-                          <Textarea
-                            id="deskripsi"
-                            placeholder="Deskripsi CPL"
-                            value={formData.deskripsi}
-                            onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                            required
-                            className="min-h-[100px]"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <RequiredLabel htmlFor="kategori" required>Kategori</RequiredLabel>
-                          <Select
-                            value={formData.kategoriId}
-                            onValueChange={(val) => setFormData({ ...formData, kategoriId: val })}
-                            required
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih Kategori" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {kategoriList.map((k) => (
-                                <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <RequiredLabel htmlFor="prodi" required>Program Studi</RequiredLabel>
-                          <Select
-                            value={formData.prodiId}
-                            onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
-                            disabled={!canViewAll}
-                            required
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih Program Studi" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {prodiList.map((p) => (
-                                <SelectItem key={p.id} value={p.id}>
-                                  {p.nama} {p.kode ? `(${p.kode})` : ''}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <RequiredLabel htmlFor="kurikulum" required>Kurikulum</RequiredLabel>
-                          <Select
-                            value={formData.kurikulumId}
-                            onValueChange={(val) => setFormData({ ...formData, kurikulumId: val })}
-                            required
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih Kurikulum" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {kurikulumList
-                                .filter(k => k.isActive || k.id === formData.kurikulumId)
-                                .map((k: any) => (
-                                  <SelectItem key={k.id} value={k.id}>
-                                    {k.nama} {!k.isActive && "(Tidak Aktif)"}
+                      <Button onClick={handleSaveTargets} disabled={loadingTargets || !cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan || isTargetLocked}>
+                        <Save className="w-4 h-4 mr-2" />
+                        Simpan Target
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+
+                  {(!cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan) ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Silakan pilih Program Studi dan Angkatan terlebih dahulu
+                    </div>
+                  ) : loadingTargets ? (
+                    <LoadingScreen fullScreen={false} />
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[100px]">Kode CPL</TableHead>
+                          <TableHead>Deskripsi</TableHead>
+                          <TableHead className="w-[150px]">Target (%)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {cplList.map(cpl => (
+                          <TableRow key={cpl.id}>
+                            <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
+                            <TableCell>{cpl.deskripsi}</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                disabled={isTargetLocked}
+                                value={targetInputs[cpl.id] ?? 75}
+                                onChange={(e) => setTargetInputs({
+                                  ...targetInputs,
+                                  [cpl.id]: parseFloat(e.target.value)
+                                })}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          ) : viewMode === "list" ? (
+            <Card>
+              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-base md:text-lg">Daftar CPL</CardTitle>
+                  <CardDescription className="text-xs md:text-sm text-muted-foreground">
+                    Menampilkan <span className="font-medium">{cplList.length}</span> dari {pagination.totalItems} CPL
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button size="sm" variant="outline" onClick={handleExport} disabled={loading}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                  {canEdit && (
+                    <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      {importing ? 'Importing...' : 'Import'}
+                    </Button>
+                  )}
+                  {canEdit && (
+                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          onClick={() => { resetForm(); setDialogOpen(true); }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Tambah CPL
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{editingCPL ? "Edit CPL" : "Tambah CPL Baru"}</DialogTitle>
+                          <DialogDescription>
+                            Isi form untuk {editingCPL ? "mengupdate" : "menambahkan"} data CPL
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                          <div className="space-y-2">
+                            <RequiredLabel htmlFor="kodeCpl" required>Kode CPL</RequiredLabel>
+                            <Input
+                              id="kodeCpl"
+                              placeholder="Contoh: CPL-01"
+                              value={formData.kodeCpl}
+                              onChange={(e) => setFormData({ ...formData, kodeCpl: e.target.value })}
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <RequiredLabel htmlFor="deskripsi" required>Deskripsi</RequiredLabel>
+                            <Textarea
+                              id="deskripsi"
+                              placeholder="Deskripsi CPL"
+                              value={formData.deskripsi}
+                              onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                              required
+                              className="min-h-[100px]"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <RequiredLabel htmlFor="kategori" required>Kategori</RequiredLabel>
+                            <Select
+                              value={formData.kategoriId}
+                              onValueChange={(val) => setFormData({ ...formData, kategoriId: val })}
+                              required
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih Kategori" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {kategoriList.map((k) => (
+                                  <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <RequiredLabel htmlFor="prodi" required>Program Studi</RequiredLabel>
+                            <Select
+                              value={formData.prodiId}
+                              onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
+                              disabled={!canViewAll}
+                              required
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih Program Studi" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {prodiList.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.nama} {p.kode ? `(${p.kode})` : ''}
                                   </SelectItem>
                                 ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            type="submit"
-                            className="flex-1"
-                            disabled={submitting}
-                          >
-                            {submitting ? (
-                              <>
-                                <LoadingSpinner size="sm" className="mr-2" />
-                                {editingCPL ? "Memperbarui..." : "Menyimpan..."}
-                              </>
-                            ) : editingCPL ? "Update" : "Simpan"}
-                          </Button>
-                          <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                            Batal
-                          </Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                )}
-              </div>
-            </CardHeader>
-
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">No</TableHead>
-                      <TableHead>Kode CPL</TableHead>
-                      <TableHead>Deskripsi</TableHead>
-                      <TableHead>Kategori</TableHead>
-                      <TableHead>Kurikulum</TableHead>
-                      <TableHead>Program Studi</TableHead>
-                      <TableHead className="text-right">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cplList.map((cpl, index) => (
-                      <TableRow key={cpl.id}>
-                        <TableCell>
-                          {(pagination.page - 1) * pagination.limit + index + 1}
-                        </TableCell>
-                        <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
-                        <TableCell className="max-w-md">{cpl.deskripsi}</TableCell>
-                        <TableCell>{cpl.kategoriRef?.nama || cpl.kategori}</TableCell>
-                        <TableCell>{cpl.kurikulum?.nama || '-'}</TableCell>
-                        <TableCell>{cpl.prodi?.nama || '-'}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button size="sm" variant="ghost" onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {canEdit && (
-                              <>
-                                <Button size="sm" variant="outline" onClick={() => handleEdit(cpl)}>
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={(e) => handleDeleteClick(cpl.id, e)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
+                              </SelectContent>
+                            </Select>
                           </div>
-                        </TableCell>
+                          <div className="space-y-2">
+                            <RequiredLabel htmlFor="kurikulum" required>Kurikulum</RequiredLabel>
+                            <Select
+                              value={formData.kurikulumId}
+                              onValueChange={(val) => setFormData({ ...formData, kurikulumId: val })}
+                              required
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih Kurikulum" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {kurikulumList
+                                  .filter(k => k.isActive || k.id === formData.kurikulumId)
+                                  .map((k: any) => (
+                                    <SelectItem key={k.id} value={k.id}>
+                                      {k.nama} {!k.isActive && "(Tidak Aktif)"}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="submit"
+                              className="flex-1"
+                              disabled={submitting}
+                            >
+                              {submitting ? (
+                                <>
+                                  <LoadingSpinner size="sm" className="mr-2" />
+                                  {editingCPL ? "Memperbarui..." : "Menyimpan..."}
+                                </>
+                              ) : editingCPL ? "Update" : "Simpan"}
+                            </Button>
+                            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                              Batal
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+              </CardHeader>
+
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[50px]">No</TableHead>
+                        <TableHead>Kode CPL</TableHead>
+                        <TableHead>Deskripsi</TableHead>
+                        <TableHead>Kategori</TableHead>
+                        <TableHead>Kurikulum</TableHead>
+                        <TableHead>Program Studi</TableHead>
+                        <TableHead className="text-right">Aksi</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-            {/* Pagination Controls */}
-            {
-              pagination.totalPages > 1 && (
-                <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      pagination.setPage(Math.max(1, pagination.page - 1));
-                    }}
-                    disabled={pagination.page === 1}
-                  >
-                    Previous
-                  </Button>
-                  <div className="flex items-center space-x-1">
-                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                      let start = Math.max(1, pagination.page - 2);
-                      if (start + 4 > pagination.totalPages) {
-                        start = Math.max(1, pagination.totalPages - 4);
-                      }
-                      const p = start + i;
-                      if (p > pagination.totalPages) return null;
-
-                      return (
-                        <Button
-                          key={p}
-                          variant={pagination.page === p ? "default" : "outline"}
-                          size="sm"
-                          type="button"
-                          className="w-8 h-8 p-0"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            pagination.setPage(p);
-                          }}
-                        >
-                          {p}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1));
-                    }}
-                    disabled={pagination.page === pagination.totalPages}
-                  >
-                    Next
-                  </Button>
+                    </TableHeader>
+                    <TableBody>
+                      {cplList.map((cpl, index) => (
+                        <TableRow key={cpl.id}>
+                          <TableCell>
+                            {(pagination.page - 1) * pagination.limit + index + 1}
+                          </TableCell>
+                          <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
+                          <TableCell className="max-w-md">{cpl.deskripsi}</TableCell>
+                          <TableCell>{cpl.kategoriRef?.nama || cpl.kategori}</TableCell>
+                          <TableCell>{cpl.kurikulum?.nama || '-'}</TableCell>
+                          <TableCell>{cpl.prodi?.nama || '-'}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button size="sm" variant="ghost" onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {canEdit && (
+                                <>
+                                  <Button size="sm" variant="outline" onClick={() => handleEdit(cpl)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={(e) => handleDeleteClick(cpl.id, e)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-              )
-            }
-          </Card >
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Matrix Mapping Profil Lulusan - CPL</CardTitle>
-              <CardDescription>
-                Hubungkan Profil Lulusan dengan CPL menggunakan tabel matrix di bawah ini.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {cplFilters.prodiFilter === 'all' && canViewAll && !currentSearchTerm ? (
-                <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed">
-                  <div className="p-4 bg-muted rounded-full mb-4">
-                    <TableIcon className="w-8 h-8 text-muted-foreground/50" />
+              </CardContent>
+              {/* Pagination Controls */}
+              {
+                pagination.totalPages > 1 && (
+                  <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        pagination.setPage(Math.max(1, pagination.page - 1));
+                      }}
+                      disabled={pagination.page === 1}
+                    >
+                      Previous
+                    </Button>
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                        let start = Math.max(1, pagination.page - 2);
+                        if (start + 4 > pagination.totalPages) {
+                          start = Math.max(1, pagination.totalPages - 4);
+                        }
+                        const p = start + i;
+                        if (p > pagination.totalPages) return null;
+
+                        return (
+                          <Button
+                            key={p}
+                            variant={pagination.page === p ? "default" : "outline"}
+                            size="sm"
+                            type="button"
+                            className="w-8 h-8 p-0"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              pagination.setPage(p);
+                            }}
+                          >
+                            {p}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1));
+                      }}
+                      disabled={pagination.page === pagination.totalPages}
+                    >
+                      Next
+                    </Button>
                   </div>
-                  <h3 className="text-lg font-semibold">Pilih Program Studi</h3>
-                  <p className="max-w-sm mt-2">
-                    Silakan pilih Program Studi terlebih dahulu pada filter di atas atau gunakan pencarian untuk menampilkan tabel matrix mapping.
-                  </p>
-                </div>
-              ) : (
-                <PLMappingMatrix
-                  profilList={profilList}
-                  cplList={cplList}
-                  onUpdate={async (id, cplIds) => {
-                    const success = await updateProfil(id, { cplIds });
-                    return success;
-                  }}
-                  loading={loadingProfil}
-                  readOnly={!canEdit}
-                />
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div >
+                )
+              }
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Matrix Mapping Profil Lulusan - CPL</CardTitle>
+                <CardDescription>
+                  Hubungkan Profil Lulusan dengan CPL menggunakan tabel matrix di bawah ini.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {cplFilters.prodiFilter === 'all' && canViewAll && !currentSearchTerm ? (
+                  <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed">
+                    <div className="p-4 bg-muted rounded-full mb-4">
+                      <TableIcon className="w-8 h-8 text-muted-foreground/50" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Pilih Program Studi</h3>
+                    <p className="max-w-sm mt-2">
+                      Silakan pilih Program Studi terlebih dahulu pada filter di atas atau gunakan pencarian untuk menampilkan tabel matrix mapping.
+                    </p>
+                  </div>
+                ) : (
+                  <PLMappingMatrix
+                    profilList={profilList}
+                    cplList={cplList}
+                    onUpdate={async (id, cplIds) => {
+                      const success = await updateProfil(id, { cplIds });
+                      return success;
+                    }}
+                    loading={loadingProfil}
+                    readOnly={!canEdit}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
 
-      <DeleteConfirmationDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={confirmDelete}
-        title="Hapus CPL"
-        description="Apakah Anda yakin ingin menghapus CPL ini? Data yang telah dihapus tidak dapat dikembalikan."
-      />
+        <ImportResultDialog
+          open={!!importResult}
+          onOpenChange={(open) => !open && setImportResult(null)}
+          result={importResult}
+          title="Hasil Import CPL"
+          description="Proses import data CPL telah selesai dengan rincian berikut."
+        />
+
+        <DeleteConfirmationDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={confirmDelete}
+          title="Hapus CPL"
+          description="Apakah Anda yakin ingin menghapus CPL ini? Data yang telah dihapus tidak dapat dikembalikan."
+        />
+      </FloatingBackButton>
     </DashboardPage >
   );
 }

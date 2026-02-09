@@ -29,11 +29,10 @@ export function getUser() {
 
 // API request helper
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  // const token = getToken();
+  const isFormData = options.body instanceof FormData;
 
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    // ...(token && { 'Authorization': `Bearer ${token}` }),
+    ...(!isFormData && { 'Content-Type': 'application/json' }),
     ...options.headers,
   };
 
@@ -49,7 +48,9 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Request failed');
+      const message = data.error || 'Request failed';
+      const detail = data.detail ? `\n${data.detail}` : '';
+      throw new Error(message + detail);
     }
 
     return data;
@@ -70,8 +71,22 @@ export const api = {
     }
     return apiRequest(url, { ...options, method: 'GET' });
   },
-  post: (endpoint: string, body: any, options: RequestInit = {}) => apiRequest(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) }),
-  put: (endpoint: string, body: any, options: RequestInit = {}) => apiRequest(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
+  post: (endpoint: string, body: any, options: RequestInit = {}) => {
+    const isFormData = body instanceof FormData;
+    return apiRequest(endpoint, {
+      ...options,
+      method: 'POST',
+      body: isFormData ? body : JSON.stringify(body)
+    });
+  },
+  put: (endpoint: string, body: any, options: RequestInit = {}) => {
+    const isFormData = body instanceof FormData;
+    return apiRequest(endpoint, {
+      ...options,
+      method: 'PUT',
+      body: isFormData ? body : JSON.stringify(body)
+    });
+  },
   delete: (endpoint: string, options: RequestInit = {}) => apiRequest(endpoint, { ...options, method: 'DELETE' }),
 };
 
@@ -522,6 +537,55 @@ export const supabase = {
         },
         error: null
       };
+    },
+
+    forgotPassword: async (email: string) => {
+      try {
+        const data = await apiRequest('/auth/forgot-password', {
+          method: 'POST',
+          body: JSON.stringify({ email }),
+        });
+        return { data, error: null };
+      } catch (error: any) {
+        return { data: null, error: { message: error.message || 'Gagal mengirim kode reset password' } };
+      }
+    },
+
+    verifyResetCode: async (email: string, code: string) => {
+      try {
+        const data = await apiRequest('/auth/verify-reset-code', {
+          method: 'POST',
+          body: JSON.stringify({ email, code }),
+        });
+        return { data, error: null };
+      } catch (error: any) {
+        return { data: null, error: { message: error.message || 'Kode verifikasi tidak valid' } };
+      }
+    },
+
+    resetPassword: async (email: string, code: string, newPassword: string) => {
+      try {
+        const data = await apiRequest('/auth/reset-password', {
+          method: 'POST',
+          body: JSON.stringify({ email, code, newPassword }),
+        });
+
+        const session = {
+          access_token: 'cookie',
+          user: { ...data.user }
+        };
+
+        setUser(data.user);
+
+        // Trigger auth state change callbacks
+        setTimeout(() => {
+          authCallbacks.forEach(cb => cb('SIGNED_IN', session));
+        }, 100);
+
+        return { data: { ...data, session }, error: null };
+      } catch (error: any) {
+        return { data: null, error: { message: error.message || 'Gagal mereset password' } };
+      }
     }
   },
 

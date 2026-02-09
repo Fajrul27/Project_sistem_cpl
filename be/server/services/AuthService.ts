@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
 
 import { authSchemas } from '../schemas/auth.schema.js';
+import { EmailService } from './EmailService.js';
+import crypto from 'crypto';
 
 export class AuthService {
     static async register(data: any) {
@@ -88,7 +90,13 @@ export class AuthService {
             where: { email },
             include: {
                 role: { include: { role: true } },
-                profile: true
+                profile: {
+                    include: {
+                        kelasRef: true,
+                        angkatanRef: { include: { kurikulum: true } },
+                        prodi: { include: { fakultas: true } }
+                    }
+                }
             }
         });
 
@@ -146,6 +154,7 @@ export class AuthService {
                 profile: {
                     include: {
                         kelasRef: true,
+                        angkatanRef: { include: { kurikulum: true } },
                         prodi: {
                             include: {
                                 fakultas: true
@@ -196,6 +205,7 @@ export class AuthService {
                 profile: {
                     include: {
                         kelasRef: true,
+                        angkatanRef: { include: { kurikulum: true } },
                         prodi: { include: { fakultas: true } }
                     }
                 }
@@ -266,6 +276,7 @@ export class AuthService {
                 profile: {
                     include: {
                         kelasRef: true,
+                        angkatanRef: { include: { kurikulum: true } },
                         prodi: { include: { fakultas: true } }
                     }
                 }
@@ -303,6 +314,131 @@ export class AuthService {
                 email: adminUser.email,
                 role: adminUser.role?.role?.name || 'admin',
                 profile: adminUser.profile
+            }
+        };
+    }
+
+    // Forgot Password Flow
+    static async forgotPassword(email: string) {
+        // Find user
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: { profile: true }
+        });
+
+        if (!user) {
+            throw new Error('Email tidak terdaftar');
+        }
+
+        // Generate 6 digit code
+        const code = crypto.randomInt(100000, 999999).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+
+
+        // Actually, to ensure only one active token or strict logic:
+        await prisma.passwordResetToken.deleteMany({ where: { email } });
+        await prisma.passwordResetToken.create({
+            data: { email, token: code, expiresAt }
+        });
+
+        // Send Email
+        await EmailService.sendResetCode(email, code, user.profile?.namaLengkap || user.email);
+
+        return { message: 'Kode verifikasi telah dikirim ke email Anda' };
+    }
+
+    static async verifyResetCode(email: string, code: string) {
+        const resetToken = await prisma.passwordResetToken.findFirst({
+            where: {
+                email,
+                token: code,
+                expiresAt: { gt: new Date() }
+            }
+        });
+
+        if (!resetToken) {
+            throw new Error('Kode verifikasi salah atau sudah kadaluarsa');
+        }
+
+        return { message: 'Kode valid', valid: true };
+    }
+
+    static async resetPassword(email: string, code: string, newPassword: string) {
+        const resetToken = await prisma.passwordResetToken.findFirst({
+            where: {
+                email,
+                token: code,
+                expiresAt: { gt: new Date() }
+            }
+        });
+
+        if (!resetToken) {
+            throw new Error('Kode verifikasi salah atau sudah kadaluarsa');
+        }
+
+        // Find user
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: {
+                role: { include: { role: true } },
+                profile: {
+                    include: {
+                        kelasRef: true,
+                        angkatanRef: { include: { kurikulum: true } },
+                        prodi: { include: { fakultas: true } }
+                    }
+                }
+            }
+        });
+
+        if (!user) {
+            throw new Error('User tidak ditemukan');
+        }
+
+        // Update password
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+        await prisma.user.update({
+            where: { email },
+            data: { passwordHash }
+        });
+
+        // Delete used token
+        await prisma.passwordResetToken.deleteMany({ where: { email } });
+
+        // Generate JWT token
+        const token = jwt.sign(
+            {
+                userId: user.id,
+                email: user.email,
+                role: user.role?.role?.name || 'mahasiswa'
+            },
+            process.env.JWT_SECRET || 'your-secret-key',
+            { expiresIn: '7d' }
+        );
+
+        // Delete any existing sessions for this user
+        await prisma.session.deleteMany({
+            where: { userId: user.id }
+        });
+
+        // Create new session
+        await prisma.session.create({
+            data: {
+                userId: user.id,
+                token,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+            }
+        });
+
+        return {
+            message: 'Password berhasil direset. Login otomatis...',
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role?.role?.name || 'mahasiswa',
+                profile: user.profile
             }
         };
     }

@@ -6,6 +6,7 @@ import { fetchMahasiswaList, api, getTranskripCPMK, getTranskripProfil, fetchFak
 export interface TranskripItem {
     cplId: string;
     nilaiAkhir: number;
+    huruf: string; // Letter grade from backend
     status: 'tercapai' | 'belum_tercapai';
     cpl: {
         kodeCpl: string;
@@ -30,6 +31,8 @@ export interface TranskripCpmkItem {
     kodeCpmk: string;
     deskripsi: string;
     nilai: number;
+    courseScore?: number; // Course-level grade
+    huruf?: string; // Letter grade
     status: 'tercapai' | 'belum_tercapai';
     mataKuliah: {
         kodeMk: string;
@@ -40,6 +43,7 @@ export interface TranskripCpmkItem {
         tahunMasuk?: number;
     };
     tahunAjaran: string;
+    rowSpan?: number; // For table display
 }
 
 export interface ProfilLulusanItem {

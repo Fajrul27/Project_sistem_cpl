@@ -7,7 +7,8 @@ import {
   createMapping,
   updateMapping,
   batchCreateMappings,
-  deleteMapping
+  deleteMapping,
+  batchUpdateWeights
 } from '../controllers/cpl-mapping-controller.js';
 
 const router = Router();
@@ -26,6 +27,9 @@ router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), updateMappin
 
 // Batch create mappings
 router.post('/batch', authMiddleware, requireRole('admin', 'kaprodi'), batchCreateMappings);
+
+// Batch update weights
+router.post('/batch-update-weights', authMiddleware, requireRole('admin', 'kaprodi'), batchUpdateWeights);
 
 // Delete mapping
 router.delete('/:id', authMiddleware, requireRole('admin', 'kaprodi'), deleteMapping);

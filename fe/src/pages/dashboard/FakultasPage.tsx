@@ -17,8 +17,14 @@ import {
     fetchProdiList, createProdi, updateProdi, deleteProdi,
     fetchJenjangList, createJenjang, updateJenjang, deleteJenjang
 } from '@/lib/api';
+import { CollapsibleGuide } from '@/components/common/CollapsibleGuide';
+import { usePermission } from '@/contexts/PermissionContext';
+
 
 export default function FakultasPage() {
+    const { can } = usePermission();
+    const canManage = can('access', 'admin'); // Only Admin can manage units
+
     const [activeTab, setActiveTab] = useState('fakultas');
 
     // Fakultas State
@@ -251,6 +257,20 @@ export default function FakultasPage() {
 
     return (
         <DashboardPage title="Data Fakultas & Prodi" description="Kelola data referensi fakultas dan program studi">
+            <div className="mb-6">
+                {canManage && (
+                    <CollapsibleGuide title="Panduan Struktur Organisasi">
+                        <div className="space-y-3">
+                            <p>Halaman ini digunakan untuk mengelola hirarki organisasi pendidikan dan referensi jenjang yang akan digunakan di seluruh sistem.</p>
+                            <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                <li><strong>Data Jenjang:</strong> Definisikan tingkatan pendidikan (S1, D3, dsb) terlebih dahulu sebelum membuat Prodi.</li>
+                                <li><strong>Data Fakultas:</strong> Induk organisasi tertinggi yang akan membawahi beberapa Program Studi.</li>
+                                <li><strong>Data Prodi:</strong> Unit pelaksana akademik yang akan terikat pada satu Fakultas dan satu Jenjang pendidikan.</li>
+                            </ul>
+                        </div>
+                    </CollapsibleGuide>
+                )}
+            </div>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="fakultas" className="flex items-center gap-2">

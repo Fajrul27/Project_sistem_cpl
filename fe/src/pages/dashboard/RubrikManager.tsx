@@ -5,10 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RequiredLabel } from "@/components/common/RequiredLabel";
-import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Save } from "lucide-react";
 import { useRubrik } from "@/hooks/useRubrik";
+import { FloatingBackButton } from "@/components/common/FloatingBackButton";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { usePermission } from "@/contexts/PermissionContext";
+
 
 export default function RubrikManager() {
+    const { can } = usePermission();
+    const canManage = can('access', 'kaprodi') || can('access', 'admin');
+
     const {
         rubrik,
         cpmkData,
@@ -30,23 +37,21 @@ export default function RubrikManager() {
             title="Kelola Rubrik Penilaian"
             description={`Rubrik untuk CPMK: ${cpmkData?.kodeCpmk} - ${cpmkData?.mataKuliah?.namaMk}`}
         >
-            <div className="flex gap-6 relative">
-                {/* Fixed Back Button Sidebar */}
-                <div className="hidden xl:block w-28 shrink-0 relative">
-                    <div className="fixed left-80 top-1/2 -translate-y-1/2 z-40">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="rounded-full shadow-lg bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 h-12 w-12 transition-all hover:scale-105"
-                            onClick={() => navigate(-1)}
-                            title="Kembali"
-                        >
-                            <ArrowLeft className="h-6 w-6" />
-                        </Button>
-                    </div>
-                </div>
+            <FloatingBackButton>
+                <div className="space-y-6 pb-20 min-w-0">
+                    {canManage && (
+                        <CollapsibleGuide title="Panduan Rubrik Penilaian">
+                            <div className="space-y-3">
+                                <p>Rubrik membantu dosen dalam memberikan penilaian yang konsisten dan membantu mahasiswa memahami standar pencapaian.</p>
+                                <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                    <li><strong>Kriteria:</strong> Aspek-aspek yang dinilai pada satu CPMK (contoh: Logika Progam, Kreativitas, dsb).</li>
+                                    <li><strong>Bobot:</strong> Persentase kontribusi kriteria terhadap nilai CPMK (Total harus 100%).</li>
+                                    <li><strong>Level:</strong> Deskripsi kualitatif perolehan nilai (Sangat Baik, Baik, dsb) untuk setiap kriteria.</li>
+                                </ul>
+                            </div>
+                        </CollapsibleGuide>
+                    )}
 
-                <div className="flex-1 space-y-6 pb-20 min-w-0">
 
                     <Card>
                         <CardHeader>
@@ -136,7 +141,7 @@ export default function RubrikManager() {
                         </div>
                     )}
                 </div>
-            </div>
+            </FloatingBackButton>
 
             {/* Floating Save Button */}
             <div className="fixed bottom-6 right-6">
@@ -145,6 +150,6 @@ export default function RubrikManager() {
                     {saving ? "Menyimpan..." : "Simpan Rubrik"}
                 </Button>
             </div>
-        </DashboardPage>
+        </DashboardPage >
     );
 }

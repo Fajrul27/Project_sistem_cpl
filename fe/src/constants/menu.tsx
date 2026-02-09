@@ -25,6 +25,7 @@ export const MENU_ITEMS = [
         roles: ["admin", "kaprodi"] as UserRole[], // Restricted to admins generally
         items: [
             { title: "Fakultas, Prodi & Jenjang", url: "/dashboard/fakultas", roles: ["admin"], resource: 'fakultas' },
+            { title: "Skala Nilai", url: "/dashboard/skala-nilai", roles: ["admin", "kaprodi"], resource: 'fakultas' },
         ]
     },
     {
@@ -33,6 +34,7 @@ export const MENU_ITEMS = [
         roles: ["admin", "kaprodi", "dosen"] as UserRole[],
         items: [
             { title: "Tahun Ajaran, Kurikulum & Angkatan", url: "/dashboard/master-akademik", roles: ["admin", "kaprodi"], resource: 'tahun_ajaran' },
+            { title: "Data KRS Mahasiswa", url: "/dashboard/krs", roles: ["admin", "kaprodi"], resource: 'tahun_ajaran' },
         ]
     },
     {

@@ -15,6 +15,7 @@ import MahasiswaPage from "./pages/dashboard/Mahasiswa";
 import UsersPage from "./pages/dashboard/Users";
 import InputNilaiTeknikPage from "./pages/dashboard/InputNilaiTeknik";
 import AnalisisiPage from "./pages/dashboard/Analisis";
+import KrsPage from "./pages/dashboard/KrsPage";
 
 import ProfilePage from "./pages/dashboard/Profile";
 import DebugAccess from "./pages/dashboard/DebugAccess";
@@ -43,6 +44,7 @@ import EvaluasiCPLPage from "./pages/dashboard/EvaluasiCPL";
 import FakultasPage from "./pages/dashboard/FakultasPage";
 import ActivityLogPage from "./pages/dashboard/ActivityLog";
 import MasterAkademikPage from "./pages/dashboard/MasterAkademikPage";
+import SkalaNilaiPage from "./pages/dashboard/SkalaNilaiPage";
 
 
 
@@ -89,6 +91,14 @@ const App = () => (
                   element={
                     <RequireRole roles={["admin", "kaprodi", "dosen"]} resource="mata_kuliah">
                       <MataKuliahPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="krs"
+                  element={
+                    <RequireRole roles={["admin", "kaprodi"]} resource="tahun_ajaran">
+                      <KrsPage />
                     </RequireRole>
                   }
                 />
@@ -220,6 +230,14 @@ const App = () => (
                   element={
                     <RequireRole roles={["admin"]} resource="fakultas">
                       <FakultasPage />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="skala-nilai"
+                  element={
+                    <RequireRole roles={["admin", "kaprodi"]} resource="fakultas">
+                      <SkalaNilaiPage />
                     </RequireRole>
                   }
                 />

@@ -36,11 +36,14 @@ import { Progress } from "@/components/ui/progress";
 import { useProfilLulusan, ProfilLulusan } from "@/hooks/useProfilLulusan";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 
 export default function ProfilLulusanPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { role, profile } = useUserRole();
+    const { can } = usePermission();
+    const canManage = can('access', 'kaprodi') || can('access', 'admin');
     const {
         profilList,
         prodiList,
@@ -143,7 +146,7 @@ export default function ProfilLulusanPage() {
         }
     }, [formData.fakultasId]);
 
-    const { can } = usePermission();
+
 
     // const canEdit = role === "admin" || role === "kaprodi"; // Removed in favor of dynamic checks
 
@@ -237,6 +240,19 @@ export default function ProfilLulusanPage() {
             }
         >
             <div className="space-y-6">
+                {canManage && (
+                    <CollapsibleGuide title="Panduan Profil Lulusan">
+                        <div className="space-y-3">
+                            <p>Profil Lulusan adalah gambaran peran atau profesi yang diharapkan dapat dijalankan oleh lulusan setelah menyelesaikan studi.</p>
+                            <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                <li><strong>Target Ketercapaian:</strong> Nilai minimal (0-100) yang harus dicapai oleh mahasiswa untuk dianggap memenuhi kriteria profil tersebut.</li>
+                                <li><strong>Capaian (Mahasiswa):</strong> Dihitung berdasarkan rata-rata nilai CPL yang mendukung profil lulusan tersebut di kurikulum yang berlaku.</li>
+                                <li><strong>Mapping:</strong> Hubungan antara CPL dan Profil Lulusan dikelola pada halaman <em>CPL & Mapping</em>.</li>
+                            </ul>
+                        </div>
+                    </CollapsibleGuide>
+                )}
+
                 {/* Filter and Search - Hidden for mahasiswa */}
                 {role !== 'mahasiswa' && (
                     <div className="flex flex-wrap items-center gap-2">

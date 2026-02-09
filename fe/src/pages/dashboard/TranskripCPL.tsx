@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn, getGradeLetter } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranskripCPL } from "@/hooks/useTranskripCPL";
 
@@ -23,9 +23,14 @@ import { api } from "@/lib/api";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { usePermission } from "@/contexts/PermissionContext";
 
 
 const TranskripCPLPage = () => {
+    const { can } = usePermission();
+    const canManage = can('access', 'kaprodi') || can('access', 'admin');
+
     const {
         transkripList,
         transkripCpmkList,
@@ -195,6 +200,18 @@ const TranskripCPLPage = () => {
             description="Rekapitulasi nilai dan capaian pembelajaran"
         >
             <div className="space-y-6">
+                {canManage && (
+                    <CollapsibleGuide title="Panduan Transkrip & Capaian">
+                        <div className="space-y-3">
+                            <p>Transkrip ini menyajikan ringkasan performa akademik yang dipetakan langsung ke standar kompetensi lulusan (OBE).</p>
+                            <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                <li><strong>Tab CPL:</strong> Menampilkan rata-rata nilai untuk setiap Capaian Pembelajaran Lulusan beserta grafik radarnya.</li>
+                                <li><strong>Tab CPMK:</strong> Menampilkan detail nilai pendukung dari setiap mata kuliah yang berkontribusi pada CPL.</li>
+                                <li><strong>Cetak:</strong> Gunakan tombol ikon printer untuk mengunduh versi PDF transkrip yang telah diformat secara profesional.</li>
+                            </ul>
+                        </div>
+                    </CollapsibleGuide>
+                )}
                 {
                     !isMahasiswa && (
                         <Card>
@@ -509,7 +526,7 @@ const TranskripCPLPage = () => {
                                                                     <TableCell className="max-w-md">{item.cpl.deskripsi}</TableCell>
                                                                     <TableCell><Badge variant="outline">{item.cpl.kategori}</Badge></TableCell>
                                                                     <TableCell className="text-right font-medium">{item.nilaiAkhir.toFixed(2)}</TableCell>
-                                                                    <TableCell className="text-center font-bold">{getGradeLetter(item.nilaiAkhir)}</TableCell>
+                                                                    <TableCell className="text-center font-bold">{item.huruf || '-'}</TableCell>
                                                                     <TableCell className="text-center">
                                                                         {item.status === 'tercapai' ? <Badge className="bg-green-500">Tercapai</Badge> : <Badge variant="destructive">Belum Tercapai</Badge>}
                                                                     </TableCell>
@@ -635,75 +652,7 @@ const TranskripCPLPage = () => {
                                         </Card>
                                     </div>
 
-                                    {/* Profil Lulusan Section (Duplicated from CPL Tab) */}
-                                    <Card className="mb-6">
-                                        <CardHeader>
-                                            <CardTitle className="text-sm font-medium">Daftar Profil Lulusan</CardTitle>
-                                            <CardDescription>Menampilkan {profilLulusanList.length} dari {profilLulusanList.length} Profil Lulusan</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead className="w-[50px]">No</TableHead>
-                                                        <TableHead>Kode</TableHead>
-                                                        <TableHead>Nama Profil</TableHead>
-                                                        <TableHead>Deskripsi</TableHead>
-                                                        <TableHead className="w-[200px]">Ketercapaian</TableHead>
-                                                        <TableHead>Capaian Pembelajaran</TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {profilLulusanList.length > 0 ? (
-                                                        profilLulusanList.map((profil, idx) => (
-                                                            <TableRow key={profil.id}>
-                                                                <TableCell>{idx + 1}</TableCell>
-                                                                <TableCell>{profil.kode}</TableCell>
-                                                                <TableCell>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400">
-                                                                            <Briefcase size={16} />
-                                                                        </div>
-                                                                        <span className="font-medium">{profil.nama}</span>
-                                                                    </div>
-                                                                </TableCell>
-                                                                <TableCell className="max-w-xs text-xs text-muted-foreground line-clamp-2">{profil.deskripsi}</TableCell>
-                                                                <TableCell>
-                                                                    <div className="flex flex-col gap-1">
-                                                                        <div className="flex justify-between text-xs">
-                                                                            <span>{profil.percentage.toFixed(2)}%</span>
-                                                                            <span className={profil.percentage >= 80 ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
-                                                                                {profil.percentage >= 80 ? "Tercapai" : "Belum Tercapai"}
-                                                                            </span>
-                                                                        </div>
-                                                                        <Progress value={profil.percentage} className="h-2" />
-                                                                    </div>
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <div className="flex items-center justify-center">
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            onClick={() => handleViewDetail(profil)}
-                                                                            title="Lihat Detail Kalkulasi"
-                                                                        >
-                                                                            <Eye className="w-4 h-4 text-primary" />
-                                                                        </Button>
-                                                                    </div>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        ))
-                                                    ) : (
-                                                        <TableRow>
-                                                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                                                Belum ada data profil lulusan
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    )}
-                                                </TableBody>
-                                            </Table>
-                                        </CardContent>
-                                    </Card>
+
 
                                     <Card>
                                         <CardHeader className="flex flex-row items-center justify-between">
@@ -755,10 +704,10 @@ const TranskripCPLPage = () => {
                                                                                 {item.courseScore?.toFixed(2)}
                                                                             </TableCell>
                                                                             <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center font-bold">
-                                                                                {getGradeLetter(item.courseScore || 0)}
+                                                                                {item.huruf || '-'}
                                                                             </TableCell>
                                                                             <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center">
-                                                                                {item.courseScore && item.courseScore >= 70
+                                                                                {item.status === 'tercapai'
                                                                                     ? <Badge className="bg-green-500">Tercapai</Badge>
                                                                                     : <Badge variant="destructive">Belum Tercapai</Badge>}
                                                                             </TableCell>
@@ -841,7 +790,7 @@ const TranskripCPLPage = () => {
                                                                 <div className="text-xs text-muted-foreground line-clamp-1 max-w-[500px]">{item.cpl.deskripsi}</div>
                                                             </div>
                                                             <div className="flex items-center gap-2">
-                                                                <Badge className={cn("text-sm h-7 px-3", Number(item.nilaiAkhir) >= 70 ? "bg-blue-600 hover:bg-blue-700" : "bg-amber-600 hover:bg-amber-700")}>
+                                                                <Badge className={cn("text-sm h-7 px-3", item.status === 'tercapai' ? "bg-blue-600 hover:bg-blue-700" : "bg-amber-600 hover:bg-amber-700")}>
                                                                     {Number(item.nilaiAkhir).toFixed(2)}
                                                                 </Badge>
                                                             </div>
@@ -1090,7 +1039,7 @@ const TranskripCPLPage = () => {
                                                             }));
                                                             const numPoints = data.length;
                                                             const centerX = 100;
-                                                            const centerY = 70;
+                                                            const centerY = 50; // Center of 0-100 scale
                                                             const radius = 50;
 
                                                             // Calculate points for radar
@@ -1220,7 +1169,7 @@ const TranskripCPLPage = () => {
                                                         {(() => {
                                                             const numPoints = radarData.length;
                                                             const centerX = 100;
-                                                            const centerY = 70;
+                                                            const centerY = 50; // Center of 0-100 scale
                                                             const radius = 50;
 
                                                             // Calculate points for radar
@@ -1315,7 +1264,7 @@ const TranskripCPLPage = () => {
                                                             </div>
                                                         </td>
                                                         <td className="border border-black p-1 text-center font-bold">{item.nilaiAkhir.toFixed(2)}</td>
-                                                        <td className="border border-black p-1 text-center font-bold">{getGradeLetter(item.nilaiAkhir)}</td>
+                                                        <td className="border border-black p-1 text-center font-bold">{item.huruf || '-'}</td>
                                                         <td className="border border-black p-1 text-center">
                                                             {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
                                                         </td>
@@ -1343,10 +1292,10 @@ const TranskripCPLPage = () => {
                                                                     {item.courseScore?.toFixed(2)}
                                                                 </td>
                                                                 <td className="border border-black p-1 text-center font-bold align-top" rowSpan={item.rowSpan}>
-                                                                    {getGradeLetter(item.courseScore || 0)}
+                                                                    {item.huruf || '-'}
                                                                 </td>
                                                                 <td className="border border-black p-1 text-center align-top" rowSpan={item.rowSpan}>
-                                                                    {item.courseScore && item.courseScore >= 70 ? 'Tercapai' : 'Belum'}
+                                                                    {item.status === 'tercapai' ? 'Tercapai' : 'Belum'}
                                                                 </td>
                                                             </>
                                                         )}
