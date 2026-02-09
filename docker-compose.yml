@@ -22,6 +22,8 @@ services:
   be:
     build: ./be
     container_name: sistem_cpl_be
+    env_file:
+      - ./be/.env
     restart: always
     ports:
       - "8002:8002"
