@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+// Hook for fetching dashboard statistics
 import { fetchDashboardStats, fetchTranskripCPL, fetchDosenAnalysis, fetchStudentEvaluation } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -15,6 +16,9 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
     const [trendData, setTrendData] = useState<any[]>([]);
     const [distributionData, setDistributionData] = useState<any[]>([]);
     const [performanceData, setPerformanceData] = useState<any[]>([]);
+    const [recentAssessments, setRecentAssessments] = useState<any[]>([]);
+    const [studentInfo, setStudentInfo] = useState<any>(null);
+    const [profilLulusanData, setProfilLulusanData] = useState<any[]>([]);
 
     // New Features State
     const [alerts, setAlerts] = useState<any[]>([]);
@@ -24,61 +28,81 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
     const [studentEvaluation, setStudentEvaluation] = useState<any[]>([]);
 
     const fetchStudentDashboardData = useCallback(async () => {
-        if (!user?.id) return;
+        const targetId = user?.userId || user?.id;
+        if (!targetId) return;
 
         try {
-            const response = await fetchTranskripCPL(user.id);
+            const response = await fetchTranskripCPL(targetId);
             const data = response.data;
 
-            if (data && data.summary) {
-                setCplStats({
-                    total: data.summary.totalCpl || 0,
-                    avgScore: data.summary.avgScore || 0,
-                    totalCurriculum: data.summary.totalCurriculumCpl || 0,
-                    tercapai: data.summary.tercapai || 0
-                });
-                setMkStats({ total: data.transkrip?.length || 0 });
-                setStudentStats({ total: 1 });
+            if (data) {
+                if (data.mahasiswa) {
+                    setStudentInfo(data.mahasiswa);
+                }
 
-                if (data.transkrip) {
-                    const cplChartData = data.transkrip.map((t: any) => ({
-                        name: t.cpl.kodeCpl,
-                        nilai: t.nilaiAkhir
-                    }));
-                    setChartData(cplChartData);
-
-                    const perfData = [...cplChartData]
-                        .sort((a: any, b: any) => b.nilai - a.nilai)
-                        .slice(0, 5)
-                        .map((item: any) => ({
-                            ...item,
-                            status: item.nilai >= 80 ? "Excellent" : item.nilai >= 70 ? "Good" : "Need Improvement"
-                        }));
-                    setPerformanceData(perfData);
-
-                    // Distribution Logic
-                    const dist = [
-                        { name: "Sangat Baik (>85)", value: 0 },
-                        { name: "Baik (70-85)", value: 0 },
-                        { name: "Cukup (60-70)", value: 0 },
-                        { name: "Kurang (<60)", value: 0 },
-                    ];
-
-                    data.transkrip.forEach((t: any) => {
-                        const n = t.nilaiAkhir;
-                        if (n >= 85) dist[0].value++;
-                        else if (n >= 70) dist[1].value++;
-                        else if (n >= 60) dist[2].value++;
-                        else dist[3].value++;
+                if (data.summary) {
+                    setCplStats({
+                        total: data.summary.totalCpl || 0,
+                        avgScore: data.summary.avgScore || 0,
+                        totalCurriculum: data.summary.totalCurriculumCpl || 0,
+                        tercapai: data.summary.tercapai || 0
                     });
+                    setMkStats({ total: data.summary.totalMataKuliah || 0 });
+                    setStudentStats({ total: 1 });
 
-                    const total = data.transkrip.length;
-                    const distData = dist.map(d => ({
-                        ...d,
-                        percentage: total > 0 ? ((d.value / total) * 100).toFixed(1) : "0.0"
-                    })).filter(d => d.value > 0);
+                    setRecentAssessments(data.penilaianTeknikList || []);
 
-                    setDistributionData(distData);
+                    // Map Profil Lulusan Data
+                    if (data.profilLulusan) {
+                        const plData = data.profilLulusan.map((pl: any) => ({
+                            name: pl.nama,
+                            kode: pl.kode,
+                            nilai: pl.percentage,
+                            full: 100
+                        }));
+                        setProfilLulusanData(plData);
+                    }
+
+                    if (data.transkrip) {
+                        const cplChartData = data.transkrip.map((t: any) => ({
+                            name: t.cpl.kodeCpl,
+                            nilai: t.nilaiAkhir
+                        }));
+                        setChartData(cplChartData);
+
+                        const perfData = [...cplChartData]
+                            .sort((a: any, b: any) => b.nilai - a.nilai)
+                            .slice(0, 5)
+                            .map((item: any) => ({
+                                ...item,
+                                status: item.nilai >= 80 ? "Excellent" : item.nilai >= 70 ? "Good" : "Need Improvement"
+                            }));
+                        setPerformanceData(perfData);
+
+                        // Distribution Logic
+                        const dist = [
+                            { name: "Sangat Baik (>85)", value: 0 },
+                            { name: "Baik (70-85)", value: 0 },
+                            { name: "Cukup (60-70)", value: 0 },
+                            { name: "Kurang (<60)", value: 0 },
+                        ];
+
+                        data.transkrip.forEach((t: any) => {
+                            const n = t.nilaiAkhir;
+                            if (n >= 85) dist[0].value++;
+                            else if (n >= 70) dist[1].value++;
+                            else if (n >= 60) dist[2].value++;
+                            else dist[3].value++;
+                        });
+
+                        const total = data.transkrip.length;
+                        const distData = dist.map(d => ({
+                            ...d,
+                            percentage: total > 0 ? ((d.value / total) * 100).toFixed(1) : "0.0"
+                        })).filter(d => d.value > 0);
+
+                        setDistributionData(distData);
+                    }
                 }
             }
         } catch (error) {
@@ -126,7 +150,7 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
 
             if (isManager) {
                 const [dosenRes, studentRes] = await Promise.all([
-                    fetchDosenAnalysis(activeFilters.prodiId).catch(() => ({ data: [] })),
+                    fetchDosenAnalysis(activeFilters).catch(() => ({ data: [] })),
                     fetchStudentEvaluation(activeFilters).catch(() => ({ data: [] }))
                 ]);
 
@@ -147,17 +171,22 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
         }
     }, [role, activeFilters]);
 
+    // Student Data Fetch Effect
     useEffect(() => {
-        if (role) {
+        const targetId = user?.userId || user?.id;
+        if (role === 'mahasiswa' && targetId) {
             setLoading(true);
-            const normalizedRole = role.toLowerCase();
-            if (normalizedRole === 'mahasiswa') {
-                fetchStudentDashboardData();
-            } else {
-                fetchAdminDashboardData();
-            }
+            fetchStudentDashboardData();
         }
-    }, [role, user, activeFilters, fetchStudentDashboardData, fetchAdminDashboardData]);
+    }, [role, user?.userId, user?.id, fetchStudentDashboardData]);
+
+    // Admin/Staff Data Fetch Effect
+    useEffect(() => {
+        if (role && role !== 'mahasiswa') {
+            setLoading(true);
+            fetchAdminDashboardData();
+        }
+    }, [role, activeFilters, fetchAdminDashboardData]);
 
     return {
         loading,
@@ -168,11 +197,14 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
         trendData,
         distributionData,
         performanceData,
+        recentAssessments,
+        studentInfo,
         alerts,
         insights,
         completeness,
         dosenAnalysis,
         studentEvaluation,
+        profilLulusanData,
         refresh: role?.toLowerCase() === 'mahasiswa' ? fetchStudentDashboardData : fetchAdminDashboardData
     };
 }

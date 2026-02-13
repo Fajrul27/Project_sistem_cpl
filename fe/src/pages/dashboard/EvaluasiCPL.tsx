@@ -45,8 +45,8 @@ const EvaluasiCPLPage = () => {
         fakultasId: "",
         prodiId: "",
         angkatan: "",
-        tahunAjaran: "", // Default or dynamic
-        semester: "all"
+        tahunAjaran: "",
+        semester: "" // Default to empty for placeholder
     });
 
     // Local state for target editing
@@ -81,12 +81,12 @@ const EvaluasiCPLPage = () => {
         }
     }, [filters.prodiId]);
 
-    // Set default active Tahun Ajaran
-    useEffect(() => {
-        if (activeTahunAjaran && !filters.tahunAjaran) {
-            setFilters(prev => ({ ...prev, tahunAjaran: activeTahunAjaran.id }));
-        }
-    }, [activeTahunAjaran]);
+    // Auto-selection of active Tahun Ajaran removed to force user selection behavior ('Pilih...')
+    // useEffect(() => {
+    //     if (activeTahunAjaran && !filters.tahunAjaran) {
+    //         setFilters(prev => ({ ...prev, tahunAjaran: activeTahunAjaran.id }));
+    //     }
+    // }, [activeTahunAjaran]);
 
     useEffect(() => {
         if (filters.prodiId && filters.angkatan && filters.tahunAjaran) {

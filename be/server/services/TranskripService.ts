@@ -169,6 +169,7 @@ export class TranskripService {
             where: { userId: mahasiswaId },
             include: { prodi: true, angkatanRef: true }
         });
+        console.log(`[TranskripService] Fetching transkrip for ID: ${mahasiswaId}, found:`, mahasiswa ? `Found (Prodi: ${mahasiswa.prodiId}, Semester: ${mahasiswa.semester})` : 'Not Found');
         if (!mahasiswa) throw new Error('MAHASISWA_NOT_FOUND');
 
         // Fetch Active Grade Scale
@@ -194,8 +195,11 @@ export class TranskripService {
         if (semester) where.semester = semester;
         if (tahunAjaran) where.tahunAjaranId = tahunAjaran;
 
+        const krsWhere: any = { mahasiswaId };
+        if (semester) krsWhere.semester = { angka: semester };
+        if (tahunAjaran) krsWhere.tahunAjaranId = tahunAjaran;
 
-        const [nilaiCplListRaw, nilaiTeknikList] = await Promise.all([
+        const [nilaiCplListRaw, nilaiTeknikList, krsCount] = await Promise.all([
             prisma.nilaiCpl.findMany({
                 where,
                 include: { cpl: true, mataKuliah: true, tahunAjaranRef: true }
@@ -216,8 +220,26 @@ export class TranskripService {
                     tahunAjaranRef: true
                 },
                 orderBy: [{ tahunAjaranRef: { nama: 'desc' } }, { semester: 'desc' }]
-            })
+            }),
+            prisma.krs.count({ where: krsWhere })
         ]);
+
+        let effectiveMkCount = krsCount;
+        if (effectiveMkCount === 0) {
+            const mkWhere: any = { isActive: true };
+            if (semester) mkWhere.semester = semester;
+            else if (mahasiswa.semester) mkWhere.semester = mahasiswa.semester;
+
+            if (mahasiswa.angkatanRef?.kurikulumId) {
+                mkWhere.kurikulumId = mahasiswa.angkatanRef.kurikulumId;
+            }
+
+            if (mahasiswa.prodiId) {
+                mkWhere.prodiId = mahasiswa.prodiId;
+            }
+
+            effectiveMkCount = await prisma.mataKuliah.count({ where: mkWhere });
+        }
 
         // Filter out orphan records (missing CPL or MataKuliah) to prevent crashes
         const rawNilaiCplList = nilaiCplListRaw.filter(n => n.cpl && n.mataKuliah);
@@ -272,7 +294,7 @@ export class TranskripService {
         });
 
 
-        for (const cpl of cplsWithNilai) {
+        for (const cpl of allCpls) {
             const nilaiList = cplMap.get(cpl.id) || [];
             let totalWeightedScore = 0;
             let totalWeight = 0;
@@ -342,13 +364,14 @@ export class TranskripService {
         }
 
         const stats = {
-            totalCpl: transkrip.length,
+            totalCpl: transkrip.filter(t => t.mataKuliahList.length > 0).length,
             totalCurriculumCpl: allCpls.length,
-            tercapai: transkrip.filter(t => t.status === 'tercapai').length,
-            belumTercapai: transkrip.filter(t => t.status === 'belum_tercapai').length,
+            totalMataKuliah: effectiveMkCount,
+            tercapai: transkrip.filter(t => t.status === 'tercapai' && t.mataKuliahList.length > 0).length,
+            belumTercapai: transkrip.filter(t => (t.status === 'belum_tercapai' || t.mataKuliahList.length === 0)).length,
             avgScore: Number((transkrip.reduce((s, t) => s + t.nilaiAkhir, 0) / (transkrip.length || 1)).toFixed(2))
         };
-        (stats as any).persentaseTercapai = stats.totalCpl > 0 ? Number(((stats.tercapai / stats.totalCpl) * 100).toFixed(2)) : 0;
+        (stats as any).persentaseTercapai = stats.totalCurriculumCpl > 0 ? Number(((stats.tercapai / stats.totalCurriculumCpl) * 100).toFixed(2)) : 0;
 
         return {
             mahasiswa,
@@ -360,13 +383,15 @@ export class TranskripService {
                 nilai: Number(nt.nilai),
                 teknikPenilaian: nt.teknikPenilaian?.namaTeknik || 'N/A',
                 mataKuliah: {
+                    id: nt.mataKuliahId,
                     kodeMk: nt.mataKuliah?.kodeMk,
                     namaMk: nt.mataKuliah?.namaMk
                 },
                 semester: nt.semester,
 
                 tahunAjaran: nt.tahunAjaranRef?.nama || '-'
-            }))
+            })),
+            profilLulusan: await TranskripService.getTranskripProfil(mahasiswaId)
         };
     }
 

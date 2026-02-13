@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
-import { Printer, FileText, Check, ChevronsUpDown, Briefcase, Eye, Filter, Info, ChevronDown } from "lucide-react";
+import { Printer, FileText, Check, ChevronsUpDown, Briefcase, Eye, Filter, Info, ChevronDown, BookOpen, SlidersHorizontal, Search, RotateCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -54,6 +54,9 @@ const TranskripCPLPage = () => {
 
         isMahasiswa,
         isDosen,
+        semester,
+        setSemester,
+        tahunAjaranList,
         // Filter props
         selectedFakultas,
         setSelectedFakultas,
@@ -157,7 +160,9 @@ const TranskripCPLPage = () => {
         if (titleTag) titleTag.innerText = printTitle;
 
         window.print();
-        document.title = originalTitle;
+        setTimeout(() => {
+            document.title = originalTitle;
+        }, 500);
     };
 
     // Detail View State for Profil Lulusan
@@ -348,7 +353,6 @@ const TranskripCPLPage = () => {
                         <>
 
 
-                            {/* Empty Sate Check */}
 
                             <Tabs defaultValue="cpl" className="w-full" onValueChange={setActiveTab} value={activeTab}>
                                 <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -374,17 +378,17 @@ const TranskripCPLPage = () => {
                                                     const lowest = sorted[sorted.length - 1];
                                                     return (
                                                         <>
-                                                            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-900">
-                                                                <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">CPL Tertinggi</div>
-                                                                <div className="text-3xl font-bold text-green-700 dark:text-green-300">{highest.nilaiAkhir.toFixed(2)}</div>
-                                                                <div className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">{highest.cpl.kodeCpl}</div>
-                                                                <div className="text-[10px] text-green-600/80 dark:text-green-400/80 line-clamp-2 mt-1">{highest.cpl.deskripsi}</div>
+                                                            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-100 dark:border-emerald-800/50 shadow-sm">
+                                                                <div className="text-sm text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-tight mb-1">CPL Tertinggi</div>
+                                                                <div className="text-3xl font-black text-emerald-700 dark:text-emerald-300">{highest.nilaiAkhir.toFixed(2)}</div>
+                                                                <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-bold">{highest.cpl.kodeCpl}</div>
+                                                                <div className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 line-clamp-2 mt-1 italic">"{highest.cpl.deskripsi}"</div>
                                                             </div>
-                                                            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-100 dark:border-red-900">
-                                                                <div className="text-sm text-red-600 dark:text-red-400 font-medium mb-1">CPL Terendah</div>
-                                                                <div className="text-3xl font-bold text-red-700 dark:text-red-300">{lowest.nilaiAkhir.toFixed(2)}</div>
-                                                                <div className="text-xs text-red-600 dark:text-red-400 mt-1 font-medium">{lowest.cpl.kodeCpl}</div>
-                                                                <div className="text-[10px] text-red-600/80 dark:text-red-400/80 line-clamp-2 mt-1">{lowest.cpl.deskripsi}</div>
+                                                            <div className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-lg border border-rose-100 dark:border-rose-800/50 shadow-sm">
+                                                                <div className="text-sm text-rose-600 dark:text-rose-400 font-bold uppercase tracking-tight mb-1">CPL Terendah</div>
+                                                                <div className="text-3xl font-black text-rose-700 dark:text-rose-300">{lowest.nilaiAkhir.toFixed(2)}</div>
+                                                                <div className="text-xs text-rose-600 dark:text-rose-400 mt-1 font-bold">{lowest.cpl.kodeCpl}</div>
+                                                                <div className="text-[10px] text-rose-600/80 dark:text-rose-400/80 line-clamp-2 mt-1 italic">"{lowest.cpl.deskripsi}"</div>
                                                             </div>
                                                         </>
                                                     );
@@ -397,14 +401,29 @@ const TranskripCPLPage = () => {
                                                 <CardDescription>Visualisasi sebaran capaian lulusan</CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <div className="h-[300px] w-full">
+                                                <div className="h-[350px] w-full py-4">
                                                     {validTranskripList.length > 0 ? (
                                                         <ResponsiveContainer width="100%" height="100%">
-                                                            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={validTranskripList.map(i => ({ subject: i.cpl.kodeCpl, A: Number(i.nilaiAkhir) || 0, fullMark: 100 }))}>
-                                                                <PolarGrid stroke="#e5e7eb" />
-                                                                <PolarAngleAxis dataKey="subject" tick={{ fill: 'currentColor', fontSize: 10 }} />
-                                                                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 10 }} />
-                                                                <Radar name="Capaian" dataKey="A" stroke="#2563eb" fill="#3b82f6" fillOpacity={0.5} />
+                                                            <RadarChart cx="50%" cy="50%" outerRadius="75%" style={{ overflow: 'visible' }} margin={{ top: 30, right: 40, bottom: 10, left: 40 }} data={validTranskripList.map(i => ({ subject: i.cpl.kodeCpl, A: Number(i.nilaiAkhir) || 0, fullMark: 100 }))}>
+                                                                <PolarGrid stroke="#cbd5e1" />
+                                                                <PolarAngleAxis
+                                                                    dataKey="subject"
+                                                                    tick={({ payload, x, y, cx, cy, ...rest }: any) => (
+                                                                        <text
+                                                                            {...rest}
+                                                                            x={x + (x - cx) * 0.15}
+                                                                            y={y + (y - cy) * 0.15}
+                                                                            fontSize={10}
+                                                                            fontWeight={600}
+                                                                            textAnchor="middle"
+                                                                            fill="currentColor"
+                                                                        >
+                                                                            {payload.value}
+                                                                        </text>
+                                                                    )}
+                                                                />
+                                                                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 8 }} />
+                                                                <Radar name="Capaian" dataKey="A" stroke="#2563eb" strokeWidth={3} fill="#3b82f6" fillOpacity={0.5} dot={{ r: 3, fill: '#2563eb', stroke: '#fff', strokeWidth: 1.5 }} />
                                                                 <Tooltip
                                                                     contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                                                     itemStyle={{ color: '#2563eb', fontWeight: 600 }}
@@ -498,7 +517,15 @@ const TranskripCPLPage = () => {
                                                 <CardDescription>{selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}</CardDescription>
                                             </div>
                                             <div className="flex gap-2">
-                                                <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-4 w-4 mr-2" />Print</Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={handlePrint}
+                                                    disabled={loading || (activeTab === 'cpl' ? validTranskripList.length === 0 : transkripCpmkList.length === 0)}
+                                                >
+                                                    <Printer className="h-4 w-4 mr-2" />
+                                                    Cetak Transkrip
+                                                </Button>
                                             </div>
                                         </CardHeader>
                                         <CardContent>
@@ -541,12 +568,45 @@ const TranskripCPLPage = () => {
                                 </TabsContent>
 
                                 <TabsContent value="cpmk" className="animate-in fade-in slide-in-from-top-4 duration-500">
+                                    {/* CPMK Exclusive Filter Bar */}
+                                    <div className="flex items-center justify-start gap-2 mb-6 p-2 rounded-xl bg-muted/20 border border-border/40">
+                                        <div className="flex items-center gap-2">
+                                            <Label className="text-sm font-medium">Semester</Label>
+                                            <Select value={semester} onValueChange={setSemester}>
+                                                <SelectTrigger className="w-[180px] h-9">
+                                                    <SelectValue placeholder="Pilih Semester" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">Semua Semester</SelectItem>
+                                                    {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                                                        <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+
+                                            {semester !== (selectedStudent?.profile?.semester?.toString() || "all") && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setSemester(selectedStudent?.profile?.semester?.toString() || "all")}
+                                                    className="h-9 text-sm font-medium"
+                                                >
+                                                    Reset Filter
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
 
                                     {/* CPMK Chart & Analysis */}
                                     <div className="grid gap-4 md:grid-cols-7 mb-6">
                                         <Card className="md:col-span-3">
                                             <CardHeader>
-                                                <CardTitle className="text-sm font-medium">Analisis Mata Kuliah</CardTitle>
+                                                <div className="flex items-center justify-between">
+                                                    <CardTitle className="text-sm font-medium">Analisis Mata Kuliah</CardTitle>
+                                                    <Badge variant="outline" className="text-[9px] font-normal opacity-70">
+                                                        {semester === 'all' ? 'Kumulatif' : `Smt ${semester}`}
+                                                    </Badge>
+                                                </div>
                                                 <CardDescription>Nilai Mata Kuliah Tertinggi & Terendah</CardDescription>
                                             </CardHeader>
                                             <CardContent className="space-y-4">
@@ -579,17 +639,17 @@ const TranskripCPLPage = () => {
 
                                                     return (
                                                         <>
-                                                            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-900">
-                                                                <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-1">Nilai Makul Tertinggi</div>
-                                                                <div className="text-3xl font-bold text-green-700 dark:text-green-300">{highest.average.toFixed(2)}</div>
-                                                                <div className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">{highest.kodeMk}</div>
-                                                                <div className="text-[10px] text-green-600/80 dark:text-green-400/80 line-clamp-2 mt-1">{highest.namaMk}</div>
+                                                            <div className="bg-violet-50 dark:bg-violet-900/20 p-4 rounded-lg border border-violet-100 dark:border-violet-800/50 shadow-sm">
+                                                                <div className="text-sm text-violet-600 dark:text-violet-400 font-bold uppercase tracking-tight mb-1">Nilai Makul Tertinggi</div>
+                                                                <div className="text-3xl font-black text-violet-700 dark:text-violet-300">{highest.average.toFixed(2)}</div>
+                                                                <div className="text-xs text-violet-600 dark:text-violet-400 mt-1 font-bold">{highest.kodeMk}</div>
+                                                                <div className="text-[10px] text-violet-600/80 dark:text-violet-400/80 line-clamp-2 mt-1 italic font-medium">"{highest.namaMk}"</div>
                                                             </div>
-                                                            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-100 dark:border-red-900">
-                                                                <div className="text-sm text-red-600 dark:text-red-400 font-medium mb-1">Nilai Makul Terendah</div>
-                                                                <div className="text-3xl font-bold text-red-700 dark:text-red-300">{lowest.average.toFixed(2)}</div>
-                                                                <div className="text-xs text-red-600 dark:text-red-400 mt-1 font-medium">{lowest.kodeMk}</div>
-                                                                <div className="text-[10px] text-red-600/80 dark:text-red-400/80 line-clamp-2 mt-1">{lowest.namaMk}</div>
+                                                            <div className="bg-slate-50 dark:bg-slate-900/20 p-4 rounded-lg border border-slate-200 dark:border-slate-800/50 shadow-sm">
+                                                                <div className="text-sm text-slate-600 dark:text-slate-400 font-bold uppercase tracking-tight mb-1">Nilai Makul Terendah</div>
+                                                                <div className="text-3xl font-black text-slate-700 dark:text-slate-300">{lowest.average.toFixed(2)}</div>
+                                                                <div className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-bold">{lowest.kodeMk}</div>
+                                                                <div className="text-[10px] text-slate-600/80 dark:text-slate-400/80 line-clamp-2 mt-1 italic font-medium">"{lowest.namaMk}"</div>
                                                             </div>
                                                         </>
                                                     );
@@ -598,11 +658,16 @@ const TranskripCPLPage = () => {
                                         </Card>
                                         <Card className="md:col-span-4">
                                             <CardHeader>
-                                                <CardTitle className="text-sm font-medium">Peta Radar Mata Kuliah</CardTitle>
-                                                <CardDescription>Sebaran rata-rata nilai per Mata Kuliah (Sample 10 Data)</CardDescription>
+                                                <div className="flex items-center justify-between">
+                                                    <CardTitle className="text-sm font-medium">Peta Radar Mata Kuliah</CardTitle>
+                                                    <Badge variant="outline" className="text-[9px] font-normal opacity-70">
+                                                        {semester === 'all' ? 'Kumulatif' : `Smt ${semester}`}
+                                                    </Badge>
+                                                </div>
+                                                <CardDescription>Sebaran rata-rata nilai per Mata Kuliah</CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <div className="h-[300px] w-full">
+                                                <div className="h-[350px] w-full py-4">
                                                     {transkripCpmkList.length > 0 ? (() => {
                                                         const makulMap = new Map();
                                                         transkripCpmkList.forEach(item => {
@@ -625,18 +690,42 @@ const TranskripCPLPage = () => {
                                                                 A: Number((m.totalNilai / m.count).toFixed(2)) || 0,
                                                                 fullMark: 100
                                                             }))
-                                                            .slice(0, 10);
+                                                            .sort((a, b) => b.A - a.A);
 
                                                         return (
                                                             <ResponsiveContainer width="100%" height="100%">
-                                                                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                                                                    <PolarGrid stroke="#e5e7eb" />
-                                                                    <PolarAngleAxis dataKey="subject" tick={{ fill: 'currentColor', fontSize: 10 }} />
-                                                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 10 }} />
-                                                                    <Radar name="Rata-rata Nilai" dataKey="A" stroke="#8b5cf6" fill="#a78bfa" fillOpacity={0.5} />
+                                                                <RadarChart cx="50%" cy="50%" outerRadius="75%" style={{ overflow: 'visible' }} margin={{ top: 30, right: 40, bottom: 10, left: 40 }} data={radarData}>
+                                                                    <PolarGrid stroke="#cbd5e1" />
+                                                                    <PolarAngleAxis
+                                                                        dataKey="subject"
+                                                                        tick={({ payload, x, y, cx, cy, ...rest }: any) => (
+                                                                            <text
+                                                                                {...rest}
+                                                                                x={x + (x - cx) * 0.15}
+                                                                                y={y + (y - cy) * 0.15}
+                                                                                fontSize={10}
+                                                                                fontWeight={600}
+                                                                                textAnchor="middle"
+                                                                                fill="currentColor"
+                                                                            >
+                                                                                {payload.value}
+                                                                            </text>
+                                                                        )}
+                                                                    />
+                                                                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 8 }} />
+                                                                    <Radar
+                                                                        name="Rata-rata Nilai"
+                                                                        dataKey="A"
+                                                                        stroke="#7c3aed"
+                                                                        strokeWidth={3}
+                                                                        fill="#8b5cf6"
+                                                                        fillOpacity={0.4}
+                                                                        dot={{ r: 3, fill: '#7c3aed', stroke: '#fff', strokeWidth: 1.5 }}
+                                                                        activeDot={{ r: 5 }}
+                                                                    />
                                                                     <Tooltip
                                                                         contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                                        itemStyle={{ color: '#8b5cf6', fontWeight: 600 }}
+                                                                        itemStyle={{ color: '#7c3aed', fontWeight: 600 }}
                                                                     />
                                                                 </RadarChart>
                                                             </ResponsiveContainer>
@@ -661,7 +750,16 @@ const TranskripCPLPage = () => {
                                                 <CardDescription>{selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}</CardDescription>
                                             </div>
                                             <div className="flex gap-2">
-                                                <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-4 w-4 mr-2" />Print</Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-9"
+                                                    onClick={handlePrint}
+                                                    disabled={loading || (activeTab === 'cpl' ? validTranskripList.length === 0 : transkripCpmkList.length === 0)}
+                                                >
+                                                    <Printer className="h-4 w-4 mr-2" />
+                                                    Cetak Transkrip
+                                                </Button>
                                             </div>
                                         </CardHeader>
                                         <CardContent>
@@ -674,39 +772,41 @@ const TranskripCPLPage = () => {
                                                     <Table>
                                                         <TableHeader>
                                                             <TableRow>
-                                                                <TableHead>Mata Kuliah</TableHead>
-                                                                <TableHead>Kode CPMK</TableHead>
-                                                                <TableHead className="text-right">Nilai</TableHead>
-                                                                <TableHead className="text-center">Huruf</TableHead>
-                                                                <TableHead className="text-center">Status</TableHead>
+                                                                <TableHead className="w-[50px] text-center">No</TableHead>
+                                                                <TableHead className="w-[300px]">Mata Kuliah</TableHead>
+                                                                <TableHead>Capaian Pembelajaran (CPMK)</TableHead>
+                                                                <TableHead className="w-[80px] text-right">Nilai</TableHead>
+                                                                <TableHead className="w-[80px] text-center">Huruf</TableHead>
+                                                                <TableHead className="w-[120px] text-center">Status</TableHead>
                                                             </TableRow>
                                                         </TableHeader>
                                                         <TableBody>
                                                             {processedCpmkList.map((item, index) => (
-                                                                <TableRow key={index} className={item.isLastInGroup ? "" : "border-b-0"}>
+                                                                <TableRow key={index} className={cn("hover:bg-muted/30 transition-colors", item.isLastInGroup ? "border-b" : "border-b-0")}>
                                                                     {item.rowSpan !== 0 && (
                                                                         <>
-                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center font-medium">
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center text-muted-foreground pt-4">
                                                                                 {item.courseNumber}
                                                                             </TableCell>
-                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r">
-                                                                                <div className="font-medium">{item.mataKuliah.kodeMk} - {item.mataKuliah.namaMk}</div>
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r pt-4">
+                                                                                <div className="font-medium text-slate-900">{item.mataKuliah.kodeMk}</div>
+                                                                                <div className="font-medium mt-1">{item.mataKuliah.namaMk}</div>
                                                                             </TableCell>
                                                                         </>
                                                                     )}
-                                                                    <TableCell className={item.isLastInGroup ? "" : "border-b-0"}>
+                                                                    <TableCell className={cn("py-4", item.isLastInGroup ? "border-r" : "border-r border-b-0")}>
                                                                         <div className="font-medium">{item.kodeCpmk}</div>
-                                                                        <div className="text-xs text-muted-foreground mt-1">{item.deskripsi}</div>
+                                                                        <div className="text-muted-foreground mt-1">{item.deskripsi}</div>
                                                                     </TableCell>
                                                                     {item.rowSpan !== 0 && (
                                                                         <>
-                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-right font-medium">
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-right font-medium pt-4">
                                                                                 {item.courseScore?.toFixed(2)}
                                                                             </TableCell>
-                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center font-bold">
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center font-bold pt-4">
                                                                                 {item.huruf || '-'}
                                                                             </TableCell>
-                                                                            <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center">
+                                                                            <TableCell rowSpan={item.rowSpan} className="align-top text-center pt-4">
                                                                                 {item.status === 'tercapai'
                                                                                     ? <Badge className="bg-green-500">Tercapai</Badge>
                                                                                     : <Badge variant="destructive">Belum Tercapai</Badge>}
@@ -909,6 +1009,7 @@ const TranskripCPLPage = () => {
                             /* Reset positioning */
                             position: static !important;
                             overflow: visible !important;
+                            color: black;
                         }
 
                         table {
@@ -919,7 +1020,7 @@ const TranskripCPLPage = () => {
                         * {
                             -webkit-print-color-adjust: exact !important;
                             print-color-adjust: exact !important;
-                            color: black !important;
+                            color-adjust: exact !important;
                         }
                     }
                     
@@ -946,9 +1047,12 @@ const TranskripCPLPage = () => {
 
                                 <div className="border-b border-black mb-4"></div>
 
-                                <h2 className="text-center text-base font-bold mb-4 uppercase">
-                                    {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CAPAIAN MATA KULIAH SEMENTARA'}
+                                <h2 className="text-center text-base font-bold mb-1 uppercase">
+                                    {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CAPAIAN MATA KULIAH'}
                                 </h2>
+                                <p className="text-center text-[10px] uppercase font-semibold mb-4">
+                                    {activeTab === 'cpmk' && semester !== 'all' ? `SEMESTER ${semester}` : 'SELURUH SEMESTER (AKUMULATIF)'}
+                                </p>
 
                                 {/* Student Info */}
                                 <div className="grid grid-cols-2 gap-x-8 mb-4 text-[11px]">
@@ -1007,30 +1111,31 @@ const TranskripCPLPage = () => {
                                     return (
                                         <div className="mb-4 grid grid-cols-2 gap-3">
                                             {/* Analysis Section */}
-                                            <div className="border border-black p-2">
-                                                <h3 className="text-xs font-bold mb-2">ANALISIS CAPAIAN</h3>
-                                                <div className="text-[9px] mb-2">
-                                                    <div className="bg-green-50 p-2 mb-1.5 border border-green-200">
-                                                        <div className="font-semibold text-green-700">CPL Tertinggi</div>
-                                                        <div className="text-2xl font-bold text-green-800">{highest.nilaiAkhir.toFixed(2)}</div>
-                                                        <div className="font-medium">{highest.cpl.kodeCpl}</div>
-                                                        <div className="text-[8px] italic line-clamp-2">{highest.cpl.deskripsi}</div>
+                                            <div className="border border-black p-3 flex flex-col">
+                                                <h3 className="text-xs font-bold uppercase">ANALISIS CAPAIAN</h3>
+                                                <div className="text-[8px] text-slate-500 italic mb-2">CPL Tertinggi & Terendah</div>
+                                                <div className="flex-1 flex flex-col justify-center space-y-3">
+                                                    <div className="bg-emerald-50 p-3 border border-emerald-300 border-l-4 border-l-emerald-600 rounded shadow-sm">
+                                                        <div className="text-[9px] font-bold text-emerald-800 uppercase tracking-wider mb-1">CPL TERTINGGI</div>
+                                                        <div className="text-2xl font-black text-emerald-900 leading-tight">{highest.nilaiAkhir.toFixed(2)}</div>
+                                                        <div className="text-[10px] font-bold text-emerald-700 mb-1">{highest.cpl.kodeCpl}</div>
+                                                        <div className="text-[8px] text-emerald-800/80 leading-snug font-medium italic line-clamp-2">"{highest.cpl.deskripsi}"</div>
                                                     </div>
-                                                    <div className="bg-red-50 p-2 border border-red-200">
-                                                        <div className="font-semibold text-red-700">CPL Terendah</div>
-                                                        <div className="text-2xl font-bold text-red-800">{lowest.nilaiAkhir.toFixed(2)}</div>
-                                                        <div className="font-medium">{lowest.cpl.kodeCpl}</div>
-                                                        <div className="text-[8px] italic line-clamp-2">{lowest.cpl.deskripsi}</div>
+                                                    <div className="bg-rose-50 p-3 border border-rose-300 border-l-4 border-l-rose-600 rounded shadow-sm">
+                                                        <div className="text-[9px] font-bold text-rose-800 uppercase tracking-wider mb-1">CPL TERENDAH</div>
+                                                        <div className="text-2xl font-black text-rose-900 leading-tight">{lowest.nilaiAkhir.toFixed(2)}</div>
+                                                        <div className="text-[10px] font-bold text-rose-700 mb-1">{lowest.cpl.kodeCpl}</div>
+                                                        <div className="text-[8px] text-rose-800/80 leading-snug font-medium italic line-clamp-2">"{lowest.cpl.deskripsi}"</div>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Radar Chart Section */}
-                                            <div className="border border-black p-2">
-                                                <h3 className="text-xs font-bold mb-2">PETA RADAR CPL</h3>
-                                                <div className="text-[8px] text-center mb-1">Visualisasi Sebaran Capaian Lulusan</div>
-                                                <div className="relative" style={{ height: '140px' }}>
-                                                    <svg viewBox="0 0 200 140" className="w-full h-full">
+                                            <div className="border border-black p-3 flex flex-col">
+                                                <h3 className="text-xs font-bold uppercase">PETA RADAR CPL</h3>
+                                                <div className="text-[8px] text-slate-500 italic mb-2">Visualisasi Sebaran Capaian Lulusan</div>
+                                                <div className="relative flex-1 flex justify-center items-center" style={{ minHeight: '170px' }}>
+                                                    <svg viewBox="0 0 200 170" className="w-full h-full max-h-[170px]">
                                                         {/* Create radar chart visualization */}
                                                         {(() => {
                                                             const data = validTranskripList.map(i => ({
@@ -1039,8 +1144,9 @@ const TranskripCPLPage = () => {
                                                             }));
                                                             const numPoints = data.length;
                                                             const centerX = 100;
-                                                            const centerY = 50; // Center of 0-100 scale
-                                                            const radius = 50;
+                                                            const centerY = 85; // Center of 170 height
+                                                            const radius = 55;
+                                                            const labelRadius = 68;
 
                                                             // Calculate points for radar
                                                             const points = data.map((item, idx) => {
@@ -1052,8 +1158,8 @@ const TranskripCPLPage = () => {
                                                                     maxX: centerX + Math.cos(angle) * radius,
                                                                     maxY: centerY + Math.sin(angle) * radius,
                                                                     label: item.label,
-                                                                    labelX: centerX + Math.cos(angle) * (radius + 15),
-                                                                    labelY: centerY + Math.sin(angle) * (radius + 15)
+                                                                    labelX: centerX + Math.cos(angle) * labelRadius,
+                                                                    labelY: centerY + Math.sin(angle) * labelRadius
                                                                 };
                                                             });
 
@@ -1061,39 +1167,69 @@ const TranskripCPLPage = () => {
 
                                                             return (
                                                                 <>
-                                                                    {/* Grid circles */}
-                                                                    <circle cx={centerX} cy={centerY} r={radius * 0.25} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
-                                                                    <circle cx={centerX} cy={centerY} r={radius * 0.5} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
-                                                                    <circle cx={centerX} cy={centerY} r={radius * 0.75} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
-                                                                    <circle cx={centerX} cy={centerY} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+                                                                    {/* Grid polygons with better colors */}
+                                                                    {[0.25, 0.5, 0.75, 1].map((scale) => {
+                                                                        const gridPoints = points.map(p => {
+                                                                            const angle = (Math.PI * 2 * points.indexOf(p)) / numPoints - Math.PI / 2;
+                                                                            return `${centerX + Math.cos(angle) * (radius * scale)},${centerY + Math.sin(angle) * (radius * scale)}`;
+                                                                        }).join(' ');
+                                                                        return (
+                                                                            <polygon
+                                                                                key={scale}
+                                                                                points={gridPoints}
+                                                                                fill="none"
+                                                                                stroke={scale === 1 ? "#cbd5e1" : "#e2e8f0"}
+                                                                                strokeWidth={scale === 1 ? "1" : "0.5"}
+                                                                            />
+                                                                        );
+                                                                    })}
 
-                                                                    {/* Value indicators on circles */}
-                                                                    <text x={centerX + radius * 0.25 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">25</text>
-                                                                    <text x={centerX + radius * 0.5 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">50</text>
-                                                                    <text x={centerX + radius * 0.75 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">75</text>
-                                                                    <text x={centerX + radius + 2} y={centerY - 1} fontSize="5" fill="#6b7280" fontWeight="bold">100</text>
-                                                                    <text x={centerX + 2} y={centerY - 1} fontSize="5" fill="#6b7280">0</text>
-
-                                                                    {/* Grid lines */}
+                                                                    {/* Radar Category Lines */}
                                                                     {points.map((p, idx) => (
-                                                                        <line key={idx} x1={centerX} y1={centerY} x2={p.maxX} y2={p.maxY} stroke="#e5e7eb" strokeWidth="0.5" />
+                                                                        <line key={idx} x1={centerX} y1={centerY} x2={p.maxX} y2={p.maxY} stroke="#cbd5e1" strokeWidth="0.5" />
                                                                     ))}
 
-                                                                    {/* Data polygon */}
-                                                                    <path d={pathData} fill="#3b82f6" fillOpacity="0.4" stroke="#2563eb" strokeWidth="1.5" />
+                                                                    {/* Data polygon - Blue theme to match screenshot */}
+                                                                    <path
+                                                                        d={pathData}
+                                                                        fill="#3b82f6"
+                                                                        fillOpacity="0.5"
+                                                                        stroke="#2563eb"
+                                                                        strokeWidth="1.5"
+                                                                        strokeLinejoin="round"
+                                                                    />
 
-                                                                    {/* Labels */}
+                                                                    {/* Points with little circles */}
+                                                                    {points.map((p, idx) => (
+                                                                        <circle key={idx} cx={p.x} cy={p.y} r="2" fill="#2563eb" stroke="white" strokeWidth="0.5" />
+                                                                    ))}
+
+                                                                    {/* Labels with better placement */}
                                                                     {points.map((p, idx) => (
                                                                         <text
                                                                             key={idx}
                                                                             x={p.labelX}
                                                                             y={p.labelY}
-                                                                            fontSize="6"
+                                                                            fontSize="7"
                                                                             textAnchor="middle"
                                                                             alignmentBaseline="middle"
                                                                             fontWeight="bold"
+                                                                            fill="#1e293b"
                                                                         >
                                                                             {p.label}
+                                                                        </text>
+                                                                    ))}
+
+                                                                    {/* Scale markers */}
+                                                                    {[25, 50, 75, 100].map(val => (
+                                                                        <text
+                                                                            key={val}
+                                                                            x={centerX + 2}
+                                                                            y={centerY - (radius * val / 100) - 2}
+                                                                            fontSize="5"
+                                                                            fill="#94a3b8"
+                                                                        >
+                                                                            {val}
                                                                         </text>
                                                                     ))}
                                                                 </>
@@ -1142,37 +1278,38 @@ const TranskripCPLPage = () => {
                                     return (
                                         <div className="mb-4 grid grid-cols-2 gap-3">
                                             {/* Analysis Section */}
-                                            <div className="border border-black p-2">
-                                                <h3 className="text-xs font-bold mb-2">ANALISIS MATA KULIAH</h3>
-                                                <div className="text-[9px] mb-2">
-                                                    <div className="bg-green-50 p-2 mb-1.5 border border-green-200">
-                                                        <div className="font-semibold text-green-700">Nilai Makul Tertinggi</div>
-                                                        <div className="text-2xl font-bold text-green-800">{highest.average.toFixed(2)}</div>
-                                                        <div className="font-medium">{highest.kodeMk}</div>
-                                                        <div className="text-[8px] italic line-clamp-2">{highest.namaMk}</div>
+                                            <div className="border border-black p-3 flex flex-col">
+                                                <h3 className="text-xs font-bold uppercase">ANALISIS MATA KULIAH</h3>
+                                                <div className="text-[8px] text-slate-500 italic mb-2">Nilai Mata Kuliah Tertinggi & Terendah</div>
+                                                <div className="flex-1 flex flex-col justify-center space-y-3">
+                                                    <div className="bg-violet-50 p-3 border border-violet-300 border-l-4 border-l-violet-600 rounded shadow-sm">
+                                                        <div className="text-[9px] font-bold text-violet-800 uppercase tracking-wider mb-1">Nilai Makul Tertinggi</div>
+                                                        <div className="text-2xl font-black text-violet-900 leading-tight">{highest.average.toFixed(2)}</div>
+                                                        <div className="text-[10px] font-bold text-violet-700 mb-1">{highest.kodeMk}</div>
+                                                        <div className="text-[8px] text-violet-800/80 leading-snug font-medium italic line-clamp-2">"{highest.namaMk}"</div>
                                                     </div>
-                                                    <div className="bg-red-50 p-2 border border-red-200">
-                                                        <div className="font-semibold text-red-700">Nilai Makul Terendah</div>
-                                                        <div className="text-2xl font-bold text-red-800">{lowest.average.toFixed(2)}</div>
-                                                        <div className="font-medium">{lowest.kodeMk}</div>
-                                                        <div className="text-[8px] italic line-clamp-2">{lowest.namaMk}</div>
+                                                    <div className="bg-slate-50 p-3 border border-slate-300 border-l-4 border-l-slate-600 rounded shadow-sm">
+                                                        <div className="text-[9px] font-bold text-slate-800 uppercase tracking-wider mb-1">Nilai Makul Terendah</div>
+                                                        <div className="text-2xl font-black text-slate-900 leading-tight">{lowest.average.toFixed(2)}</div>
+                                                        <div className="text-[10px] font-bold text-slate-700 mb-1">{lowest.kodeMk}</div>
+                                                        <div className="text-[8px] text-slate-800/80 leading-snug font-medium italic line-clamp-2">"{lowest.namaMk}"</div>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Radar Chart Section */}
-                                            <div className="border border-black p-2">
-                                                <h3 className="text-xs font-bold mb-2">PETA RADAR MATA KULIAH</h3>
-                                                <div className="text-[8px] text-center mb-1">Sebaran Rata-rata Nilai per MK (Sample 10 Data)</div>
-                                                <div className="relative" style={{ height: '140px' }}>
-                                                    <svg viewBox="0 0 200 140" className="w-full h-full">
+                                            <div className="border border-black p-3 flex flex-col">
+                                                <h3 className="text-xs font-bold uppercase">PETA RADAR MATA KULIAH</h3>
+                                                <div className="text-[8px] text-slate-500 italic mb-2">Sebaran Rata-rata Nilai per MK (Sample 10 Data)</div>
+                                                <div className="relative flex-1 flex justify-center items-center" style={{ minHeight: '170px' }}>
+                                                    <svg viewBox="0 0 200 170" className="w-full h-full max-h-[170px]">
                                                         {(() => {
                                                             const numPoints = radarData.length;
                                                             const centerX = 100;
-                                                            const centerY = 50; // Center of 0-100 scale
-                                                            const radius = 50;
+                                                            const centerY = 85; // Center of 170 height
+                                                            const radius = 55;
+                                                            const labelRadius = 68;
 
-                                                            // Calculate points for radar
                                                             const points = radarData.map((item, idx) => {
                                                                 const angle = (Math.PI * 2 * idx) / numPoints - Math.PI / 2;
                                                                 const value = (item.value / 100) * radius;
@@ -1182,8 +1319,8 @@ const TranskripCPLPage = () => {
                                                                     maxX: centerX + Math.cos(angle) * radius,
                                                                     maxY: centerY + Math.sin(angle) * radius,
                                                                     label: item.label,
-                                                                    labelX: centerX + Math.cos(angle) * (radius + 15),
-                                                                    labelY: centerY + Math.sin(angle) * (radius + 15)
+                                                                    labelX: centerX + Math.cos(angle) * labelRadius,
+                                                                    labelY: centerY + Math.sin(angle) * labelRadius
                                                                 };
                                                             });
 
@@ -1191,26 +1328,35 @@ const TranskripCPLPage = () => {
 
                                                             return (
                                                                 <>
-                                                                    {/* Grid circles */}
-                                                                    <circle cx={centerX} cy={centerY} r={radius * 0.25} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
-                                                                    <circle cx={centerX} cy={centerY} r={radius * 0.5} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
-                                                                    <circle cx={centerX} cy={centerY} r={radius * 0.75} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
-                                                                    <circle cx={centerX} cy={centerY} r={radius} fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
-
-                                                                    {/* Value indicators on circles */}
-                                                                    <text x={centerX + radius * 0.25 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">25</text>
-                                                                    <text x={centerX + radius * 0.5 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">50</text>
-                                                                    <text x={centerX + radius * 0.75 + 2} y={centerY - 1} fontSize="5" fill="#6b7280">75</text>
-                                                                    <text x={centerX + radius + 2} y={centerY - 1} fontSize="5" fill="#6b7280" fontWeight="bold">100</text>
-                                                                    <text x={centerX + 2} y={centerY - 1} fontSize="5" fill="#6b7280">0</text>
+                                                                    {/* Grid polygons */}
+                                                                    {[0.25, 0.5, 0.75, 1].map((scale) => {
+                                                                        const gridPoints = points.map(p => {
+                                                                            const angle = (Math.PI * 2 * points.indexOf(p)) / numPoints - Math.PI / 2;
+                                                                            return `${centerX + Math.cos(angle) * (radius * scale)},${centerY + Math.sin(angle) * (radius * scale)}`;
+                                                                        }).join(' ');
+                                                                        return (
+                                                                            <polygon
+                                                                                key={scale}
+                                                                                points={gridPoints}
+                                                                                fill="none"
+                                                                                stroke="#e2e8f0"
+                                                                                strokeWidth="0.5"
+                                                                            />
+                                                                        );
+                                                                    })}
 
                                                                     {/* Grid lines */}
                                                                     {points.map((p, idx) => (
-                                                                        <line key={idx} x1={centerX} y1={centerY} x2={p.maxX} y2={p.maxY} stroke="#e5e7eb" strokeWidth="0.5" />
+                                                                        <line key={idx} x1={centerX} y1={centerY} x2={p.maxX} y2={p.maxY} stroke="#e2e8f0" strokeWidth="0.5" />
                                                                     ))}
 
                                                                     {/* Data polygon */}
                                                                     <path d={pathData} fill="#8b5cf6" fillOpacity="0.4" stroke="#7c3aed" strokeWidth="1.5" />
+
+                                                                    {/* Points */}
+                                                                    {points.map((p, idx) => (
+                                                                        <circle key={idx} cx={p.x} cy={p.y} r="1.5" fill="#7c3aed" stroke="white" strokeWidth="0.5" />
+                                                                    ))}
 
                                                                     {/* Labels */}
                                                                     {points.map((p, idx) => (
@@ -1222,8 +1368,22 @@ const TranskripCPLPage = () => {
                                                                             textAnchor="middle"
                                                                             alignmentBaseline="middle"
                                                                             fontWeight="bold"
+                                                                            fill="#1e293b"
                                                                         >
                                                                             {p.label}
+                                                                        </text>
+                                                                    ))}
+
+                                                                    {/* Scale markers */}
+                                                                    {[25, 50, 75, 100].map(val => (
+                                                                        <text
+                                                                            key={val}
+                                                                            x={centerX + 2}
+                                                                            y={centerY - (radius * val / 100) - 2}
+                                                                            fontSize="5"
+                                                                            fill="#94a3b8"
+                                                                        >
+                                                                            {val}
                                                                         </text>
                                                                     ))}
                                                                 </>
@@ -1242,7 +1402,7 @@ const TranskripCPLPage = () => {
                                         <thead>
                                             <tr className="bg-gray-100">
                                                 <th className="border border-black p-1 w-8 text-center">NO</th>
-                                                <th className="border border-black p-1 text-center w-20">{activeTab === 'cpl' ? 'KODE CPL' : 'MATA KULIAH'}</th>
+                                                <th className="border border-black p-1 text-center" style={{ width: activeTab === 'cpl' ? '80px' : '140px' }}>{activeTab === 'cpl' ? 'KODE CPL' : 'MATA KULIAH'}</th>
                                                 <th className="border border-black p-1 text-left">{activeTab === 'cpl' ? 'CAPAIAN PEMBELAJARAN' : 'CPMK'}</th>
                                                 <th className="border border-black p-1 w-12 text-center">NILAI</th>
                                                 <th className="border border-black p-1 w-10 text-center">HURUF</th>
@@ -1282,9 +1442,9 @@ const TranskripCPLPage = () => {
                                                                 <div className="font-medium">{item.mataKuliah.kodeMk} - {item.mataKuliah.namaMk}</div>
                                                             </td>
                                                         )}
-                                                        <td className={`border-x border-black p-1 ${item.isLastInGroup ? 'border-b' : ''}`}>
+                                                        <td className={`border border-black p-1`}>
                                                             <div className="font-bold">{item.kodeCpmk}</div>
-                                                            <div className="text-[9px] italic">{item.deskripsi}</div>
+                                                            <div className="text-[9px] italic leading-tight">{item.deskripsi}</div>
                                                         </td>
                                                         {item.rowSpan !== 0 && (
                                                             <>
@@ -1311,8 +1471,8 @@ const TranskripCPLPage = () => {
                                     <div className="border border-black p-2 w-56">
                                         <div className="font-bold mb-1 text-[10px]">KETERANGAN</div>
                                         <div className="grid grid-cols-[1fr_auto] gap-2 text-[10px]">
-                                            <div>Rata-rata Nilai</div>
-                                            <div className="font-bold">: {avgScore.toFixed(2)}</div>
+                                            <div>Rata-rata Nilai {activeTab === 'cpl' ? 'CPL' : 'Mata Kuliah'}</div>
+                                            <div className="font-bold">: {activeTab === 'cpl' ? avgScore.toFixed(2) : (transkripCpmkList.reduce((a, b) => a + b.nilai, 0) / (transkripCpmkList.length || 1)).toFixed(2)}</div>
                                             <div>Total {activeTab === 'cpl' ? 'CPL' : 'CPMK'} Tercapai</div>
                                             <div className="font-bold">: {activeTab === 'cpl' ? completedCPL : transkripCpmkList.filter(i => i.status === 'tercapai').length} / {activeTab === 'cpl' ? (totalCurriculumCpl || validTranskripList.length) : transkripCpmkList.length}</div>
                                         </div>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { api, fetchSemesters } from "@/lib/api";
+import { useSearchParams } from "react-router-dom";
+import { useDebounce } from "@/hooks/useDebounce";
 // Type import from backend schemas for payload validation
 import type { MataKuliah as MataKuliahSchema } from "@schemas/index";
 
@@ -51,12 +53,19 @@ const initialForm: MataKuliahFormData = {
 const mkCache: Record<string, { data: any[], meta: any }> = {};
 
 export const useMataKuliah = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [mkList, setMkList] = useState<MataKuliah[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
     // Pagination State
-    const [page, setPage] = useState(1);
+    const page = parseInt(searchParams.get("page") || "1");
+    const setPage = (p: number) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set("page", p.toString());
+        setSearchParams(newParams);
+    };
+
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const limit = 10;
@@ -68,18 +77,81 @@ export const useMataKuliah = () => {
     const [fakultasList, setFakultasList] = useState<any[]>([]);
     const [semesterList, setSemesterList] = useState<any[]>([]);
 
-    // Filter State
-    const [searchTerm, setSearchTerm] = useState("");
-    const [semesterFilter, setSemesterFilter] = useState<string>("");
-    const [fakultasFilter, setFakultasFilter] = useState<string>("");
-    const [prodiFilter, setProdiFilter] = useState<string>("");
-    const [kurikulumFilter, setKurikulumFilter] = useState<string>("");
+    // Filter State derived from URL
+    const searchTerm = searchParams.get("q") || "";
+    // Local state for immediate input feedback before debounce updates URL
+    const [inputValue, setInputValue] = useState(searchTerm);
+    const debouncedSearchTerm = useDebounce(inputValue, 500);
+
+    // Sync input value if URL changes externally (e.g. back button)
+    useEffect(() => {
+        setInputValue(searchTerm);
+    }, [searchTerm]);
+
+    // Update URL when debounced value changes
+    useEffect(() => {
+        const currentQ = searchParams.get("q") || "";
+        if (debouncedSearchTerm !== currentQ) {
+            const newParams = new URLSearchParams(searchParams);
+            if (debouncedSearchTerm) {
+                newParams.set("q", debouncedSearchTerm);
+            } else {
+                newParams.delete("q");
+            }
+            newParams.set("page", "1"); // Reset page on search
+            setSearchParams(newParams);
+        }
+    }, [debouncedSearchTerm, searchParams, setSearchParams]);
+
+    const semesterFilter = searchParams.get("semester") || "";
+    const fakultasFilter = searchParams.get("fakultasId") || "";
+    const prodiFilter = searchParams.get("prodiId") || "";
+    const kurikulumFilter = searchParams.get("kurikulumId") || "";
+
+    // Setters that update URL
+    const setSearchTermState = (val: string) => {
+        setInputValue(val);
+    };
+
+    const setSemesterFilter = (val: string) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (val && val !== 'all') newParams.set("semester", val);
+        else newParams.delete("semester");
+        newParams.set("page", "1");
+        setSearchParams(newParams);
+    };
+
+    const setFakultasFilter = (val: string) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (val && val !== 'all') newParams.set("fakultasId", val);
+        else newParams.delete("fakultasId");
+        newParams.set("page", "1");
+        setSearchParams(newParams);
+    };
+
+    const setProdiFilter = (val: string) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (val && val !== 'all') newParams.set("prodiId", val);
+        else newParams.delete("prodiId");
+        newParams.set("page", "1");
+        setSearchParams(newParams);
+    };
+
+    const setKurikulumFilter = (val: string) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (val && val !== 'all') newParams.set("kurikulumId", val);
+        else newParams.delete("kurikulumId");
+        newParams.set("page", "1");
+        setSearchParams(newParams);
+    };
+
+    const resetFilters = () => {
+        setSearchParams(new URLSearchParams());
+        setInputValue("");
+    };
 
     useEffect(() => {
         fetchMataKuliah();
-        // Master data only needs to be fetched once or when dependencies change? 
-        // We'll leave it to separate call or inside effect if strictly needed.
-        // But preventing repeated fetches for master data is good.
     }, [page, searchTerm, semesterFilter, fakultasFilter, prodiFilter, kurikulumFilter]);
 
     useEffect(() => {
@@ -97,15 +169,7 @@ export const useMataKuliah = () => {
             ]);
 
             if (prodiRes.data) setProdiList(prodiRes.data);
-            if (kurikulumRes.data) {
-                setKurikulumList(kurikulumRes.data);
-                // Set default filter to active curriculum if available (and currently 'all')
-                // Auto-selection removed to keep filter state neutral (gray button) by default
-                // const activeKurikulum = kurikulumRes.data.find((k: any) => k.isActive);
-                // if (activeKurikulum && kurikulumFilter === 'all') {
-                //     setKurikulumFilter(activeKurikulum.id);
-                // }
-            }
+            if (kurikulumRes.data) setKurikulumList(kurikulumRes.data);
             if (jenisMkRes.data) setJenisMkList(jenisMkRes.data);
             if (fakultasRes.data) setFakultasList(fakultasRes.data);
             if (semesterRes.data) setSemesterList(semesterRes.data);
@@ -133,10 +197,10 @@ export const useMataKuliah = () => {
                 limit,
                 q: searchTerm
             };
-            if (semesterFilter !== 'all') params.semester = semesterFilter;
-            if (fakultasFilter !== 'all') params.fakultasId = fakultasFilter;
-            if (prodiFilter !== 'all') params.prodiId = prodiFilter;
-            if (kurikulumFilter !== 'all') params.kurikulumId = kurikulumFilter;
+            if (semesterFilter && semesterFilter !== 'all') params.semester = semesterFilter;
+            if (fakultasFilter && fakultasFilter !== 'all') params.fakultasId = fakultasFilter;
+            if (prodiFilter && prodiFilter !== 'all') params.prodiId = prodiFilter;
+            if (kurikulumFilter && kurikulumFilter !== 'all') params.kurikulumId = kurikulumFilter;
 
             const result = await api.get('/mata-kuliah', { params });
             const data = result.data || [];
@@ -178,7 +242,6 @@ export const useMataKuliah = () => {
 
             await api.post('/mata-kuliah', payload);
             toast.success("Mata kuliah berhasil ditambahkan");
-            toast.success("Mata kuliah berhasil ditambahkan");
             // Invalidate cache
             Object.keys(mkCache).forEach(k => delete mkCache[k]);
             await fetchMataKuliah(true);
@@ -213,7 +276,6 @@ export const useMataKuliah = () => {
 
             await api.put(`/mata-kuliah/${id}`, payload);
             toast.success("Mata kuliah berhasil diupdate");
-            toast.success("Mata kuliah berhasil diupdate");
             Object.keys(mkCache).forEach(k => delete mkCache[k]);
             await fetchMataKuliah(true);
             return true;
@@ -241,22 +303,6 @@ export const useMataKuliah = () => {
         }
     };
 
-    // Wrappers for pagination reset
-    const handleSetSearchTerm = (val: string) => { searchTerm !== val && setPage(1); setSearchTerm(val); };
-    const handleSetSemesterFilter = (val: string) => { semesterFilter !== val && setPage(1); setSemesterFilter(val); };
-    const handleSetFakultasFilter = (val: string) => { fakultasFilter !== val && setPage(1); setFakultasFilter(val); };
-    const handleSetProdiFilter = (val: string) => { prodiFilter !== val && setPage(1); setProdiFilter(val); };
-    const handleSetKurikulumFilter = (val: string) => { kurikulumFilter !== val && setPage(1); setKurikulumFilter(val); };
-
-    const resetFilters = () => {
-        setSemesterFilter("");
-        setFakultasFilter("");
-        setProdiFilter("");
-        setKurikulumFilter("");
-        setSearchTerm("");
-        setPage(1);
-    };
-
     return {
         // Data
         mkList,
@@ -273,7 +319,7 @@ export const useMataKuliah = () => {
 
         // Standardized Filters Object
         filters: {
-            searchTerm,
+            searchTerm: inputValue, // Use local input value for immediate feedback
             semesterFilter,
             fakultasFilter,
             prodiFilter,
@@ -281,11 +327,11 @@ export const useMataKuliah = () => {
         },
 
         // Individual Setters (Wrapped)
-        setSearchTerm: handleSetSearchTerm,
-        setSemesterFilter: handleSetSemesterFilter,
-        setFakultasFilter: handleSetFakultasFilter,
-        setProdiFilter: handleSetProdiFilter,
-        setKurikulumFilter: handleSetKurikulumFilter,
+        setSearchTerm: setSearchTermState,
+        setSemesterFilter,
+        setFakultasFilter,
+        setProdiFilter,
+        setKurikulumFilter,
         resetFilters,
 
         // Actions

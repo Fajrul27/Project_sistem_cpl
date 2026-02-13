@@ -27,6 +27,8 @@ type SortOrder = 'asc' | 'desc';
 export const DosenAnalysisTable = ({ data }: DosenAnalysisTableProps) => {
     const [sortField, setSortField] = useState<SortField>('progressInput');
     const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 15;
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {
@@ -59,6 +61,10 @@ export const DosenAnalysisTable = ({ data }: DosenAnalysisTableProps) => {
 
         return sortOrder === 'asc' ? comparison : -comparison;
     });
+
+    const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
 
     const SortIcon = ({ field }: { field: SortField }) => {
         if (sortField !== field) {
@@ -117,8 +123,8 @@ export const DosenAnalysisTable = ({ data }: DosenAnalysisTableProps) => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {sortedData.length > 0 ? (
-                            sortedData.map((dosen) => (
+                        {paginatedData.length > 0 ? (
+                            paginatedData.map((dosen) => (
                                 <TableRow key={dosen.id}>
                                     <TableCell className="font-medium">{dosen.nama}</TableCell>
                                     <TableCell className="text-center">{dosen.totalKelas}</TableCell>
@@ -139,6 +145,48 @@ export const DosenAnalysisTable = ({ data }: DosenAnalysisTableProps) => {
                         )}
                     </TableBody>
                 </Table>
+
+                {sortedData.length > itemsPerPage && (
+                    <div className="mt-4 flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                            Halaman {currentPage} dari {totalPages}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <button
+                                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                                onClick={() => setCurrentPage(1)}
+                                disabled={currentPage === 1}
+                            >
+                                <span className="sr-only">Go to first page</span>
+                                «
+                            </button>
+                            <button
+                                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                            >
+                                <span className="sr-only">Go to previous page</span>
+                                ‹
+                            </button>
+                            <button
+                                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                            >
+                                <span className="sr-only">Go to next page</span>
+                                ›
+                            </button>
+                            <button
+                                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                                onClick={() => setCurrentPage(totalPages)}
+                                disabled={currentPage === totalPages}
+                            >
+                                <span className="sr-only">Go to last page</span>
+                                »
+                            </button>
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

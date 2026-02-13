@@ -30,7 +30,7 @@ const MahasiswaPage = () => {
     studentProgress,
     selectedStudent,
     progressLoading,
-    currentUser,
+    user: currentUser,
     setSearchTerm,
     setSemesterFilter,
     setProdiFilter,
@@ -160,7 +160,7 @@ const MahasiswaPage = () => {
     filters.fakultasFilter !== "all";
 
   // Const for checks
-  const isDosen = currentUser?.role === 'dosen';
+  const isDosen = role === 'dosen';
 
   return (
     <DashboardPage
@@ -213,8 +213,8 @@ const MahasiswaPage = () => {
                 </div>
               )}
 
-              {/* Prodi Filter - Hide for Dosen if they are restricted */}
-              {!isDosen && (
+              {/* Prodi Filter */}
+              {true && (
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Program Studi</Label>
                   <Select value={filters.prodiFilter} onValueChange={setProdiFilter}>
@@ -280,9 +280,10 @@ const MahasiswaPage = () => {
         {(() => {
           const isFilterComplete = (() => {
             // Logic:
-            // 1. Should Semester be required? Yes.
-            // 2. Should Prodi be required? Yes, if not Dosen.
-            // 3. Should Fakultas be required? Yes, if Admin. (can view all fakultas)
+            // 1. Dosen: Always show default data (derived from taught courses)
+            // 2. Others: Require specific filters
+
+            if (isDosen) return true;
 
             let complete = !!filters.semesterFilter;
 
@@ -346,22 +347,20 @@ const MahasiswaPage = () => {
                         <TableHead>NIM</TableHead>
                         <TableHead>Nama Mahasiswa</TableHead>
                         <TableHead>Program Studi</TableHead>
-                        <TableHead>Sem</TableHead>
-                        <TableHead className="text-center">Total SKS</TableHead>
-                        <TableHead className="text-right">Progress CPL</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
+                        <TableHead className="text-center">Sem</TableHead>
+                        <TableHead className="text-right">Aksi</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {loading ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="h-24 text-center">
+                          <TableCell colSpan={6} className="h-24 text-center">
                             <LoadingScreen fullScreen={false} message="Memuat data mahasiswa..." />
                           </TableCell>
                         </TableRow>
                       ) : profiles.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                             {filters.searchTerm ? "Tidak ada mahasiswa ditemukan" : "Belum ada data mahasiswa"}
                           </TableCell>
                         </TableRow>
@@ -382,19 +381,15 @@ const MahasiswaPage = () => {
                                 <span className="text-xs text-muted-foreground">{student.fakultasName}</span>
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-center">
                               <Badge variant="secondary" className={getSemesterBadgeColor(student.semester)}>
                                 {student.semester || "?"}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-center">-</TableCell>
                             <TableCell className="text-right">
                               <Button variant="ghost" size="sm" onClick={() => handleShowProgress(student)}>
                                 Lihat Progress
                               </Button>
-                            </TableCell>
-                            <TableCell>
-                              {/* Actions */}
                             </TableCell>
                           </TableRow>
                         ))

@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, BookOpen, Users, BarChart3, TrendingUp, ChevronDown } from "lucide-react";
+import { GraduationCap, BookOpen, Users, BarChart3, TrendingUp, ChevronDown, Star, History, Trophy } from "lucide-react";
 import { toast } from "sonner";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,12 +29,15 @@ import { LoadingScreen } from "@/components/common/LoadingScreen";
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const { role, loading: roleLoading } = useUserRole();
+  const { role, profile: contextProfile, userId, loading: roleLoading } = useUserRole();
   const { can } = usePermission();
 
   const canEdit = can('edit', 'dashboard');
   const canVerify = can('verify', 'dashboard');
   const isStaff = canEdit || canVerify;
+
+  // Handle case where profile might be nested or direct
+  const profileData = contextProfile?.userId ? contextProfile : (contextProfile || user?.profile || user);
 
   // Filter State
   const [activeFilters, setActiveFilters] = useState<any>({});
@@ -51,12 +54,17 @@ const Dashboard = () => {
     trendData,
     distributionData,
     performanceData,
+    recentAssessments,
+    studentInfo,
     alerts,
     insights,
     completeness,
     dosenAnalysis,
-    studentEvaluation
-  } = useDashboardStats(role, user, activeFilters);
+    studentEvaluation,
+    profilLulusanData
+  } = useDashboardStats(role, profileData, activeFilters);
+
+  const displaySemester = studentInfo?.profile?.semester || profileData?.semester || contextProfile?.semester || user?.profile?.semester || '-';
 
   // Derived sorted data
   const sortedChartData = [...chartData].sort((a, b) => {
@@ -73,7 +81,9 @@ const Dashboard = () => {
       if (event === "SIGNED_OUT") {
         navigate("/auth");
       }
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setUser(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -116,7 +126,7 @@ const Dashboard = () => {
     {
       title: role === 'mahasiswa' ? "Status" : "Mahasiswa",
       value: role === 'mahasiswa' ? "Aktif" : studentStats.total.toString(),
-      description: role === 'mahasiswa' ? "Semester 5" : "Mahasiswa terdaftar",
+      description: role === 'mahasiswa' ? `Semester ${displaySemester}` : "Mahasiswa terdaftar",
       icon: Users,
       gradient: "bg-gradient-primary",
       resource: 'mahasiswa'
@@ -306,59 +316,123 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow duration-300">
-          <CardHeader>
-            <CardTitle>{role === 'mahasiswa' ? "Distribusi Nilai" : "Tren Semester"}</CardTitle>
-            <CardDescription>{role === 'mahasiswa' ? "Sebaran nilai CPL Anda" : "Perkembangan nilai rata-rata"}</CardDescription>
+        <Card className="hover:shadow-lg transition-all duration-500 overflow-hidden border-none shadow-xl bg-card/60 backdrop-blur-sm group">
+          <div className="h-1.5 w-full bg-gradient-to-r from-primary via-blue-500 to-indigo-600" />
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+                {role === 'mahasiswa' ? "Kecocokan Profil Lulusan" : "Tren Semester"}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {role === 'mahasiswa'
+                  ? "Analisis kesiapan karier berdasarkan kompetensi akademik"
+                  : "Perkembangan nilai rata-rata kolektif"}
+              </CardDescription>
+            </div>
+            {role === 'mahasiswa' && (
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <BarChart3 className="h-5 w-5 text-primary animate-pulse" />
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             {role === 'mahasiswa' ? (
-              distributionData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={distributionData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percentage }) => `${name}: ${percentage}%`}
-                      outerRadius={80}
-                      fill="hsl(var(--primary))"
-                      dataKey="value"
-                    >
-                      {distributionData.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={['hsl(var(--primary))', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'][index % 4]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `${value} CPL`} />
-                  </PieChart>
-                </ResponsiveContainer>
+              profilLulusanData.length > 0 ? (
+                <div className="space-y-6 pt-2">
+                  {/* Hero Match for Top Result - Refined & Tidied */}
+                  {[...profilLulusanData].sort((a, b) => b.nilai - a.nilai).slice(0, 1).map((top, i) => (
+                    <div key={i} className="relative p-6 rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-card border border-primary/20 shadow-sm overflow-hidden group/hero">
+                      {/* Subtle Background Accent */}
+                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover/hero:opacity-20 transition-opacity pointer-events-none">
+                        <Trophy className="h-16 w-16 text-primary" fill="currentColor" />
+                      </div>
+
+                      <div className="relative">
+                        <div className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-primary/15 text-primary uppercase tracking-[0.15em] mb-4">
+                          Best Fit Recommendation
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                          <div className="flex-1 space-y-1">
+                            <h4 className="text-2xl font-black tracking-tight text-foreground leading-none">{top.name}</h4>
+                            <p className="text-xs text-muted-foreground font-medium">Profil ini memiliki keselarasan tertinggi dengan kompetensi Anda.</p>
+                          </div>
+                          <div className="flex flex-row sm:flex-col items-baseline sm:items-end gap-2 sm:gap-0 h-fit">
+                            <span className="text-4xl font-black text-primary tracking-tighter">{top.nilai}%</span>
+                            <span className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">Match Score</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* List of all matches - Icons removed for cleaner look */}
+                  <div className="grid gap-5 px-1">
+                    {[...profilLulusanData].sort((a, b) => b.nilai - a.nilai).map((pl, index) => {
+                      return (
+                        <div key={index} className="group/item relative">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-bold text-foreground/90 group-hover/item:text-primary transition-colors">
+                              {pl.name}
+                            </span>
+                            <span className="text-xs font-black text-muted-foreground group-hover/item:text-foreground transition-colors tabular-nums">
+                              {pl.nilai}%
+                            </span>
+                          </div>
+                          <div className="h-2 w-full bg-muted/50 rounded-full overflow-hidden shadow-inner border border-muted/20">
+                            <div
+                              className={`h-full bg-gradient-to-r ${pl.nilai >= 80 ? 'from-primary to-blue-500' : pl.nilai >= 70 ? 'from-emerald-500 to-teal-400' : 'from-orange-400 to-amber-300'} transition-all duration-1000 ease-out`}
+                              style={{ width: `${pl.nilai}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               ) : (
-                <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                  <p className="text-muted-foreground">Belum ada data distribusi</p>
+                <div className="h-[300px] flex flex-col items-center justify-center border-2 border-dashed border-muted rounded-lg text-muted-foreground text-center p-6">
+                  <TrendingUp className="h-8 w-8 mb-2 opacity-10" />
+                  <p className="text-sm font-medium">Data Profil Lulusan belum tersedia</p>
+                  <p className="text-[10px] opacity-60">Hubungi admin untuk konfigurasi pemetaan PL</p>
                 </div>
               )
             ) : (
               trendData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={trendData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="semester" className="text-xs" />
-                    <YAxis domain={[0, 100]} className="text-xs" />
-                    <Tooltip />
-                    <Legend />
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" vertical={false} />
+                    <XAxis dataKey="semester" className="text-xs font-medium" axisLine={false} tickLine={false} dy={10} />
+                    <YAxis domain={[0, 100]} className="text-xs font-medium" axisLine={false} tickLine={false} dx={-10} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        borderColor: 'hsl(var(--border))',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+                      }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
                     <Line
                       type="monotone"
                       dataKey="nilai"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
+                      stroke="url(#lineGradient)"
+                      strokeWidth={4}
+                      dot={{ r: 4, fill: 'hsl(var(--primary))', strokeWidth: 2, stroke: 'white' }}
+                      activeDot={{ r: 6, strokeWidth: 0 }}
                       name="Rata-rata Nilai"
                     />
+                    <defs>
+                      <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" />
+                        <stop offset="100%" stopColor="#3b82f6" />
+                      </linearGradient>
+                    </defs>
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                  <p className="text-muted-foreground">Belum ada data tren</p>
+                  <p className="text-muted-foreground font-medium">Belum ada data tren</p>
                 </div>
               )
             )}
@@ -377,36 +451,39 @@ const Dashboard = () => {
 
       {
         role === 'mahasiswa' && (
-          <div className="grid gap-4 md:grid-cols-1 animate-in fade-in duration-1000">
-            <Card>
+          <div className="grid gap-4 animate-in fade-in duration-1000">
+            <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <CardTitle>Top 5 CPL Terbaik</CardTitle>
-                <CardDescription>Pencapaian teratas Anda</CardDescription>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Star className="h-5 w-5 text-yellow-500" />
+                  Top 5 Capaian Teratas
+                </CardTitle>
+                <CardDescription>Kompetensi dengan performa terbaik Anda</CardDescription>
               </CardHeader>
               <CardContent>
                 {performanceData.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {performanceData.map((item: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-sm font-bold text-primary">
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg border bg-card/50 hover:bg-accent/10 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                             {index + 1}
                           </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{item.name}</p>
-                            <p className="text-xs text-muted-foreground">{item.status}</p>
+                          <div>
+                            <p className="font-semibold text-sm">{item.name}</p>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{item.status}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-lg text-primary">{item.nilai}</p>
-                          <p className="text-xs text-muted-foreground">nilai</p>
+                          <span className="text-lg font-bold text-primary">{item.nilai}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                    <p className="text-muted-foreground">Belum ada data performa</p>
+                  <div className="h-[200px] flex flex-col items-center justify-center border-2 border-dashed border-muted rounded-lg text-muted-foreground">
+                    <BarChart3 className="h-8 w-8 mb-2 opacity-20" />
+                    <p className="text-sm">Belum ada data performa</p>
                   </div>
                 )}
               </CardContent>

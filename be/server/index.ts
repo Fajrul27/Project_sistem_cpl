@@ -6,6 +6,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import { prisma } from './lib/prisma.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,13 +47,25 @@ app.use((req, res, next) => {
 });
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'Server running',
-    database: 'MySQL + Prisma',
-    timestamp: new Date().toISOString()
-  });
+app.get('/health', async (req, res) => {
+  try {
+    // Check database connection
+    await prisma.$queryRaw`SELECT 1`;
+
+    res.json({
+      status: 'ok',
+      message: 'Server and Database are running',
+      database: 'MySQL + Prisma',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    res.status(503).json({
+      status: 'error',
+      message: 'Database connection failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 

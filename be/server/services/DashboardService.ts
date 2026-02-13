@@ -10,9 +10,10 @@ export class DashboardService {
         angkatan?: string,
         kelasId?: string,
         mataKuliahId?: string,
-        prodiId?: string // filter param
+        prodiId?: string, // filter param
+        fakultasId?: string // filter param
     }) {
-        const { userId, userRole, semester, angkatan, kelasId, mataKuliahId, prodiId: filterProdiId } = params;
+        const { userId, userRole, semester, angkatan, kelasId, mataKuliahId, prodiId: filterProdiId, fakultasId } = params;
 
         // Define filters
         let userFilter: any = {};
@@ -97,18 +98,46 @@ export class DashboardService {
                 mahasiswa: { prodiId }
             };
         } else if (userRole === 'admin') {
-            // Admin without specific prodi filter sees all students
+            // Admin without specific prodi filter 
             userFilter = {
                 ...userFilter,
                 role: { role: { name: 'mahasiswa' } },
             };
+
+            // Faculty Filter (Admin only)
+            if (fakultasId && fakultasId !== 'all') {
+                if (!userFilter.profile) userFilter.profile = {};
+                userFilter.profile.OR = [
+                    { fakultasId: fakultasId },
+                    { prodi: { fakultasId: fakultasId } }
+                ];
+
+                // Also filter CPL and MK by Faculty
+                cplFilter = {
+                    ...cplFilter,
+                    prodi: { fakultasId: fakultasId }
+                };
+                mkFilter = {
+                    ...mkFilter,
+                    prodi: { fakultasId: fakultasId }
+                };
+                nilaiFilter = {
+                    ...nilaiFilter,
+                    mahasiswa: {
+                        OR: [
+                            { fakultasId: fakultasId },
+                            { prodi: { fakultasId: fakultasId } }
+                        ]
+                    }
+                };
+            }
         }
 
         // Dosen Specific Logic
         let customUserCount: number | null = null;
         if (userRole === 'dosen') {
             const pengampuRecords = await prisma.mataKuliahPengampu.findMany({
-                where: { dosenId: userId },
+                where: { dosenId: userId, isPengampu: true },
                 include: { mataKuliah: true }
             });
 
@@ -124,16 +153,37 @@ export class DashboardService {
                 nilaiFilter = { ...nilaiFilter, mataKuliahId: { in: myMkIds } };
             }
 
-            // Calculate User Count for Dosen
-            // Count unique students who have grades in courses taught by this dosen
-            const studentIdsInCourses = await prisma.nilaiCpl.findMany({
-                where: {
-                    mataKuliahId: { in: myMkIds }
-                },
-                distinct: ['mahasiswaId'],
-                select: { mahasiswaId: true }
+            // Calculate User Count for Dosen based on Active Managed Students (Matching UserService logic)
+            const criteria: any[] = [];
+            pengampuRecords.forEach(mkPengampu => {
+                const mk = mkPengampu.mataKuliah;
+                if (mkPengampu.kelasId) {
+                    criteria.push({
+                        kelasId: mkPengampu.kelasId,
+                        user: { role: { role: { name: 'mahasiswa' } } }
+                    });
+                } else if (mk.prodiId) {
+                    criteria.push({
+                        prodiId: mk.prodiId,
+                        semester: mk.semester,
+                        user: { role: { role: { name: 'mahasiswa' } } }
+                    });
+                } else if (mk.programStudi) {
+                    criteria.push({
+                        programStudi: mk.programStudi,
+                        semester: mk.semester,
+                        user: { role: { role: { name: 'mahasiswa' } } }
+                    });
+                }
             });
-            customUserCount = studentIdsInCourses.length;
+
+            if (criteria.length > 0) {
+                customUserCount = await prisma.profile.count({
+                    where: { OR: criteria }
+                });
+            } else {
+                customUserCount = 0;
+            }
         }
 
         // --- DATA FETCHING ---
@@ -400,11 +450,20 @@ export class DashboardService {
         };
     }
 
-    static async getDosenAnalysis(prodiId?: string) {
+    static async getDosenAnalysis(params: { prodiId?: string, fakultasId?: string }) {
+        const { prodiId, fakultasId } = params;
         const where: any = { role: { role: { name: 'dosen' } } };
 
         if (prodiId && prodiId !== 'all') {
             where.profile = { prodiId: prodiId };
+        } else if (fakultasId && fakultasId !== 'all') {
+            // Filter dosen by faculty (Direct or via Prodi)
+            where.profile = {
+                OR: [
+                    { fakultasId: fakultasId },
+                    { prodi: { fakultasId: fakultasId } }
+                ]
+            };
         }
 
         const dosenList = await prisma.user.findMany({
@@ -694,12 +753,18 @@ export class DashboardService {
         });
     }
 
-    static async getStudentEvaluation(params: { prodiId?: string, angkatan?: string, semester?: string }) {
-        const { prodiId, angkatan, semester } = params;
+    static async getStudentEvaluation(params: { prodiId?: string, angkatan?: string, semester?: string, fakultasId?: string }) {
+        const { prodiId, angkatan, semester, fakultasId } = params;
         const where: any = { role: { role: { name: 'mahasiswa' } } };
         const profileWhere: any = {};
 
         if (prodiId && prodiId !== 'all') profileWhere.prodiId = prodiId;
+        if (fakultasId && fakultasId !== 'all') {
+            profileWhere.OR = [
+                { fakultasId: fakultasId },
+                { prodi: { fakultasId: fakultasId } }
+            ];
+        }
         if (semester) profileWhere.semester = parseInt(semester);
         if (angkatan) profileWhere.angkatanRef = { tahun: parseInt(angkatan) };
 

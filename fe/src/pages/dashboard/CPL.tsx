@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useDebounce } from "@/hooks/useDebounce";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,12 @@ const CPLPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingCPL, setEditingCPL] = useState<CPL | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "matrix" | "target" | "weight-matrix">("list");
+
+  // Initialize viewMode from URL to prevent flash
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialViewMode = (searchParams.get("view") as "list" | "matrix" | "target" | "weight-matrix") || "list";
+  const [viewMode, setViewMode] = useState<"list" | "matrix" | "target" | "weight-matrix">(initialViewMode);
+
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ successCount: number; errors?: string[] } | null>(null);
 
@@ -227,9 +233,9 @@ const CPLPage = () => {
     setSearchBy
   } = useProfilLulusan();
 
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Helper to update URL params
+
+  // Sync targets to inputs
   const updateParams = (updates: Record<string, string | null>) => {
     const newParams = new URLSearchParams(searchParams);
     Object.entries(updates).forEach(([key, value]) => {
@@ -267,16 +273,36 @@ const CPLPage = () => {
     }
   }, [viewMode, setCplSearchTerm, setProfilSearchTerm]);
 
-  const currentSearchTerm = viewMode === "matrix" ? profilSearchTerm : cplFilters.searchTerm;
+  // Debounced Search Logic
+  const initialSearchTerm = viewMode === "matrix" ? profilSearchTerm : (cplFilters.searchTerm || "");
+  const [localSearchTerm, setLocalSearchTerm] = useState(initialSearchTerm);
+  const debouncedSearchTerm = useDebounce(localSearchTerm, 300);
+
+  // Sync local state when external search term changes (e.g. from URL or reset)
+  useEffect(() => {
+    const term = viewMode === "matrix" ? profilSearchTerm : cplFilters.searchTerm;
+    if (term !== localSearchTerm) {
+      setLocalSearchTerm(term || "");
+    }
+  }, [viewMode, profilSearchTerm, cplFilters.searchTerm]);
 
   const handleSearchChange = (val: string) => {
-    if (viewMode === "matrix") {
-      setProfilSearchTerm(val);
-    } else {
-      setCplSearchTerm(val);
-      updateParams({ q: val });
-    }
+    setLocalSearchTerm(val);
   };
+
+  // Trigger search when debounced value changes
+  useEffect(() => {
+    // Prevent trigger on mount matching initial
+    const currentActualTerm = viewMode === "matrix" ? profilSearchTerm : cplFilters.searchTerm;
+    if (debouncedSearchTerm === currentActualTerm) return;
+
+    if (viewMode === "matrix") {
+      setProfilSearchTerm(debouncedSearchTerm);
+    } else {
+      // setCplSearchTerm(debouncedSearchTerm); // Removed to prevent loop. State syncs from URL.
+      updateParams({ q: debouncedSearchTerm });
+    }
+  }, [debouncedSearchTerm, viewMode, setProfilSearchTerm]);
 
   const handleFakultasChange = (val: string) => {
     setFakultasFilter(val);
@@ -302,7 +328,7 @@ const CPLPage = () => {
 
   const handleViewChange = (val: string) => {
     const v = val as "list" | "matrix" | "target" | "weight-matrix";
-    setViewMode(v);
+    // setViewMode(v); // Removed optimistic update to prevent race condition with useEffect
     updateParams({ view: v });
   };
 
@@ -384,13 +410,7 @@ const CPLPage = () => {
   }, [searchParams, viewMode, cplFilters, targetFilters.angkatan, setViewMode, setFakultasFilter, setProdiFilter, setCplSearchTerm, setKategoriFilter, setKurikulumFilter]);
 
 
-  useEffect(() => {
-    fetchCPL();
-    fetchKategori();
-    fetchFakultas();
-    fetchProdi();
-    fetchKurikulum();
-  }, [fetchCPL, fetchKategori, fetchFakultas, fetchProdi, fetchKurikulum]);
+  // Removed redundant useEffect. Data fetching is now handled internally by useCPL hook.
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -485,11 +505,18 @@ const CPLPage = () => {
     (cplFilters.kategoriFilter && cplFilters.kategoriFilter !== "all") ||
     (cplFilters.kurikulumFilter && cplFilters.kurikulumFilter !== "all");
 
-  if (loading && cplList.length === 0) {
+  const [initialLoad, setInitialLoad] = useState(true);
+
+  useEffect(() => {
+    if (!loading && initialLoad) {
+      setInitialLoad(false);
+    }
+  }, [loading, initialLoad]);
+
+  if (initialLoad) {
     return (
       <DashboardPage title="Data CPL">
         <LoadingScreen fullScreen={false} message="Memuat data CPL..." />
-
       </DashboardPage >
     );
   }
@@ -550,7 +577,7 @@ const CPLPage = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder={viewMode === "matrix" ? "Cari Profil atau Program Studi..." : "Cari kode, deskripsi, atau kategori CPL..."}
-                    value={currentSearchTerm}
+                    value={localSearchTerm}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     className="pl-9"
                   />
@@ -645,7 +672,7 @@ const CPLPage = () => {
                 <Button
                   variant="outline"
                   onClick={handleResetFilters}
-                  disabled={!hasActiveFilter && currentSearchTerm === ""}
+                  disabled={!hasActiveFilter && localSearchTerm === ""}
                 >
                   Reset Filter
                 </Button>
@@ -663,8 +690,8 @@ const CPLPage = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Cari kode, deskripsi, atau kategori CPL..."
-                    value={cplFilters.searchTerm}
-                    onChange={(e) => setCplSearchTerm(e.target.value)}
+                    value={localSearchTerm}
+                    onChange={(e) => handleSearchChange(e.target.value)}
                     className="pl-9"
                   />
                 </div>
@@ -826,7 +853,7 @@ const CPLPage = () => {
                           <TableHead className="w-[150px]">Target (%)</TableHead>
                         </TableRow>
                       </TableHeader>
-                      <TableBody>
+                      <TableBody className={loadingTargets ? "opacity-50 pointer-events-none transition-opacity duration-200" : "transition-opacity duration-200"}>
                         {cplList.map(cpl => (
                           <TableRow key={cpl.id}>
                             <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
@@ -862,7 +889,7 @@ const CPLPage = () => {
                   </CardDescription>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  <Button size="sm" variant="outline" onClick={handleExport} disabled={loading}>
+                  <Button size="sm" variant="outline" onClick={handleExport}>
                     <Download className="h-4 w-4 mr-2" />
                     Export
                   </Button>
@@ -1008,7 +1035,7 @@ const CPLPage = () => {
                         <TableHead className="text-right">Aksi</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className={loading ? "opacity-50 pointer-events-none transition-opacity duration-200" : "transition-opacity duration-200"}>
                       {cplList.map((cpl, index) => (
                         <TableRow key={cpl.id}>
                           <TableCell>
@@ -1113,7 +1140,7 @@ const CPLPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {cplFilters.prodiFilter === 'all' && canViewAll && !currentSearchTerm ? (
+                {cplFilters.prodiFilter === 'all' && canViewAll && !localSearchTerm ? (
                   <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed">
                     <div className="p-4 bg-muted rounded-full mb-4">
                       <TableIcon className="w-8 h-8 text-muted-foreground/50" />

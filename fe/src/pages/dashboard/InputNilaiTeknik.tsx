@@ -78,11 +78,12 @@ const InputNilaiTeknikPage = () => {
     const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
 
     // Set default active Tahun Ajaran
-    useEffect(() => {
-        if (activeTahunAjaran && !tahunAjaran) {
-            setTahunAjaran(activeTahunAjaran.id);
-        }
-    }, [activeTahunAjaran]);
+    // Set default active Tahun Ajaran - REMOVED per user request
+    // useEffect(() => {
+    //     if (activeTahunAjaran && !tahunAjaran) {
+    //         setTahunAjaran(activeTahunAjaran.id);
+    //     }
+    // }, [activeTahunAjaran]);
 
     const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -120,7 +121,7 @@ const InputNilaiTeknikPage = () => {
                             <Label>Semester</Label>
                             <Select value={semester} onValueChange={setSemester}>
                                 <SelectTrigger>
-                                    <SelectValue />
+                                    <SelectValue placeholder="Pilih Semester" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {availableSemesters.length > 0 ? (

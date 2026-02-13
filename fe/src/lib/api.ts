@@ -297,20 +297,21 @@ export async function fetchAnalisisCPL(semester?: string, fakultasId?: string, p
 }
 
 // Helper: fetch dashboard stats
-export async function fetchDashboardStats(filters?: { semester?: string; angkatan?: string; kelasId?: string; mataKuliahId?: string; prodiId?: string }) {
+export async function fetchDashboardStats(filters?: { semester?: string; angkatan?: string; kelasId?: string; mataKuliahId?: string; prodiId?: string; fakultasId?: string }) {
   return api.get('/dashboard/stats', { params: filters });
 }
 
 // Helper: fetch dosen analysis
-export async function fetchDosenAnalysis(prodiId?: string) {
-  const params = prodiId ? { prodiId } : {};
-  return api.get('/dashboard/dosen', { params });
+export async function fetchDosenAnalysis(filters?: { prodiId?: string; fakultasId?: string }) {
+  return api.get('/dashboard/dosen', { params: filters });
 }
 
+
 // Helper: fetch student evaluation
-export async function fetchStudentEvaluation(filters?: { prodiId?: string; angkatan?: string; semester?: string }) {
+export async function fetchStudentEvaluation(filters?: { prodiId?: string; angkatan?: string; semester?: string; fakultasId?: string }) {
   return api.get('/dashboard/students', { params: filters });
 }
+
 
 // Helper: fetch semesters
 export async function fetchSemesters() {

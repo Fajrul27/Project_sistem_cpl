@@ -48,7 +48,7 @@ export const useNilaiTeknik = () => {
 
     const [selectedMK, setSelectedMK] = useState<string>("");
     const [selectedKelas, setSelectedKelas] = useState<string>("");
-    const [semester, setSemester] = useState<string>("1");
+    const [semester, setSemester] = useState<string>("");
     const [tahunAjaran, setTahunAjaran] = useState<string>("");
 
     const [grades, setGrades] = useState<Record<string, number>>({}); // key: studentId_teknikId
@@ -164,8 +164,8 @@ export const useNilaiTeknik = () => {
             const result = await api.get('/mata-kuliah/semesters');
             if (result.data) {
                 setAvailableSemesters(result.data);
-                // If current semester is not in the list and list is not empty, select the first one
-                if (result.data.length > 0 && !result.data.includes(parseInt(semester))) {
+                // If current semester is not in the list and list is not empty, select the first one ONLY if semester was already set (not empty)
+                if (semester && result.data.length > 0 && !result.data.includes(parseInt(semester))) {
                     setSemester(result.data[0].toString());
                 }
             }

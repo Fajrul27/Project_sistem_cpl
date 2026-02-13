@@ -80,7 +80,10 @@ export class AuditLogService {
 
         const logs = await prisma.auditLog.findMany({
             where,
-            orderBy: { createdAt: 'desc' },
+            orderBy: [
+                { createdAt: 'desc' },
+                { id: 'desc' }
+            ],
             include: {
                 user: {
                     select: {
@@ -151,7 +154,10 @@ export class AuditLogService {
                 where,
                 take: limit,
                 skip,
-                orderBy: { createdAt: 'desc' },
+                orderBy: [
+                    { createdAt: 'desc' },
+                    { id: 'desc' }
+                ],
                 include: {
                     user: {
                         select: {

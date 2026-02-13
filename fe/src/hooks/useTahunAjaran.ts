@@ -48,9 +48,10 @@ export function useTahunAjaran() {
             toast.success("Tahun ajaran berhasil diperbarui");
             loadParams();
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Gagal memperbarui tahun ajaran");
+            const message = error.response?.data?.error || "Gagal memperbarui tahun ajaran";
+            toast.error(message);
             return false;
         }
     };
@@ -61,9 +62,10 @@ export function useTahunAjaran() {
             toast.success("Tahun ajaran berhasil dihapus");
             loadParams();
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Gagal menghapus tahun ajaran");
+            const message = error.response?.data?.error || "Gagal menghapus tahun ajaran";
+            toast.error(message);
             return false;
         }
     };

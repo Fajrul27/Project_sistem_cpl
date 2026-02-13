@@ -6,7 +6,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).userId;
         const userRole = (req as any).userRole;
-        const { semester, angkatan, kelasId, mataKuliahId, prodiId } = req.query;
+        const { semester, angkatan, kelasId, mataKuliahId, prodiId, fakultasId } = req.query;
 
         const result = await DashboardService.getDashboardStats({
             userId,
@@ -15,7 +15,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             angkatan: angkatan as string,
             kelasId: kelasId as string,
             mataKuliahId: mataKuliahId as string,
-            prodiId: prodiId as string
+            prodiId: prodiId as string,
+            fakultasId: fakultasId as string
         });
 
         res.json({ data: result });
@@ -28,8 +29,11 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 // Get Dosen Analysis
 export const getDosenAnalysis = async (req: Request, res: Response) => {
     try {
-        const { prodiId } = req.query;
-        const analysis = await DashboardService.getDosenAnalysis(prodiId as string);
+        const { prodiId, fakultasId } = req.query;
+        const analysis = await DashboardService.getDosenAnalysis({
+            prodiId: prodiId as string,
+            fakultasId: fakultasId as string
+        });
         res.json({ data: analysis });
     } catch (error) {
         console.error('Get dosen analysis error:', error);
@@ -40,11 +44,12 @@ export const getDosenAnalysis = async (req: Request, res: Response) => {
 // Get Student Evaluation
 export const getStudentEvaluation = async (req: Request, res: Response) => {
     try {
-        const { prodiId, angkatan, semester } = req.query;
+        const { prodiId, angkatan, semester, fakultasId } = req.query;
         const evaluation = await DashboardService.getStudentEvaluation({
             prodiId: prodiId as string,
             angkatan: angkatan as string,
-            semester: semester as string
+            semester: semester as string,
+            fakultasId: fakultasId as string
         });
 
         res.json({ data: evaluation });

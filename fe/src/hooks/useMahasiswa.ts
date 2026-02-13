@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { fetchMahasiswaList, fetchMataKuliahPengampu, fetchFakultasList, getUser, fetchTranskripCPL, fetchSemesters, fetchKelas, fetchProdiList } from "@/lib/api";
+import { fetchMahasiswaList, fetchMataKuliahPengampu, fetchFakultasList, fetchTranskripCPL, fetchSemesters, fetchKelas, fetchProdiList } from "@/lib/api";
+import { useUserRole } from "./useUserRole";
 import { toast } from "sonner";
 
 export interface Profile {
@@ -11,6 +12,7 @@ export interface Profile {
     fakultasId: string | null;
     fakultasName: string | null;
     kelasName: string | null;
+    relatedCourses?: { id: string; nama: string; kode: string; semester: number }[];
 }
 
 export interface Fakultas {
@@ -36,16 +38,16 @@ export interface MataKuliahPengampu {
         kodeMk: string;
         namaMk: string;
         semester: number;
-        prodi?: { nama: string };
+        prodi?: { id: string; nama: string };
     };
 }
 
 export function useMahasiswa() {
+    const { role, userId, profile } = useUserRole();
     const [profiles, setProfiles] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
     const [fakultasList, setFakultasList] = useState<Fakultas[]>([]);
     const [mataKuliahList, setMataKuliahList] = useState<MataKuliahPengampu[]>([]);
-    const [currentUser, setCurrentUser] = useState<any>(null);
 
     // Global Filter Options State
     const [allProdis, setAllProdis] = useState<string[]>([]);
@@ -74,7 +76,6 @@ export function useMahasiswa() {
     useEffect(() => {
         const loadFilterOptions = async () => {
             try {
-                const user = getUser(); // Get user for role check
                 const [prodiRes, semRes, kelasRes] = await Promise.all([
                     fetchProdiList(),
                     fetchSemesters(),
@@ -87,28 +88,16 @@ export function useMahasiswa() {
                     let prodiList = prodiRes.data;
 
                     // Security Filter for Filter Options
-                    if (user?.role === 'kaprodi' && user.profile?.prodiId) {
-                        // Filter to only user's prodi
-                        prodiList = prodiList.filter((p: any) => p.id === user.profile?.prodiId);
-                    } else if (user?.role === 'dosen') {
-                        // For dosen, we ideally filter by taught courses.
-                        // Since we don't have that list readily available in this scope effectively without prop drilling or context,
-                        // we can rely on the fact that the DATA TABLE is filtered.
-                        // However, to be cleaner, let's filter if we have course data or just show all (which becomes useless if data is empty).
+                    if (role === 'kaprodi' && profile?.prodiId) {
+                        prodiList = prodiList.filter((p: any) => p.id === profile.prodiId);
+                    } else if (role === 'dosen') {
+                        // Filter by taught courses prodis
+                        const taughtProdiIds = new Set(mataKuliahList.map(mk => mk.mataKuliah?.prodi?.id).filter(Boolean));
+                        const taughtProdiNames = new Set(mataKuliahList.map(mk => mk.mataKuliah?.prodi?.nama).filter(Boolean));
 
-                        // Strategy: If Dosen, let's TRY to filter by unique prodis found in the `profiles` (which is already loaded)?
-                        // No, `loadFilterOptions` runs once on mount. `profiles` loads later.
-
-                        // Compromise: For Dosen, we show all OR we fetch/derive later.
-                        // Given currently we don't have easy "TaughtCourseProdis" without extra fetch, 
-                        // and `fetchMataKuliahPengampu` is called in `initializeData`...
-
-                        // Let's leave Dosen with "All" for now (or empty if we want to be strict).
-                        // Current `MataKuliahPage` filters it. `MahasiswaPage` should too.
-
-                        // We will allow ALL for Dosen here, but the data result will just be empty if they pick a wrong one.
-                        // This is acceptable as a fallback if strict filtering is too complex for this hook refactor.
-                        // BUT for Kaprodi it is critical and easy (prodiId is in profile).
+                        prodiList = prodiList.filter((p: any) =>
+                            taughtProdiIds.has(p.id) || taughtProdiNames.has(p.nama)
+                        );
                     }
 
                     prodis = prodiList.map((p: any) => p.nama || p.programStudi).filter(Boolean);
@@ -117,22 +106,17 @@ export function useMahasiswa() {
 
                 let semesters: string[] = [];
                 if (Array.isArray(semRes.data)) {
-                    // Use 'angka' (value) instead of 'nama' (label) to ensure backend receives a number
                     semesters = semRes.data.map((s: any) => String(s.angka || s.semester || s.nama || s)).filter(Boolean);
                 }
 
-                let kelas: string[] = [];
+                let kelasList: string[] = [];
                 if (Array.isArray(kelasRes.data)) {
-                    kelas = kelasRes.data.map((k: any) => k.nama || k.kelas || k).filter(Boolean);
+                    kelasList = kelasRes.data.map((k: any) => k.nama || k.kelas || k).filter(Boolean);
                 }
 
-
-
-                // For now, let's just populate unique options. 
-                // The frontend page uses `uniqueOptions.prodis`.
                 setAllProdis([...new Set(prodis)]);
                 setAllSemesters([...new Set(semesters)].sort((a, b) => Number(a) - Number(b) || a.localeCompare(b)));
-                setAllKelas([...new Set(kelas)].sort());
+                setAllKelas([...new Set(kelasList)].sort());
 
             } catch (error) {
                 console.error("Error loading filter options:", error);
@@ -140,14 +124,12 @@ export function useMahasiswa() {
         };
 
         loadFilterOptions();
-    }, []);
+    }, [mataKuliahList, role, profile]);
 
     // Initial Data Fetch
     const initializeData = useCallback(async () => {
         try {
             setLoading(true);
-            const user = getUser();
-            setCurrentUser(user);
 
             let data: Profile[] = [];
             let meta = { totalPages: 1, total: 0 };
@@ -165,9 +147,9 @@ export function useMahasiswa() {
             if (kelasFilter !== "all") params.kelas = kelasFilter;
             if (fakultasFilter !== "all") params.fakultasId = fakultasFilter;
 
-            if (user?.role === "dosen") {
+            if (role === "dosen" && userId) {
                 try {
-                    const mkRes = await fetchMataKuliahPengampu(user.id);
+                    const mkRes = await fetchMataKuliahPengampu(userId);
                     setMataKuliahList(mkRes.data || []);
                 } catch (e) {
                     console.error("Error fetching taught courses", e);
@@ -187,7 +169,8 @@ export function useMahasiswa() {
                 semester: u.profile?.semester || 0,
                 fakultasId: u.profile?.fakultasId || u.profile?.prodi?.fakultasId,
                 fakultasName: u.profile?.prodi?.fakultas?.nama || u.profile?.fakultasName,
-                kelasName: u.profile?.kelasRef?.nama || u.profile?.kelasId || "-"
+                kelasName: u.profile?.kelasRef?.nama || u.profile?.kelasId || "-",
+                relatedCourses: u.relatedCourses || []
             }));
 
             setProfiles(data);
@@ -308,7 +291,7 @@ export function useMahasiswa() {
         selectedStudent,
         loading,
         progressLoading,
-        currentUser,
+        user: profile,
 
         // Pagination
         pagination: {

@@ -102,8 +102,7 @@ export function useTranskripCPL() {
     const [totalCurriculumCpl, setTotalCurriculumCpl] = useState<number>(0);
 
     const [semester, setSemester] = useState<string>("all");
-
-    const [tahunAjaran, setTahunAjaran] = useState<string>("all");
+    const [tahunAjaranList, setTahunAjaranList] = useState<any[]>([]);
 
     // Filter Filters
     const [fakultasList, setFakultasList] = useState<any[]>([]);
@@ -149,6 +148,9 @@ export function useTranskripCPL() {
         try {
             const fakRef = await fetchFakultasList();
             setFakultasList(fakRef.data || []);
+
+            const taRes = await api.get('/references/tahun-ajaran');
+            setTahunAjaranList(taRes.data || []);
         } catch (e) { console.error(e); }
     };
 
@@ -234,20 +236,38 @@ export function useTranskripCPL() {
         if (!isMahasiswa) fetchMahasiswaOptions(debouncedSearch);
     }, [debouncedSearch, roleLoading, isMahasiswa, fetchMahasiswaOptions]);
 
-    // Fetch data when student/filters change
+    // Fetch EVERYTHING when student changes
     useEffect(() => {
         if (selectedMahasiswa) {
+            // Default to student's current semester if available (for self-view)
+            if (isMahasiswa && profile?.semester) {
+                setSemester(profile.semester.toString());
+            } else {
+                setSemester("all");
+            }
             fetchAllData();
         } else {
             setLoading(false);
         }
-    }, [selectedMahasiswa, semester, tahunAjaran]);
+    }, [selectedMahasiswa, isMahasiswa, profile?.semester]);
+
+    // Fetch ONLY CPMK when semester filter changes (Periodical evaluation)
+    useEffect(() => {
+        // Skip if student not selected or if it's the 'all' reset from the effect above
+        if (selectedMahasiswa && semester !== "all") {
+            fetchTranskripCPMK();
+        } else if (selectedMahasiswa && semester === "all") {
+            // Refetch all to get full cumulative context if user resets to 'all'
+            // but usually fetchAllData already covered this. 
+            // To be safe and exclusive:
+            fetchTranskripCPMK();
+        }
+    }, [semester]);
 
     const fetchTranskrip = async () => {
         try {
             const params: any = {};
-            if (semester !== 'all') params.semester = semester;
-            if (tahunAjaran !== 'all') params.tahunAjaranId = tahunAjaran;
+            // CPL is always longitudinal (cumulative)
 
             const result = await api.get(`/transkrip-cpl/${selectedMahasiswa}`, { params });
             setTranskripList(result.data?.transkrip || []);
@@ -262,7 +282,7 @@ export function useTranskripCPL() {
 
     const fetchTranskripCPMK = async () => {
         try {
-            const result = await getTranskripCPMK(selectedMahasiswa, semester, tahunAjaran);
+            const result = await getTranskripCPMK(selectedMahasiswa, semester);
             setTranskripCpmkList(result.data?.transkrip || []);
             if (!transkripList.length) updateStudentInfo(result.data?.mahasiswa);
         } catch (error) {
@@ -274,7 +294,7 @@ export function useTranskripCPL() {
 
     const fetchTranskripProfil = async () => {
         try {
-            const result = await getTranskripProfil(selectedMahasiswa, semester, tahunAjaran);
+            const result = await getTranskripProfil(selectedMahasiswa);
             setProfilLulusanList(result || []);
         } catch (error) {
             console.error("Error fetching transkrip profil:", error);
@@ -310,6 +330,12 @@ export function useTranskripCPL() {
                     tahunMasuk: m.angkatanRef?.tahun || m.tahunMasuk
                 }
             });
+
+            // Set default semester to student's active semester if it hasn't been set yet
+            if (m.semester) {
+                setSemester(m.semester.toString());
+            }
+
             if (programStudi && programStudi !== "-") fetchKaprodiData(programStudi);
         }
     };
@@ -332,6 +358,7 @@ export function useTranskripCPL() {
         loading,
         searchLoading,
         kaprodiData,
+        tahunAjaranList,
         settings,
 
         // Selections
@@ -347,8 +374,6 @@ export function useTranskripCPL() {
         prodiList,
         semester,
         setSemester,
-        tahunAjaran,
-        setTahunAjaran,
         searchQuery,
         setSearchQuery,
 

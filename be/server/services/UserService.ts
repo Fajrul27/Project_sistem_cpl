@@ -54,23 +54,17 @@ export class UserService {
         }
 
         // [SECURITY] Dosen filters
+        // Lifted for reuse in mapping
+        let mataKuliahPengampuList: any[] = [];
+
         if (userRole === 'dosen') {
             const dosenProfile = await prisma.profile.findUnique({ where: { userId } });
             const dosenProdiId = dosenProfile?.prodiId;
 
             let allowedStudentIds = new Set<string>();
 
-            // 1. Add students from the Dosen's Prodi
-            if (dosenProdiId) {
-                const prodiStudents = await prisma.profile.findMany({
-                    where: {
-                        prodiId: dosenProdiId,
-                        user: { role: { role: { name: 'mahasiswa' } } }
-                    },
-                    select: { userId: true }
-                });
-                prodiStudents.forEach(s => allowedStudentIds.add(s.userId));
-            }
+            // 1. [REMOVED] Add students from the Dosen's Prodi - We only want students from taught courses
+            // if (dosenProdiId) { ... }
 
             // 2. Add students from courses the Dosen teaches
             if (mataKuliahId) {
@@ -109,7 +103,7 @@ export class UserService {
 
             } else {
                 // Get all students related to this dosen (taught courses)
-                const mataKuliahPengampuList = await prisma.mataKuliahPengampu.findMany({
+                mataKuliahPengampuList = await prisma.mataKuliahPengampu.findMany({
                     where: { dosenId: userId, isPengampu: true },
                     include: { mataKuliah: true }
                 });
@@ -195,8 +189,6 @@ export class UserService {
 
         if (prodi) {
             ensureProfileWhere();
-            // Handle both relational and legacy string field
-            // Using AND to combine with existing profile filters if any
             where.profile = {
                 ...where.profile,
                 OR: [
@@ -208,7 +200,6 @@ export class UserService {
 
         if (kelas) {
             ensureProfileWhere();
-            // Filter by Class Name (via relation)
             where.profile.kelasRef = { nama: kelas };
         }
 
@@ -272,6 +263,61 @@ export class UserService {
 
             return userData;
         });
+
+        // [ENHANCEMENT] For Dosen viewing Mahasiswa: Attach related courses
+        if (userRole === 'dosen') {
+            console.log("Processing Dosen view for users (Enhancement)...");
+            // Ensure we have the list if we didn't fetch it above
+            if (mataKuliahPengampuList.length === 0) {
+                console.log("Fetching mataKuliahPengampuList for context...");
+                try {
+                    mataKuliahPengampuList = await prisma.mataKuliahPengampu.findMany({
+                        where: { dosenId: userId, isPengampu: true },
+                        include: { mataKuliah: true }
+                    });
+                    console.log(`Fetched ${mataKuliahPengampuList.length} pengampu records for Dosen ${userId}`);
+                } catch (err) {
+                    console.error("Error fetching mk pengampu:", err);
+                }
+            }
+
+            enhancedUsers.forEach((user: any) => {
+                if (user.role?.role?.name === 'mahasiswa') {
+                    const relatedCourses: any[] = [];
+
+                    mataKuliahPengampuList.forEach(mkPengampu => {
+                        try {
+                            const mk = mkPengampu.mataKuliah;
+                            if (!mk) return;
+
+                            let isRelated = false;
+
+                            if (mkPengampu.kelasId) {
+                                if (user.profile?.kelasId === mkPengampu.kelasId) isRelated = true;
+                            } else if (mk.prodiId) {
+                                // console.log(`Checking match (ProdiId): User ${user.profile?.prodiId} vs MK ${mk.prodiId}, User Sem ${user.profile?.semester} vs MK ${mk.semester}`);
+                                if (user.profile?.prodiId === mk.prodiId && user.profile?.semester === mk.semester) isRelated = true;
+                            } else if (mk.programStudi) {
+                                if (user.profile?.programStudi === mk.programStudi && user.profile?.semester === mk.semester) isRelated = true;
+                            }
+
+                            if (isRelated) {
+                                relatedCourses.push({
+                                    id: mk.id,
+                                    nama: mk.namaMk,
+                                    kode: mk.kodeMk,
+                                    semester: mk.semester
+                                });
+                            }
+                        } catch (e) {
+                            console.error("Error matching student to course:", e);
+                        }
+                    });
+
+                    user.relatedCourses = relatedCourses;
+                }
+            });
+        }
 
         return {
             data: enhancedUsers,

@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Button } from "@/components/ui/button";
 import { Filter, X } from "lucide-react";
-import { fetchAngkatanList, fetchProdiList } from "@/lib/api";
+import { fetchAngkatanList, fetchProdiList, fetchFakultasList } from "@/lib/api";
+
 
 interface DashboardFilterBarProps {
-    onFilterChange: (filters: { semester?: string; angkatan?: string; kelasId?: string; prodiId?: string }) => void;
-    filters?: { semester?: string; angkatan?: string; kelasId?: string; prodiId?: string }; // Make optional to avoid initial undefined issues
+    onFilterChange: (filters: { semester?: string; angkatan?: string; kelasId?: string; prodiId?: string; fakultasId?: string }) => void;
+    filters?: { semester?: string; angkatan?: string; kelasId?: string; prodiId?: string; fakultasId?: string }; // Make optional to avoid initial undefined issues
+
     role: string;
 }
 
@@ -15,6 +17,7 @@ export const DashboardFilterBar = ({ onFilterChange, filters = {}, role }: Dashb
 
     const [angkatanOptions, setAngkatanOptions] = useState<string[]>([]);
     const [prodiOptions, setProdiOptions] = useState<any[]>([]);
+    const [fakultasOptions, setFakultasOptions] = useState<any[]>([]);
 
     useEffect(() => {
         const loadAngkatan = async () => {
@@ -41,25 +44,46 @@ export const DashboardFilterBar = ({ onFilterChange, filters = {}, role }: Dashb
             }
         };
 
+        const fetchFakultas = async () => {
+            try {
+                const res = await fetchFakultasList();
+                if (res.data) setFakultasOptions(res.data);
+            } catch (error) {
+                console.error("Failed to fetch fakultas options");
+            }
+        }
+
         loadAngkatan();
 
         if (role === 'admin') {
             fetchProdi();
+            fetchFakultas();
         }
     }, [role]);
 
     const handleFilterChange = (key: string, value: string) => {
         // Merge current filters with new value and notify parent
         const newFilters = { ...filters, [key]: value };
+
+        // If fakultas changes, reset prodi
+        if (key === 'fakultasId') {
+            newFilters.prodiId = "";
+        }
+
         onFilterChange(newFilters);
     };
 
     const clearFilters = () => {
-        const reset = { semester: "", angkatan: "", kelasId: "", prodiId: "" };
+        const reset = { semester: "", angkatan: "", kelasId: "", prodiId: "", fakultasId: "" };
         onFilterChange(reset);
     };
 
     const hasActiveFilters = Object.values(filters).some(val => val !== "" && val !== undefined && val !== null);
+
+    // Filter prodi based on selected fakultas
+    const filteredProdiOptions = filters.fakultasId && filters.fakultasId !== "all"
+        ? prodiOptions.filter(p => p.fakultasId === filters.fakultasId)
+        : prodiOptions;
 
     return (
         <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 p-4 bg-card rounded-lg border shadow-sm mb-6 animate-in fade-in slide-in-from-top-4">
@@ -69,21 +93,39 @@ export const DashboardFilterBar = ({ onFilterChange, filters = {}, role }: Dashb
             </div>
 
             {role === 'admin' && (
-                <Select value={filters.prodiId || ""} onValueChange={(val) => handleFilterChange("prodiId", val)}>
-                    <SelectTrigger className="w-full sm:w-[200px] h-9">
-                        <SelectValue placeholder="Semua Program Studi">
-                            {filters.prodiId && filters.prodiId !== "all"
-                                ? prodiOptions.find(p => p.id === filters.prodiId)?.nama
-                                : "Semua Program Studi"}
-                        </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Semua Program Studi</SelectItem>
-                        {prodiOptions.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <>
+                    <Select value={filters.fakultasId || ""} onValueChange={(val) => handleFilterChange("fakultasId", val)}>
+                        <SelectTrigger className="w-full sm:w-[200px] h-9">
+                            <SelectValue placeholder="Semua Fakultas">
+                                {filters.fakultasId && filters.fakultasId !== "all"
+                                    ? fakultasOptions.find(f => f.id === filters.fakultasId)?.nama
+                                    : "Semua Fakultas"}
+                            </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Semua Fakultas</SelectItem>
+                            {fakultasOptions.map((f) => (
+                                <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={filters.prodiId || ""} onValueChange={(val) => handleFilterChange("prodiId", val)}>
+                        <SelectTrigger className="w-full sm:w-[200px] h-9">
+                            <SelectValue placeholder="Semua Program Studi">
+                                {filters.prodiId && filters.prodiId !== "all"
+                                    ? prodiOptions.find(p => p.id === filters.prodiId)?.nama
+                                    : "Semua Program Studi"}
+                            </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Semua Program Studi</SelectItem>
+                            {filteredProdiOptions.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </>
             )}
 
             <Select value={filters.semester ? filters.semester.toString() : ""} onValueChange={(val) => handleFilterChange("semester", val)}>

@@ -75,7 +75,7 @@ const MataKuliahPage = () => {
       return filters.fakultasFilter && filters.prodiFilter && filters.semesterFilter;
     }
     if (normalizedRole === 'dosen') {
-      return filters.semesterFilter;
+      return true;
     }
     // Kaprodi
     return filters.prodiFilter && filters.semesterFilter;

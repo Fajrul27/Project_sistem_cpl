@@ -608,7 +608,7 @@ const CPMKPage = () => {
                                                         />
                                                     </div>
                                                     <div className="space-y-2 flex flex-col">
-                                                        <Label htmlFor="mataKuliah">Mata Kuliah</Label>
+                                                        <RequiredLabel htmlFor="mataKuliah" required>Mata Kuliah</RequiredLabel>
                                                         <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
                                                             <PopoverTrigger asChild>
                                                                 <Button

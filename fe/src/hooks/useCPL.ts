@@ -27,9 +27,10 @@ export function useCPL() {
 
     // Filter Stats
     const [searchTerm, setSearchTerm] = useState("");
-    // const [kategoriFilter, setKategoriFilter] = useState<string>("all"); // Removed
     const [fakultasFilter, setFakultasFilter] = useState<string>("");
     const [prodiFilter, setProdiFilter] = useState<string>("all");
+    const [kategoriFilter, setKategoriFilter] = useState<string>("all");
+    const [kurikulumFilter, setKurikulumFilter] = useState<string>("all");
 
     // Data
     const [cplList, setCplList] = useState<CPL[]>([]);
@@ -38,9 +39,6 @@ export function useCPL() {
     const [prodiList, setProdiList] = useState<any[]>([]);
     const [kurikulumList, setKurikulumList] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-
-    const [kategoriFilter, setKategoriFilter] = useState<string>("all");
-    const [kurikulumFilter, setKurikulumFilter] = useState<string>("all");
 
     const fetchFakultas = useCallback(async () => {
         try {
@@ -123,12 +121,17 @@ export function useCPL() {
         }
     }, [page, searchTerm, prodiFilter, kategoriFilter, kurikulumFilter]);
 
+    // Initial Data Fetch
     useEffect(() => {
-        fetchCPL();
         fetchKategori();
         fetchFakultas();
         fetchKurikulum();
-    }, [fetchCPL, fetchKategori, fetchFakultas, fetchKurikulum]);
+    }, [fetchKategori, fetchFakultas, fetchKurikulum]);
+
+    // Data Fetch on Filter Change
+    useEffect(() => {
+        fetchCPL();
+    }, [page, searchTerm, prodiFilter, kategoriFilter, kurikulumFilter]); // Use primitives to guarantee stability
 
     // Fetch prodi when fakultas filter changes
     useEffect(() => {
@@ -136,33 +139,33 @@ export function useCPL() {
     }, [fetchProdi]);
 
     // Wrapper setters to reset page
-    const handleSetSearchTerm = (val: string) => {
+    const handleSetSearchTerm = useCallback((val: string) => {
         setSearchTerm(val);
         setPage(1);
-    };
+    }, []);
 
-    const handleSetFakultasFilter = (val: string) => {
+    const handleSetFakultasFilter = useCallback((val: string) => {
         setFakultasFilter(val);
         setProdiFilter("all"); // Reset prodi when fakultas changes
         setPage(1);
-    };
+    }, []);
 
-    const handleSetProdiFilter = (val: string) => {
+    const handleSetProdiFilter = useCallback((val: string) => {
         setProdiFilter(val);
         setPage(1);
-    };
+    }, []);
 
-    const handleSetKategoriFilter = (val: string) => {
+    const handleSetKategoriFilter = useCallback((val: string) => {
         setKategoriFilter(val);
         setPage(1);
-    };
+    }, []);
 
-    const handleSetKurikulumFilter = (val: string) => {
+    const handleSetKurikulumFilter = useCallback((val: string) => {
         setKurikulumFilter(val);
         setPage(1);
-    };
+    }, []);
 
-    const createCPL = async (payload: any) => {
+    const createCPL = useCallback(async (payload: any) => {
         try {
             await api.post('/cpl', payload);
             toast.success("CPL berhasil ditambahkan");
@@ -173,9 +176,9 @@ export function useCPL() {
             toast.error("Gagal menyimpan CPL");
             return false;
         }
-    };
+    }, [fetchCPL]);
 
-    const updateCPL = async (id: string, payload: any) => {
+    const updateCPL = useCallback(async (id: string, payload: any) => {
         try {
             await api.put(`/cpl/${id}`, payload);
             toast.success("CPL berhasil diperbarui");
@@ -186,9 +189,9 @@ export function useCPL() {
             toast.error("Gagal menyimpan CPL");
             return false;
         }
-    };
+    }, [fetchCPL]);
 
-    const deleteCPL = async (id: string) => {
+    const deleteCPL = useCallback(async (id: string) => {
         try {
             await api.delete(`/cpl/${id}`);
             toast.success("CPL berhasil dihapus");
@@ -199,22 +202,38 @@ export function useCPL() {
             toast.error("Gagal menghapus CPL");
             return false;
         }
-    };
+    }, [fetchCPL]);
 
     // Generic reset
-    const resetFilters = () => {
+    const resetFilters = useCallback(() => {
         setFakultasFilter("");
         setProdiFilter("all");
         setKategoriFilter("all");
         setKurikulumFilter("all");
         setSearchTerm("");
         setPage(1);
-    };
+    }, []);
 
-    return {
+    const filters = useMemo(() => ({
+        searchTerm,
+        fakultasFilter,
+        prodiFilter,
+        kategoriFilter,
+        kurikulumFilter
+    }), [searchTerm, fakultasFilter, prodiFilter, kategoriFilter, kurikulumFilter]);
+
+    const pagination = useMemo(() => ({
+        page,
+        setPage,
+        totalPages,
+        totalItems,
+        limit
+    }), [page, totalPages, totalItems]);
+
+    return useMemo(() => ({
         // Data
         cplList,
-        fullCplList: cplList, // Keeping legacy support if any
+        fullCplList: cplList,
         kategoriList,
         fakultasList,
         prodiList,
@@ -232,13 +251,7 @@ export function useCPL() {
         deleteCPL,
 
         // Standardized Filters Object
-        filters: {
-            searchTerm,
-            fakultasFilter,
-            prodiFilter,
-            kategoriFilter,
-            kurikulumFilter
-        },
+        filters,
 
         // Individual Setters
         setSearchTerm: handleSetSearchTerm,
@@ -249,12 +262,29 @@ export function useCPL() {
         resetFilters,
 
         // Standardized Pagination Object
-        pagination: {
-            page,
-            setPage,
-            totalPages,
-            totalItems,
-            limit
-        }
-    };
+        pagination
+    }), [
+        cplList,
+        kategoriList,
+        fakultasList,
+        prodiList,
+        kurikulumList,
+        loading,
+        fetchCPL,
+        fetchKategori,
+        fetchFakultas,
+        fetchProdi,
+        fetchKurikulum,
+        createCPL,
+        updateCPL,
+        deleteCPL,
+        filters,
+        handleSetSearchTerm,
+        handleSetFakultasFilter,
+        handleSetProdiFilter,
+        handleSetKategoriFilter,
+        handleSetKurikulumFilter,
+        resetFilters,
+        pagination
+    ]);
 }

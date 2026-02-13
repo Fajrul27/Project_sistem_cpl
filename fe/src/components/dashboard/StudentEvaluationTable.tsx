@@ -40,6 +40,8 @@ export const StudentEvaluationTable = ({ data }: StudentEvaluationTableProps) =>
         nama: string;
         details: LowCplDetail[];
     } | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 15;
 
     const handleRowClick = (student: any) => {
         if (student.lowCplCount > 0 && student.lowCplDetails) {
@@ -49,6 +51,10 @@ export const StudentEvaluationTable = ({ data }: StudentEvaluationTableProps) =>
             });
         }
     };
+
+    const totalPages = Math.ceil(data.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = data.slice(startIndex, startIndex + itemsPerPage);
 
     return (
         <>
@@ -67,8 +73,8 @@ export const StudentEvaluationTable = ({ data }: StudentEvaluationTableProps) =>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {data.length > 0 ? (
-                                data.map((mhs) => (
+                            {paginatedData.length > 0 ? (
+                                paginatedData.map((mhs) => (
                                     <TableRow
                                         key={mhs.id}
                                         className={mhs.lowCplCount > 0 ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
@@ -97,6 +103,48 @@ export const StudentEvaluationTable = ({ data }: StudentEvaluationTableProps) =>
                             )}
                         </TableBody>
                     </Table>
+
+                    {data.length > itemsPerPage && (
+                        <div className="mt-4 flex items-center justify-between">
+                            <div className="text-sm text-muted-foreground">
+                                Halaman {currentPage} dari {totalPages}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                                    onClick={() => setCurrentPage(1)}
+                                    disabled={currentPage === 1}
+                                >
+                                    <span className="sr-only">Go to first page</span>
+                                    «
+                                </button>
+                                <button
+                                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    <span className="sr-only">Go to previous page</span>
+                                    ‹
+                                </button>
+                                <button
+                                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    <span className="sr-only">Go to next page</span>
+                                    ›
+                                </button>
+                                <button
+                                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                                    onClick={() => setCurrentPage(totalPages)}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    <span className="sr-only">Go to last page</span>
+                                    »
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
