@@ -54,6 +54,12 @@ export function useDosenPengampu() {
     const [prodiList, setProdiList] = useState<any[]>([]);
     const [semesterList, setSemesterList] = useState<any[]>([]);
 
+    // Pagination for All Pengampu List
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const limit = 10;
+
     // Filters / Selection
     const [selectedFakultas, setSelectedFakultas] = useState<string>("");
     const [selectedProdi, setSelectedProdi] = useState<string>("");
@@ -139,28 +145,38 @@ export function useDosenPengampu() {
         fetchProdi();
     }, [selectedFakultas, fetchProdi]);
 
-    // Effect for MK
-    useEffect(() => {
-        fetchMataKuliah();
-        fetchAllAssignments();
-    }, [selectedProdi, selectedSemester, fetchMataKuliah]);
-
     const fetchAllAssignments = useCallback(async () => {
         try {
             setLoadingPengampu(true);
-            const filters: any = {};
+            const filters: any = {
+                page,
+                limit
+            };
             if (selectedProdi && selectedProdi !== 'all') filters.prodiId = selectedProdi;
             if (selectedSemester && selectedSemester !== 'all') filters.semester = selectedSemester;
             if (selectedFakultas && selectedFakultas !== 'all') filters.fakultasId = selectedFakultas;
 
             const res = await fetchAllPengampu(filters);
-            setAllPengampuList(res.data || []);
+
+            const data = (res?.data || []) as Pengampu[];
+            const meta = res?.meta || { totalPages: 1, total: 0 };
+
+            setAllPengampuList(data);
+            setTotalPages(meta.totalPages);
+            setTotalItems(meta.total);
         } catch (error) {
             console.error("Error fetching all assignments:", error);
+            setAllPengampuList([]);
         } finally {
             setLoadingPengampu(false);
         }
-    }, [selectedProdi, selectedSemester, selectedFakultas]);
+    }, [selectedProdi, selectedSemester, selectedFakultas, page]);
+
+    // Effect for MK and All Assignments
+    useEffect(() => {
+        fetchMataKuliah();
+        fetchAllAssignments();
+    }, [selectedProdi, selectedSemester, fetchMataKuliah, fetchAllAssignments]);
 
     // Effect for Pengampu
     useEffect(() => {
@@ -243,6 +259,13 @@ export function useDosenPengampu() {
 
         // Actions
         handleAddPengampu,
-        handleDeletePengampu
+        handleDeletePengampu,
+        pagination: {
+            page,
+            setPage,
+            totalPages,
+            totalItems,
+            limit
+        }
     };
 }

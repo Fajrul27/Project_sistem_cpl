@@ -72,7 +72,7 @@ const AnalisisiPage = () => {
   return (
     <DashboardPage
       title="Analisis CPL"
-      description="Visualisasi pencapaian pembelajaran"
+      description="Visualisasi performa dan statistik capaian pembelajaran"
     >
       <div className="space-y-6">
         {canManage && (
@@ -181,9 +181,6 @@ const AnalisisiPage = () => {
                 <p className="text-sm text-muted-foreground max-w-sm mx-auto">
                   Silakan pilih Semester, Fakultas, Jenjang, atau Program Studi pada menu filter di atas untuk menampilkan data analisis.
                 </p>
-                <Button variant="outline" onClick={() => setIsFilterOpen(true)}>
-                  Buka Filter
-                </Button>
               </div>
             </div>
           ) : (

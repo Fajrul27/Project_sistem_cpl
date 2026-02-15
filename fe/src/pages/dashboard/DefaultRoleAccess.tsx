@@ -361,7 +361,7 @@ const DefaultRoleAccessPage = () => {
     return (
         <TooltipProvider>
             <DashboardPage
-                title="Manajemen Hak Akses Default Role"
+                title="Template Akses Role"
                 description="Konfigurasi template hak akses default untuk setiap role."
             >
                 <div className="space-y-6">

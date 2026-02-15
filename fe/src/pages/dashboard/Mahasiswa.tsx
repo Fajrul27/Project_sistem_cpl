@@ -17,6 +17,7 @@ import { useMahasiswa, Profile } from "@/hooks/useMahasiswa";
 import { usePermission } from "@/contexts/PermissionContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
+import { Pagination } from "@/components/common/Pagination";
 
 const MahasiswaPage = () => {
   const { can } = usePermission();
@@ -165,7 +166,7 @@ const MahasiswaPage = () => {
   return (
     <DashboardPage
       title="Data Mahasiswa"
-      description="Monitoring data dan progress capaian pembelajaran mahasiswa"
+      description="Direktori data dan monitoring perkembangan kompetensi mahasiswa"
     >
       <div className="space-y-6">
         {/* Filters */}
@@ -399,48 +400,11 @@ const MahasiswaPage = () => {
                 </div>
 
                 {/* Pagination */}
-                {pagination.totalPages > 1 && (
-                  <div className="flex items-center justify-end space-x-2 py-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => pagination.setPage(Math.max(1, pagination.page - 1))}
-                      disabled={pagination.page === 1}
-                    >
-                      Previous
-                    </Button>
-                    <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                        let start = Math.max(1, pagination.page - 2);
-                        if (start + 4 > pagination.totalPages) {
-                          start = Math.max(1, pagination.totalPages - 4);
-                        }
-                        const p = start + i;
-                        if (p > pagination.totalPages) return null;
-
-                        return (
-                          <Button
-                            key={p}
-                            variant={pagination.page === p ? "default" : "outline"}
-                            size="sm"
-                            className="w-8 h-8 p-0"
-                            onClick={() => pagination.setPage(p)}
-                          >
-                            {p}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1))}
-                      disabled={pagination.page === pagination.totalPages}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                )}
+                <Pagination
+                  currentPage={pagination.page}
+                  totalPages={pagination.totalPages}
+                  onPageChange={pagination.setPage}
+                />
 
               </CardContent>
             </Card>

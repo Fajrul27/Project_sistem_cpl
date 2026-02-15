@@ -37,6 +37,8 @@ import { useProfilLulusan, ProfilLulusan } from "@/hooks/useProfilLulusan";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
+import { Pagination } from "@/components/common/Pagination";
 
 export default function ProfilLulusanPage() {
     const navigate = useNavigate();
@@ -355,11 +357,9 @@ export default function ProfilLulusanPage() {
                                 <LoadingSpinner size="lg" />
                             </div>
                         ) : !selectedProdi && !searchTerm ? (
-                            <div className="text-center py-12 border rounded-lg border-dashed">
-                                <Briefcase className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                                <h3 className="text-lg font-medium">Pilih Program Studi</h3>
-                                <p className="text-muted-foreground mb-4">Silakan pilih Program Studi terlebih dahulu untuk menampilkan data Profil Lulusan.</p>
-                            </div>
+                            <FilterRequiredState
+                                message="Silakan pilih Program Studi terlebih dahulu untuk menampilkan data Profil Lulusan."
+                            />
                         ) : profilList && profilList.length > 0 ? (
                             <div className="rounded-md border">
                                 <div className="overflow-x-auto">
@@ -493,49 +493,11 @@ export default function ProfilLulusanPage() {
                             </div>
                         )}
 
-                        {/* Pagination Controls */}
-                        {pagination.totalPages > 1 && (
-                            <div className="flex items-center justify-end space-x-2 py-4 border-t mt-4">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => pagination.setPage(Math.max(1, pagination.page - 1))}
-                                    disabled={pagination.page === 1}
-                                >
-                                    Previous
-                                </Button>
-                                <div className="flex items-center space-x-1">
-                                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                                        let start = Math.max(1, pagination.page - 2);
-                                        if (start + 4 > pagination.totalPages) {
-                                            start = Math.max(1, pagination.totalPages - 4);
-                                        }
-                                        const p = start + i;
-                                        if (p > pagination.totalPages) return null;
-
-                                        return (
-                                            <Button
-                                                key={p}
-                                                variant={pagination.page === p ? "default" : "outline"}
-                                                size="sm"
-                                                className="w-8 h-8 p-0"
-                                                onClick={() => pagination.setPage(p)}
-                                            >
-                                                {p}
-                                            </Button>
-                                        );
-                                    })}
-                                </div>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1))}
-                                    disabled={pagination.page === pagination.totalPages}
-                                >
-                                    Next
-                                </Button>
-                            </div>
-                        )}
+                        <Pagination
+                            currentPage={pagination.page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={pagination.setPage}
+                        />
                     </CardContent>
                 </Card>
 

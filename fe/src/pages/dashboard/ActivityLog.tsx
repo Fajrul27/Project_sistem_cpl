@@ -13,6 +13,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Search, RefreshCw, Undo, Eye, Filter, Download, Calendar as CalendarIcon, Activity, Users, FileText } from "lucide-react";
+import { Pagination } from "@/components/common/Pagination";
 
 interface AuditLog {
     id: string;
@@ -279,7 +280,7 @@ const ActivityLogPage = () => {
     };
 
     return (
-        <DashboardPage title="Log Aktivitas" description="Pantau aktivitas pengguna dan kelola riwayat perubahan data.">
+        <DashboardPage title="Log Aktivitas Pengguna" description="Pantau aktivitas pengguna dan kelola riwayat perubahan data.">
 
             {/* Statistics Cards */}
             {stats && (
@@ -533,25 +534,11 @@ const ActivityLogPage = () => {
                             </TableBody>
                         </Table>
                     </div>
-                    <div className="flex justify-end space-x-2 mt-4">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                        >
-                            Previous
-                        </Button>
-                        <span className="py-2 text-sm text-muted-foreground">Page {page} of {totalPages}</span>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                            disabled={page === totalPages}
-                        >
-                            Next
-                        </Button>
-                    </div>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={setPage}
+                    />
                 </CardContent>
             </Card>
 

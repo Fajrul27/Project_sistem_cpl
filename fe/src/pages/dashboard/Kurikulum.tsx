@@ -44,6 +44,7 @@ import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { Pagination } from "@/components/common/Pagination";
 
 import {
     getAllKurikulum,
@@ -175,6 +176,17 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
         item.nama.toLowerCase().includes(searchQuery.toLowerCase()) &&
         (filterActive ? item.isActive : true) // If filterActive is true, show only active. If false, show all.
     );
+
+    // Pagination
+    const [page, setPage] = useState(1);
+    const limit = 10;
+    const totalPages = Math.ceil(filteredList.length / limit) || 1;
+    const paginatedList = filteredList.slice((page - 1) * limit, page * limit);
+
+    // Reset page when filter changes
+    useEffect(() => {
+        setPage(1);
+    }, [searchQuery, filterActive]);
 
     return (
         <div className="space-y-6">
@@ -325,14 +337,14 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
                                             Memuat data...
                                         </TableCell>
                                     </TableRow>
-                                ) : filteredList.length === 0 ? (
+                                ) : paginatedList.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={5} className="h-24 text-center">
-                                            Tidak ada data kurikulum ditemukan
+                                            {filteredList.length === 0 ? "Tidak ada data kurikulum ditemukan" : "Halaman kosong"}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    filteredList.map((item) => (
+                                    paginatedList.map((item, index) => (
                                         <TableRow key={item.id}>
                                             <TableCell className="font-medium">{item.nama}</TableCell>
                                             <TableCell>{item.tahunMulai}</TableCell>
@@ -373,6 +385,14 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
                             </TableBody>
                         </Table>
                     </div>
+
+                    {filteredList.length > 0 && (
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={setPage}
+                        />
+                    )}
                 </CardContent>
             </Card>
 

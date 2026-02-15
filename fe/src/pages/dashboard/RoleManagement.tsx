@@ -15,7 +15,7 @@ import { LoadingScreen } from "@/components/common/LoadingScreen";
 
 interface RoleMetadata {
     id: string;
-    roleName: string;
+    name: string;  // Field dari backend
     displayName: string;
     description: string | null;
     icon: string | null;
@@ -69,7 +69,7 @@ const RoleManagementPage = () => {
     const handleEdit = (role: RoleMetadata) => {
         setEditingRole(role);
         setFormData({
-            name: role.roleName,
+            name: role.name,
             displayName: role.displayName,
             description: role.description || ""
         });
@@ -162,13 +162,13 @@ const RoleManagementPage = () => {
 
     return (
         <DashboardPage
-            title="Kelola Role"
-            description="Manage role display names and descriptions"
+            title="Daftar Role"
+            description="Kelola nama tampilan dan deskripsi peran pengguna dalam sistem"
         >
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Daftar Role</CardTitle>
+                        <CardTitle>Daftar Peran (Role)</CardTitle>
                         <CardDescription>
                             {roles.length} role tersedia dalam sistem
                         </CardDescription>
@@ -186,82 +186,94 @@ const RoleManagementPage = () => {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[50px]">Icon</TableHead>
-                                <TableHead>Role Name</TableHead>
-                                <TableHead>Display Name</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {roles.length === 0 ? (
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                        Tidak ada data role. Klik "Inisialisasi Default" untuk memuat role default.
-                                    </TableCell>
+                                    <TableHead className="w-[100px] text-center">Ikon</TableHead>
+                                    <TableHead className="w-[200px]">Nama Role</TableHead>
+                                    <TableHead className="w-[250px]">Nama Tampilan</TableHead>
+                                    <TableHead>Deskripsi</TableHead>
+                                    <TableHead className="w-[120px] text-right">Aksi</TableHead>
                                 </TableRow>
-                            ) : (
-                                roles.map((role) => {
-                                    const Icon = getRoleIcon(role.icon);
-                                    return (
-                                        <TableRow key={role.id}>
-                                            <TableCell>
-                                                <Icon className="h-5 w-5" style={{ color: role.color || undefined }} />
-                                            </TableCell>
-                                            <TableCell className="font-medium">{role.roleName}</TableCell>
-                                            <TableCell>{role.displayName}</TableCell>
-                                            <TableCell className="max-w-md truncate">
-                                                {role.description || '-'}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex gap-2 justify-end">
-                                                    <Button size="sm" variant="outline" onClick={() => handleEdit(role)}>
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="destructive"
-                                                        onClick={() => handleDelete(role)}
-                                                        disabled={role._count?.userRoles! > 0 || role.isSystem || role.roleName === 'dekan'}
-                                                        title={(role.isSystem || role.roleName === 'dekan') ? "System role cannot be deleted" : "Delete role"}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })
-                            )}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {roles.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                                            Tidak ada data role. Klik "Inisialisasi Default" untuk memuat role default.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    roles.map((role) => {
+                                        const Icon = getRoleIcon(role.icon);
+                                        return (
+                                            <TableRow key={role.id} className="hover:bg-muted/30">
+                                                <TableCell className="py-4">
+                                                    <Icon className="h-5 w-5 mx-auto" style={{ color: role.color || undefined }} />
+                                                </TableCell>
+                                                <TableCell className="py-4 font-medium text-muted-foreground">
+                                                    {role.name}
+                                                </TableCell>
+                                                <TableCell className="py-4 font-semibold text-foreground">
+                                                    {role.displayName}
+                                                </TableCell>
+                                                <TableCell className="py-4 text-muted-foreground max-w-md">
+                                                    {role.description || '-'}
+                                                </TableCell>
+                                                <TableCell className="py-4 text-right">
+                                                    <div className="flex gap-1 justify-end">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={() => handleEdit(role)}
+                                                            className="h-8 w-8 p-0"
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={() => handleDelete(role)}
+                                                            disabled={role._count?.userRoles! > 0 || role.isSystem || role.name === 'dekan'}
+                                                            title={(role.isSystem || role.name === 'dekan') ? "Role sistem tidak dapat dihapus" : "Hapus role"}
+                                                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
 
             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Edit Role: {editingRole?.roleName}</DialogTitle>
+                        <DialogTitle>Edit Role: {editingRole?.name}</DialogTitle>
                         <DialogDescription>
-                            Update display name and description for this role
+                            Perbarui nama tampilan dan deskripsi untuk role ini
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <RequiredLabel htmlFor="displayName" required>Display Name</RequiredLabel>
+                            <RequiredLabel htmlFor="displayName" required>Nama Tampilan</RequiredLabel>
                             <Input
                                 id="displayName"
                                 value={formData.displayName}
                                 onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                                placeholder="e.g., Administrator"
+                                placeholder="Contoh: Administrator"
                                 required
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
+                            <Label htmlFor="description">Deskripsi</Label>
                             <Textarea
                                 id="description"
                                 value={formData.description}
@@ -272,10 +284,10 @@ const RoleManagementPage = () => {
                         </div>
                         <div className="flex gap-2">
                             <Button onClick={handleSave} className="flex-1">
-                                Save
+                                Simpan
                             </Button>
                             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                                Cancel
+                                Batal
                             </Button>
                         </div>
                     </div>
@@ -293,28 +305,28 @@ const RoleManagementPage = () => {
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <RequiredLabel htmlFor="name" required>Name (ID)</RequiredLabel>
+                            <RequiredLabel htmlFor="name" required>Nama (ID)</RequiredLabel>
                             <Input
                                 id="name"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
-                                placeholder="e.g., koordinator"
+                                placeholder="Contoh: koordinator"
                                 required
                             />
                             <p className="text-xs text-muted-foreground">Lowercase, alphanumeric dan underscore saja</p>
                         </div>
                         <div className="space-y-2">
-                            <RequiredLabel htmlFor="createDisplayName" required>Display Name</RequiredLabel>
+                            <RequiredLabel htmlFor="createDisplayName" required>Nama Tampilan</RequiredLabel>
                             <Input
                                 id="createDisplayName"
                                 value={formData.displayName}
                                 onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                                placeholder="e.g., Koordinator Program"
+                                placeholder="Contoh: Koordinator Program"
                                 required
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="createDescription">Description</Label>
+                            <Label htmlFor="createDescription">Deskripsi</Label>
                             <Textarea
                                 id="createDescription"
                                 value={formData.description}

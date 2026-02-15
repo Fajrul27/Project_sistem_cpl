@@ -65,7 +65,7 @@ const KaprodiDataSettings = () => {
     return (
         <DashboardPage
             title="Data Kaprodi"
-            description="Kelola data Ketua Program Studi untuk transkrip"
+            description="Pengaturan data Ketua Program Studi untuk validasi dokumen resmi"
         >
             <div className="space-y-6">
                 {canManage && (

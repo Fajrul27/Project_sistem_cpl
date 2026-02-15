@@ -238,7 +238,7 @@ const KrsPage = () => {
     };
 
     return (
-        <DashboardPage title="Data KRS Mahasiswa" description="Manajemen Kartu Rencana Studi (KRS) Mahasiswa hasil import Siakad">
+        <DashboardPage title="Registrasi KRS" description="Manajemen Kartu Rencana Studi (KRS) Mahasiswa hasil import Siakad">
             <div className="flex flex-col gap-6">
                 {canManage && (
                     <CollapsibleGuide title="Panduan Pengisian & Import KRS">

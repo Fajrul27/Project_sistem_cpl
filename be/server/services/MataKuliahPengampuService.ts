@@ -40,7 +40,9 @@ export class MataKuliahPengampuService {
         userRole?: string;
         prodiId?: string;
         semester?: number;
-        fakultasId?: string
+        fakultasId?: string;
+        page?: number;
+        limit?: number;
     }) {
         const where: any = {};
 
@@ -74,8 +76,19 @@ export class MataKuliahPengampuService {
             where.mataKuliah = { ...where.mataKuliah, prodi: { fakultasId: filters.fakultasId } };
         }
 
-        return prisma.mataKuliahPengampu.findMany({
+        // Pagination
+        const page = filters?.page || 1;
+        const limit = filters?.limit || 10;
+        const skip = (page - 1) * limit;
+
+        // Get total count for pagination
+        const total = await prisma.mataKuliahPengampu.count({ where });
+
+        // Get paginated data
+        const data = await prisma.mataKuliahPengampu.findMany({
             where,
+            skip,
+            take: limit,
             include: {
                 mataKuliah: {
                     select: {
@@ -105,6 +118,16 @@ export class MataKuliahPengampuService {
                 { mataKuliah: { kodeMk: 'asc' } }
             ]
         });
+
+        return {
+            data,
+            meta: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
     }
 
     static async assignDosen(data: any, userId: string, userRole: string) {

@@ -256,7 +256,7 @@ export default function FakultasPage() {
     );
 
     return (
-        <DashboardPage title="Data Fakultas & Prodi" description="Kelola data referensi fakultas dan program studi">
+        <DashboardPage title="Unit & Jenjang" description="Kelola data referensi fakultas, program studi, dan jenjang pendidikan">
             <div className="mb-6">
                 {canManage && (
                     <CollapsibleGuide title="Panduan Struktur Organisasi">

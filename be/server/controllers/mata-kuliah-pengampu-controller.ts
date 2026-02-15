@@ -18,17 +18,19 @@ export const getAllAssignments = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).userId;
         const userRole = (req as any).userRole;
-        const { prodiId, semester, fakultasId } = req.query;
+        const { prodiId, semester, fakultasId, page, limit } = req.query;
 
         const filters = {
             userId,
             userRole,
             prodiId: prodiId as string,
             semester: semester ? Number(semester) : undefined,
-            fakultasId: fakultasId as string
+            fakultasId: fakultasId as string,
+            page: page ? Number(page) : 1,
+            limit: limit ? Number(limit) : 10
         };
-        const assignments = await MataKuliahPengampuService.getAllAssignments(filters);
-        res.json({ data: assignments });
+        const result = await MataKuliahPengampuService.getAllAssignments(filters);
+        res.json(result);
     } catch (error) {
         console.error('Error fetching all assignments:', error);
         res.status(500).json({ error: 'Failed to fetch assignments' });

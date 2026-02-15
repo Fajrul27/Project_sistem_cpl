@@ -1,4 +1,6 @@
+
 import { useState } from 'react';
+import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useSkalaNilai, SkalaNilai } from '@/hooks/useSkalaNilai';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,11 +79,10 @@ export default function SkalaNilaiPage() {
     };
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-bold">Manajemen Skala Nilai</h1>
-                <p className="text-muted-foreground text-sm">Atur rentang nilai huruf untuk konversi otomatis hasil evaluasi mahasiswa.</p>
-            </div>
+        <DashboardPage
+            title="Manajemen Skala Nilai"
+            description="Atur rentang nilai huruf untuk konversi otomatis hasil evaluasi mahasiswa."
+        >
 
             {canManage && (
                 <CollapsibleGuide title="Panduan Skala Nilai">
@@ -99,7 +100,7 @@ export default function SkalaNilaiPage() {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Daftar Skala Nilai</CardTitle>
+                        <CardTitle>Daftar Standar Nilai</CardTitle>
                         <CardDescription>Atur rentang nilai huruf untuk konversi otomatis</CardDescription>
                     </div>
                     <Button onClick={() => handleOpenDialog()}>
@@ -213,6 +214,6 @@ export default function SkalaNilaiPage() {
                     </form>
                 </DialogContent>
             </Dialog>
-        </div>
+        </DashboardPage>
     );
 }

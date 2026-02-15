@@ -12,6 +12,8 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { usePermission } from "@/contexts/PermissionContext";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
+import { Pagination } from "@/components/common/Pagination";
 
 const DosenPengampuPage = () => {
     const { can } = usePermission();
@@ -38,7 +40,8 @@ const DosenPengampuPage = () => {
         setSelectedDosen,
         handleAddPengampu,
         handleDeletePengampu,
-        allPengampuList // Added from hook
+        allPengampuList, // Added from hook
+        pagination // Added pagination
     } = useDosenPengampu();
 
     // Delete Dialog State
@@ -60,14 +63,14 @@ const DosenPengampuPage = () => {
 
     if (loading) {
         return (
-            <DashboardPage title="Manajemen Dosen Pengampu">
+            <DashboardPage title="Data Tenaga Pendidik (Dosen)">
                 <LoadingScreen fullScreen={false} message="Memuat data..." />
             </DashboardPage>
         );
     }
 
     return (
-        <DashboardPage title="Penetapan Dosen Pengampu" description="Kelola dosen pengampu untuk setiap mata kuliah">
+        <DashboardPage title="Dosen Pengampu" description="Penetapan tugas mengajar dan pengampu mata kuliah">
             <div className="space-y-6">
                 {canManage && (
                     <CollapsibleGuide title="Panduan Dosen Pengampu">
@@ -201,10 +204,9 @@ const DosenPengampuPage = () => {
                             </CardHeader>
                             <CardContent>
                                 {!selectedMk ? (
-                                    <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-                                        <UserPlus className="h-12 w-12 mb-4 opacity-20" />
-                                        <p>Silakan pilih mata kuliah di sebelah kiri</p>
-                                    </div>
+                                    <FilterRequiredState
+                                        message="Silakan pilih Mata Kuliah di panel sebelah kiri untuk melihat daftar dosen pengampu."
+                                    />
                                 ) : loadingPengampu ? (
                                     <LoadingScreen fullScreen={false} message="Memuat pengampu..." />
                                 ) : pengampuList.length === 0 ? (
@@ -276,7 +278,7 @@ const DosenPengampuPage = () => {
                                     {allPengampuList && allPengampuList.length > 0 ? (
                                         allPengampuList.map((item, index) => (
                                             <TableRow key={item.id}>
-                                                <TableCell className="text-center">{index + 1}</TableCell>
+                                                <TableCell className="text-center">{(pagination.page - 1) * pagination.limit + index + 1}</TableCell>
                                                 <TableCell>{(item as any).mataKuliah?.kodeMk || '-'}</TableCell>
                                                 <TableCell>{(item as any).mataKuliah?.namaMk || '-'}</TableCell>
                                                 <TableCell className="text-center">{(item as any).mataKuliah?.semester || '-'}</TableCell>
@@ -294,6 +296,11 @@ const DosenPengampuPage = () => {
                                 </TableBody>
                             </Table>
                         </div>
+                        <Pagination
+                            currentPage={pagination.page}
+                            totalPages={pagination.totalPages}
+                            onPageChange={pagination.setPage}
+                        />
                     </CardContent>
                 </Card>
 

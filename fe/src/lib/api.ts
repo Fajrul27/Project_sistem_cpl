@@ -117,6 +117,8 @@ export async function fetchAllPengampu(filters: {
   prodiId?: string;
   semester?: string;
   fakultasId?: string;
+  page?: number;
+  limit?: number;
 }) {
   // Backend: GET /api/mata-kuliah-pengampu
   return api.get('/mata-kuliah-pengampu', { params: filters });

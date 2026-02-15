@@ -392,7 +392,7 @@ const RoleAccessPage = () => {
     return (
         <TooltipProvider>
             <DashboardPage
-                title="Manajemen Akses Role"
+                title="Pengaturan Hak Akses"
                 description="Atur hak akses untuk setiap role terhadap fitur-fitur sistem."
             >
                 <div className="space-y-6">

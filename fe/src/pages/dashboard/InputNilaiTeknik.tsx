@@ -16,6 +16,7 @@ import { useTahunAjaran } from "@/hooks/useTahunAjaran";
 import { useEffect } from "react";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { usePermission } from "@/contexts/PermissionContext";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -95,7 +96,7 @@ const InputNilaiTeknikPage = () => {
     };
 
     return (
-        <DashboardPage title="Input Nilai Teknik Penilaian" description="Input nilai berdasarkan teknik penilaian (Tugas, Kuis, dll)">
+        <DashboardPage title="Penilaian" description="Evaluasi capaian pembelajaran melalui asesmen mata kuliah">
             <div className="space-y-6">
                 {canManage && (
                     <CollapsibleGuide title="Panduan Input Nilai & Rubrik">
@@ -214,7 +215,8 @@ const InputNilaiTeknikPage = () => {
                     </CardContent>
                 </Card>
 
-                {selectedMK && selectedKelas && (
+
+                {selectedMK && selectedKelas ? (
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
@@ -380,6 +382,10 @@ const InputNilaiTeknikPage = () => {
                             )}
                         </CardContent>
                     </Card>
+                ) : (
+                    <FilterRequiredState
+                        message="Silakan pilih Semester, Mata Kuliah, dan Kelas pada menu filter di atas untuk mulai menginput nilai."
+                    />
                 )}
             </div>
 

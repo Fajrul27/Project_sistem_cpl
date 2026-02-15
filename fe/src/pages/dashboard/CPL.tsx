@@ -28,6 +28,7 @@ import { useAngkatan } from "@/hooks/useAngkatan";
 import { useTahunAjaran } from "@/hooks/useTahunAjaran";
 import { ImportResultDialog } from "@/components/common/ImportResultDialog";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { Pagination } from "@/components/common/Pagination";
 
 
 type FormData = {
@@ -527,9 +528,8 @@ const CPLPage = () => {
 
   return (
     <DashboardPage
-      title="Data CPL & Mapping"
-      description="Kelola Capaian Pembelajaran Lulusan dan Mapping ke Profil Lulusan"
-
+      title="Data CPL"
+      description="Manajemen Capaian Pembelajaran Lulusan (CPL) dan Pemetaan Capaian"
     >
       <FloatingBackButton
         onClick={() => navigate('/dashboard/profil-lulusan', { state: { filters: location.state?.filters } })}
@@ -1076,58 +1076,11 @@ const CPLPage = () => {
               {/* Pagination Controls */}
               {
                 pagination.totalPages > 1 && (
-                  <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        pagination.setPage(Math.max(1, pagination.page - 1));
-                      }}
-                      disabled={pagination.page === 1}
-                    >
-                      Previous
-                    </Button>
-                    <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                        let start = Math.max(1, pagination.page - 2);
-                        if (start + 4 > pagination.totalPages) {
-                          start = Math.max(1, pagination.totalPages - 4);
-                        }
-                        const p = start + i;
-                        if (p > pagination.totalPages) return null;
-
-                        return (
-                          <Button
-                            key={p}
-                            variant={pagination.page === p ? "default" : "outline"}
-                            size="sm"
-                            type="button"
-                            className="w-8 h-8 p-0"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              pagination.setPage(p);
-                            }}
-                          >
-                            {p}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1));
-                      }}
-                      disabled={pagination.page === pagination.totalPages}
-                    >
-                      Next
-                    </Button>
-                  </div>
+                  <Pagination
+                    currentPage={pagination.page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={pagination.setPage}
+                  />
                 )
               }
             </Card>

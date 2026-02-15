@@ -22,6 +22,7 @@ import { CheckCircle, XCircle, AlertCircle, Save, ChevronDown, ChevronRight, Tre
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { usePermission } from "@/contexts/PermissionContext";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 
 
 const EvaluasiCPLPage = () => {
@@ -153,7 +154,7 @@ const EvaluasiCPLPage = () => {
     }));
 
     return (
-        <DashboardPage title="Evaluasi CPL & Tindak Lanjut OBE">
+        <DashboardPage title="Evaluasi Kurikulum" description="Evaluasi ketercapaian kompetensi lulusan (CQI)">
             <div className="space-y-6">
                 {canManage && (
                     <CollapsibleGuide title="Panduan Evaluasi CPL">
@@ -340,9 +341,9 @@ const EvaluasiCPLPage = () => {
                             </CardHeader>
                             <CardContent>
                                 {!canLoad ? (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        Silakan pilih filter terlebih dahulu
-                                    </div>
+                                    <FilterRequiredState
+                                        message="Silakan pilih Fakultas, Program Studi, Angkatan, dan Tahun Ajaran untuk melihat target CPL."
+                                    />
                                 ) : loading ? (
                                     <LoadingScreen fullScreen={false} />
                                 ) : (
@@ -379,254 +380,258 @@ const EvaluasiCPLPage = () => {
                     </TabsContent>
 
                     <TabsContent value="evaluation">
-                        <div className="grid gap-4 md:grid-cols-3 mb-6">
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium">Total CPL</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{summary.totalCpl}</div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium">Tercapai</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-green-600">{summary.tercapai}</div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium">Tidak Tercapai</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-red-600">{summary.tidakTercapai}</div>
-                                </CardContent>
-                            </Card>
-                        </div>
+                        {!canLoad ? (
+                            <FilterRequiredState
+                                message="Silakan pilih Fakultas, Program Studi, Angkatan, dan Tahun Ajaran pada menu filter di atas untuk menampilkan hasil evaluasi."
+                            />
+                        ) : (
+                            <>
+                                <div className="grid gap-4 md:grid-cols-3 mb-6">
+                                    <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Total CPL</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">{summary.totalCpl}</div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Tercapai</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold text-green-600">{summary.tercapai}</div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium">Tidak Tercapai</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold text-red-600">{summary.tidakTercapai}</div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
 
-                        {/* Radar Chart */}
-                        {canLoad && !loading && evaluation.length > 0 && (
-                            <Card className="mb-6">
-                                <CardHeader>
-                                    <CardTitle>Peta Capaian CPL (Radar Chart)</CardTitle>
-                                    <CardDescription>Visualisasi perbandingan Target vs Capaian Aktual</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="h-[400px] w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
-                                                <PolarGrid />
-                                                <PolarAngleAxis dataKey="subject" />
-                                                <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                                                <Radar name="Target" dataKey="Target" stroke="#8884d8" fill="#8884d8" fillOpacity={0.1} />
-                                                <Radar name="Actual" dataKey="Actual" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
-                                                <Legend />
-                                                <Tooltip />
-                                            </RadarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Hasil Evaluasi CPL</CardTitle>
-                                <CardDescription>Perbandingan capaian aktual mahasiswa dengan target yang ditetapkan</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {!canLoad ? (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        Silakan pilih filter terlebih dahulu
-                                    </div>
-                                ) : loading ? (
-                                    <LoadingScreen fullScreen={false} />
-                                ) : (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="w-[50px]"></TableHead>
-                                                <TableHead className="w-[80px]">Kode</TableHead>
-                                                <TableHead>Deskripsi</TableHead>
-                                                <TableHead className="text-center">Target</TableHead>
-                                                <TableHead className="text-center">Aktual</TableHead>
-                                                <TableHead className="text-center">% Mhs Lulus</TableHead>
-                                                <TableHead className="text-center">Status</TableHead>
-                                                <TableHead className="text-right">Aksi</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {evaluation.map(item => (
-                                                <>
-                                                    <TableRow key={item.cplId} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleRow(item.cplId)}>
-                                                        <TableCell>
-                                                            {expandedRows.has(item.cplId) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                                        </TableCell>
-                                                        <TableCell className="font-medium">{item.kodeCpl}</TableCell>
-                                                        <TableCell className="max-w-md truncate" title={item.deskripsi}>{item.deskripsi}</TableCell>
-                                                        <TableCell className="text-center">{item.target}</TableCell>
-                                                        <TableCell className="text-center font-bold">{item.actual}</TableCell>
-                                                        <TableCell className="text-center">
-                                                            <Badge variant={item.passPercentage >= 80 ? "outline" : "secondary"} className={item.passPercentage < 50 ? "text-red-600 border-red-200 bg-red-50" : ""}>
-                                                                {item.passPercentage}%
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            {item.status === 'Tercapai' ? (
-                                                                <Badge variant="default" className="bg-green-600 hover:bg-green-700">
-                                                                    <CheckCircle className="w-3 h-3 mr-1" /> Tercapai
-                                                                </Badge>
-                                                            ) : (
-                                                                <Badge variant="destructive">
-                                                                    <XCircle className="w-3 h-3 mr-1" /> Tidak Tercapai
-                                                                </Badge>
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                                            {item.status === 'Tidak Tercapai' && (
-                                                                <Dialog>
-                                                                    <DialogTrigger asChild>
-                                                                        <Button
-                                                                            variant={item.tindakLanjut ? "outline" : "default"}
-                                                                            size="sm"
-                                                                            onClick={() => setSelectedCpl(item)}
-                                                                        >
-                                                                            {item.tindakLanjut ? "Lihat Tindak Lanjut" : "Tindak Lanjut"}
-                                                                        </Button>
-                                                                    </DialogTrigger>
-                                                                    <DialogContent className="max-w-lg">
-                                                                        <DialogHeader>
-                                                                            <DialogTitle>Tindak Lanjut OBE - {item.kodeCpl}</DialogTitle>
-                                                                            <DialogDescription>
-                                                                                Lengkapi formulir tindak lanjut untuk CPL yang tidak tercapai (Closing the Loop).
-                                                                            </DialogDescription>
-                                                                        </DialogHeader>
-
-                                                                        {item.tindakLanjut ? (
-                                                                            <div className="space-y-4 py-4">
-                                                                                <div className="p-4 bg-muted rounded-lg space-y-3">
-                                                                                    <div>
-                                                                                        <Label className="text-xs text-muted-foreground">Akar Masalah</Label>
-                                                                                        <p className="text-sm font-medium">{item.tindakLanjut.akarMasalah}</p>
-                                                                                    </div>
-                                                                                    <div>
-                                                                                        <Label className="text-xs text-muted-foreground">Rencana Perbaikan</Label>
-                                                                                        <p className="text-sm font-medium">{item.tindakLanjut.rencanaPerbaikan}</p>
-                                                                                    </div>
-                                                                                    <div className="grid grid-cols-2 gap-4">
-                                                                                        <div>
-                                                                                            <Label className="text-xs text-muted-foreground">PIC</Label>
-                                                                                            <p className="text-sm font-medium">{item.tindakLanjut.penanggungJawab}</p>
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <Label className="text-xs text-muted-foreground">Target Semester</Label>
-                                                                                            <p className="text-sm font-medium">{item.tindakLanjut.targetSemester}</p>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div className="space-y-4 py-4">
-                                                                                <div className="space-y-2">
-                                                                                    <Label>Akar Masalah</Label>
-                                                                                    <Textarea
-                                                                                        placeholder="Jelaskan penyebab tidak tercapainya CPL..."
-                                                                                        value={tindakLanjutForm.akarMasalah}
-                                                                                        onChange={e => setTindakLanjutForm({ ...tindakLanjutForm, akarMasalah: e.target.value })}
-                                                                                    />
-                                                                                </div>
-                                                                                <div className="space-y-2">
-                                                                                    <Label>Rencana Perbaikan Pembelajaran</Label>
-                                                                                    <Textarea
-                                                                                        placeholder="Deskripsikan rencana perbaikan..."
-                                                                                        value={tindakLanjutForm.rencanaPerbaikan}
-                                                                                        onChange={e => setTindakLanjutForm({ ...tindakLanjutForm, rencanaPerbaikan: e.target.value })}
-                                                                                    />
-                                                                                </div>
-                                                                                <div className="grid grid-cols-2 gap-4">
-                                                                                    <div className="space-y-2">
-                                                                                        <Label>Penanggung Jawab (PIC)</Label>
-                                                                                        <Input
-                                                                                            placeholder="Nama Dosen / Tim"
-                                                                                            value={tindakLanjutForm.penanggungJawab}
-                                                                                            onChange={e => setTindakLanjutForm({ ...tindakLanjutForm, penanggungJawab: e.target.value })}
-                                                                                        />
-                                                                                    </div>
-                                                                                    <div className="space-y-2">
-                                                                                        <Label>Target Semester</Label>
-                                                                                        <Input
-                                                                                            placeholder="Contoh: Ganjil 2024/2025"
-                                                                                            value={tindakLanjutForm.targetSemester}
-                                                                                            onChange={e => setTindakLanjutForm({ ...tindakLanjutForm, targetSemester: e.target.value })}
-                                                                                        />
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-
-                                                                        <DialogFooter>
-                                                                            {!item.tindakLanjut && (
-                                                                                <Button onClick={handleSaveTindakLanjut} disabled={loading}>
-                                                                                    Simpan Tindak Lanjut
-                                                                                </Button>
-                                                                            )}
-                                                                        </DialogFooter>
-                                                                    </DialogContent>
-                                                                </Dialog>
-                                                            )}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                    {expandedRows.has(item.cplId) && (
-                                                        <TableRow className="bg-muted/30">
-                                                            <TableCell colSpan={8} className="p-4">
-                                                                <div className="pl-12">
-                                                                    <h4 className="text-sm font-semibold mb-2 flex items-center">
-                                                                        <TrendingUp className="w-4 h-4 mr-2" />
-                                                                        Kontribusi Mata Kuliah
-                                                                    </h4>
-                                                                    <div className="border rounded-md bg-background">
-                                                                        <Table>
-                                                                            <TableHeader>
-                                                                                <TableRow>
-                                                                                    <TableHead>Kode MK</TableHead>
-                                                                                    <TableHead>Nama Mata Kuliah</TableHead>
-                                                                                    <TableHead className="text-right">Rata-rata Nilai</TableHead>
-                                                                                </TableRow>
-                                                                            </TableHeader>
-                                                                            <TableBody>
-                                                                                {item.courseBreakdown.length > 0 ? (
-                                                                                    item.courseBreakdown.map((mk, idx) => (
-                                                                                        <TableRow key={idx}>
-                                                                                            <TableCell>{mk.kodeMk}</TableCell>
-                                                                                            <TableCell>{mk.namaMk}</TableCell>
-                                                                                            <TableCell className="text-right font-medium">
-                                                                                                {mk.averageScore}
-                                                                                            </TableCell>
-                                                                                        </TableRow>
-                                                                                    ))
-                                                                                ) : (
-                                                                                    <TableRow>
-                                                                                        <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                                                                            Belum ada data nilai mata kuliah
-                                                                                        </TableCell>
-                                                                                    </TableRow>
-                                                                                )}
-                                                                            </TableBody>
-                                                                        </Table>
-                                                                    </div>
-                                                                </div>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    )}
-                                                </>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                {/* Radar Chart */}
+                                {!loading && evaluation.length > 0 && (
+                                    <Card className="mb-6">
+                                        <CardHeader>
+                                            <CardTitle>Peta Capaian CPL (Radar Chart)</CardTitle>
+                                            <CardDescription>Visualisasi perbandingan Target vs Capaian Aktual</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="h-[400px] w-full">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
+                                                        <PolarGrid />
+                                                        <PolarAngleAxis dataKey="subject" />
+                                                        <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                                                        <Radar name="Target" dataKey="Target" stroke="#8884d8" fill="#8884d8" fillOpacity={0.1} />
+                                                        <Radar name="Actual" dataKey="Actual" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
+                                                        <Legend />
+                                                        <Tooltip />
+                                                    </RadarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
                                 )}
-                            </CardContent>
-                        </Card>
+
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Hasil Evaluasi CPL</CardTitle>
+                                        <CardDescription>Perbandingan capaian aktual mahasiswa dengan target yang ditetapkan</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {loading ? (
+                                            <LoadingScreen fullScreen={false} />
+                                        ) : (
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="w-[50px]"></TableHead>
+                                                        <TableHead className="w-[80px]">Kode</TableHead>
+                                                        <TableHead>Deskripsi</TableHead>
+                                                        <TableHead className="text-center">Target</TableHead>
+                                                        <TableHead className="text-center">Aktual</TableHead>
+                                                        <TableHead className="text-center">% Mhs Lulus</TableHead>
+                                                        <TableHead className="text-center">Status</TableHead>
+                                                        <TableHead className="text-right">Aksi</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {evaluation.map(item => (
+                                                        <>
+                                                            <TableRow key={item.cplId} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleRow(item.cplId)}>
+                                                                <TableCell>
+                                                                    {expandedRows.has(item.cplId) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                                                </TableCell>
+                                                                <TableCell className="font-medium">{item.kodeCpl}</TableCell>
+                                                                <TableCell className="max-w-md truncate" title={item.deskripsi}>{item.deskripsi}</TableCell>
+                                                                <TableCell className="text-center">{item.target}</TableCell>
+                                                                <TableCell className="text-center font-bold">{item.actual}</TableCell>
+                                                                <TableCell className="text-center">
+                                                                    <Badge variant={item.passPercentage >= 80 ? "outline" : "secondary"} className={item.passPercentage < 50 ? "text-red-600 border-red-200 bg-red-50" : ""}>
+                                                                        {item.passPercentage}%
+                                                                    </Badge>
+                                                                </TableCell>
+                                                                <TableCell className="text-center">
+                                                                    {item.status === 'Tercapai' ? (
+                                                                        <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                                                                            <CheckCircle className="w-3 h-3 mr-1" /> Tercapai
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <Badge variant="destructive">
+                                                                            <XCircle className="w-3 h-3 mr-1" /> Tidak Tercapai
+                                                                        </Badge>
+                                                                    )}
+                                                                </TableCell>
+                                                                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                                    {item.status === 'Tidak Tercapai' && (
+                                                                        <Dialog>
+                                                                            <DialogTrigger asChild>
+                                                                                <Button
+                                                                                    variant={item.tindakLanjut ? "outline" : "default"}
+                                                                                    size="sm"
+                                                                                    onClick={() => setSelectedCpl(item)}
+                                                                                >
+                                                                                    {item.tindakLanjut ? "Lihat Tindak Lanjut" : "Tindak Lanjut"}
+                                                                                </Button>
+                                                                            </DialogTrigger>
+                                                                            <DialogContent className="max-w-lg">
+                                                                                <DialogHeader>
+                                                                                    <DialogTitle>Tindak Lanjut OBE - {item.kodeCpl}</DialogTitle>
+                                                                                    <DialogDescription>
+                                                                                        Lengkapi formulir tindak lanjut untuk CPL yang tidak tercapai (Closing the Loop).
+                                                                                    </DialogDescription>
+                                                                                </DialogHeader>
+
+                                                                                {item.tindakLanjut ? (
+                                                                                    <div className="space-y-4 py-4">
+                                                                                        <div className="p-4 bg-muted rounded-lg space-y-3">
+                                                                                            <div>
+                                                                                                <Label className="text-xs text-muted-foreground">Akar Masalah</Label>
+                                                                                                <p className="text-sm font-medium">{item.tindakLanjut.akarMasalah}</p>
+                                                                                            </div>
+                                                                                            <div>
+                                                                                                <Label className="text-xs text-muted-foreground">Rencana Perbaikan</Label>
+                                                                                                <p className="text-sm font-medium">{item.tindakLanjut.rencanaPerbaikan}</p>
+                                                                                            </div>
+                                                                                            <div className="grid grid-cols-2 gap-4">
+                                                                                                <div>
+                                                                                                    <Label className="text-xs text-muted-foreground">PIC</Label>
+                                                                                                    <p className="text-sm font-medium">{item.tindakLanjut.penanggungJawab}</p>
+                                                                                                </div>
+                                                                                                <div>
+                                                                                                    <Label className="text-xs text-muted-foreground">Target Semester</Label>
+                                                                                                    <p className="text-sm font-medium">{item.tindakLanjut.targetSemester}</p>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="space-y-4 py-4">
+                                                                                        <div className="space-y-2">
+                                                                                            <Label>Akar Masalah</Label>
+                                                                                            <Textarea
+                                                                                                placeholder="Jelaskan penyebab tidak tercapainya CPL..."
+                                                                                                value={tindakLanjutForm.akarMasalah}
+                                                                                                onChange={e => setTindakLanjutForm({ ...tindakLanjutForm, akarMasalah: e.target.value })}
+                                                                                            />
+                                                                                        </div>
+                                                                                        <div className="space-y-2">
+                                                                                            <Label>Rencana Perbaikan Pembelajaran</Label>
+                                                                                            <Textarea
+                                                                                                placeholder="Deskripsikan rencana perbaikan..."
+                                                                                                value={tindakLanjutForm.rencanaPerbaikan}
+                                                                                                onChange={e => setTindakLanjutForm({ ...tindakLanjutForm, rencanaPerbaikan: e.target.value })}
+                                                                                            />
+                                                                                        </div>
+                                                                                        <div className="grid grid-cols-2 gap-4">
+                                                                                            <div className="space-y-2">
+                                                                                                <Label>Penanggung Jawab (PIC)</Label>
+                                                                                                <Input
+                                                                                                    placeholder="Nama Dosen / Tim"
+                                                                                                    value={tindakLanjutForm.penanggungJawab}
+                                                                                                    onChange={e => setTindakLanjutForm({ ...tindakLanjutForm, penanggungJawab: e.target.value })}
+                                                                                                />
+                                                                                            </div>
+                                                                                            <div className="space-y-2">
+                                                                                                <Label>Target Semester</Label>
+                                                                                                <Input
+                                                                                                    placeholder="Contoh: Ganjil 2024/2025"
+                                                                                                    value={tindakLanjutForm.targetSemester}
+                                                                                                    onChange={e => setTindakLanjutForm({ ...tindakLanjutForm, targetSemester: e.target.value })}
+                                                                                                />
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                <DialogFooter>
+                                                                                    {!item.tindakLanjut && (
+                                                                                        <Button onClick={handleSaveTindakLanjut} disabled={loading}>
+                                                                                            Simpan Tindak Lanjut
+                                                                                        </Button>
+                                                                                    )}
+                                                                                </DialogFooter>
+                                                                            </DialogContent>
+                                                                        </Dialog>
+                                                                    )}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                            {expandedRows.has(item.cplId) && (
+                                                                <TableRow className="bg-muted/30">
+                                                                    <TableCell colSpan={8} className="p-4">
+                                                                        <div className="pl-12">
+                                                                            <h4 className="text-sm font-semibold mb-2 flex items-center">
+                                                                                <TrendingUp className="w-4 h-4 mr-2" />
+                                                                                Kontribusi Mata Kuliah
+                                                                            </h4>
+                                                                            <div className="border rounded-md bg-background">
+                                                                                <Table>
+                                                                                    <TableHeader>
+                                                                                        <TableRow>
+                                                                                            <TableHead>Kode MK</TableHead>
+                                                                                            <TableHead>Nama Mata Kuliah</TableHead>
+                                                                                            <TableHead className="text-right">Rata-rata Nilai</TableHead>
+                                                                                        </TableRow>
+                                                                                    </TableHeader>
+                                                                                    <TableBody>
+                                                                                        {item.courseBreakdown.length > 0 ? (
+                                                                                            item.courseBreakdown.map((mk, idx) => (
+                                                                                                <TableRow key={idx}>
+                                                                                                    <TableCell>{mk.kodeMk}</TableCell>
+                                                                                                    <TableCell>{mk.namaMk}</TableCell>
+                                                                                                    <TableCell className="text-right font-medium">
+                                                                                                        {mk.averageScore}
+                                                                                                    </TableCell>
+                                                                                                </TableRow>
+                                                                                            ))
+                                                                                        ) : (
+                                                                                            <TableRow>
+                                                                                                <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                                                                                    Belum ada data nilai mata kuliah
+                                                                                                </TableCell>
+                                                                                            </TableRow>
+                                                                                        )}
+                                                                                    </TableBody>
+                                                                                </Table>
+                                                                            </div>
+                                                                        </div>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            )}
+                                                        </>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </>
+                        )}
                     </TabsContent>
                 </Tabs>
             </div>

@@ -18,6 +18,7 @@ import {
 import { useVisiMisi } from "@/hooks/useVisiMisi";
 import { usePermission } from "@/contexts/PermissionContext";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 
 export default function VisiMisiPage() {
     const {
@@ -45,7 +46,7 @@ export default function VisiMisiPage() {
     const { can } = usePermission(); // Add this line
 
     return (
-        <DashboardPage title="Visi & Misi Program Studi" description="Kelola Visi dan Misi sebagai landasan kurikulum OBE">
+        <DashboardPage title="Visi & Misi" description="Kelola Visi dan Misi sebagai landasan kurikulum OBE">
             <div className="space-y-6">
                 {canEdit && (
                     <CollapsibleGuide title="Panduan Visi & Misi">
@@ -97,10 +98,9 @@ export default function VisiMisiPage() {
 
                 {/* VISI SECTION */}
                 {!selectedProdi && role === "admin" ? (
-                    <div className="text-center py-12 border rounded-lg border-dashed">
-                        <h3 className="text-lg font-medium">Pilih Program Studi</h3>
-                        <p className="text-muted-foreground">Silakan pilih Fakultas dan Program Studi terlebih dahulu untuk menampilkan Visi & Misi.</p>
-                    </div>
+                    <FilterRequiredState
+                        message="Silakan pilih Fakultas dan Program Studi terlebih dahulu untuk menampilkan Visi & Misi."
+                    />
                 ) : (
                     <>
                         <Card>

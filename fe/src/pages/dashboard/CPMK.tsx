@@ -35,6 +35,7 @@ import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { usePermission } from "@/contexts/PermissionContext";
+import { Pagination } from "@/components/common/Pagination";
 
 
 const CPMKPage = () => {
@@ -393,8 +394,8 @@ const CPMKPage = () => {
 
     return (
         <DashboardPage
-            title="Kelola CPMK & Mapping"
-            description="Manajemen Capaian Pembelajaran Mata Kuliah dan Mapping ke CPL"
+            title="Data CPMK"
+            description="Manajemen Capaian Pembelajaran Mata Kuliah (CPMK) dan Pemetaan ke CPL"
         >
             <div className="space-y-6">
                 {canManage && (
@@ -827,49 +828,11 @@ const CPMKPage = () => {
                             </CardContent>
                             {/* Pagination Controls */}
                             {pagination.totalPages > 1 && (
-                                <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        type="button"
-                                        onClick={() => pagination.setPage(Math.max(1, pagination.page - 1))}
-                                        disabled={pagination.page === 1}
-                                    >
-                                        Previous
-                                    </Button>
-                                    <div className="flex items-center space-x-1">
-                                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                                            let start = Math.max(1, pagination.page - 2);
-                                            if (start + 4 > pagination.totalPages) {
-                                                start = Math.max(1, pagination.totalPages - 4);
-                                            }
-                                            const p = start + i;
-                                            if (p > pagination.totalPages) return null;
-
-                                            return (
-                                                <Button
-                                                    key={p}
-                                                    variant={pagination.page === p ? "default" : "outline"}
-                                                    size="sm"
-                                                    type="button"
-                                                    className="w-8 h-8 p-0"
-                                                    onClick={() => pagination.setPage(p)}
-                                                >
-                                                    {p}
-                                                </Button>
-                                            );
-                                        })}
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        type="button"
-                                        onClick={() => pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1))}
-                                        disabled={pagination.page === pagination.totalPages}
-                                    >
-                                        Next
-                                    </Button>
-                                </div>
+                                <Pagination
+                                    currentPage={pagination.page}
+                                    totalPages={pagination.totalPages}
+                                    onPageChange={pagination.setPage}
+                                />
                             )}
                         </Card>
                     </>

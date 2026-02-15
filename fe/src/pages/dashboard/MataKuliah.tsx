@@ -22,7 +22,9 @@ import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmation
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { List as ListIcon } from "lucide-react";
 import { CPLMKWeightMatrix } from "./components/CPLMKWeightMatrix";
+
 import { useCPL } from "@/hooks/useCPL";
+import { Pagination } from "@/components/common/Pagination";
 
 const MataKuliahPage = () => {
   const navigate = useNavigate();
@@ -348,10 +350,10 @@ const MataKuliahPage = () => {
 
   return (
     <DashboardPage
-      title="Data Mata Kuliah"
+      title="Mata Kuliah"
       description={role === 'mahasiswa'
         ? "Daftar mata kuliah program studi Anda"
-        : "Kelola mata kuliah program studi"
+        : "Kelola daftar mata kuliah dan struktur kurikulum"
       }
     >
       <div className="flex flex-col gap-6">
@@ -822,58 +824,11 @@ const MataKuliahPage = () => {
         {/* Only show pagination if filters completed AND we have data AND more than 1 page */}
         {
           isFilterComplete && mkList.length > 0 && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-end space-x-2 py-4 border-t mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  pagination.setPage(Math.max(1, pagination.page - 1));
-                }}
-                disabled={pagination.page === 1}
-              >
-                Previous
-              </Button>
-              <div className="flex items-center space-x-1">
-                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                  let start = Math.max(1, pagination.page - 2);
-                  if (start + 4 > pagination.totalPages) {
-                    start = Math.max(1, pagination.totalPages - 4);
-                  }
-                  const p = start + i;
-                  if (p > pagination.totalPages) return null;
-
-                  return (
-                    <Button
-                      key={p}
-                      variant={pagination.page === p ? "default" : "outline"}
-                      size="sm"
-                      type="button"
-                      className="w-8 h-8 p-0"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        pagination.setPage(p);
-                      }}
-                    >
-                      {p}
-                    </Button>
-                  );
-                })}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  pagination.setPage(Math.min(pagination.totalPages, pagination.page + 1));
-                }}
-                disabled={pagination.page === pagination.totalPages}
-              >
-                Next
-              </Button>
-            </div>
+            <Pagination
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              onPageChange={pagination.setPage}
+            />
           )
         }
 

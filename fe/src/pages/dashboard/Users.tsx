@@ -10,8 +10,8 @@ const UsersPage = () => {
 
   return (
     <DashboardPage
-      title="Manajemen Pengguna"
-      description="Kelola akun dan role pengguna dalam sistem"
+      title="Akun Pengguna"
+      description="Konfigurasi hak akses dan kredensial pengguna"
     >
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
