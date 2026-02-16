@@ -95,20 +95,39 @@ export const createTindakLanjut = async (req: Request, res: Response) => {
 // Get Tindak Lanjut History
 export const getTindakLanjutHistory = async (req: Request, res: Response) => {
     try {
-        const { cplId, prodiId } = req.query;
+        const { cplId, prodiId, status } = req.query;
+        const { userId, role } = (req as any);
 
-        if (!cplId || !prodiId) {
-            return res.status(400).json({ error: 'Missing required params: cplId, prodiId' });
+        if (!prodiId) {
+            return res.status(400).json({ error: 'Missing required params: prodiId' });
         }
 
         const history = await EvaluasiCPLService.getTindakLanjutHistory(
-            cplId as string,
-            prodiId as string
+            prodiId as string,
+            cplId as string | undefined,
+            status as string | undefined
         );
 
         res.json({ data: history });
     } catch (error) {
         console.error('Error fetching history:', error);
         res.status(500).json({ error: 'Gagal mengambil riwayat tindak lanjut' });
+    }
+};
+
+export const updateTindakLanjutStatus = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body; // 'open' or 'closed'
+
+        if (!status) {
+            return res.status(400).json({ error: 'Missing required body: status' });
+        }
+
+        const result = await EvaluasiCPLService.updateTindakLanjutStatus(id, status);
+        res.json({ message: 'Status berhasil diperbarui', data: result });
+    } catch (error) {
+        console.error('Error updating status:', error);
+        res.status(500).json({ error: 'Gagal memperbarui status tindak lanjut' });
     }
 };

@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { fetchMahasiswaList, fetchMataKuliahPengampu, fetchFakultasList, fetchTranskripCPL, fetchSemesters, fetchKelas, fetchProdiList } from "@/lib/api";
 import { useUserRole } from "./useUserRole";
+import { useDosenTeachingInfo } from "./useDosenTeachingInfo";
 import { toast } from "sonner";
 
 export interface Profile {
@@ -48,6 +49,9 @@ export function useMahasiswa() {
     const [loading, setLoading] = useState(true);
     const [fakultasList, setFakultasList] = useState<Fakultas[]>([]);
     const [mataKuliahList, setMataKuliahList] = useState<MataKuliahPengampu[]>([]);
+
+    // Dosen Teaching Info
+    const { taughtSemesters } = useDosenTeachingInfo();
 
     // Global Filter Options State
     const [allProdis, setAllProdis] = useState<string[]>([]);
@@ -312,7 +316,7 @@ export function useMahasiswa() {
         },
         uniqueOptions: {
             prodis: allProdis,
-            semesters: allSemesters,
+            semesters: (role === 'dosen' && taughtSemesters.length > 0) ? taughtSemesters.map(String) : allSemesters,
             kelas: allKelas
         },
         setSearchTerm: handleSetSearchTerm,

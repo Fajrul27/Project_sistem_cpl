@@ -58,9 +58,16 @@ export function useVisiMisi() {
                 try {
                     const res = await api.get(`/prodi?fakultasId=${selectedFakultas}`);
                     setProdiList(res.data);
-                    // Don't auto-select prodi
-                    setSelectedProdi("");
-                    setVisiMisiList([]);
+
+                    // Reset prodi selection ONLY if current prodi is not in the new list 
+                    // and user is NOT a kaprodi (locked to their prodi)
+                    if (role !== "kaprodi") {
+                        const isInList = res.data.some((p: any) => p.id === selectedProdi);
+                        if (!isInList) {
+                            setSelectedProdi("");
+                            setVisiMisiList([]);
+                        }
+                    }
                 } catch (error) {
                     console.error("Error fetching prodi:", error);
                     setProdiList([]);
@@ -68,11 +75,13 @@ export function useVisiMisi() {
             };
             fetchProdiByFakultas();
         } else if (canViewAll && !selectedFakultas) {
-            setProdiList([]);
-            setSelectedProdi("");
-            setVisiMisiList([]);
+            if (role !== "kaprodi") {
+                setProdiList([]);
+                setSelectedProdi("");
+                setVisiMisiList([]);
+            }
         }
-    }, [selectedFakultas, canViewAll]);
+    }, [selectedFakultas, canViewAll, role]);
 
     useEffect(() => {
         if (selectedProdi) {
@@ -80,23 +89,43 @@ export function useVisiMisi() {
         } else {
             // Clear data if no prodi selected
             setVisiMisiList([]);
+            setLoading(false);
         }
     }, [selectedProdi]);
 
     const fetchInitialData = async () => {
         try {
-            // Fetch Fakultas List for Admin/ViewAll
-            if (canViewAll) {
+            // Fetch Fakultas List for Admin/ViewAll or Kaprodi
+            if (canViewAll || role === 'kaprodi') {
                 const res = await api.get("/fakultas");
                 setFakultasList(res.data);
-            } else if (!canViewAll && profile?.prodiId) {
-                // Anyone else restricted to their prodi
-                setSelectedProdi(profile.prodiId);
-            } else if (!canViewAll) {
+            }
+
+            // Always try to set default prodi from profile if available
+            if (profile?.prodiId) {
+                // If it's the first load and nothing is selected yet
+                if (!selectedProdi) {
+                    setSelectedProdi(profile.prodiId);
+                }
+
+                // If we also fetched fakultasList or have fakultasId in profile, try to set selectedFakultas
+                if (!selectedFakultas) {
+                    const fId = profile.fakultasId || (profile.prodi && (profile.prodi as any).fakultasId);
+                    if (fId) {
+                        setSelectedFakultas(fId);
+                    }
+                }
+            }
+
+            // Set loading to false if we didn't trigger any prodi-specific fetch yet 
+            // OR we are admin and can view all (who needs to select something first)
+            if (!profile?.prodiId && !selectedProdi) {
+                setLoading(false);
             }
         } catch (error) {
             console.error("Error fetching initial data:", error);
             toast.error("Gagal memuat data");
+            setLoading(false);
         }
     };
 

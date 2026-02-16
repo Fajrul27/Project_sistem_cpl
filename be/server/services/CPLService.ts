@@ -109,8 +109,26 @@ export class CPLService {
             }
         }
 
-        if (prodiId && userRole === 'admin') {
-            where.prodiId = prodiId;
+        if (prodiId) {
+            if (userRole === 'admin') {
+                where.prodiId = prodiId;
+            } else if (userRole === 'kaprodi' || userRole === 'dosen') {
+                // If they provided a prodiId, make sure it matches their allowed prodis
+                if (where.prodiId) {
+                    if (typeof where.prodiId === 'string') {
+                        if (where.prodiId !== prodiId) {
+                            // Trying to access prodi they don't own
+                            return { data: [], meta: { total: 0, page, limit, totalPages: 0 } };
+                        }
+                    } else if (where.prodiId && typeof where.prodiId === 'object' && 'in' in (where.prodiId as any)) {
+                        if (!(where.prodiId as any).in.includes(prodiId)) {
+                            // Trying to access prodi they don't teach
+                            return { data: [], meta: { total: 0, page, limit, totalPages: 0 } };
+                        }
+                        where.prodiId = prodiId;
+                    }
+                }
+            }
         }
 
         const skip = (page - 1) * limit;

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RequiredLabel } from "@/components/common/RequiredLabel";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Edit, Save } from "lucide-react";
 import {
     Dialog,
@@ -46,7 +46,13 @@ export default function VisiMisiPage() {
     const { can } = usePermission(); // Add this line
 
     return (
-        <DashboardPage title="Visi & Misi" description="Kelola Visi dan Misi sebagai landasan kurikulum OBE">
+        <DashboardPage
+            title="Visi & Misi"
+            description={role === 'mahasiswa'
+                ? "Lihat Visi dan Misi program studi sebagai landasan kurikulum Anda"
+                : "Kelola Visi dan Misi sebagai landasan kurikulum OBE"
+            }
+        >
             <div className="space-y-6">
                 {canEdit && (
                     <CollapsibleGuide title="Panduan Visi & Misi">
@@ -67,7 +73,11 @@ export default function VisiMisiPage() {
                             <div className="flex flex-col md:flex-row gap-4">
                                 <div className="flex items-center gap-2">
                                     <Label className="min-w-[80px]">Fakultas:</Label>
-                                    <Select value={selectedFakultas} onValueChange={setSelectedFakultas}>
+                                    <Select
+                                        value={selectedFakultas}
+                                        onValueChange={setSelectedFakultas}
+                                        disabled={role === "kaprodi"}
+                                    >
                                         <SelectTrigger className="w-[300px]">
                                             <SelectValue placeholder="Pilih Fakultas" />
                                         </SelectTrigger>
@@ -80,7 +90,11 @@ export default function VisiMisiPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Label className="min-w-[80px]">Prodi:</Label>
-                                    <Select value={selectedProdi} onValueChange={setSelectedProdi} disabled={!selectedFakultas}>
+                                    <Select
+                                        value={selectedProdi}
+                                        onValueChange={setSelectedProdi}
+                                        disabled={role === "kaprodi" || !selectedFakultas}
+                                    >
                                         <SelectTrigger className="w-[300px]">
                                             <SelectValue placeholder="Pilih Prodi" />
                                         </SelectTrigger>
@@ -101,6 +115,10 @@ export default function VisiMisiPage() {
                     <FilterRequiredState
                         message="Silakan pilih Fakultas dan Program Studi terlebih dahulu untuk menampilkan Visi & Misi."
                     />
+                ) : !selectedProdi && loading ? (
+                    <div className="text-center py-10">Memuat data...</div>
+                ) : !selectedProdi ? (
+                    <div className="text-center py-10 text-muted-foreground">Data tidak tersedia untuk profil Anda.</div>
                 ) : (
                     <>
                         <Card>

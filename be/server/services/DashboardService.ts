@@ -143,6 +143,12 @@ export class DashboardService {
 
             const myMkIds = [...new Set(pengampuRecords.map(p => p.mataKuliahId))];
 
+            // Collect associated prodi IDs for CPL filtering
+            const myProdiIds = [...new Set(pengampuRecords.map(p => p.mataKuliah?.prodiId).filter(Boolean))];
+            const dProfile = await prisma.profile.findUnique({ where: { userId }, select: { prodiId: true } });
+            if (dProfile?.prodiId) myProdiIds.push(dProfile.prodiId);
+            const uniqueProdiIds = [...new Set(myProdiIds)];
+
             if (mataKuliahId) {
                 if (!myMkIds.includes(mataKuliahId)) {
                     mkFilter.id = "invalid_id";
@@ -151,6 +157,11 @@ export class DashboardService {
             } else {
                 mkFilter = { ...mkFilter, id: { in: myMkIds } };
                 nilaiFilter = { ...nilaiFilter, mataKuliahId: { in: myMkIds } };
+            }
+
+            // Filter CPLs for Dosen by their associated prodis
+            if (uniqueProdiIds.length > 0) {
+                cplFilter = { ...cplFilter, prodiId: { in: uniqueProdiIds as string[] } };
             }
 
             // Calculate User Count for Dosen based on Active Managed Students (Matching UserService logic)

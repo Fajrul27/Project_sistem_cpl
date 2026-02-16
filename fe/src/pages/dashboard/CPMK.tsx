@@ -433,7 +433,7 @@ const CPMKPage = () => {
                             <div className="relative flex-1 min-w-[220px] max-w-sm">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Cari kode atau deskripsi CPMK..."
+                                    placeholder={role === 'admin' ? "Cari kode atau deskripsi CPMK (semua kriteria)..." : "Cari kode atau deskripsi CPMK..."}
                                     value={filters.searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="pl-9"
@@ -480,22 +480,24 @@ const CPMKPage = () => {
                                     )}
 
 
-                                    <div className="space-y-1">
-                                        <Label className="text-xs font-medium">Program Studi</Label>
-                                        <Select value={filters.selectedProdi} onValueChange={setSelectedProdi}>
-                                            <SelectTrigger className="w-full bg-background">
-                                                <SelectValue placeholder="Semua Program Studi" />
-                                            </SelectTrigger>
-                                            <SelectContent className="max-h-[300px]">
-                                                <SelectItem value="all">Semua Program Studi</SelectItem>
-                                                {accessibleProdis.map((prodi) => (
-                                                    <SelectItem key={prodi.id} value={prodi.id}>
-                                                        {prodi.nama}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                    {(role === 'admin' || accessibleProdis.length > 1) && (
+                                        <div className="space-y-1">
+                                            <Label className="text-xs font-medium">Program Studi</Label>
+                                            <Select value={filters.selectedProdi} onValueChange={setSelectedProdi}>
+                                                <SelectTrigger className="w-full bg-background">
+                                                    <SelectValue placeholder="Semua Program Studi" />
+                                                </SelectTrigger>
+                                                <SelectContent className="max-h-[300px]">
+                                                    <SelectItem value="all">Semua Program Studi</SelectItem>
+                                                    {accessibleProdis.map((prodi) => (
+                                                        <SelectItem key={prodi.id} value={prodi.id}>
+                                                            {prodi.nama}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
 
 
                                     <div className="space-y-1">

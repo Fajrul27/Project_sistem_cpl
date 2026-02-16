@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
-import { fetchMahasiswaList, api, getTranskripCPMK, getTranskripProfil, fetchFakultasList, fetchProdiList } from "@/lib/api";
+import { useDosenTeachingInfo } from "@/hooks/useDosenTeachingInfo";
+import { fetchMahasiswaList, api, getTranskripCPMK, getTranskripProfil, fetchFakultasList, fetchProdiList, fetchMataKuliahPengampu } from "@/lib/api";
 
 export interface TranskripItem {
     cplId: string;
@@ -101,6 +102,9 @@ export function useTranskripCPL() {
     const [kaprodiData, setKaprodiData] = useState<KaprodiData | null>(null);
     const [totalCurriculumCpl, setTotalCurriculumCpl] = useState<number>(0);
 
+    // Dosen Teaching Info
+    const { taughtSemesters } = useDosenTeachingInfo();
+
     const [semester, setSemester] = useState<string>("all");
     const [tahunAjaranList, setTahunAjaranList] = useState<any[]>([]);
 
@@ -149,6 +153,14 @@ export function useTranskripCPL() {
             const fakRef = await fetchFakultasList();
             setFakultasList(fakRef.data || []);
 
+            // Role-based Fakultas initialization
+            if (!roleLoading && role !== "admin" && profile) {
+                const fId = profile.fakultasId || (profile.prodi as any)?.fakultasId;
+                if (fId) {
+                    setSelectedFakultas(fId);
+                }
+            }
+
             const taRes = await api.get('/references/tahun-ajaran');
             setTahunAjaranList(taRes.data || []);
         } catch (e) { console.error(e); }
@@ -162,16 +174,34 @@ export function useTranskripCPL() {
                 if (selectedFakultas && selectedFakultas !== 'all') {
                     const res = await fetchProdiList(selectedFakultas);
                     prodiData = res.data || [];
-                } else {
+                } else if (!selectedFakultas || selectedFakultas === 'all') {
                     const res = await fetchProdiList();
                     prodiData = res.data || [];
                 }
 
-                // Filter prodi for dosen/kaprodi to only show their assigned prodi
-                if (isDosen && profile?.prodi?.id) {
-                    prodiData = prodiData.filter((p: any) => p.id === profile.prodi.id);
-                    // Auto-select dosen's prodi
-                    setSelectedProdi(profile.prodi.id);
+                // Filter prodi based on role
+                if (role !== "admin" && profile) {
+                    let allowedProdiIds = new Set<string>();
+                    if (profile.prodiId) allowedProdiIds.add(profile.prodiId);
+
+                    // For lecturers, also include prodis from courses they teach
+                    if (role === 'dosen') {
+                        try {
+                            const mkRes = await fetchMataKuliahPengampu(userId!);
+                            const mkProdis = mkRes.data?.map((mk: any) => mk.mataKuliah?.prodiId || mk.prodiId).filter(Boolean);
+                            mkProdis?.forEach((id: string) => allowedProdiIds.add(id));
+                        } catch (e) { console.error("Error fetching taught prodis:", e); }
+                    }
+
+                    if (allowedProdiIds.size > 0) {
+                        prodiData = prodiData.filter((p: any) => allowedProdiIds.has(p.id));
+                    }
+
+                    // Force select the user's prodi if not already set or if it's currently 'all'
+                    if (!selectedProdi || selectedProdi === 'all') {
+                        if (profile.prodiId) setSelectedProdi(profile.prodiId);
+                        else if (prodiData.length > 0) setSelectedProdi(prodiData[0].id);
+                    }
                 }
 
                 setProdiList(prodiData);
@@ -180,8 +210,10 @@ export function useTranskripCPL() {
                 setProdiList([]);
             }
         };
-        fetchProdi();
-    }, [selectedFakultas, isDosen, profile]);
+        if (!roleLoading) {
+            fetchProdi();
+        }
+    }, [selectedFakultas, role, profile, roleLoading]);
 
 
 
@@ -342,6 +374,10 @@ export function useTranskripCPL() {
 
 
     // Computed
+    const semesterList = (role === 'dosen' && taughtSemesters.length > 0)
+        ? taughtSemesters.map(s => ({ id: s.toString(), nama: `Semester ${s}` }))
+        : [1, 2, 3, 4, 5, 6, 7, 8].map(s => ({ id: s.toString(), nama: `Semester ${s}` }));
+
     const selectedStudent = currentStudent || mahasiswaList.find(m => m.id === selectedMahasiswa);
     const validTranskripList = Array.isArray(transkripList) ? transkripList : [];
     const avgScore = validTranskripList.length > 0
@@ -372,6 +408,7 @@ export function useTranskripCPL() {
         setSelectedSemester,
         fakultasList,
         prodiList,
+        semesterList,
         semester,
         setSemester,
         searchQuery,

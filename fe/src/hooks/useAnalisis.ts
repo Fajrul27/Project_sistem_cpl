@@ -3,9 +3,10 @@ import {
     fetchAnalisisCPL,
     fetchFakultasList,
     fetchProdiList,
-    fetchAngkatanList,
     fetchJenjangList
 } from "@/lib/api";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useDosenTeachingInfo } from "@/hooks/useDosenTeachingInfo";
 import { toast } from "sonner";
 
 export interface DashboardPageProps {
@@ -13,6 +14,7 @@ export interface DashboardPageProps {
 }
 
 export function useAnalisis() {
+    const { role, profile, loading: roleLoading } = useUserRole();
     const [cplData, setCplData] = useState<any[]>([]);
     const [radarData, setRadarData] = useState<any[]>([]);
     const [distributionData, setDistributionData] = useState<any[]>([]);
@@ -28,7 +30,45 @@ export function useAnalisis() {
     const [jenjangList, setJenjangList] = useState<any[]>([]);
     const [prodiList, setProdiList] = useState<any[]>([]);
 
+    // Dosen Teaching Info
+    const { taughtSemesters } = useDosenTeachingInfo();
+
     const [loading, setLoading] = useState(true);
+
+    // Role-based filter initialization
+    useEffect(() => {
+        if (!roleLoading && role !== "admin") {
+            if (profile?.prodiId) {
+                setProdiFilter(profile.prodiId);
+                const fId = profile.fakultasId || (profile.prodi as any)?.fakultasId;
+                if (fId) {
+                    setFakultasFilter(fId);
+                }
+                if (profile.prodi?.jenjang) {
+                    setJenjangFilter(profile.prodi.jenjang);
+                }
+            }
+        }
+    }, [roleLoading, role, profile]);
+
+    // Dosen Semester Auto-select
+    useEffect(() => {
+        if ((role as string) === 'dosen') {
+            if (taughtSemesters.length === 1) {
+                const singleSemester = taughtSemesters[0].toString();
+                if (semester !== singleSemester) {
+                    setSemester(singleSemester);
+                }
+            }
+        } else if ((role as string) !== 'dosen' && !semester) {
+            // For Admin/Kaprodi default to Semester 1 or All
+            // Ideally we force user to select, but previously it was "1"
+            // Let's set it to "1" to match previous behavior for non-dosen
+            // Or keep it empty? User asked "defaultnya pilih semester"
+            // If I keep it empty, it forces selection.
+            // Given the complaint was specifically about Dosen, let's just handle Dosen.
+        }
+    }, [role, taughtSemesters, semester]);
 
     // Fetch Filter Options
     useEffect(() => {
@@ -87,6 +127,11 @@ export function useAnalisis() {
         setProdiFilter("");
     };
 
+    // Determine effective semester list
+    const semesterList = (role === 'dosen' && taughtSemesters.length > 0)
+        ? taughtSemesters.map(s => ({ id: s.toString(), nama: `Semester ${s}` }))
+        : [1, 2, 3, 4, 5, 6, 7, 8].map(s => ({ id: s.toString(), nama: `Semester ${s}` }));
+
     // Derived list for Prodi based on Fakultas and Jenjang selection
     const filteredProdiList = prodiList.filter(p => {
         const matchFakultas = fakultasFilter && fakultasFilter !== "all" ? p.fakultasId === fakultasFilter : true;
@@ -108,7 +153,8 @@ export function useAnalisis() {
         setProdiFilter,
         fakultasList,
         jenjangList,
-        prodiList: filteredProdiList, // Return filtered list directly
+        prodiList: filteredProdiList,
+        semesterList,
         loading,
         resetFilters
     };

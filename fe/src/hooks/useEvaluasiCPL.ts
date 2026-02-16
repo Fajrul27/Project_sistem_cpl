@@ -93,7 +93,9 @@ export function useEvaluasiCPL() {
     const saveTindakLanjut = useCallback(async (payload: any) => {
         setLoading(true);
         try {
-            await api.post('/evaluasi-cpl/tindak-lanjut', payload);
+            const apiPayload = { ...payload, tahunAjaranId: payload.tahunAjaran };
+            delete (apiPayload as any).tahunAjaran;
+            await api.post('/evaluasi-cpl/tindak-lanjut', apiPayload);
             toast.success("Tindak lanjut berhasil disimpan");
             return true;
         } catch (error: any) {
@@ -102,6 +104,29 @@ export function useEvaluasiCPL() {
             return false;
         } finally {
             setLoading(false);
+        }
+    }, []);
+
+    const fetchTindakLanjutHistory = useCallback(async (prodiId: string, filters?: { cplId?: string, status?: string }) => {
+        try {
+            const params: any = { prodiId, ...filters };
+            const response = await api.get('/evaluasi-cpl/tindak-lanjut/history', { params });
+            return response.data || [];
+        } catch (error: any) {
+            console.error("Gagal memuat riwayat tindak lanjut", error);
+            return [];
+        }
+    }, []);
+
+    const updateTindakLanjutStatus = useCallback(async (id: string, status: string) => {
+        try {
+            await api.put(`/evaluasi-cpl/tindak-lanjut/${id}/status`, { status });
+            toast.success("Status tindak lanjut diperbarui");
+            return true;
+        } catch (error: any) {
+            toast.error("Gagal memperbarui status");
+            console.error(error);
+            return false;
         }
     }, []);
 
@@ -120,6 +145,8 @@ export function useEvaluasiCPL() {
         saveTargets,
         fetchEvaluation,
         saveTindakLanjut,
+        fetchTindakLanjutHistory,
+        updateTindakLanjutStatus,
         resetEvaluation
     };
 }

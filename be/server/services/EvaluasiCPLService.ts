@@ -235,20 +235,57 @@ export class EvaluasiCPLService {
 
     // --- TINDAK LANJUT ---
 
-    static async createTindakLanjut(data: TindakLanjutParams) {
+    static async createTindakLanjut(data: any) {
+        const payload = { ...data };
+
+        // Ensure tahunAjaran is present
+        if (payload.tahunAjaranId && !payload.tahunAjaran) {
+            payload.tahunAjaran = payload.tahunAjaranId;
+        }
+        delete payload.tahunAjaranId;
+
+        // Ensure semester is Int or null
+        const sem = payload.semester ? Number(payload.semester) : null;
+
         return prisma.tindakLanjutCPL.create({
             data: {
-                ...data,
-                semester: data.semester || null
+                prodiId: payload.prodiId,
+                angkatan: payload.angkatan,
+                tahunAjaran: payload.tahunAjaran,
+                semester: sem,
+                cplId: payload.cplId,
+                akarMasalah: payload.akarMasalah,
+                rencanaPerbaikan: payload.rencanaPerbaikan,
+                penanggungJawab: payload.penanggungJawab,
+                targetSemester: payload.targetSemester,
+                createdBy: payload.createdBy
             }
         });
     }
 
-    static async getTindakLanjutHistory(cplId: string, prodiId: string) {
-        return prisma.tindakLanjutCPL.findMany({
-            where: { cplId, prodiId },
+    static async getTindakLanjutHistory(prodiId: string, cplId?: string, status?: string) {
+        const where: any = { prodiId };
+        if (cplId) where.cplId = cplId;
+        if (status) where.status = status;
+
+        return (prisma.tindakLanjutCPL as any).findMany({
+            where,
             orderBy: { createdAt: 'desc' },
-            include: { cpl: true }
+            include: {
+                cpl: true,
+                creator: {
+                    include: {
+                        profile: true
+                    }
+                }
+            }
+        });
+    }
+
+    static async updateTindakLanjutStatus(id: string, status: string) {
+        return prisma.tindakLanjutCPL.update({
+            where: { id },
+            data: { status }
         });
     }
 }

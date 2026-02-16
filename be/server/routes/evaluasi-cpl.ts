@@ -16,7 +16,8 @@ router.post('/targets', requireRole('admin', 'kaprodi'), EvaluasiController.upse
 router.get('/evaluation', requireRole('admin', 'kaprodi', 'dosen'), EvaluasiController.getEvaluation);
 
 // Tindak Lanjut
-router.post('/tindak-lanjut', requireRole('admin', 'kaprodi'), EvaluasiController.createTindakLanjut);
+router.post('/tindak-lanjut', requireRole('admin', 'kaprodi', 'dosen'), EvaluasiController.createTindakLanjut);
 router.get('/tindak-lanjut/history', requireRole('admin', 'kaprodi', 'dosen'), EvaluasiController.getTindakLanjutHistory);
+router.put('/tindak-lanjut/:id/status', requireRole('admin', 'kaprodi'), EvaluasiController.updateTindakLanjutStatus);
 
 export default router;

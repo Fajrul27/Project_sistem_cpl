@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { api, fetchSemesters } from "@/lib/api";
 import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useDosenTeachingInfo } from "@/hooks/useDosenTeachingInfo";
 // Type import from backend schemas for payload validation
 import type { MataKuliah as MataKuliahSchema } from "@schemas/index";
 
@@ -53,10 +55,14 @@ const initialForm: MataKuliahFormData = {
 const mkCache: Record<string, { data: any[], meta: any }> = {};
 
 export const useMataKuliah = () => {
+    const { role, profile, loading: roleLoading } = useUserRole();
     const [searchParams, setSearchParams] = useSearchParams();
     const [mkList, setMkList] = useState<MataKuliah[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+
+    // Dosen Teaching Info
+    const { taughtSemesters } = useDosenTeachingInfo();
 
     // Pagination State
     const page = parseInt(searchParams.get("page") || "1");
@@ -150,6 +156,49 @@ export const useMataKuliah = () => {
         setInputValue("");
     };
 
+    // Role-based filter initialization
+    useEffect(() => {
+        if (!roleLoading && role !== "admin") {
+            const newParams = new URLSearchParams(searchParams);
+            let changed = false;
+
+            if (profile?.prodiId && !searchParams.get("prodiId")) {
+                newParams.set("prodiId", profile.prodiId);
+                changed = true;
+            }
+
+            const fId = profile?.fakultasId || (profile?.prodi as any)?.fakultasId;
+            if (fId && !searchParams.get("fakultasId")) {
+                newParams.set("fakultasId", fId);
+                changed = true;
+            }
+
+            if (role === 'mahasiswa' && profile?.angkatanRef?.kurikulumId && !searchParams.get("kurikulumId")) {
+                newParams.set("kurikulumId", profile.angkatanRef.kurikulumId);
+                changed = true;
+            }
+
+            if (changed) {
+                setSearchParams(newParams, { replace: true });
+            }
+        }
+    }, [roleLoading, role, profile, setSearchParams]);
+
+    // Dosen Semester Auto-select
+    useEffect(() => {
+        if (role === 'dosen' && taughtSemesters.length === 1) {
+            const singleSemester = taughtSemesters[0].toString();
+            if (semesterFilter !== singleSemester) {
+                // Update URL directly to avoid loop/dependency issues if using setSemesterFilter wrapper
+                const newParams = new URLSearchParams(searchParams);
+                newParams.set("semester", singleSemester);
+                // Preserve other params if needed, but the wrapper resets page.
+                // using setSemesterFilter is safer
+                setSemesterFilter(singleSemester);
+            }
+        }
+    }, [role, taughtSemesters, semesterFilter]);
+
     useEffect(() => {
         fetchMataKuliah();
     }, [page, searchTerm, semesterFilter, fakultasFilter, prodiFilter, kurikulumFilter]);
@@ -241,8 +290,6 @@ export const useMataKuliah = () => {
             };
 
             await api.post('/mata-kuliah', payload);
-            toast.success("Mata kuliah berhasil ditambahkan");
-            // Invalidate cache
             Object.keys(mkCache).forEach(k => delete mkCache[k]);
             await fetchMataKuliah(true);
             return true;
@@ -275,7 +322,6 @@ export const useMataKuliah = () => {
             };
 
             await api.put(`/mata-kuliah/${id}`, payload);
-            toast.success("Mata kuliah berhasil diupdate");
             Object.keys(mkCache).forEach(k => delete mkCache[k]);
             await fetchMataKuliah(true);
             return true;
@@ -315,7 +361,9 @@ export const useMataKuliah = () => {
         kurikulumList,
         jenisMkList,
         fakultasList,
-        semesterList,
+        semesterList: (role === 'dosen' && taughtSemesters.length > 0)
+            ? taughtSemesters.map(s => ({ id: s.toString(), nama: `Semester ${s}`, angka: s }))
+            : semesterList,
 
         // Standardized Filters Object
         filters: {

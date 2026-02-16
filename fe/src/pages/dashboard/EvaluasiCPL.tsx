@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,7 @@ import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { useEvaluasiCPL, TargetCPL, EvaluationItem } from "@/hooks/useEvaluasiCPL";
 import { useProdi } from "@/hooks/useProdi";
 import { useFakultas } from "@/hooks/useFakultas";
+import { useDosenTeachingInfo } from "@/hooks/useDosenTeachingInfo";
 import { useAngkatan } from "@/hooks/useAngkatan";
 import { useCPL } from "@/hooks/useCPL";
 import { useTahunAjaran } from "@/hooks/useTahunAjaran";
@@ -23,10 +24,13 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { usePermission } from "@/contexts/PermissionContext";
 import { FilterRequiredState } from "@/components/common/FilterRequiredState";
+import { useUserRole } from "@/hooks/useUserRole";
+import { TindakLanjutHistoryTable } from "./components/TindakLanjutHistoryTable";
 
 
 const EvaluasiCPLPage = () => {
     const navigate = useNavigate();
+    const { role, profile, loading: roleLoading } = useUserRole();
     const { can } = usePermission();
     const canManage = can('access', 'kaprodi') || can('access', 'admin');
 
@@ -41,6 +45,12 @@ const EvaluasiCPLPage = () => {
     const { cplList, setProdiFilter } = useCPL();
     const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
 
+    // Dosen Teaching Info
+    const { taughtSemesters } = useDosenTeachingInfo();
+    const semesterList = (role === 'dosen' && taughtSemesters.length > 0)
+        ? taughtSemesters
+        : [1, 2, 3, 4, 5, 6, 7, 8];
+
     const [activeTab, setActiveTab] = useState("evaluation");
     const [filters, setFilters] = useState({
         fakultasId: "",
@@ -52,6 +62,9 @@ const EvaluasiCPLPage = () => {
 
     // Local state for target editing
     const [targetInputs, setTargetInputs] = useState<Record<string, number>>({});
+
+    // State for filtering history
+    const [activeCplHistory, setActiveCplHistory] = useState<string | undefined>(undefined);
 
     // Local state for tindak lanjut dialog
     const [selectedCpl, setSelectedCpl] = useState<EvaluationItem | null>(null);
@@ -83,11 +96,21 @@ const EvaluasiCPLPage = () => {
     }, [filters.prodiId]);
 
     // Auto-selection of active Tahun Ajaran removed to force user selection behavior ('Pilih...')
-    // useEffect(() => {
-    //     if (activeTahunAjaran && !filters.tahunAjaran) {
-    //         setFilters(prev => ({ ...prev, tahunAjaran: activeTahunAjaran.id }));
-    //     }
-    // }, [activeTahunAjaran]);
+    useEffect(() => {
+        if (!roleLoading && role !== "admin" && profile) {
+            const updates: any = {};
+            if (profile.prodiId && !filters.prodiId) {
+                updates.prodiId = profile.prodiId;
+            }
+            const fId = profile.fakultasId || (profile.prodi as any)?.fakultasId;
+            if (fId && !filters.fakultasId) {
+                updates.fakultasId = fId;
+            }
+            if (Object.keys(updates).length > 0) {
+                setFilters(prev => ({ ...prev, ...updates }));
+            }
+        }
+    }, [roleLoading, role, profile]);
 
     useEffect(() => {
         if (filters.prodiId && filters.angkatan && filters.tahunAjaran) {
@@ -206,41 +229,45 @@ const EvaluasiCPLPage = () => {
                                         <h4 className="font-semibold text-sm">Siapa yang dievaluasi?</h4>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label className="text-xs text-muted-foreground">Fakultas</Label>
-                                            <Select
-                                                value={filters.fakultasId}
-                                                onValueChange={(v) => setFilters({ ...filters, fakultasId: v, prodiId: "" })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih Fakultas" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {fakultasList.map(f => (
-                                                        <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs text-muted-foreground">Program Studi</Label>
-                                            <Select
-                                                value={filters.prodiId}
-                                                onValueChange={(v) => setFilters({ ...filters, prodiId: v })}
-                                                disabled={!filters.fakultasId}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih Prodi" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {prodiList
-                                                        .filter(p => p.id && p.id !== "" && (!filters.fakultasId || p.fakultasId === filters.fakultasId))
-                                                        .map(p => (
-                                                            <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
-                                                        ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+                                        {role === 'admin' && (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs text-muted-foreground">Fakultas</Label>
+                                                    <Select
+                                                        value={filters.fakultasId}
+                                                        onValueChange={(v) => setFilters({ ...filters, fakultasId: v, prodiId: "" })}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Pilih Fakultas" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {fakultasList.map(f => (
+                                                                <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs text-muted-foreground">Program Studi</Label>
+                                                    <Select
+                                                        value={filters.prodiId}
+                                                        onValueChange={(v) => setFilters({ ...filters, prodiId: v })}
+                                                        disabled={!filters.fakultasId}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Pilih Prodi" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {prodiList
+                                                                .filter(p => p.id && p.id !== "" && (!filters.fakultasId || p.fakultasId === filters.fakultasId))
+                                                                .map(p => (
+                                                                    <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                                                ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </>
+                                        )}
                                         <div className="space-y-2">
                                             <Label className="text-xs text-muted-foreground">Angkatan Mahasiswa</Label>
                                             <Select
@@ -293,7 +320,8 @@ const EvaluasiCPLPage = () => {
                                                     <SelectValue placeholder="Pilih Semester" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                                                    <SelectItem value="all">Semua Semester</SelectItem>
+                                                    {semesterList.map(s => (
                                                         <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -310,6 +338,7 @@ const EvaluasiCPLPage = () => {
                     <TabsList>
                         <TabsTrigger value="evaluation">Evaluasi & Tindak Lanjut</TabsTrigger>
                         <TabsTrigger value="target">Lihat Target</TabsTrigger>
+                        <TabsTrigger value="history">Riwayat Tindak Lanjut</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="target">
@@ -342,7 +371,7 @@ const EvaluasiCPLPage = () => {
                             <CardContent>
                                 {!canLoad ? (
                                     <FilterRequiredState
-                                        message="Silakan pilih Fakultas, Program Studi, Angkatan, dan Tahun Ajaran untuk melihat target CPL."
+                                        message={`Silakan pilih ${role === 'admin' ? "Fakultas, Program Studi, " : ""}Angkatan, dan Tahun Ajaran untuk melihat target CPL.`}
                                     />
                                 ) : loading ? (
                                     <LoadingScreen fullScreen={false} />
@@ -382,7 +411,7 @@ const EvaluasiCPLPage = () => {
                     <TabsContent value="evaluation">
                         {!canLoad ? (
                             <FilterRequiredState
-                                message="Silakan pilih Fakultas, Program Studi, Angkatan, dan Tahun Ajaran pada menu filter di atas untuk menampilkan hasil evaluasi."
+                                message={`Silakan pilih ${role === 'admin' ? "Fakultas, Program Studi, " : ""}Angkatan, dan Tahun Ajaran pada menu filter di atas untuk menampilkan hasil evaluasi.`}
                             />
                         ) : (
                             <>
@@ -462,8 +491,8 @@ const EvaluasiCPLPage = () => {
                                                 </TableHeader>
                                                 <TableBody>
                                                     {evaluation.map(item => (
-                                                        <>
-                                                            <TableRow key={item.cplId} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleRow(item.cplId)}>
+                                                        <React.Fragment key={item.cplId}>
+                                                            <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => toggleRow(item.cplId)}>
                                                                 <TableCell>
                                                                     {expandedRows.has(item.cplId) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                                                                 </TableCell>
@@ -494,6 +523,7 @@ const EvaluasiCPLPage = () => {
                                                                                 <Button
                                                                                     variant={item.tindakLanjut ? "outline" : "default"}
                                                                                     size="sm"
+                                                                                    className={item.tindakLanjut?.status !== 'open' ? "opacity-50" : ""}
                                                                                     onClick={() => setSelectedCpl(item)}
                                                                                 >
                                                                                     {item.tindakLanjut ? "Lihat Tindak Lanjut" : "Tindak Lanjut"}
@@ -509,6 +539,12 @@ const EvaluasiCPLPage = () => {
 
                                                                                 {item.tindakLanjut ? (
                                                                                     <div className="space-y-4 py-4">
+                                                                                        {item.tindakLanjut.status === 'closed' && (
+                                                                                            <div className="flex items-center gap-2 p-2 bg-green-50 text-green-700 rounded-md border border-green-200 text-sm">
+                                                                                                <CheckCircle className="w-4 h-4" />
+                                                                                                <span>Tindak lanjut ini telah ditandai sebagai <strong>Selesai</strong>.</span>
+                                                                                            </div>
+                                                                                        )}
                                                                                         <div className="p-4 bg-muted rounded-lg space-y-3">
                                                                                             <div>
                                                                                                 <Label className="text-xs text-muted-foreground">Akar Masalah</Label>
@@ -623,7 +659,7 @@ const EvaluasiCPLPage = () => {
                                                                     </TableCell>
                                                                 </TableRow>
                                                             )}
-                                                        </>
+                                                        </React.Fragment>
                                                     ))}
                                                 </TableBody>
                                             </Table>
@@ -632,6 +668,26 @@ const EvaluasiCPLPage = () => {
                                 </Card>
                             </>
                         )}
+                    </TabsContent>
+
+                    <TabsContent value="history">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Riwayat Tindak Lanjut</CardTitle>
+                                <CardDescription>Daftar semua rencana perbaikan yang telah diajukan.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {!filters.prodiId ? (
+                                    <FilterRequiredState message="Pilih Program Studi untuk melihat riwayat tindak lanjut." />
+                                ) : (
+                                    <TindakLanjutHistoryTable
+                                        prodiId={filters.prodiId}
+                                        cplId={activeCplHistory}
+                                        onClose={() => setActiveCplHistory(undefined)}
+                                    />
+                                )}
+                            </CardContent>
+                        </Card>
                     </TabsContent>
                 </Tabs>
             </div>

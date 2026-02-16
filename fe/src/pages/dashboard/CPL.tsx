@@ -46,11 +46,14 @@ const CPLPage = () => {
   const { can } = usePermission();
   const canManage = can('access', 'kaprodi') || can('access', 'admin');
   const {
-    cplList, // Now filtered
+    cplList,
+    fullCplList, // Add this
     kategoriList,
     fakultasList,
     prodiList,
     kurikulumList,
+    kategoriOptions,
+    kurikulumOptions,
     loading,
     fetchCPL,
     fetchKategori,
@@ -67,7 +70,8 @@ const CPLPage = () => {
     setKategoriFilter,
     setKurikulumFilter,
     resetFilters,
-    pagination
+    pagination,
+    accessibleProdis
   } = useCPL();
 
   const [submitting, setSubmitting] = useState(false);
@@ -327,6 +331,11 @@ const CPLPage = () => {
     setTargetFilters(prev => ({ ...prev, tahunAjaran: val }));
   };
 
+  const handleAngkatanChange = (val: string) => {
+    setTargetFilters(prev => ({ ...prev, angkatan: val }));
+    updateParams({ angkatan: val });
+  };
+
   const handleViewChange = (val: string) => {
     const v = val as "list" | "matrix" | "target" | "weight-matrix";
     // setViewMode(v); // Removed optimistic update to prevent race condition with useEffect
@@ -370,7 +379,14 @@ const CPLPage = () => {
 
     // Reset prodi filter if param is removed
     if (!prodiIdParam && cplFilters.prodiFilter !== "all") {
-      setProdiFilter("all");
+      // For restricted roles (like Dosen), don't reset to "all" if they have a default
+      if (role === 'dosen' && accessibleProdis.length === 1) {
+        if (!accessibleProdis.some(p => p.id === cplFilters.prodiFilter)) {
+          setProdiFilter(accessibleProdis[0].id);
+        }
+      } else {
+        setProdiFilter("all");
+      }
     } else if (prodiIdParam && cplFilters.prodiFilter !== prodiIdParam) {
       setProdiFilter(prodiIdParam);
     }
@@ -394,7 +410,10 @@ const CPLPage = () => {
       setKurikulumFilter("all");
     } else if (kurikulumIdParam && cplFilters.kurikulumFilter !== kurikulumIdParam) {
       setKurikulumFilter(kurikulumIdParam);
-      setTargetFilters(prev => ({ ...prev, tahunAjaran: kurikulumIdParam }));
+      setTargetFilters(prev => {
+        if (prev.tahunAjaran === kurikulumIdParam) return prev;
+        return { ...prev, tahunAjaran: kurikulumIdParam };
+      });
     }
 
     const angkatanParam = searchParams.get("angkatan");
@@ -408,7 +427,21 @@ const CPLPage = () => {
     } else if (!angkatanParam && targetFilters.angkatan !== "") {
       setTargetFilters(prev => ({ ...prev, angkatan: "" }));
     }
-  }, [searchParams, viewMode, cplFilters, targetFilters.angkatan, setViewMode, setFakultasFilter, setProdiFilter, setCplSearchTerm, setKategoriFilter, setKurikulumFilter]);
+  }, [searchParams, viewMode, cplFilters, targetFilters.angkatan, role, accessibleProdis, setViewMode, setFakultasFilter, setProdiFilter, setCplSearchTerm, setKategoriFilter, setKurikulumFilter]);
+
+  // Safety effect: Ensure Dosen with single prodi has it selected if currently 'all' or empty
+  useEffect(() => {
+    if (role === 'dosen' && accessibleProdis.length === 1) {
+      const singleProdiId = accessibleProdis[0].id;
+      if (cplFilters.prodiFilter === 'all' || cplFilters.prodiFilter === '') {
+        setProdiFilter(singleProdiId);
+        // Also ensure fakultas is set if available
+        if (accessibleProdis[0].fakultasId && cplFilters.fakultasFilter !== accessibleProdis[0].fakultasId) {
+          setFakultasFilter(accessibleProdis[0].fakultasId);
+        }
+      }
+    }
+  }, [role, accessibleProdis, cplFilters.prodiFilter, cplFilters.fakultasFilter, setProdiFilter, setFakultasFilter]);
 
 
   // Removed redundant useEffect. Data fetching is now handled internally by useCPL hook.
@@ -497,7 +530,6 @@ const CPLPage = () => {
   const canViewAll = can('view_all', 'cpl') || role === 'admin';
 
   // Use full lists for filter options now since we don't have all data client-side
-  const kategoriOptions = kategoriList; // .map(k => k.nama); Use full object for SelectItem
   const filterProdiOptions = prodiList;
 
 
@@ -576,106 +608,113 @@ const CPLPage = () => {
                 <div className="relative flex-1 min-w-[220px] max-w-sm">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder={viewMode === "matrix" ? "Cari Profil atau Program Studi..." : "Cari kode, deskripsi, atau kategori CPL..."}
+                    placeholder={viewMode === "matrix" ? "Cari Profil..." : "Cari kode, deskripsi, atau kategori CPL..."}
                     value={localSearchTerm}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     className="pl-9"
                   />
                 </div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={hasActiveFilter ? "default" : "outline"}
-                      size="sm"
-                      className="gap-2"
-                    >
-                      <SlidersHorizontal className="h-4 w-4" />
-                      <span className="hidden sm:inline">Filter</span>
-                      <span className="sm:hidden">Filter</span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-80 p-4">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Fakultas</Label>
-                        <Select
-                          value={cplFilters.fakultasFilter}
-                          onValueChange={handleFakultasChange}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Semua Fakultas" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Semua Fakultas</SelectItem>
-                            {fakultasList.map((f) => (
-                              <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {(canViewAll || role === 'kaprodi') && (
+                {(role === 'admin' || role === 'dosen' || role === 'kaprodi' || role === 'dekan') && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={hasActiveFilter ? "default" : "outline"}
+                        size="sm"
+                        className="gap-2"
+                      >
+                        <SlidersHorizontal className="h-4 w-4" />
+                        <span className="hidden sm:inline">Filter</span>
+                        <span className="sm:hidden">Filter</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-80 p-4">
+                      <div className="space-y-4">
+                        {(role === 'admin' || (role === 'dosen' && accessibleProdis && accessibleProdis.length > 1)) && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Fakultas</Label>
+                            <Select
+                              value={cplFilters.fakultasFilter}
+                              onValueChange={handleFakultasChange}
+                              disabled={role === 'dosen'}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Semua Fakultas" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">Semua Fakultas</SelectItem>
+                                {fakultasList.map((f) => (
+                                  <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        {(canViewAll || role === 'kaprodi' || role === 'dosen') && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Program Studi</Label>
+                            <Select
+                              value={cplFilters.prodiFilter}
+                              onValueChange={handleProdiChange}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Semua Program Studi" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {!(role === 'dosen' && accessibleProdis.length === 1) && <SelectItem value="all">Semua Program Studi</SelectItem>}
+                                {filterProdiOptions.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Program Studi</Label>
+                          <Label className="text-sm font-medium">Kurikulum</Label>
                           <Select
-                            value={cplFilters.prodiFilter}
-                            onValueChange={handleProdiChange}
+                            value={cplFilters.kurikulumFilter}
+                            onValueChange={handleKurikulumChange}
                           >
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Semua Program Studi" />
+                              <SelectValue placeholder="Semua Kurikulum" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">Semua Program Studi</SelectItem>
-                              {filterProdiOptions.map((p) => (
-                                <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                              <SelectItem value="all">Semua Kurikulum</SelectItem>
+                              {kurikulumOptions.map((k) => (
+                                <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
-                      )}
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Kurikulum</Label>
-                        <Select
-                          value={cplFilters.kurikulumFilter}
-                          onValueChange={handleKurikulumChange}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Semua Kurikulum" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Semua Kurikulum</SelectItem>
-                            {kurikulumList.map((k) => (
-                              <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Kategori</Label>
+                          <Select
+                            value={cplFilters.kategoriFilter}
+                            onValueChange={handleKategoriChange}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Semua Kategori" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Semua Kategori</SelectItem>
+                              {kategoriOptions.map((k) => (
+                                <SelectItem key={k.id} value={k.nama}>{k.nama}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Kategori</Label>
-                        <Select
-                          value={cplFilters.kategoriFilter}
-                          onValueChange={handleKategoriChange}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Semua Kategori" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Semua Kategori</SelectItem>
-                            {kategoriList.map((k) => (
-                              <SelectItem key={k.id} value={k.nama}>{k.nama}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                <Button
-                  variant="outline"
-                  onClick={handleResetFilters}
-                  disabled={!hasActiveFilter && localSearchTerm === ""}
-                >
-                  Reset Filter
-                </Button>
+                    </PopoverContent>
+                  </Popover>
+                )}
+                {(role === 'admin' || role === 'dosen' || role === 'kaprodi' || role === 'dekan') && (
+                  <Button
+                    variant="outline"
+                    onClick={handleResetFilters}
+                    disabled={!hasActiveFilter && localSearchTerm === ""}
+                  >
+                    Reset Filter
+                  </Button>
+                )}
               </>
             )}
           </div>
@@ -696,111 +735,110 @@ const CPLPage = () => {
                   />
                 </div>
 
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant={(cplFilters.fakultasFilter && cplFilters.fakultasFilter !== 'all') ||
-                        (cplFilters.prodiFilter && cplFilters.prodiFilter !== 'all') ||
-                        (cplFilters.kurikulumFilter && cplFilters.kurikulumFilter !== 'all') ||
-                        targetFilters.angkatan ? "default" : "outline"}
-                      className="gap-2"
-                    >
-                      <SlidersHorizontal className="h-4 w-4" />
-                      Filter
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-80 p-4" onClick={(e) => e.stopPropagation()}>
-                    <div className="space-y-4">
-                      {canViewAll && (
+                {(role === 'admin' || role === 'dosen' || role === 'kaprodi' || role === 'dekan') && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant={(cplFilters.fakultasFilter && cplFilters.fakultasFilter !== 'all') ||
+                          (cplFilters.prodiFilter && cplFilters.prodiFilter !== 'all') ||
+                          (cplFilters.kurikulumFilter && cplFilters.kurikulumFilter !== 'all') ||
+                          targetFilters.angkatan ? "default" : "outline"}
+                        className="gap-2"
+                      >
+                        <SlidersHorizontal className="h-4 w-4" />
+                        Filter
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-80 p-4" onClick={(e) => e.stopPropagation()}>
+                      <div className="space-y-4">
+                        {(role === 'admin' || (role === 'dosen' && accessibleProdis && accessibleProdis.length > 1)) && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Fakultas</Label>
+                            <Select
+                              value={cplFilters.fakultasFilter}
+                              onValueChange={handleFakultasChange}
+                              disabled={role === 'dosen'}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Semua Fakultas" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">Semua Fakultas</SelectItem>
+                                {fakultasList.map((f) => (
+                                  <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        {(canViewAll || role === 'kaprodi' || role === 'dosen') && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Program Studi</Label>
+                            <Select
+                              value={cplFilters.prodiFilter}
+                              onValueChange={handleProdiChange}
+                              disabled={!canViewAll && role !== 'kaprodi' && role !== 'dosen'}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Semua Program Studi" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(!(role === 'dosen' && accessibleProdis.length === 1) || cplFilters.prodiFilter === 'all') && <SelectItem value="all">Semua Program Studi</SelectItem>}
+                                {filterProdiOptions.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Fakultas</Label>
+                          <Label className="text-sm font-medium">Angkatan</Label>
                           <Select
-                            value={cplFilters.fakultasFilter}
-                            onValueChange={setFakultasFilter}
+                            value={targetFilters.angkatan}
+                            onValueChange={handleAngkatanChange}
                           >
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Semua Fakultas" />
+                              <SelectValue placeholder="Pilih Angkatan" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">Semua Fakultas</SelectItem>
-                              {fakultasList.map((f) => (
-                                <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                              {angkatanList.filter(a => a.tahun).map(a => (
+                                <SelectItem key={a.id} value={a.tahun.toString()}>{a.tahun}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
-                      )}
 
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Program Studi</Label>
-                        <Select
-                          value={cplFilters.prodiFilter}
-                          onValueChange={setProdiFilter}
-                          disabled={!canViewAll && role !== 'kaprodi'}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Semua Program Studi" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Semua Program Studi</SelectItem>
-                            {filterProdiOptions.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Kurikulum</Label>
+                          <Select
+                            value={cplFilters.kurikulumFilter}
+                            onValueChange={handleKurikulumChange}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Semua Kurikulum" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Semua Kurikulum</SelectItem>
+                              {kurikulumList
+                                .filter(k => k.isActive || k.id === targetFilters.tahunAjaran)
+                                .map(k => (
+                                  <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Kurikulum</Label>
-                        <Select
-                          value={cplFilters.kurikulumFilter}
-                          onValueChange={handleKurikulumChange}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Semua Kurikulum" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Semua Kurikulum</SelectItem>
-                            {kurikulumList
-                              .filter(k => k.isActive || k.id === targetFilters.tahunAjaran)
-                              .map(k => (
-                                <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Angkatan</Label>
-                        <Select
-                          value={targetFilters.angkatan}
-                          onValueChange={(v) => setTargetFilters({ ...targetFilters, angkatan: v })}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Pilih Angkatan" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {angkatanList.filter(a => a.tahun).map(a => (
-                              <SelectItem key={a.id} value={a.tahun.toString()}>{a.tahun}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                    </PopoverContent>
+                  </Popover>
+                )}
 
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    resetFilters();
-                    setTargetFilters({
-                      angkatan: "",
-                      tahunAjaran: ""
-                    });
-                  }}
+                  onClick={handleResetFilters}
                   disabled={
                     (!cplFilters.fakultasFilter || cplFilters.fakultasFilter === 'all') &&
                     (!cplFilters.prodiFilter || cplFilters.prodiFilter === 'all') &&
@@ -821,26 +859,36 @@ const CPLPage = () => {
                       <CardDescription>Tentukan target minimal pencapaian untuk setiap CPL</CardDescription>
                     </div>
                     <div className="flex gap-2">
-                      <Button
-                        variant={isTargetLocked ? "outline" : "secondary"}
-                        onClick={() => setIsTargetLocked(!isTargetLocked)}
-                        className="gap-2"
-                      >
-                        {isTargetLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                        {isTargetLocked ? "Buka Kunci" : "Kunci Data"}
-                      </Button>
-                      <Button onClick={handleSaveTargets} disabled={loadingTargets || !cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan || isTargetLocked}>
-                        <Save className="w-4 h-4 mr-2" />
-                        Simpan Target
-                      </Button>
+                      {canManage && (
+                        <>
+                          <Button
+                            variant={isTargetLocked ? "outline" : "secondary"}
+                            onClick={() => setIsTargetLocked(!isTargetLocked)}
+                            className="gap-2"
+                          >
+                            {isTargetLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                            {isTargetLocked ? "Buka Kunci" : "Kunci Data"}
+                          </Button>
+                          <Button onClick={handleSaveTargets} disabled={loadingTargets || !cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan || isTargetLocked}>
+                            <Save className="w-4 h-4 mr-2" />
+                            Simpan Target
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
 
                   {(!cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan) ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Silakan pilih Program Studi dan Angkatan terlebih dahulu
+                    <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed animate-in fade-in duration-500">
+                      <div className="p-4 bg-muted/50 rounded-full mb-4">
+                        <SlidersHorizontal className="w-8 h-8 text-muted-foreground/50" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground">Filter Data Diperlukan</h3>
+                      <p className="max-w-sm mt-2">
+                        Silakan pilih <strong>Program Studi</strong> dan <strong>Angkatan</strong> terlebih dahulu pada filter di atas untuk menampilkan target CPL.
+                      </p>
                     </div>
                   ) : loadingTargets ? (
                     <LoadingScreen fullScreen={false} />
@@ -853,8 +901,8 @@ const CPLPage = () => {
                           <TableHead className="w-[150px]">Target (%)</TableHead>
                         </TableRow>
                       </TableHeader>
-                      <TableBody className={loadingTargets ? "opacity-50 pointer-events-none transition-opacity duration-200" : "transition-opacity duration-200"}>
-                        {cplList.map(cpl => (
+                      <TableBody className={(loadingTargets || loading) ? "opacity-50 pointer-events-none transition-opacity duration-200" : "transition-opacity duration-200"}>
+                        {fullCplList.map(cpl => (
                           <TableRow key={cpl.id}>
                             <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
                             <TableCell>{cpl.deskripsi}</TableCell>
@@ -863,11 +911,11 @@ const CPLPage = () => {
                                 type="number"
                                 min="0"
                                 max="100"
-                                disabled={isTargetLocked}
+                                disabled={isTargetLocked || !canManage}
                                 value={targetInputs[cpl.id] ?? 75}
                                 onChange={(e) => setTargetInputs({
                                   ...targetInputs,
-                                  [cpl.id]: parseFloat(e.target.value)
+                                  [cpl.id]: parseFloat(e.target.value) || 0
                                 })}
                               />
                             </TableCell>
@@ -1106,7 +1154,7 @@ const CPLPage = () => {
                 ) : (
                   <PLMappingMatrix
                     profilList={profilList}
-                    cplList={cplList}
+                    cplList={fullCplList}
                     onUpdate={async (id, cplIds) => {
                       const success = await updateProfil(id, { cplIds });
                       return success;

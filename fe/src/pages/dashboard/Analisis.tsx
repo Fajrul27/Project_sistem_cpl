@@ -11,9 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { usePermission } from "@/contexts/PermissionContext";
+import { useUserRole } from "@/hooks/useUserRole";
 
 
 const AnalisisiPage = () => {
+  const { role } = useUserRole();
   const { can } = usePermission();
   const canManage = can('access', 'kaprodi') || can('access', 'admin');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -33,6 +35,7 @@ const AnalisisiPage = () => {
     fakultasList,
     jenjangList,
     prodiList,
+    semesterList,
     loading,
     resetFilters
   } = useAnalisis();
@@ -113,51 +116,55 @@ const AnalisisiPage = () => {
                         <SelectValue placeholder="Pilih Semester" />
                       </SelectTrigger>
                       <SelectContent>
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                          <SelectItem key={sem} value={sem.toString()}>Semester {sem}</SelectItem>
+                        {semesterList.map((sem: any) => (
+                          <SelectItem key={sem.id} value={sem.id}>{sem.nama}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="fakultas">Fakultas</Label>
-                    <Select value={fakultasFilter} onValueChange={setFakultasFilter}>
-                      <SelectTrigger id="fakultas" className="h-10">
-                        <SelectValue placeholder="Pilih Fakultas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {fakultasList.map((f) => (
-                          <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="jenjang">Jenjang</Label>
-                    <Select value={jenjangFilter} onValueChange={setJenjangFilter}>
-                      <SelectTrigger id="jenjang" className="h-10">
-                        <SelectValue placeholder="Pilih Jenjang" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {jenjangList.map((j) => (
-                          <SelectItem key={j.id} value={j.nama}>{j.nama}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="prodi">Program Studi</Label>
-                    <Select value={prodiFilter} onValueChange={setProdiFilter}>
-                      <SelectTrigger id="prodi" className="h-10">
-                        <SelectValue placeholder="Pilih Prodi" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {prodiList.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {(role === 'admin' || role === 'dosen') && (
+                    <>
+                      <div className="grid gap-2">
+                        <Label htmlFor="fakultas">Fakultas</Label>
+                        <Select value={fakultasFilter} onValueChange={setFakultasFilter}>
+                          <SelectTrigger id="fakultas" className="h-10">
+                            <SelectValue placeholder="Pilih Fakultas" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {fakultasList.map((f) => (
+                              <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="jenjang">Jenjang</Label>
+                        <Select value={jenjangFilter} onValueChange={setJenjangFilter}>
+                          <SelectTrigger id="jenjang" className="h-10">
+                            <SelectValue placeholder="Pilih Jenjang" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {jenjangList.map((j) => (
+                              <SelectItem key={j.id} value={j.nama}>{j.nama}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="prodi">Program Studi</Label>
+                        <Select value={prodiFilter} onValueChange={setProdiFilter}>
+                          <SelectTrigger id="prodi" className="h-10">
+                            <SelectValue placeholder="Pilih Prodi" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {prodiList.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </PopoverContent>
@@ -179,7 +186,7 @@ const AnalisisiPage = () => {
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Filter Data Diperlukan</h3>
                 <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                  Silakan pilih Semester, Fakultas, Jenjang, atau Program Studi pada menu filter di atas untuk menampilkan data analisis.
+                  Silakan pilih {role === 'admin' ? "Semester, Fakultas, Jenjang, atau Program Studi" : "Semester"} pada menu filter di atas untuk menampilkan data analisis.
                 </p>
               </div>
             </div>

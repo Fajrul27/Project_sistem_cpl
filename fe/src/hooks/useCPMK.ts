@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { api, fetchFakultasList, fetchProdiList, fetchMataKuliahPengampu, getUser } from "@/lib/api";
+import { api, fetchFakultasList, fetchProdiList, fetchMataKuliahPengampu } from "@/lib/api";
+import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import type { CPMK as CPMKSchema } from "@schemas/index";
 
@@ -31,7 +32,7 @@ export interface Cpmk {
 const cpmkCache: Record<string, { data: any[], meta: any }> = {};
 
 export function useCPMK() {
-    // Pagination State
+    const { role, userId, profile, loading: roleLoading } = useUserRole();
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
@@ -49,6 +50,19 @@ export function useCPMK() {
     const [selectedProdi, setSelectedProdi] = useState<string>("all");
     const [mataKuliahFilter, setMataKuliahFilter] = useState<string>("all");
 
+    // Role-based filter initialization
+    useEffect(() => {
+        if (!roleLoading && role !== "admin") {
+            if (profile?.prodiId) {
+                setSelectedProdi(profile.prodiId);
+                const fId = profile.fakultasId || (profile.prodi as any)?.fakultasId;
+                if (fId) {
+                    setSelectedFakultas(fId);
+                }
+            }
+        }
+    }, [roleLoading, role, profile]);
+
     const fetchInitialData = useCallback(async () => {
         try {
             const [fakultasRes, prodiRes] = await Promise.all([
@@ -59,9 +73,8 @@ export function useCPMK() {
             setProdiList(prodiRes.data || []);
 
             // If user is dosen, fetch taught courses
-            const user = getUser();
-            if (user && user.role === 'dosen') {
-                const mkRes = await fetchMataKuliahPengampu(user.id);
+            if (role === 'dosen' && userId) {
+                const mkRes = await fetchMataKuliahPengampu(userId);
                 setMataKuliahList(mkRes.data || []);
             }
         } catch (error) {
@@ -82,8 +95,7 @@ export function useCPMK() {
 
     const fetchMataKuliah = useCallback(async (prodiId?: string) => {
         // Skip if user is dosen (already fetched in initialData)
-        const user = getUser();
-        if (user && user.role === 'dosen') return;
+        if (role === 'dosen') return;
 
         try {
             const params: any = {};
@@ -255,7 +267,6 @@ export function useCPMK() {
     const deleteCpmk = async (id: string) => {
         try {
             await api.delete(`/cpmk/${id}`);
-            toast.success("CPMK berhasil dihapus");
             toast.success("CPMK berhasil dihapus");
             Object.keys(cpmkCache).forEach(k => delete cpmkCache[k]);
             await fetchCpmk(true);

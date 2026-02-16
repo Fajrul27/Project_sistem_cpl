@@ -26,9 +26,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { usePermission } from "@/contexts/PermissionContext";
 import { FilterRequiredState } from "@/components/common/FilterRequiredState";
+import { useUserRole } from "@/hooks/useUserRole";
 
 
 const TranskripCPLPage = () => {
+    const { role } = useUserRole();
     const { can } = usePermission();
     const canManage = can('access', 'kaprodi') || can('access', 'admin');
 
@@ -65,6 +67,7 @@ const TranskripCPLPage = () => {
         setSelectedProdi,
         fakultasList,
         prodiList,
+        semesterList,
         selectedSemester,
         setSelectedSemester
     } = useTranskripCPL();
@@ -249,34 +252,38 @@ const TranskripCPLPage = () => {
                                                         Filter daftar mahasiswa berdasarkan kriteria
                                                     </p>
                                                 </div>
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor="filter-fakultas">Fakultas</Label>
-                                                    <Select value={selectedFakultas || 'all'} onValueChange={setSelectedFakultas}>
-                                                        <SelectTrigger id="filter-fakultas">
-                                                            <SelectValue placeholder="Pilih Fakultas" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="all">Semua Fakultas</SelectItem>
-                                                            {fakultasList.map((f) => (
-                                                                <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor="filter-prodi">Program Studi</Label>
-                                                    <Select value={selectedProdi || 'all'} onValueChange={setSelectedProdi}>
-                                                        <SelectTrigger id="filter-prodi">
-                                                            <SelectValue placeholder="Pilih Prodi" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="all">Semua Prodi</SelectItem>
-                                                            {prodiList.map((p) => (
-                                                                <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
+                                                {role === 'admin' && (
+                                                    <div className="grid gap-2">
+                                                        <Label htmlFor="filter-fakultas">Fakultas</Label>
+                                                        <Select value={selectedFakultas || 'all'} onValueChange={setSelectedFakultas}>
+                                                            <SelectTrigger id="filter-fakultas">
+                                                                <SelectValue placeholder="Pilih Fakultas" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="all">Semua Fakultas</SelectItem>
+                                                                {fakultasList.map((f) => (
+                                                                    <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                )}
+                                                {(role === 'admin' || prodiList.length > 1) && (
+                                                    <div className="grid gap-2">
+                                                        <Label htmlFor="filter-prodi">Program Studi</Label>
+                                                        <Select value={selectedProdi || 'all'} onValueChange={setSelectedProdi}>
+                                                            <SelectTrigger id="filter-prodi">
+                                                                <SelectValue placeholder="Pilih Prodi" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="all">Semua Prodi</SelectItem>
+                                                                {prodiList.map((p) => (
+                                                                    <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                )}
                                                 <div className="grid gap-2">
                                                     <Label htmlFor="filter-semester">Semester</Label>
                                                     <Select value={selectedSemester || 'all'} onValueChange={setSelectedSemester}>
@@ -285,8 +292,8 @@ const TranskripCPLPage = () => {
                                                         </SelectTrigger>
                                                         <SelectContent>
                                                             <SelectItem value="all">Semua Semester</SelectItem>
-                                                            {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                                                                <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                                            {semesterList.map((s: any) => (
+                                                                <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
@@ -294,8 +301,10 @@ const TranskripCPLPage = () => {
                                                 <Button
                                                     variant="ghost"
                                                     onClick={() => {
-                                                        setSelectedFakultas('all');
-                                                        setSelectedProdi('all');
+                                                        if (role === 'admin') {
+                                                            setSelectedFakultas('all');
+                                                            setSelectedProdi('all');
+                                                        }
                                                         setSelectedSemester('all');
                                                     }}
                                                     className="w-full text-muted-foreground hover:text-foreground"
@@ -579,8 +588,8 @@ const TranskripCPLPage = () => {
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">Semua Semester</SelectItem>
-                                                {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                                                    <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                                {semesterList.map((s: any) => (
+                                                    <SelectItem key={s.id} value={s.id}>{s.nama}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>

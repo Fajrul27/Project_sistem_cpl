@@ -392,7 +392,7 @@ const MataKuliahPage = () => {
             <div className="relative flex-1 min-w-[220px] max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cari kode, nama, atau semester mata kuliah..."
+                placeholder={role === 'admin' ? "Cari kode, nama, atau semester mata kuliah..." : "Cari kode atau nama mata kuliah..."}
                 value={filters.searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
@@ -435,13 +435,12 @@ const MataKuliahPage = () => {
                     </div>
                   )}
 
-                  {role?.toLowerCase() !== 'dosen' && role?.toLowerCase() !== 'mahasiswa' && (
+                  {(role?.toLowerCase() === 'admin' || filteredProdiOptions.length > 1) && (
                     <div className="space-y-1">
                       <Label className="text-xs font-medium">Program Studi</Label>
                       <Select
                         value={filters.prodiFilter}
                         onValueChange={(value) => setProdiFilter(value)}
-                        disabled={filters.fakultasFilter === 'all' && false}
                       >
                         <SelectTrigger className="w-full h-8 text-xs">
                           <SelectValue placeholder="Pilih Program Studi" />
@@ -465,7 +464,10 @@ const MataKuliahPage = () => {
                         <SelectValue placeholder="Pilih Semester" />
                       </SelectTrigger>
                       <SelectContent>
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>)}
+                        <SelectItem value="all">Semua Semester</SelectItem>
+                        {semesterList.map((s: any) => (
+                          <SelectItem key={s.id || s} value={s.id?.toString() || s.toString()}>{s.nama || `Semester ${s}`}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

@@ -35,6 +35,7 @@ model User {
   mkCreated          MataKuliah[]           @relation("MataKuliahCreatedBy")
   nilaiCreated       NilaiCpl[]             @relation("NilaiCreatedBy")
   nilaiTeknikCreated NilaiTeknikPenilaian[] @relation("NilaiTeknikCreatedBy")
+  tindakLanjutCreated TindakLanjutCPL[]      @relation("TindakLanjutCreatedBy")
   profile            Profile?
   sessions           Session[]
   role               UserRole?
@@ -870,6 +871,7 @@ model TindakLanjutCPL {
   updatedAt        DateTime @updatedAt @map("updated_at")
   createdBy        String   @map("created_by")
   cpl              Cpl      @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  creator          User     @relation("TindakLanjutCreatedBy", fields: [createdBy], references: [id])
 
   @@index([prodiId, angkatan, tahunAjaran, cplId])
   @@index([cplId], map: "tindak_lanjut_cpl_cpl_id_fkey")

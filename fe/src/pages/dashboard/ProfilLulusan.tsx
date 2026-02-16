@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RequiredLabel } from "@/components/common/RequiredLabel";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePermission } from "@/contexts/PermissionContext";
 import { toast } from "sonner";
@@ -62,7 +62,8 @@ export default function ProfilLulusanPage() {
         deleteProfil,
         pagination,
         searchTerm,
-        setSearchTerm
+        setSearchTerm,
+        accessibleProdis
     } = useProfilLulusan();
 
     // Restore state from navigation
@@ -177,14 +178,8 @@ export default function ProfilLulusanPage() {
         let success = false;
         if (editingItem) {
             success = await updateProfil(editingItem.id, payload);
-            if (success) {
-                toast.success(`Profil "${payload.nama}" berhasil diupdate`);
-            }
         } else {
             success = await createProfil(payload);
-            if (success) {
-                toast.success(`Profil "${payload.nama}" (${payload.kode}) berhasil ditambahkan`);
-            }
         }
 
         if (success) {
@@ -255,8 +250,8 @@ export default function ProfilLulusanPage() {
                     </CollapsibleGuide>
                 )}
 
-                {/* Filter and Search - Hidden for mahasiswa */}
-                {role !== 'mahasiswa' && (
+                {/* Filter and Search - Hidden for mahasiswa and dosen (unless multi-prodi) */}
+                {(role !== 'mahasiswa' && role !== 'dosen') && (
                     <div className="flex flex-wrap items-center gap-2">
                         <div className="relative flex-1 min-w-[220px] max-w-sm">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -283,10 +278,14 @@ export default function ProfilLulusanPage() {
                                 <PopoverContent align="end" className="w-64 space-y-4">
                                     <div className="space-y-1">
                                         <Label className="text-xs font-medium">Fakultas</Label>
-                                        <Select value={selectedFakultas} onValueChange={(val) => {
-                                            setSelectedFakultas(val);
-                                            setSelectedProdi(""); // Reset Prodi when Fakultas changes
-                                        }}>
+                                        <Select
+                                            value={selectedFakultas}
+                                            onValueChange={(val) => {
+                                                setSelectedFakultas(val);
+                                                setSelectedProdi(""); // Reset Prodi when Fakultas changes
+                                            }}
+                                            disabled={role === "kaprodi"}
+                                        >
                                             <SelectTrigger className="w-full h-8 text-xs">
                                                 <SelectValue placeholder="Pilih Fakultas" />
                                             </SelectTrigger>
@@ -302,7 +301,7 @@ export default function ProfilLulusanPage() {
                                         <Select
                                             value={selectedProdi}
                                             onValueChange={setSelectedProdi}
-                                            disabled={!selectedFakultas}
+                                            disabled={role === "kaprodi" || !selectedFakultas}
                                         >
                                             <SelectTrigger className="w-full h-8 text-xs">
                                                 <SelectValue placeholder="Pilih Program Studi" />
@@ -333,6 +332,25 @@ export default function ProfilLulusanPage() {
                     </div>
                 )}
 
+                {/* Dosen Multi-Prodi Filter */}
+                {role === 'dosen' && accessibleProdis.length > 1 && (
+                    <div className="flex items-center justify-end mb-4">
+                        <div className="flex items-center gap-2">
+                            <Label className="text-sm font-medium">Program Studi:</Label>
+                            <Select value={selectedProdi} onValueChange={setSelectedProdi}>
+                                <SelectTrigger className="w-[250px]">
+                                    <SelectValue placeholder="Pilih Program Studi" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {accessibleProdis.map(p => (
+                                        <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                )}
+
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
@@ -356,10 +374,16 @@ export default function ProfilLulusanPage() {
                             <div className="flex justify-center py-8">
                                 <LoadingSpinner size="lg" />
                             </div>
-                        ) : !selectedProdi && !searchTerm ? (
+                        ) : !selectedProdi && !searchTerm && role === 'admin' ? (
                             <FilterRequiredState
                                 message="Silakan pilih Program Studi terlebih dahulu untuk menampilkan data Profil Lulusan."
                             />
+                        ) : !selectedProdi && !searchTerm ? (
+                            <div className="text-center py-12 border rounded-lg border-dashed">
+                                <Briefcase className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                                <h3 className="text-lg font-medium">Data prodi tidak ditemukan</h3>
+                                <p className="text-muted-foreground">Silakan hubungi admin untuk melengkapi data profil Anda.</p>
+                            </div>
                         ) : profilList && profilList.length > 0 ? (
                             <div className="rounded-md border">
                                 <div className="overflow-x-auto">
@@ -519,7 +543,7 @@ export default function ProfilLulusanPage() {
                                 />
                             </div>
 
-                            {role === "admin" && (
+                            {(role === "admin" || role === "kaprodi") && (
                                 <>
                                     <div className="grid grid-cols-4 gap-4 items-center">
                                         <RequiredLabel className="text-right" required>Fakultas</RequiredLabel>
@@ -528,6 +552,7 @@ export default function ProfilLulusanPage() {
                                                 value={formData.fakultasId}
                                                 onValueChange={(val) => setFormData({ ...formData, fakultasId: val, prodiId: "" })}
                                                 required
+                                                disabled={role === "kaprodi"}
                                             >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Pilih Fakultas" />
@@ -546,7 +571,7 @@ export default function ProfilLulusanPage() {
                                             <Select
                                                 value={formData.prodiId}
                                                 onValueChange={(val) => setFormData({ ...formData, prodiId: val })}
-                                                disabled={!formData.fakultasId}
+                                                disabled={role === "kaprodi" || !formData.fakultasId}
                                                 required
                                             >
                                                 <SelectTrigger>

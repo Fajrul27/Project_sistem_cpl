@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { api } from "@/lib/api";
+import { api, fetchMataKuliahPengampu } from "@/lib/api";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 
@@ -34,7 +34,7 @@ export interface CPL {
 const profilCache: Record<string, any> = {};
 
 export const useProfilLulusan = () => {
-    const { role, profile, loading: roleLoading } = useUserRole();
+    const { role, userId, profile, loading: roleLoading } = useUserRole();
 
     // Pagination State
     const [page, setPage] = useState(1);
@@ -45,6 +45,7 @@ export const useProfilLulusan = () => {
 
     const [profilList, setProfilList] = useState<ProfilLulusan[]>([]);
     const [prodiList, setProdiList] = useState<Prodi[]>([]);
+    const [accessibleProdis, setAccessibleProdis] = useState<Prodi[]>([]);
     const [fakultasList, setFakultasList] = useState<{ id: string; nama: string }[]>([]);
     const [cplList, setCplList] = useState<CPL[]>([]);
     const [selectedFakultas, setSelectedFakultas] = useState<string>("");
@@ -54,30 +55,78 @@ export const useProfilLulusan = () => {
 
     const fetchInitialData = useCallback(async () => {
         try {
-            // Fetch Prodi List logic
-            if (role === "admin") {
+            // Fetch Fakultas List for Admin/Kaprodi
+            if (role === "admin" || role === "kaprodi") {
                 const res = await api.get("/references/fakultas");
                 setFakultasList(res.data);
-                // Removed auto-select for admin
-                setLoading(false); // Ensure loading is turned off since we are not auto-fetching
-            } else if ((role === "kaprodi" || role === "dosen" || role === "mahasiswa") && profile?.prodiId) {
+            }
+
+            // Always try to set default prodi and fakultas from profile if available
+            if (profile?.prodiId) {
                 if (!selectedProdi) {
                     setSelectedProdi(profile.prodiId);
                 }
-            } else if (role === "kaprodi" || role === "dosen" || role === "mahasiswa") {
-                // Wait for profile to load
+
+                if (!selectedFakultas) {
+                    const fId = profile.fakultasId || (profile.prodi && (profile.prodi as any).fakultasId);
+                    if (fId) {
+                        setSelectedFakultas(fId);
+                    }
+                }
+                setLoading(false);
+            } else if (role === "admin") {
+                // Admin might have no prodiId, they need to select manually
+                setLoading(false);
+            } else if (role === "dosen") {
+                // Fetch taught prodis
+                if (userId) {
+                    try {
+                        const mkRes = await fetchMataKuliahPengampu(userId);
+                        const uniqueProdis = new Map<string, Prodi>();
+
+                        // Add own prodi
+                        if (profile.prodi) {
+                            uniqueProdis.set(profile.prodi.id, profile.prodi);
+                        } else if (profile.prodiId) {
+                            // Fetch prodi detail if not expanded
+                            const pRes = await api.get(`/prodi/${profile.prodiId}`);
+                            if (pRes.data) uniqueProdis.set(pRes.data.id, pRes.data);
+                        }
+
+                        // Add taught prodis
+                        mkRes.data?.forEach((mk: any) => {
+                            const p = mk.mataKuliah?.prodi || mk.prodi;
+                            if (p) {
+                                uniqueProdis.set(p.id, p);
+                            }
+                        });
+
+                        const prodis = Array.from(uniqueProdis.values());
+                        setAccessibleProdis(prodis);
+
+                        // Default select first one if not selected
+                        if (!selectedProdi && prodis.length > 0) {
+                            setSelectedProdi(prodis[0].id);
+                        }
+                    } catch (e) {
+                        console.error("Error fetching accessible prodis:", e);
+                    }
+                }
+                setLoading(false);
+            } else if (role === "mahasiswa") {
+                // Wait for profile (should have prodiId)
             } else {
                 // Fallback for edge cases
                 const res = await api.get("/prodi");
                 setProdiList(res.data);
-                // Removed auto-select for fallback
+                setLoading(false);
             }
         } catch (error) {
             console.error("Error fetching initial data:", error);
             toast.error("Gagal memuat data awal");
-            toast.error("Gagal memuat data awal");
+            setLoading(false);
         }
-    }, [role, profile, selectedProdi]);
+    }, [role, userId, profile, selectedProdi, selectedFakultas]);
 
     const fetchKurikulum = useCallback(async () => {
         try {
@@ -90,26 +139,37 @@ export const useProfilLulusan = () => {
 
     // Fetch Prodi when Fakultas changes (for Admin)
     useEffect(() => {
-        if (role === "admin" && selectedFakultas) {
+        const canViewAll = role === "admin" || role === "dekan";
+
+        if (canViewAll && selectedFakultas) {
             const fetchProdi = async () => {
                 try {
                     const res = await api.get(`/prodi?fakultasId=${selectedFakultas}`);
                     setProdiList(res.data);
+
+                    // Reset prodi selection if user is not restricted
+                    const isInList = res.data.some((p: any) => p.id === selectedProdi);
+                    if (!isInList) {
+                        setSelectedProdi("");
+                    }
                 } catch (error) {
                     console.error("Error fetching prodi:", error);
                 }
             };
             fetchProdi();
-        } else if (role === "admin" && !selectedFakultas) {
+        } else if (canViewAll && !selectedFakultas) {
             setProdiList([]);
         }
-    }, [selectedFakultas, role]);
+    }, [selectedFakultas, role, selectedProdi]);
 
     const [searchBy, setSearchBy] = useState<'all' | 'prodi'>('all');
 
     const fetchProfilLulusan = useCallback(async (prodiId: string, force = false) => {
         // Allow fetch if prodiId is present OR if searchTerm is present (Global Search)
-        if (!prodiId && !searchTerm) return;
+        if (!prodiId && !searchTerm) {
+            setLoading(false);
+            return;
+        }
 
         const cacheKey = `${prodiId || 'global'}-${page}-${limit}-${searchTerm}-${searchBy}`;
 
@@ -251,7 +311,6 @@ export const useProfilLulusan = () => {
         try {
             await api.post("/profil-lulusan", data);
             toast.success("Berhasil ditambahkan");
-            toast.success("Berhasil ditambahkan");
             // Invalidate cache by clearing relevant keys or simple force fetch
             // Ideally clear keys starting with prodiId... but simple force works for current view
             // Better: clear all cache for this prodi to be safe or intelligent key filtering
@@ -271,7 +330,6 @@ export const useProfilLulusan = () => {
         try {
             await api.put(`/profil-lulusan/${id}`, data);
             toast.success("Berhasil diperbarui");
-            toast.success("Berhasil diperbarui");
             const cacheKeyPrefix = `${selectedProdi}-`;
             Object.keys(profilCache).forEach(k => { if (k.startsWith(cacheKeyPrefix)) delete profilCache[k]; });
             await fetchProfilLulusan(selectedProdi, true);
@@ -287,7 +345,6 @@ export const useProfilLulusan = () => {
         try {
             await api.delete(`/profil-lulusan/${id}`);
             toast.success("Berhasil dihapus");
-            toast.success("Berhasil dihapus");
             const cacheKeyPrefix = `${selectedProdi}-`;
             Object.keys(profilCache).forEach(k => { if (k.startsWith(cacheKeyPrefix)) delete profilCache[k]; });
             await fetchProfilLulusan(selectedProdi, true);
@@ -302,6 +359,7 @@ export const useProfilLulusan = () => {
     return {
         profilList,
         prodiList,
+        accessibleProdis,
         fakultasList,
         cplList,
         kurikulumList,
