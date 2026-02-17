@@ -19,6 +19,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { usePermission } from "@/contexts/PermissionContext";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useCPL, CPL } from "@/hooks/useCPL";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import { PLMappingMatrix } from "./components/PLMappingMatrix";
 import { useProfilLulusan } from "@/hooks/useProfilLulusan";
 import { FloatingBackButton } from "@/components/common/FloatingBackButton";
@@ -567,7 +568,7 @@ const CPLPage = () => {
         onClick={() => navigate('/dashboard/profil-lulusan', { state: { filters: location.state?.filters } })}
         hideBackButton={!showBackButton}
       >
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           {canManage && (
             <CollapsibleGuide title="Panduan Manajemen CPL & Mapping">
               <div className="space-y-3">
@@ -881,15 +882,9 @@ const CPLPage = () => {
                 <CardContent>
 
                   {(!cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan) ? (
-                    <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed animate-in fade-in duration-500">
-                      <div className="p-4 bg-muted/50 rounded-full mb-4">
-                        <SlidersHorizontal className="w-8 h-8 text-muted-foreground/50" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-foreground">Filter Data Diperlukan</h3>
-                      <p className="max-w-sm mt-2">
-                        Silakan pilih <strong>Program Studi</strong> dan <strong>Angkatan</strong> terlebih dahulu pada filter di atas untuk menampilkan target CPL.
-                      </p>
-                    </div>
+                    <FilterRequiredState
+                      message="Silakan pilih Program Studi dan Angkatan terlebih dahulu pada filter di atas untuk menampilkan target CPL."
+                    />
                   ) : loadingTargets ? (
                     <LoadingScreen fullScreen={false} />
                   ) : (
@@ -1142,15 +1137,9 @@ const CPLPage = () => {
               </CardHeader>
               <CardContent>
                 {cplFilters.prodiFilter === 'all' && canViewAll && !localSearchTerm ? (
-                  <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed">
-                    <div className="p-4 bg-muted rounded-full mb-4">
-                      <TableIcon className="w-8 h-8 text-muted-foreground/50" />
-                    </div>
-                    <h3 className="text-lg font-semibold">Pilih Program Studi</h3>
-                    <p className="max-w-sm mt-2">
-                      Silakan pilih Program Studi terlebih dahulu pada filter di atas atau gunakan pencarian untuk menampilkan tabel matrix mapping.
-                    </p>
-                  </div>
+                  <FilterRequiredState
+                    message="Silakan pilih Program Studi terlebih dahulu pada filter di atas atau gunakan pencarian untuk menampilkan tabel matrix mapping."
+                  />
                 ) : (
                   <PLMappingMatrix
                     profilList={profilList}

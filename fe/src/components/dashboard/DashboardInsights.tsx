@@ -9,7 +9,7 @@ export const DashboardInsights = ({ insights }: DashboardInsightsProps) => {
     if (!insights || insights.length === 0) return null;
 
     return (
-        <Card className="h-full bg-gradient-to-br from-primary/5 via-background to-primary/5 border-primary/20 shadow-sm hover:shadow-md transition-all duration-300">
+        <Card className="h-full shadow-sm hover:shadow-md transition-all duration-300">
             <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2 text-primary">
                     <Sparkles className="h-5 w-5 fill-primary/20" />

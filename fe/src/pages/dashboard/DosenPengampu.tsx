@@ -71,7 +71,7 @@ const DosenPengampuPage = () => {
 
     return (
         <DashboardPage title="Dosen Pengampu" description="Penetapan tugas mengajar dan pengampu mata kuliah">
-            <div className="space-y-6">
+            <div className="flex flex-col gap-6">
                 {canManage && (
                     <CollapsibleGuide title="Panduan Dosen Pengampu">
                         <div className="space-y-3">

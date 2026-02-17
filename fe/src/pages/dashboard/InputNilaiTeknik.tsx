@@ -79,12 +79,11 @@ const InputNilaiTeknikPage = () => {
     const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
 
     // Set default active Tahun Ajaran
-    // Set default active Tahun Ajaran - REMOVED per user request
-    // useEffect(() => {
-    //     if (activeTahunAjaran && !tahunAjaran) {
-    //         setTahunAjaran(activeTahunAjaran.id);
-    //     }
-    // }, [activeTahunAjaran]);
+    useEffect(() => {
+        if (activeTahunAjaran && !tahunAjaran) {
+            setTahunAjaran(activeTahunAjaran.id);
+        }
+    }, [activeTahunAjaran]);
 
     const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -117,7 +116,7 @@ const InputNilaiTeknikPage = () => {
                         <CardTitle>Filter Data</CardTitle>
                         <CardDescription>Pilih Mata Kuliah dan Periode Akademik</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <Label>Semester</Label>
                             <Select value={semester} onValueChange={setSemester}>
@@ -199,19 +198,7 @@ const InputNilaiTeknikPage = () => {
                             </Select>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label>Tahun Ajaran</Label>
-                            <Select value={tahunAjaran} onValueChange={setTahunAjaran}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih Tahun Ajaran" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {tahunAjaranList.map(ta => (
-                                        <SelectItem key={ta.id} value={ta.id}>{ta.nama}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+
                     </CardContent>
                 </Card>
 
@@ -294,24 +281,7 @@ const InputNilaiTeknikPage = () => {
                                                                 Rubrik
                                                             </Button>
 
-                                                            {cpmk.statusValidasi === 'validated' || cpmk.statusValidasi === 'active' ? (
-                                                                <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-[10px] h-5 px-1">
-                                                                    <CheckCircle2 className="w-3 h-3 mr-1" /> Valid
-                                                                </Badge>
-                                                            ) : (
-                                                                <TooltipProvider>
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger>
-                                                                            <Badge variant="destructive" className="text-[10px] h-5 px-1">
-                                                                                <XCircle className="w-3 h-3 mr-1" /> Draft
-                                                                            </Badge>
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent>
-                                                                            <p>CPMK belum divalidasi Kaprodi</p>
-                                                                        </TooltipContent>
-                                                                    </Tooltip>
-                                                                </TooltipProvider>
-                                                            )}
+
                                                         </div>
                                                     </TableHead>
                                                 ))}
@@ -354,20 +324,16 @@ const InputNilaiTeknikPage = () => {
                                                                         placeholder="0"
                                                                         value={grades[`${student.id}_${teknik.id}`] ?? ""}
                                                                         onChange={e => handleGradeChange(student.id, teknik.id, e.target.value)}
-                                                                        disabled={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active'}
-                                                                        title={cpmk.statusValidasi !== 'validated' && cpmk.statusValidasi !== 'active' ? "CPMK belum divalidasi" : ""}
                                                                     />
-                                                                    {(cpmk.statusValidasi === 'validated' || cpmk.statusValidasi === 'active') && (
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-8 w-8 ml-1 text-muted-foreground hover:text-primary"
-                                                                            title="Nilai dengan Rubrik"
-                                                                            onClick={() => handleOpenGrading(student, cpmk, teknik)}
-                                                                        >
-                                                                            <Gavel className="h-4 w-4" />
-                                                                        </Button>
-                                                                    )}
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 ml-1 text-muted-foreground hover:text-primary"
+                                                                        title="Nilai dengan Rubrik"
+                                                                        onClick={() => handleOpenGrading(student, cpmk, teknik)}
+                                                                    >
+                                                                        <Gavel className="h-4 w-4" />
+                                                                    </Button>
                                                                 </TableCell>
                                                             ))
                                                         ) : (
@@ -383,9 +349,13 @@ const InputNilaiTeknikPage = () => {
                         </CardContent>
                     </Card>
                 ) : (
-                    <FilterRequiredState
-                        message="Silakan pilih Semester, Mata Kuliah, dan Kelas pada menu filter di atas untuk mulai menginput nilai."
-                    />
+                    <Card>
+                        <CardContent className="pt-6">
+                            <FilterRequiredState
+                                message="Silakan pilih Semester, Mata Kuliah, dan Kelas pada menu filter di atas untuk mulai menginput nilai."
+                            />
+                        </CardContent>
+                    </Card>
                 )}
             </div>
 

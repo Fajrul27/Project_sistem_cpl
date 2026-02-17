@@ -248,7 +248,7 @@ export const RubrikDialog = ({ open, onOpenChange, cpmkId, cpmkInfo }: RubrikDia
                             </div>
 
                             {kriteria.map((krit, kIndex) => (
-                                <Card key={kIndex} className="border-l-4 border-l-primary">
+                                <Card key={kIndex} className="">
                                     <CardHeader className="py-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">

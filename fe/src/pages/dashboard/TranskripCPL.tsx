@@ -836,9 +836,13 @@ const TranskripCPLPage = () => {
 
                     </>
                 ) : (
-                    <FilterRequiredState
-                        message="Silakan pilih mahasiswa pada menu filter di atas untuk melihat transkrip CPL/CPMK."
-                    />
+                    <Card>
+                        <CardContent className="pt-6">
+                            <FilterRequiredState
+                                message="Silakan pilih mahasiswa pada menu filter di atas untuk melihat transkrip CPL/CPMK."
+                            />
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* Detail View Dialog */}
@@ -1128,13 +1132,13 @@ const TranskripCPLPage = () => {
                                                 <h3 className="text-xs font-bold uppercase">ANALISIS CAPAIAN</h3>
                                                 <div className="text-[8px] text-slate-500 italic mb-2">CPL Tertinggi & Terendah</div>
                                                 <div className="flex-1 flex flex-col justify-center space-y-3">
-                                                    <div className="bg-emerald-50 p-3 border border-emerald-300 border-l-4 border-l-emerald-600 rounded shadow-sm">
+                                                    <div className="bg-emerald-50 p-3 border border-emerald-300 rounded shadow-sm">
                                                         <div className="text-[9px] font-bold text-emerald-800 uppercase tracking-wider mb-1">CPL TERTINGGI</div>
                                                         <div className="text-2xl font-black text-emerald-900 leading-tight">{highest.nilaiAkhir.toFixed(2)}</div>
                                                         <div className="text-[10px] font-bold text-emerald-700 mb-1">{highest.cpl.kodeCpl}</div>
                                                         <div className="text-[8px] text-emerald-800/80 leading-snug font-medium italic line-clamp-2">"{highest.cpl.deskripsi}"</div>
                                                     </div>
-                                                    <div className="bg-rose-50 p-3 border border-rose-300 border-l-4 border-l-rose-600 rounded shadow-sm">
+                                                    <div className="bg-rose-50 p-3 border border-rose-300 rounded shadow-sm">
                                                         <div className="text-[9px] font-bold text-rose-800 uppercase tracking-wider mb-1">CPL TERENDAH</div>
                                                         <div className="text-2xl font-black text-rose-900 leading-tight">{lowest.nilaiAkhir.toFixed(2)}</div>
                                                         <div className="text-[10px] font-bold text-rose-700 mb-1">{lowest.cpl.kodeCpl}</div>
@@ -1158,8 +1162,8 @@ const TranskripCPLPage = () => {
                                                             const numPoints = data.length;
                                                             const centerX = 100;
                                                             const centerY = 85; // Center of 170 height
-                                                            const radius = 55;
-                                                            const labelRadius = 68;
+                                                            const radius = 70;
+                                                            const labelRadius = 82;
 
                                                             // Calculate points for radar
                                                             const points = data.map((item, idx) => {
@@ -1295,13 +1299,13 @@ const TranskripCPLPage = () => {
                                                 <h3 className="text-xs font-bold uppercase">ANALISIS MATA KULIAH</h3>
                                                 <div className="text-[8px] text-slate-500 italic mb-2">Nilai Mata Kuliah Tertinggi & Terendah</div>
                                                 <div className="flex-1 flex flex-col justify-center space-y-3">
-                                                    <div className="bg-violet-50 p-3 border border-violet-300 border-l-4 border-l-violet-600 rounded shadow-sm">
+                                                    <div className="bg-violet-50 p-3 border border-violet-300 rounded shadow-sm">
                                                         <div className="text-[9px] font-bold text-violet-800 uppercase tracking-wider mb-1">Nilai Makul Tertinggi</div>
                                                         <div className="text-2xl font-black text-violet-900 leading-tight">{highest.average.toFixed(2)}</div>
                                                         <div className="text-[10px] font-bold text-violet-700 mb-1">{highest.kodeMk}</div>
                                                         <div className="text-[8px] text-violet-800/80 leading-snug font-medium italic line-clamp-2">"{highest.namaMk}"</div>
                                                     </div>
-                                                    <div className="bg-slate-50 p-3 border border-slate-300 border-l-4 border-l-slate-600 rounded shadow-sm">
+                                                    <div className="bg-slate-50 p-3 border border-slate-300 rounded shadow-sm">
                                                         <div className="text-[9px] font-bold text-slate-800 uppercase tracking-wider mb-1">Nilai Makul Terendah</div>
                                                         <div className="text-2xl font-black text-slate-900 leading-tight">{lowest.average.toFixed(2)}</div>
                                                         <div className="text-[10px] font-bold text-slate-700 mb-1">{lowest.kodeMk}</div>
@@ -1320,8 +1324,8 @@ const TranskripCPLPage = () => {
                                                             const numPoints = radarData.length;
                                                             const centerX = 100;
                                                             const centerY = 85; // Center of 170 height
-                                                            const radius = 55;
-                                                            const labelRadius = 68;
+                                                            const radius = 70;
+                                                            const labelRadius = 82;
 
                                                             const points = radarData.map((item, idx) => {
                                                                 const angle = (Math.PI * 2 * idx) / numPoints - Math.PI / 2;

@@ -27,6 +27,7 @@ import { MultiTaxonomySelect } from "@/components/features/MultiTaxonomySelect";
 import { Badge } from "@/components/ui/badge";
 import { useCPMK, Cpmk } from "@/hooks/useCPMK";
 import { LoadingSpinner, LoadingScreen } from "@/components/common/LoadingScreen";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { CPMKMatrixMapping } from "@/components/features/CPMKMatrixMapping";
 import { FloatingBackButton } from "@/components/common/FloatingBackButton";
@@ -397,7 +398,7 @@ const CPMKPage = () => {
             title="Data CPMK"
             description="Manajemen Capaian Pembelajaran Mata Kuliah (CPMK) dan Pemetaan ke CPL"
         >
-            <div className="space-y-6">
+            <div className="flex flex-col gap-6">
                 {canManage && (
                     <CollapsibleGuide title="Panduan Manajemen CPMK & Mapping">
                         <div className="space-y-3">
@@ -996,15 +997,9 @@ const CPMKPage = () => {
                                             highlightCpmkId={cpmkIdFromUrl}
                                         />
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg border-dashed">
-                                            <div className="p-4 bg-muted rounded-full mb-4">
-                                                <TableIcon className="w-8 h-8 text-muted-foreground/50" />
-                                            </div>
-                                            <h3 className="text-lg font-semibold">Pilih Mata Kuliah</h3>
-                                            <p className="max-w-sm mt-2">
-                                                Silakan pilih mata kulih terlebih dahulu untuk menampilkan tabel matrix mapping CPL-CPMK.
-                                            </p>
-                                        </div>
+                                        <FilterRequiredState
+                                            message="Silakan pilih mata kuliah terlebih dahulu untuk menampilkan tabel matrix mapping CPL-CPMK."
+                                        />
                                     )}
                                 </div>
                             </CardContent>

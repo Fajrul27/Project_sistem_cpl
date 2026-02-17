@@ -14,8 +14,14 @@
         "server/*"
       ]
     },
+    "rootDirs": [
+      ".",
+      "server"
+    ],
     "types": [
-      "node"
+      "node",
+      "express",
+      "multer"
     ]
   },
   "include": [

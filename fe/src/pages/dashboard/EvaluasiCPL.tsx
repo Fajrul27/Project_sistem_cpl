@@ -193,7 +193,7 @@ const EvaluasiCPLPage = () => {
                 )}
 
                 {/* Filters */}
-                <Card className="border-l-4 border-l-primary">
+                <Card>
                     <CardHeader className="pb-3 cursor-pointer" onClick={() => setIsFilterExpanded(!isFilterExpanded)}>
                         <div className="flex justify-between items-start">
                             <div>
@@ -410,9 +410,13 @@ const EvaluasiCPLPage = () => {
 
                     <TabsContent value="evaluation">
                         {!canLoad ? (
-                            <FilterRequiredState
-                                message={`Silakan pilih ${role === 'admin' ? "Fakultas, Program Studi, " : ""}Angkatan, dan Tahun Ajaran pada menu filter di atas untuk menampilkan hasil evaluasi.`}
-                            />
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <FilterRequiredState
+                                        message={`Silakan pilih ${role === 'admin' ? "Fakultas, Program Studi, " : ""}Angkatan, dan Tahun Ajaran pada menu filter di atas untuk menampilkan hasil evaluasi.`}
+                                    />
+                                </CardContent>
+                            </Card>
                         ) : (
                             <>
                                 <div className="grid gap-4 md:grid-cols-3 mb-6">

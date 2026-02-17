@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useTahunAjaran, TahunAjaran } from "@/hooks/useTahunAjaran";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,24 +95,15 @@ export default function TahunAjaranPage({ isTabContent = false }: { isTabContent
         item.nama.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    return (
-        <div className="space-y-6">
-            {!isTabContent && (
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Manajemen Tahun Ajaran</h1>
-                        <p className="text-muted-foreground">Kelola periode akademik aktif dalam sistem</p>
-                    </div>
-                </div>
-            )}
-
-            {canManage && (
+    const content = (
+        <div className="flex flex-col gap-6">
+            {canManage && !isTabContent && (
                 <CollapsibleGuide title="Panduan Manajemen Tahun Ajaran">
                     <div className="space-y-3">
-                        <p>Tahun Ajaran merupakan periode akademik aktif di mana seluruh proses penilaian dan input KRS berlangsung.</p>
+                        <p>Manajemen Tahun Ajaran digunakan untuk mengatur periode akademik yang aktif. Data ini menjadi referensi utama untuk semua aktivitas akademik (KRS, Nilai, dll).</p>
                         <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
-                            <li><strong>Aktivasi:</strong> Hanya satu tahun ajaran yang dapat berstatus aktif dalam satu waktu.</li>
-                            <li><strong>Dampak:</strong> Perubahan tahun ajaran aktif akan langsung mempengaruhi filter default di seluruh sistem.</li>
+                            <li><strong>Aktifkan Periode:</strong> Pastikan hanya ada satu tahun ajaran yang berstatus 'Aktif' pada satu waktu.</li>
+                            <li><strong>Sinkronisasi:</strong> Perubahan tahun ajaran aktif akan berdampak pada dashboard dosen dan mahasiswa.</li>
                         </ul>
                     </div>
                 </CollapsibleGuide>
@@ -287,5 +279,15 @@ export default function TahunAjaranPage({ isTabContent = false }: { isTabContent
                 </AlertDialogContent>
             </AlertDialog>
         </div>
+    );
+
+    if (isTabContent) {
+        return <div className="space-y-6">{content}</div>;
+    }
+
+    return (
+        <DashboardPage title="Manajemen Tahun Ajaran" description="Kelola Data Tahun Ajaran Akademik">
+            {content}
+        </DashboardPage>
     );
 }

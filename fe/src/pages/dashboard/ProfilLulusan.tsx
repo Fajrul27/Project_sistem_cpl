@@ -284,7 +284,7 @@ export default function ProfilLulusanPage() {
                                                 setSelectedFakultas(val);
                                                 setSelectedProdi(""); // Reset Prodi when Fakultas changes
                                             }}
-                                            disabled={role === "kaprodi"}
+                                            disabled={false}
                                         >
                                             <SelectTrigger className="w-full h-8 text-xs">
                                                 <SelectValue placeholder="Pilih Fakultas" />
@@ -301,7 +301,7 @@ export default function ProfilLulusanPage() {
                                         <Select
                                             value={selectedProdi}
                                             onValueChange={setSelectedProdi}
-                                            disabled={role === "kaprodi" || !selectedFakultas}
+                                            disabled={!selectedFakultas}
                                         >
                                             <SelectTrigger className="w-full h-8 text-xs">
                                                 <SelectValue placeholder="Pilih Program Studi" />

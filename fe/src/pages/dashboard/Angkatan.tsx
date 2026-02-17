@@ -161,133 +161,135 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
                 </div>
             )}
 
-            {canManage && (
-                <CollapsibleGuide title="Panduan Manajemen Angkatan">
-                    <div className="space-y-3">
-                        <p>Halaman ini digunakan untuk mendaftarkan angkatan mahasiswa dan menentukan kurikulum yang berlaku bagi angkatan tersebut.</p>
-                        <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
-                            <li><strong>Mapping Kurikulum:</strong> Memilih kurikulum akan menentukan kumpulan CPL dan Mata Kuliah yang harus ditempuh oleh angkatan tersebut.</li>
-                            <li><strong>Status Aktif:</strong> Angkatan non-aktif tidak akan muncul pada pilihan filter di halaman evaluasi atau input nilai.</li>
-                            <li><strong>Penyelarasan:</strong> Pastikan kurikulum yang dipilih sudah memiliki pemetaan CPL yang lengkap.</li>
-                        </ul>
-                    </div>
-                </CollapsibleGuide>
-            )}
-
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                    <div className="space-y-1">
-                        <CardTitle>Daftar Angkatan & Kurikulum</CardTitle>
-                        <CardDescription>
-                            Total {filteredAngkatan.length} angkatan terdaftar
-                        </CardDescription>
-                    </div>
-                    {canManage && (
-                        <Button onClick={() => { reset(); setIsAddDialogOpen(true); }}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Tambah Angkatan
-                        </Button>
-                    )}
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="relative flex-1 max-w-sm">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Cari tahun atau kurikulum..."
-                                className="pl-8"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
+            <div className="flex flex-col gap-6">
+                {canManage && !isTabContent && (
+                    <CollapsibleGuide title="Panduan Manajemen Angkatan">
+                        <div className="space-y-3">
+                            <p>Halaman ini digunakan untuk mendaftarkan angkatan mahasiswa dan menentukan kurikulum yang berlaku bagi angkatan tersebut.</p>
+                            <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                <li><strong>Mapping Kurikulum:</strong> Memilih kurikulum akan menentukan kumpulan CPL dan Mata Kuliah yang harus ditempuh oleh angkatan tersebut.</li>
+                                <li><strong>Status Aktif:</strong> Angkatan non-aktif tidak akan muncul pada pilihan filter di halaman evaluasi atau input nilai.</li>
+                                <li><strong>Penyelarasan:</strong> Pastikan kurikulum yang dipilih sudah memiliki pemetaan CPL yang lengkap.</li>
+                            </ul>
                         </div>
-                        <div className="flex items-center space-x-2">
-                            <Switch
-                                id="show-archived"
-                                checked={showArchived}
-                                onCheckedChange={setShowArchived}
-                            />
-                            <Label htmlFor="show-archived" className="text-sm font-medium">
-                                Tampilkan Arsip (Tidak Aktif)
-                            </Label>
-                        </div>
-                    </div>
+                    </CollapsibleGuide>
+                )}
 
-                    <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Tahun Angkatan</TableHead>
-                                    <TableHead>Kurikulum Berlaku</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    {canManage && <TableHead className="text-right">Aksi</TableHead>}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                        <div className="space-y-1">
+                            <CardTitle>Daftar Angkatan & Kurikulum</CardTitle>
+                            <CardDescription>
+                                Total {filteredAngkatan.length} angkatan terdaftar
+                            </CardDescription>
+                        </div>
+                        {canManage && (
+                            <Button onClick={() => { reset(); setIsAddDialogOpen(true); }}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Tambah Angkatan
+                            </Button>
+                        )}
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="relative flex-1 max-w-sm">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Cari tahun atau kurikulum..."
+                                    className="pl-8"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="show-archived"
+                                    checked={showArchived}
+                                    onCheckedChange={setShowArchived}
+                                />
+                                <Label htmlFor="show-archived" className="text-sm font-medium">
+                                    Tampilkan Arsip (Tidak Aktif)
+                                </Label>
+                            </div>
+                        </div>
+
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
-                                            <div className="flex justify-center items-center gap-2">
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                <span>Memuat data...</span>
-                                            </div>
-                                        </TableCell>
+                                        <TableHead>Tahun Angkatan</TableHead>
+                                        <TableHead>Kurikulum Berlaku</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        {canManage && <TableHead className="text-right">Aksi</TableHead>}
                                     </TableRow>
-                                ) : filteredAngkatan.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
-                                            Tidak ada data angkatan.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    filteredAngkatan.map((item) => (
-                                        <TableRow key={item.id}>
-                                            <TableCell className="font-medium">{item.tahun}</TableCell>
-                                            <TableCell>
-                                                {item.kurikulum ? (
-                                                    <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-blue-200">
-                                                        {item.kurikulum.nama} ({item.kurikulum.tahunMulai})
-                                                    </Badge>
-                                                ) : (
-                                                    <span className="text-muted-foreground italic">Belum disetting</span>
-                                                )}
+                                </TableHeader>
+                                <TableBody>
+                                    {loading ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="h-24 text-center">
+                                                <div className="flex justify-center items-center gap-2">
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    <span>Memuat data...</span>
+                                                </div>
                                             </TableCell>
-                                            <TableCell>
-                                                <Badge variant={item.isActive ? "default" : "secondary"}>
-                                                    {item.isActive ? "Aktif" : "Non-aktif"}
-                                                </Badge>
-                                            </TableCell>
-                                            {canManage && (
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => openEditDialog(item)}
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                            onClick={() => {
-                                                                setSelectedAngkatan(item);
-                                                                setIsDeleteDialogOpen(true);
-                                                            }}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            )}
                                         </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
+                                    ) : filteredAngkatan.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="h-24 text-center">
+                                                Tidak ada data angkatan.
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        filteredAngkatan.map((item) => (
+                                            <TableRow key={item.id}>
+                                                <TableCell className="font-medium">{item.tahun}</TableCell>
+                                                <TableCell>
+                                                    {item.kurikulum ? (
+                                                        <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-blue-200">
+                                                            {item.kurikulum.nama} ({item.kurikulum.tahunMulai})
+                                                        </Badge>
+                                                    ) : (
+                                                        <span className="text-muted-foreground italic">Belum disetting</span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant={item.isActive ? "default" : "secondary"}>
+                                                        {item.isActive ? "Aktif" : "Non-aktif"}
+                                                    </Badge>
+                                                </TableCell>
+                                                {canManage && (
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => openEditDialog(item)}
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                                onClick={() => {
+                                                                    setSelectedAngkatan(item);
+                                                                    setIsDeleteDialogOpen(true);
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                )}
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
             {/* Dialog Tambah */}
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

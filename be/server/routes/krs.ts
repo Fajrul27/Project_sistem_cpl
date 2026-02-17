@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getAllKrs, importKrs, deleteKrs, createKrs } from '../controllers/krs-controller.js';
-import { authMiddleware, requireRole } from '../middleware/auth.js';
+import { getAllKrs, importKrs, deleteKrs, createKrs } from '@/controllers/krs-controller.js';
+import { authMiddleware, requireRole } from '@/middleware/auth.js';
 import multer from 'multer';
 
 const router = Router();

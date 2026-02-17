@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
@@ -179,17 +180,13 @@ const AnalisisiPage = () => {
 
         <div className={`grid gap-6 md:grid-cols-2 transition-opacity duration-200 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
           {!isFilterComplete ? (
-            <div className="md:col-span-2 py-12 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed rounded-lg bg-muted/30">
-              <div className="p-4 rounded-full bg-muted">
-                <SlidersHorizontal className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Filter Data Diperlukan</h3>
-                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                  Silakan pilih {role === 'admin' ? "Semester, Fakultas, Jenjang, atau Program Studi" : "Semester"} pada menu filter di atas untuk menampilkan data analisis.
-                </p>
-              </div>
-            </div>
+            <Card className="md:col-span-2">
+              <CardContent className="pt-6">
+                <FilterRequiredState
+                  message={`Silakan pilih ${role === 'admin' ? "Semester, Fakultas, Jenjang, atau Program Studi" : "Semester"} pada menu filter di atas untuk menampilkan data analisis.`}
+                />
+              </CardContent>
+            </Card>
           ) : (
             <>
               <Card className="md:col-span-2">

@@ -148,7 +148,7 @@ export const RubrikGradingDialog = ({
                                 )}
 
                                 {rubrik.kriteria?.map((k: any, index: number) => (
-                                    <Card key={k.id} className="border-l-4 border-l-primary/50">
+                                    <Card key={k.id} className="">
                                         <CardHeader className="py-3 bg-muted/20">
                                             <div className="flex justify-between items-center">
                                                 <div>

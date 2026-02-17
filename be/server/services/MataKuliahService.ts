@@ -19,7 +19,17 @@ export class MataKuliahService {
         const { userId, userRole, semester, fakultasId, prodiId, kurikulumId, page = 1, limit = 10, q } = params;
         const where: any = { isActive: true };
 
-        if (semester) where.semester = parseInt(semester);
+        if (semester) {
+            const semInt = parseInt(semester);
+            // If it parses to a number and doesn't look like a UUID (length check is a simple heuristic, or just !isNaN)
+            // UUIDs usually don't start with a number, but some might. simpler is !isNaN check.
+            // However 'ac54...' parses to NaN.
+            if (!isNaN(semInt)) {
+                where.semester = semInt;
+            } else {
+                where.semesterId = semester;
+            }
+        }
         if (kurikulumId) where.kurikulumId = kurikulumId;
 
         if (q) {

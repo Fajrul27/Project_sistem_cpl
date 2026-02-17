@@ -38,7 +38,7 @@ export default function RubrikManager() {
             description={`Rubrik untuk CPMK: ${cpmkData?.kodeCpmk} - ${cpmkData?.mataKuliah?.namaMk}`}
         >
             <FloatingBackButton>
-                <div className="space-y-6 pb-20 min-w-0">
+                <div className="flex flex-col gap-6 pb-20 min-w-0">
                     {canManage && (
                         <CollapsibleGuide title="Panduan Rubrik Penilaian">
                             <div className="space-y-3">
@@ -74,7 +74,7 @@ export default function RubrikManager() {
                     </div>
 
                     {rubrik.kriteria.map((kriteria, kIndex) => (
-                        <Card key={kIndex} className="border-l-4 border-l-primary">
+                        <Card key={kIndex} className="">
                             <CardContent className="pt-6 space-y-4">
                                 <div className="flex flex-col sm:flex-row gap-4 items-start">
                                     <div className="w-full sm:flex-1 space-y-2">

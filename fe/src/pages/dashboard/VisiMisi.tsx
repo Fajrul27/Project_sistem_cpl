@@ -76,7 +76,7 @@ export default function VisiMisiPage() {
                                     <Select
                                         value={selectedFakultas}
                                         onValueChange={setSelectedFakultas}
-                                        disabled={role === "kaprodi"}
+                                        disabled={false}
                                     >
                                         <SelectTrigger className="w-[300px]">
                                             <SelectValue placeholder="Pilih Fakultas" />
@@ -93,7 +93,7 @@ export default function VisiMisiPage() {
                                     <Select
                                         value={selectedProdi}
                                         onValueChange={setSelectedProdi}
-                                        disabled={role === "kaprodi" || !selectedFakultas}
+                                        disabled={!selectedFakultas}
                                     >
                                         <SelectTrigger className="w-[300px]">
                                             <SelectValue placeholder="Pilih Prodi" />
@@ -112,9 +112,13 @@ export default function VisiMisiPage() {
 
                 {/* VISI SECTION */}
                 {!selectedProdi && role === "admin" ? (
-                    <FilterRequiredState
-                        message="Silakan pilih Fakultas dan Program Studi terlebih dahulu untuk menampilkan Visi & Misi."
-                    />
+                    <Card>
+                        <CardContent className="pt-6">
+                            <FilterRequiredState
+                                message="Silakan pilih Fakultas dan Program Studi terlebih dahulu untuk menampilkan Visi & Misi."
+                            />
+                        </CardContent>
+                    </Card>
                 ) : !selectedProdi && loading ? (
                     <div className="text-center py-10">Memuat data...</div>
                 ) : !selectedProdi ? (

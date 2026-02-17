@@ -257,7 +257,7 @@ export default function FakultasPage() {
 
     return (
         <DashboardPage title="Unit & Jenjang" description="Kelola data referensi fakultas, program studi, dan jenjang pendidikan">
-            <div className="mb-6">
+            <div className="flex flex-col gap-6">
                 {canManage && (
                     <CollapsibleGuide title="Panduan Struktur Organisasi">
                         <div className="space-y-3">
@@ -270,304 +270,305 @@ export default function FakultasPage() {
                         </div>
                     </CollapsibleGuide>
                 )}
+
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                    <TabsList>
+                        <TabsTrigger value="fakultas" className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4" />
+                            Data Fakultas
+                        </TabsTrigger>
+                        <TabsTrigger value="prodi" className="flex items-center gap-2">
+                            <School className="w-4 h-4" />
+                            Data Prodi
+                        </TabsTrigger>
+                        <TabsTrigger value="jenjang" className="flex items-center gap-2">
+                            <School className="w-4 h-4" />
+                            Data Jenjang
+                        </TabsTrigger>
+                    </TabsList>
+
+                    {/* FAKULTAS TAB */}
+                    <TabsContent value="fakultas">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <div>
+                                    <CardTitle>Data Fakultas</CardTitle>
+                                    <CardDescription>Daftar fakultas yang terdaftar dalam sistem</CardDescription>
+                                </div>
+                                <Button onClick={openCreateFakultas}>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Tambah Fakultas
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="mb-4">
+                                    <div className="relative">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Cari fakultas..."
+                                            className="pl-8 max-w-sm"
+                                            value={fakultasSearch}
+                                            onChange={(e) => setFakultasSearch(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="border rounded-md">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="w-[100px]">Kode</TableHead>
+                                                <TableHead>Nama Fakultas</TableHead>
+                                                <TableHead>Jumlah Prodi</TableHead>
+                                                <TableHead className="text-right">Aksi</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {fakultasLoading ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                                                        Memuat data...
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : filteredFakultas.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                                                        Tidak ada data fakultas
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                filteredFakultas.map((fakultas) => (
+                                                    <TableRow key={fakultas.id}>
+                                                        <TableCell className="font-mono font-medium">{fakultas.kode}</TableCell>
+                                                        <TableCell>{fakultas.nama}</TableCell>
+                                                        <TableCell>{fakultas.prodi?.length || 0}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button variant="ghost" size="icon" onClick={() => openEditFakultas(fakultas)}>
+                                                                    <Pencil className="w-4 h-4" />
+                                                                </Button>
+                                                                <AlertDialog>
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </Button>
+                                                                    </AlertDialogTrigger>
+                                                                    <AlertDialogContent>
+                                                                        <AlertDialogHeader>
+                                                                            <AlertDialogTitle>Hapus Fakultas?</AlertDialogTitle>
+                                                                            <AlertDialogDescription>
+                                                                                Apakah Anda yakin ingin menghapus fakultas <strong>{fakultas.nama}</strong>?
+                                                                                Tindakan ini tidak dapat dibatalkan.
+                                                                            </AlertDialogDescription>
+                                                                        </AlertDialogHeader>
+                                                                        <AlertDialogFooter>
+                                                                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                                            <AlertDialogAction className="bg-red-500 hover:bg-red-600" onClick={() => handleDeleteFakultas(fakultas.id)}>
+                                                                                Hapus
+                                                                            </AlertDialogAction>
+                                                                        </AlertDialogFooter>
+                                                                    </AlertDialogContent>
+                                                                </AlertDialog>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* PRODI TAB */}
+                    <TabsContent value="prodi">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <div>
+                                    <CardTitle>Data Program Studi</CardTitle>
+                                    <CardDescription>Daftar program studi yang terdaftar</CardDescription>
+                                </div>
+                                <Button onClick={openCreateProdi}>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Tambah Prodi
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="mb-4">
+                                    <div className="relative">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Cari prodi..."
+                                            className="pl-8 max-w-sm"
+                                            value={prodiSearch}
+                                            onChange={(e) => setProdiSearch(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="border rounded-md">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="w-[100px]">Kode</TableHead>
+                                                <TableHead>Nama Prodi</TableHead>
+                                                <TableHead>Jenjang</TableHead>
+                                                <TableHead>Fakultas</TableHead>
+                                                <TableHead className="text-right">Aksi</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {prodiLoading ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                                                        Memuat data...
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : filteredProdi.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                                                        Tidak ada data prodi
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                filteredProdi.map((prodi) => (
+                                                    <TableRow key={prodi.id}>
+                                                        <TableCell className="font-mono font-medium">{prodi.kode}</TableCell>
+                                                        <TableCell>{prodi.nama}</TableCell>
+                                                        <TableCell>{prodi.jenjang}</TableCell>
+                                                        <TableCell>{prodi.fakultas?.nama || '-'}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button variant="ghost" size="icon" onClick={() => openEditProdi(prodi)}>
+                                                                    <Pencil className="w-4 h-4" />
+                                                                </Button>
+                                                                <AlertDialog>
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </Button>
+                                                                    </AlertDialogTrigger>
+                                                                    <AlertDialogContent>
+                                                                        <AlertDialogHeader>
+                                                                            <AlertDialogTitle>Hapus Prodi?</AlertDialogTitle>
+                                                                            <AlertDialogDescription>
+                                                                                Apakah Anda yakin ingin menghapus prodi <strong>{prodi.nama}</strong>?
+                                                                                Tindakan ini tidak dapat dibatalkan.
+                                                                            </AlertDialogDescription>
+                                                                        </AlertDialogHeader>
+                                                                        <AlertDialogFooter>
+                                                                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                                            <AlertDialogAction className="bg-red-500 hover:bg-red-600" onClick={() => handleDeleteProdi(prodi.id)}>
+                                                                                Hapus
+                                                                            </AlertDialogAction>
+                                                                        </AlertDialogFooter>
+                                                                    </AlertDialogContent>
+                                                                </AlertDialog>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* JENJANG TAB */}
+                    <TabsContent value="jenjang">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <div>
+                                    <CardTitle>Data Jenjang Pendidikan</CardTitle>
+                                    <CardDescription>Daftar jenjang (Strata) yang tersedia</CardDescription>
+                                </div>
+                                <Button onClick={openCreateJenjang}>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Tambah Jenjang
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="mb-4">
+                                    <div className="relative">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Cari jenjang..."
+                                            className="pl-8 max-w-sm"
+                                            value={jenjangSearch}
+                                            onChange={(e) => setJenjangSearch(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="border rounded-md">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Nama Jenjang</TableHead>
+                                                <TableHead>Keterangan</TableHead>
+                                                <TableHead className="text-right">Aksi</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {jenjangLoading ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
+                                                        Memuat data...
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : filteredJenjang.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
+                                                        Tidak ada data jenjang
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                filteredJenjang.map((jenjang) => (
+                                                    <TableRow key={jenjang.id}>
+                                                        <TableCell className="font-medium">{jenjang.nama}</TableCell>
+                                                        <TableCell>{jenjang.keterangan || '-'}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button variant="ghost" size="icon" onClick={() => openEditJenjang(jenjang)}>
+                                                                    <Pencil className="w-4 h-4" />
+                                                                </Button>
+                                                                <AlertDialog>
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </Button>
+                                                                    </AlertDialogTrigger>
+                                                                    <AlertDialogContent>
+                                                                        <AlertDialogHeader>
+                                                                            <AlertDialogTitle>Hapus Jenjang?</AlertDialogTitle>
+                                                                            <AlertDialogDescription>
+                                                                                Apakah Anda yakin ingin menghapus jenjang <strong>{jenjang.nama}</strong>?
+                                                                            </AlertDialogDescription>
+                                                                        </AlertDialogHeader>
+                                                                        <AlertDialogFooter>
+                                                                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                                            <AlertDialogAction className="bg-red-500 hover:bg-red-600" onClick={() => handleDeleteJenjang(jenjang.id)}>
+                                                                                Hapus
+                                                                            </AlertDialogAction>
+                                                                        </AlertDialogFooter>
+                                                                    </AlertDialogContent>
+                                                                </AlertDialog>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
             </div>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="fakultas" className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4" />
-                        Data Fakultas
-                    </TabsTrigger>
-                    <TabsTrigger value="prodi" className="flex items-center gap-2">
-                        <School className="w-4 h-4" />
-                        Data Prodi
-                    </TabsTrigger>
-                    <TabsTrigger value="jenjang" className="flex items-center gap-2">
-                        <School className="w-4 h-4" />
-                        Data Jenjang
-                    </TabsTrigger>
-                </TabsList>
-
-                {/* FAKULTAS TAB */}
-                <TabsContent value="fakultas">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <div>
-                                <CardTitle>Data Fakultas</CardTitle>
-                                <CardDescription>Daftar fakultas yang terdaftar dalam sistem</CardDescription>
-                            </div>
-                            <Button onClick={openCreateFakultas}>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Tambah Fakultas
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="mb-4">
-                                <div className="relative">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Cari fakultas..."
-                                        className="pl-8 max-w-sm"
-                                        value={fakultasSearch}
-                                        onChange={(e) => setFakultasSearch(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="border rounded-md">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-[100px]">Kode</TableHead>
-                                            <TableHead>Nama Fakultas</TableHead>
-                                            <TableHead>Jumlah Prodi</TableHead>
-                                            <TableHead className="text-right">Aksi</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {fakultasLoading ? (
-                                            <TableRow>
-                                                <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                                                    Memuat data...
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : filteredFakultas.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                                                    Tidak ada data fakultas
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            filteredFakultas.map((fakultas) => (
-                                                <TableRow key={fakultas.id}>
-                                                    <TableCell className="font-mono font-medium">{fakultas.kode}</TableCell>
-                                                    <TableCell>{fakultas.nama}</TableCell>
-                                                    <TableCell>{fakultas.prodi?.length || 0}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <Button variant="ghost" size="icon" onClick={() => openEditFakultas(fakultas)}>
-                                                                <Pencil className="w-4 h-4" />
-                                                            </Button>
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
-                                                                        <Trash2 className="w-4 h-4" />
-                                                                    </Button>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Hapus Fakultas?</AlertDialogTitle>
-                                                                        <AlertDialogDescription>
-                                                                            Apakah Anda yakin ingin menghapus fakultas <strong>{fakultas.nama}</strong>?
-                                                                            Tindakan ini tidak dapat dibatalkan.
-                                                                        </AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                                                                        <AlertDialogAction className="bg-red-500 hover:bg-red-600" onClick={() => handleDeleteFakultas(fakultas.id)}>
-                                                                            Hapus
-                                                                        </AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* PRODI TAB */}
-                <TabsContent value="prodi">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <div>
-                                <CardTitle>Data Program Studi</CardTitle>
-                                <CardDescription>Daftar program studi yang terdaftar</CardDescription>
-                            </div>
-                            <Button onClick={openCreateProdi}>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Tambah Prodi
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="mb-4">
-                                <div className="relative">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Cari prodi..."
-                                        className="pl-8 max-w-sm"
-                                        value={prodiSearch}
-                                        onChange={(e) => setProdiSearch(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="border rounded-md">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-[100px]">Kode</TableHead>
-                                            <TableHead>Nama Prodi</TableHead>
-                                            <TableHead>Jenjang</TableHead>
-                                            <TableHead>Fakultas</TableHead>
-                                            <TableHead className="text-right">Aksi</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {prodiLoading ? (
-                                            <TableRow>
-                                                <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                                                    Memuat data...
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : filteredProdi.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                                                    Tidak ada data prodi
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            filteredProdi.map((prodi) => (
-                                                <TableRow key={prodi.id}>
-                                                    <TableCell className="font-mono font-medium">{prodi.kode}</TableCell>
-                                                    <TableCell>{prodi.nama}</TableCell>
-                                                    <TableCell>{prodi.jenjang}</TableCell>
-                                                    <TableCell>{prodi.fakultas?.nama || '-'}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <Button variant="ghost" size="icon" onClick={() => openEditProdi(prodi)}>
-                                                                <Pencil className="w-4 h-4" />
-                                                            </Button>
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
-                                                                        <Trash2 className="w-4 h-4" />
-                                                                    </Button>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Hapus Prodi?</AlertDialogTitle>
-                                                                        <AlertDialogDescription>
-                                                                            Apakah Anda yakin ingin menghapus prodi <strong>{prodi.nama}</strong>?
-                                                                            Tindakan ini tidak dapat dibatalkan.
-                                                                        </AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                                                                        <AlertDialogAction className="bg-red-500 hover:bg-red-600" onClick={() => handleDeleteProdi(prodi.id)}>
-                                                                            Hapus
-                                                                        </AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* JENJANG TAB */}
-                <TabsContent value="jenjang">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <div>
-                                <CardTitle>Data Jenjang Pendidikan</CardTitle>
-                                <CardDescription>Daftar jenjang (Strata) yang tersedia</CardDescription>
-                            </div>
-                            <Button onClick={openCreateJenjang}>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Tambah Jenjang
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="mb-4">
-                                <div className="relative">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Cari jenjang..."
-                                        className="pl-8 max-w-sm"
-                                        value={jenjangSearch}
-                                        onChange={(e) => setJenjangSearch(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="border rounded-md">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Nama Jenjang</TableHead>
-                                            <TableHead>Keterangan</TableHead>
-                                            <TableHead className="text-right">Aksi</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {jenjangLoading ? (
-                                            <TableRow>
-                                                <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
-                                                    Memuat data...
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : filteredJenjang.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
-                                                    Tidak ada data jenjang
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            filteredJenjang.map((jenjang) => (
-                                                <TableRow key={jenjang.id}>
-                                                    <TableCell className="font-medium">{jenjang.nama}</TableCell>
-                                                    <TableCell>{jenjang.keterangan || '-'}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <Button variant="ghost" size="icon" onClick={() => openEditJenjang(jenjang)}>
-                                                                <Pencil className="w-4 h-4" />
-                                                            </Button>
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600">
-                                                                        <Trash2 className="w-4 h-4" />
-                                                                    </Button>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Hapus Jenjang?</AlertDialogTitle>
-                                                                        <AlertDialogDescription>
-                                                                            Apakah Anda yakin ingin menghapus jenjang <strong>{jenjang.nama}</strong>?
-                                                                        </AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                                                                        <AlertDialogAction className="bg-red-500 hover:bg-red-600" onClick={() => handleDeleteJenjang(jenjang.id)}>
-                                                                            Hapus
-                                                                        </AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
 
             {/* DIALOG FAKULTAS */}
             <Dialog open={isFakultasDialogOpen} onOpenChange={setIsFakultasDialogOpen}>

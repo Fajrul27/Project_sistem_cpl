@@ -188,7 +188,7 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-in fade-in duration-700">
         {stats.map((stat, index) => (
           <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-            <div className={`h-2 ${stat.gradient}`} />
+
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 group">
               <CardTitle className="text-sm font-medium group-hover:text-primary transition-colors">
                 {stat.title}
@@ -316,11 +316,10 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-all duration-500 overflow-hidden border-none shadow-xl bg-card/60 backdrop-blur-sm group">
-          <div className="h-1.5 w-full bg-gradient-to-r from-primary via-blue-500 to-indigo-600" />
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+              <CardTitle>
                 {role === 'mahasiswa' ? "Kecocokan Profil Lulusan" : "Tren Semester"}
               </CardTitle>
               <CardDescription className="text-xs">

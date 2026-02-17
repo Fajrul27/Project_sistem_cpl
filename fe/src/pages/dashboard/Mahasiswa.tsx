@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -284,7 +285,7 @@ const MahasiswaPage = () => {
             // 1. Dosen: Always show default data (derived from taught courses)
             // 2. Others: Require specific filters
 
-            if (isDosen) return true;
+            if (isDosen || role === 'kaprodi') return true;
 
             let complete = !!filters.semesterFilter;
 
@@ -301,17 +302,11 @@ const MahasiswaPage = () => {
 
           if (!isFilterComplete) {
             return (
-              <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-10 space-y-4 text-center">
-                  <div className="p-4 bg-muted rounded-full">
-                    <SlidersHorizontal className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg">Filter Data Diperlukan</h3>
-                    <p className="text-muted-foreground max-w-sm">
-                      Silakan pilih {can('view_all', 'fakultas') ? "Fakultas, " : ""}{!isDosen ? "Program Studi, dan " : ""}Semester untuk menampilkan data mahasiswa.
-                    </p>
-                  </div>
+              <Card>
+                <CardContent className="pt-6">
+                  <FilterRequiredState
+                    message={`Silakan pilih ${can('view_all', 'fakultas') ? "Fakultas, " : ""}${!isDosen ? "Program Studi, dan " : ""}Semester untuk menampilkan data mahasiswa.`}
+                  />
                 </CardContent>
               </Card>
             );
@@ -427,7 +422,7 @@ const MahasiswaPage = () => {
               <div className="space-y-6 animate-in fade-in duration-500">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 shadow-sm">
+                  <Card className="shadow-sm">
                     <CardContent className="pt-6 pb-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-primary">Rata-rata CPL</span>
@@ -440,7 +435,7 @@ const MahasiswaPage = () => {
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 shadow-sm dark:from-green-900/10 dark:to-green-900/5 dark:border-green-800">
+                  <Card className="shadow-sm border-green-200 dark:border-green-800">
                     <CardContent className="pt-6 pb-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-green-700 dark:text-green-400">Total CPL</span>
@@ -544,7 +539,7 @@ const MahasiswaPage = () => {
                 {/* Analysis & Recommendations */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Strengths */}
-                  <Card className="shadow-sm border-l-4 border-l-green-500 bg-card">
+                  <Card className="shadow-sm bg-card">
                     <CardHeader className="pb-3 border-b">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <div className="p-1.5 rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
@@ -592,7 +587,7 @@ const MahasiswaPage = () => {
                   </Card>
 
                   {/* Improvements */}
-                  <Card className="shadow-sm border-l-4 border-l-orange-500 bg-card">
+                  <Card className="shadow-sm bg-card">
                     <CardHeader className="pb-3 border-b">
                       <CardTitle className="text-sm font-semibold flex items-center gap-2">
                         <div className="p-1.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">

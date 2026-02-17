@@ -274,3 +274,10 @@ input:-webkit-autofill:focus {
   box-shadow: 0 0 0px 1000px hsl(var(--card)) inset;
   -webkit-text-fill-color: hsl(var(--card-foreground));
 }
+
+/* Fix for date input icon in dark mode */
+.dark ::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.6;
+  cursor: pointer;
+}

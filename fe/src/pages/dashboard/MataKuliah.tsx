@@ -18,6 +18,7 @@ import { ImportResultDialog } from "@/components/common/ImportResultDialog";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { useMataKuliah, MataKuliah, MataKuliahFormData } from "@/hooks/useMataKuliah";
 import { LoadingSpinner, LoadingScreen } from "@/components/common/LoadingScreen";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { List as ListIcon } from "lucide-react";
@@ -80,7 +81,7 @@ const MataKuliahPage = () => {
       return true;
     }
     // Kaprodi
-    return filters.prodiFilter && filters.semesterFilter;
+    return true;
   })();
 
   // Auto-initialize filters for mahasiswa from profile
@@ -514,17 +515,11 @@ const MataKuliahPage = () => {
 
             {/* Search and Filter - Hidden for mahasiswa */}
             {!isFilterComplete ? (
-              <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-10 space-y-4 text-center">
-                  <div className="p-4 bg-muted rounded-full">
-                    <SlidersHorizontal className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg">Filter Data Diperlukan</h3>
-                    <p className="text-muted-foreground max-w-sm">
-                      Silakan pilih {role === 'admin' ? "Fakultas, Program Studi, dan " : (role !== 'dosen' ? "Program Studi dan " : "")}Semester untuk menampilkan data mata kuliah.
-                    </p>
-                  </div>
+              <Card>
+                <CardContent className="pt-6">
+                  <FilterRequiredState
+                    message={`Silakan pilih ${role === 'admin' ? "Fakultas, Program Studi, dan " : (role !== 'dosen' ? "Program Studi dan " : "")}Semester untuk menampilkan data mata kuliah.`}
+                  />
                 </CardContent>
               </Card>
             ) : (
@@ -795,17 +790,11 @@ const MataKuliahPage = () => {
 
           <TabsContent value="weight-matrix" className="mt-0">
             {(!filters.prodiFilter || filters.prodiFilter === 'all' || !filters.kurikulumFilter || filters.kurikulumFilter === 'all') ? (
-              <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-10 space-y-4 text-center">
-                  <div className="p-4 bg-muted rounded-full">
-                    <SlidersHorizontal className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg">Pilih Program Studi & Kurikulum</h3>
-                    <p className="text-muted-foreground max-w-sm">
-                      Silakan pilih Program Studi dan Kurikulum terlebih dahulu pada filter di atas untuk menampilkan matrix bobot mata kuliah.
-                    </p>
-                  </div>
+              <Card>
+                <CardContent className="pt-6">
+                  <FilterRequiredState
+                    message="Silakan pilih Program Studi dan Kurikulum terlebih dahulu pada filter di atas untuk menampilkan matrix bobot mata kuliah."
+                  />
                 </CardContent>
               </Card>
             ) : (

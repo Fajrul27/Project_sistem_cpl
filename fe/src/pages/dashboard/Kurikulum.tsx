@@ -189,7 +189,7 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
     }, [searchQuery, filterActive]);
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
             {!isTabContent && (
                 <div className="flex flex-col gap-2">
                     <h1 className="text-3xl font-bold tracking-tight">Kurikulum</h1>
@@ -199,7 +199,7 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
                 </div>
             )}
 
-            {canManage && (
+            {canManage && !isTabContent && (
                 <CollapsibleGuide title="Panduan Manajemen Kurikulum">
                     <div className="space-y-3">
                         <p>Kurikulum berfungsi sebagai wadah utama yang mengikat seluruh struktur akademik, mulai dari CPL, Mata Kuliah, hingga Profil Lulusan.</p>

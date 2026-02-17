@@ -64,17 +64,17 @@ const KaprodiDataSettings = () => {
 
     return (
         <DashboardPage
-            title="Data Kaprodi"
-            description="Pengaturan data Ketua Program Studi untuk validasi dokumen resmi"
+            title="Pengaturan Data Kaprodi"
+            description="Lengkapi data profil Koordinator Program Studi untuk keperluan pelaporan"
         >
-            <div className="space-y-6">
+            <div className="flex flex-col gap-6">
                 {canManage && (
                     <CollapsibleGuide title="Panduan Data Kaprodi">
                         <div className="space-y-3">
-                            <p>Data ini digunakan untuk menampilkan tanda tangan Ketua Program Studi pada transkrip resmi (PDF).</p>
+                            <p>Data ini digunakan secara otomatis dalam kop surat dan tanda tangan pada laporan-laporan resmi sistem (seperti Transkrip CPL).</p>
                             <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
-                                <li><strong>Pemilihan User:</strong> Cari user yang sudah terdaftar sebagai 'Kaprodi' untuk sinkronisasi data NIDN/NIP secara otomatis.</li>
-                                <li><strong>Nama & NIDN:</strong> Pastikan gelar akademik dan nomor identitas benar karena akan tercetak langsung pada dokumen resmi mahasiswa.</li>
+                                <li><strong>NIP/NIDN:</strong> Pastikan nomor identitas valid dan sesuai data kepegawaian.</li>
+                                <li><strong>Gelar:</strong> Tuliskan gelar lengkap (depan dan belakang).</li>
                                 <li><strong>Satu Per Prodi:</strong> Sistem hanya menyimpan satu data kaprodi aktif per program studi.</li>
                             </ul>
                         </div>
@@ -292,7 +292,7 @@ const KaprodiDataSettings = () => {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-            </div >
+            </div>
         </DashboardPage >
     );
 };

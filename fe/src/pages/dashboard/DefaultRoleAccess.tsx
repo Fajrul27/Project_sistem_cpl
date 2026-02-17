@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import {
     RotateCcw,
     Save,
@@ -397,9 +398,13 @@ const DefaultRoleAccessPage = () => {
                         </div>
 
                         {!activeRole && (
-                            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                                <p>Silakan pilih role terlebih dahulu untuk mengatur default hak akses.</p>
-                            </div>
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <FilterRequiredState
+                                        message="Silakan pilih role terlebih dahulu untuk mengatur default hak akses."
+                                    />
+                                </CardContent>
+                            </Card>
                         )}
 
                         {roles.map(role => (

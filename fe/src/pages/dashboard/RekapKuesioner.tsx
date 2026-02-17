@@ -16,6 +16,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { usePermission } from "@/contexts/PermissionContext";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 
 import { useRekapKuesioner } from "@/hooks/useRekapKuesioner";
 import { useTahunAjaran } from "@/hooks/useTahunAjaran";
@@ -174,21 +175,17 @@ export default function RekapKuesionerPage() {
                         : semester;
 
                     if (!isFilterComplete) {
-                        return (
-                            <Card className="border-dashed">
-                                <CardContent className="flex flex-col items-center justify-center py-10 space-y-4 text-center">
-                                    <div className="p-4 bg-muted rounded-full">
-                                        <SlidersHorizontal className="w-8 h-8 text-muted-foreground" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h3 className="font-semibold text-lg">Filter Data Diperlukan</h3>
-                                        <p className="text-muted-foreground max-w-sm">
-                                            Silakan pilih {isAdminOrViewAll ? "Fakultas, Program Studi, dan " : ""}Semester untuk menampilkan data rekap kuesioner.
-                                        </p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        );
+                        if (!isFilterComplete) {
+                            return (
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <FilterRequiredState
+                                            message={`Silakan pilih ${isAdminOrViewAll ? "Fakultas, Program Studi, dan " : ""}Semester untuk menampilkan data rekap kuesioner.`}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            );
+                        }
                     }
 
                     return (

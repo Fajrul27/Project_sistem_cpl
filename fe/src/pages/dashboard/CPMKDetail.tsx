@@ -194,7 +194,7 @@ const CPMKDetailPage = () => {
                     {/* Info Cards */}
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-                            <div className="h-2 bg-gradient-to-r from-primary to-primary/60" />
+
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Kode CPMK</CardTitle>
                                 <Hash className="h-4 w-4 text-muted-foreground" />
@@ -205,7 +205,7 @@ const CPMKDetailPage = () => {
                         </Card>
 
                         <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-                            <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-400" />
+
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Level Taksonomi</CardTitle>
                                 <GraduationCap className="h-4 w-4 text-muted-foreground" />
@@ -219,7 +219,7 @@ const CPMKDetailPage = () => {
 
                         {/* Mata Kuliah Card */}
                         <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-                            <div className="h-2 bg-gradient-to-r from-blue-500 to-blue-400" />
+
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Mata Kuliah</CardTitle>
                                 <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -233,7 +233,7 @@ const CPMKDetailPage = () => {
 
                         {/* Pembuat Card */}
                         <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-                            <div className="h-2 bg-gradient-to-r from-purple-500 to-purple-400" />
+
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Dibuat Oleh</CardTitle>
                                 <User className="h-4 w-4 text-muted-foreground" />

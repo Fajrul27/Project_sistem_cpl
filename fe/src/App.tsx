@@ -25,7 +25,7 @@ import CPMKDetailPage from "./pages/dashboard/CPMKDetail";
 import TranskripCPLPage from "./pages/dashboard/TranskripCPL";
 import KaprodiDataSettings from "./pages/dashboard/KaprodiDataSettings";
 import DosenPengampuPage from "./pages/dashboard/DosenPengampu";
-import TestNavbar from "./pages/TestNavbar";
+
 import NotFound from "./pages/NotFound";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RequireRole } from "@/components/common/RequireRole";
@@ -255,7 +255,7 @@ const App = () => (
                   </RequireRole>
                 } />
                 <Route path="profile" element={<ProfilePage />} />
-                <Route path="test-navbar" element={<TestNavbar />} />
+
               </Route>
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

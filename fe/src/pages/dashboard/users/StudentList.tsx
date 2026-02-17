@@ -452,7 +452,7 @@ export const StudentList = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
             {canManage && (
                 <CollapsibleGuide title="Panduan Manajemen Mahasiswa">
                     <div className="space-y-3">
