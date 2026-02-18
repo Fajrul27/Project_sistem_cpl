@@ -51,3 +51,8 @@ git add.txt
 # yarn.lock
 # pnpm-lock.yaml
 
+
+# Security Keys
+*.key
+private.key
+public.key

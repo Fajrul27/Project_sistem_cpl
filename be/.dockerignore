@@ -1,4 +1,6 @@
+*.key
+private.key
+public.key
+.env
 node_modules
 dist
-.env
-npm-debug.log

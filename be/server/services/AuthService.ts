@@ -1,10 +1,23 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
+import fs from 'fs';
+import path from 'path';
 
 import { authSchemas } from '../schemas/auth.schema.js';
 import { EmailService } from './EmailService.js';
 import crypto from 'crypto';
+
+// Read Private Key
+const privateKeyPath = path.resolve(process.cwd(), '../private.key');
+let privateKey: string;
+try {
+    privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+} catch (error) {
+    console.error('CRITICAL: Failed to read private.key at', privateKeyPath);
+    // Fallback to avoid crash during build if key missing, but will fail at runtime
+    privateKey = '';
+}
 
 export class AuthService {
     static async register(data: any) {
@@ -82,6 +95,7 @@ export class AuthService {
         };
     }
 
+
     static async login(data: any) {
         const { email, password } = authSchemas.login.parse(data);
 
@@ -110,15 +124,18 @@ export class AuthService {
             throw new Error('Email atau password salah');
         }
 
-        // Generate JWT token
+        // Generate JWT token using RS256
         const token = jwt.sign(
             {
                 userId: user.id,
                 email: user.email,
                 role: user.role?.role?.name || 'mahasiswa'
             },
-            process.env.JWT_SECRET || 'your-secret-key',
-            { expiresIn: '7d' }
+            privateKey,
+            {
+                algorithm: 'RS256',
+                expiresIn: '7d'
+            }
         );
 
         // Delete any existing sessions for this user to avoid duplicate token errors

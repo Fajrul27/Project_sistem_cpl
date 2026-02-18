@@ -6,6 +6,18 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
 import { context } from '../lib/context.js';
+import fs from 'fs';
+import path from 'path';
+
+// Read Public Key
+const publicKeyPath = path.resolve(process.cwd(), '../public.key');
+let publicKey: string;
+try {
+  publicKey = fs.readFileSync(publicKeyPath, 'utf8');
+} catch (error) {
+  console.error('CRITICAL: Failed to read public.key at', publicKeyPath);
+  publicKey = '';
+}
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -25,8 +37,8 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
       return res.status(401).json({ error: 'Unauthorized - No token provided' });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+    // Verify token using RS256
+    const decoded = jwt.verify(token, publicKey, { algorithms: ['RS256'] }) as any;
 
     // Attach user info to request
     (req as any).userId = decoded.userId;

@@ -17,6 +17,8 @@ import { useEffect } from "react";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { usePermission } from "@/contexts/PermissionContext";
 import { FilterRequiredState } from "@/components/common/FilterRequiredState";
+import { Pagination } from "@/components/common/Pagination";
+import { Search } from "lucide-react";
 
 import { ChevronsUpDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -75,6 +77,30 @@ const InputNilaiTeknikPage = () => {
     } = useNilaiTeknik();
 
     const [openMK, setOpenMK] = useState(false);
+
+    // Pagination & Search State
+    const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    // Filter & Pagination Logic
+    const filteredStudents = students.filter(student => {
+        const term = searchTerm.toLowerCase();
+        const nome = student.profile?.namaLengkap?.toLowerCase() || student.email?.toLowerCase() || '';
+        const nim = student.profile?.nim?.toLowerCase() || '';
+        return nome.includes(term) || nim.includes(term);
+    });
+
+    const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+    const paginatedStudents = filteredStudents.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    // Reset page on search/class change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedKelas]);
 
     const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
 
@@ -253,98 +279,129 @@ const InputNilaiTeknikPage = () => {
                                     Tidak ada mahasiswa di kelas ini.
                                 </div>
                             ) : (
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead rowSpan={2} className="w-[200px]">Mahasiswa</TableHead>
-                                                {cpmkList.map(cpmk => (
-                                                    <TableHead
-                                                        key={cpmk.id}
-                                                        colSpan={cpmk.teknikPenilaian.length}
-                                                        className="text-center border-l border-r bg-muted/50"
-                                                    >
-                                                        <div className="flex flex-col items-center gap-2 py-2">
-                                                            <span className="font-semibold">{cpmk.kodeCpmk}</span>
+                                <>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="relative w-full max-w-sm">
+                                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                placeholder="Cari mahasiswa (Nama / NIM)..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                className="pl-9"
+                                            />
+                                        </div>
+                                        <div className="text-sm text-muted-foreground">
+                                            Total: {filteredStudents.length} Mahasiswa
+                                        </div>
+                                    </div>
 
-                                                            {/* Rubrik Button - CPMK Level */}
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="h-7 text-[10px] px-2 border-primary/40 hover:bg-primary/10"
-                                                                onClick={() => {
-                                                                    setSelectedCpmkForRubrik(cpmk);
-                                                                    setRubrikDialogOpen(true);
-                                                                }}
-                                                            >
-                                                                <Settings className="h-3 w-3 mr-1" />
-                                                                Rubrik
-                                                            </Button>
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead rowSpan={2} className="w-[200px]">Mahasiswa</TableHead>
+                                                    {cpmkList.map(cpmk => (
+                                                        <TableHead
+                                                            key={cpmk.id}
+                                                            colSpan={cpmk.teknikPenilaian.length}
+                                                            className="text-center border-l border-r bg-muted/50"
+                                                        >
+                                                            <div className="flex flex-col items-center gap-2 py-2">
+                                                                <span className="font-semibold">{cpmk.kodeCpmk}</span>
+
+                                                                {/* Rubrik Button - CPMK Level */}
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="h-7 text-[10px] px-2 border-primary/40 hover:bg-primary/10"
+                                                                    onClick={() => {
+                                                                        setSelectedCpmkForRubrik(cpmk);
+                                                                        setRubrikDialogOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <Settings className="h-3 w-3 mr-1" />
+                                                                    Rubrik
+                                                                </Button>
 
 
-                                                        </div>
-                                                    </TableHead>
-                                                ))}
-                                            </TableRow>
-                                            <TableRow>
-                                                {cpmkList.map(cpmk =>
-                                                    cpmk.teknikPenilaian.length > 0 ? (
-                                                        cpmk.teknikPenilaian.map(teknik => (
-                                                            <TableHead key={teknik.id} className="text-center min-w-[100px] border-l border-r text-xs">
-                                                                <div className="flex flex-col items-center gap-0.5 py-1">
-                                                                    <div className="font-medium">{teknik.namaTeknik}</div>
-                                                                    <div className="text-[10px] text-muted-foreground">({teknik.bobotPersentase}%)</div>
-                                                                </div>
-                                                            </TableHead>
-                                                        ))
-                                                    ) : (
-                                                        <TableHead key={`empty-${cpmk.id}`} className="text-center text-xs italic text-muted-foreground">
-                                                            No Teknik
+                                                            </div>
                                                         </TableHead>
-                                                    )
-                                                )}
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {students.map(student => (
-                                                <TableRow key={student.id}>
-                                                    <TableCell className="font-medium">
-                                                        <div className="text-sm">{student.profile?.namaLengkap || student.email}</div>
-                                                        <div className="text-xs text-muted-foreground">{student.profile?.nim}</div>
-                                                    </TableCell>
+                                                    ))}
+                                                </TableRow>
+                                                <TableRow>
                                                     {cpmkList.map(cpmk =>
                                                         cpmk.teknikPenilaian.length > 0 ? (
                                                             cpmk.teknikPenilaian.map(teknik => (
-                                                                <TableCell key={`${student.id}-${teknik.id}`} className="border-l border-r p-2">
-                                                                    <Input
-                                                                        type="number"
-                                                                        min="0"
-                                                                        max="100"
-                                                                        className="h-8 text-center"
-                                                                        placeholder="0"
-                                                                        value={grades[`${student.id}_${teknik.id}`] ?? ""}
-                                                                        onChange={e => handleGradeChange(student.id, teknik.id, e.target.value)}
-                                                                    />
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="h-8 w-8 ml-1 text-muted-foreground hover:text-primary"
-                                                                        title="Nilai dengan Rubrik"
-                                                                        onClick={() => handleOpenGrading(student, cpmk, teknik)}
-                                                                    >
-                                                                        <Gavel className="h-4 w-4" />
-                                                                    </Button>
-                                                                </TableCell>
+                                                                <TableHead key={teknik.id} className="text-center min-w-[100px] border-l border-r text-xs">
+                                                                    <div className="flex flex-col items-center gap-0.5 py-1">
+                                                                        <div className="font-medium">{teknik.namaTeknik}</div>
+                                                                        <div className="text-[10px] text-muted-foreground">({teknik.bobotPersentase}%)</div>
+                                                                    </div>
+                                                                </TableHead>
                                                             ))
                                                         ) : (
-                                                            <TableCell key={`empty-cell-${cpmk.id}`} className="bg-muted/20" />
+                                                            <TableHead key={`empty-${cpmk.id}`} className="text-center text-xs italic text-muted-foreground">
+                                                                No Teknik
+                                                            </TableHead>
                                                         )
                                                     )}
                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {paginatedStudents.length === 0 ? (
+                                                    <TableRow>
+                                                        <TableCell colSpan={1 + cpmkList.reduce((acc, c) => acc + (c.teknikPenilaian.length || 1), 0)} className="text-center py-8 text-muted-foreground">
+                                                            Tidak ada mahasiswa yang cocok dengan pencarian.
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ) : (
+                                                    paginatedStudents.map(student => (
+                                                        <TableRow key={student.id}>
+                                                            <TableCell className="font-medium">
+                                                                <div className="text-sm">{student.profile?.namaLengkap || student.email}</div>
+                                                                <div className="text-xs text-muted-foreground">{student.profile?.nim}</div>
+                                                            </TableCell>
+                                                            {cpmkList.map(cpmk =>
+                                                                cpmk.teknikPenilaian.length > 0 ? (
+                                                                    cpmk.teknikPenilaian.map(teknik => (
+                                                                        <TableCell key={`${student.id}-${teknik.id}`} className="border-l border-r p-2">
+                                                                            <Input
+                                                                                type="number"
+                                                                                min="0"
+                                                                                max="100"
+                                                                                className="h-8 text-center"
+                                                                                placeholder="0"
+                                                                                value={grades[`${student.id}_${teknik.id}`] ?? ""}
+                                                                                onChange={e => handleGradeChange(student.id, teknik.id, e.target.value)}
+                                                                            />
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="h-8 w-8 ml-1 text-muted-foreground hover:text-primary"
+                                                                                title="Nilai dengan Rubrik"
+                                                                                onClick={() => handleOpenGrading(student, cpmk, teknik)}
+                                                                            >
+                                                                                <Gavel className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </TableCell>
+                                                                    ))
+                                                                ) : (
+                                                                    <TableCell key={`empty-cell-${cpmk.id}`} className="bg-muted/20" />
+                                                                )
+                                                            )}
+                                                        </TableRow>
+                                                    ))
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={setCurrentPage}
+                                    />
+                                </>
                             )}
                         </CardContent>
                     </Card>

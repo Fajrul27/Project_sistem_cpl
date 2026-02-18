@@ -12,7 +12,6 @@ services:
       - "3307:3306" # Map to 3307 to avoid conflict with local MySQL/MariaDB
     volumes:
       - db_data:/var/lib/mysql
-      - ./sistem_cpl.sql:/docker-entrypoint-initdb.d/sistem_cpl.sql:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
@@ -27,15 +26,19 @@ services:
     restart: always
     ports:
       - "8002:8002"
+    volumes:
+      - ./private.key:/app/private.key:ro  # Mount private key as read-only
+      - ./public.key:/app/public.key:ro    # Mount public key as read-only
     environment:
       DATABASE_URL: mysql://root:root@db:3306/sistem_cpl
-      JWT_SECRET: your-super-secret-key-change-in-production-minimum-32-characters
+      JWT_PRIVATE_KEY_PATH: /app/private.key
+      JWT_PUBLIC_KEY_PATH: /app/public.key
       PORT: 8002
       CORS_ORIGIN: http://localhost:8001
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "mysql -h db -u root -proot -e 'DROP DATABASE IF EXISTS sistem_cpl; CREATE DATABASE sistem_cpl;' && mysql -h db -u root -proot sistem_cpl < /app/sistem_cpl.sql && npx prisma generate && npm start"
+    command: sh -c "npx prisma generate && npm start"
 
   fe:
     build: ./fe
