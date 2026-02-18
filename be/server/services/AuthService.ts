@@ -9,7 +9,7 @@ import { EmailService } from './EmailService.js';
 import crypto from 'crypto';
 
 // Read Private Key
-const privateKeyPath = path.resolve(process.cwd(), '../private.key');
+const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH || path.resolve(process.cwd(), '../private.key');
 let privateKey: string;
 try {
     privateKey = fs.readFileSync(privateKeyPath, 'utf8');

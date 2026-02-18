@@ -10,7 +10,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Read Public Key
-const publicKeyPath = path.resolve(process.cwd(), '../public.key');
+const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH || path.resolve(process.cwd(), '../public.key');
 let publicKey: string;
 try {
   publicKey = fs.readFileSync(publicKeyPath, 'utf8');
