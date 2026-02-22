@@ -247,8 +247,11 @@ export class AuthService {
                 originalUserId: adminUserId, // Track original admin
                 isImpersonating: true
             },
-            process.env.JWT_SECRET || 'your-secret-key',
-            { expiresIn: '7d' }
+            privateKey,
+            {
+                algorithm: 'RS256',
+                expiresIn: '7d'
+            }
         );
 
         // Create session with impersonation flag
@@ -311,8 +314,11 @@ export class AuthService {
                 email: adminUser.email,
                 role: adminUser.role?.role?.name || 'admin'
             },
-            process.env.JWT_SECRET || 'your-secret-key',
-            { expiresIn: '7d' }
+            privateKey,
+            {
+                algorithm: 'RS256',
+                expiresIn: '7d'
+            }
         );
 
         // Create new admin session
@@ -430,8 +436,11 @@ export class AuthService {
                 email: user.email,
                 role: user.role?.role?.name || 'mahasiswa'
             },
-            process.env.JWT_SECRET || 'your-secret-key',
-            { expiresIn: '7d' }
+            privateKey,
+            {
+                algorithm: 'RS256',
+                expiresIn: '7d'
+            }
         );
 
         // Delete any existing sessions for this user

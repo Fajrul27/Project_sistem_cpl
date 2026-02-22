@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDosenTeachingInfo } from "@/hooks/useDosenTeachingInfo";
@@ -107,6 +107,9 @@ export function useTranskripCPL() {
 
     const [semester, setSemester] = useState<string>("all");
     const [tahunAjaranList, setTahunAjaranList] = useState<any[]>([]);
+
+    // Track the last requested parameters to avoid race conditions
+    const lastRequestRef = useRef<{ mhsId: string; semester: string } | null>(null);
 
     // Filter Filters
     const [fakultasList, setFakultasList] = useState<any[]>([]);
@@ -268,65 +271,78 @@ export function useTranskripCPL() {
         if (!isMahasiswa) fetchMahasiswaOptions(debouncedSearch);
     }, [debouncedSearch, roleLoading, isMahasiswa, fetchMahasiswaOptions]);
 
-    // Fetch EVERYTHING when student changes
+    // Watch for student selection changes
     useEffect(() => {
         if (selectedMahasiswa) {
-            // Default to student's current semester if available (for self-view)
-            if (isMahasiswa && profile?.semester) {
-                setSemester(profile.semester.toString());
-            } else {
-                setSemester("all");
-            }
-            fetchAllData();
+            // Find student profile to get current semester (even if admin)
+            const mhsProfile = mahasiswaList.find(m => m.id === selectedMahasiswa);
+            const currentSem = (isMahasiswa ? profile?.semester : mhsProfile?.profile?.semester)?.toString() || "all";
+
+            setSemester(currentSem);
+            fetchAllData(selectedMahasiswa, currentSem);
         } else {
             setLoading(false);
         }
-    }, [selectedMahasiswa, isMahasiswa, profile?.semester]);
+    }, [selectedMahasiswa, isMahasiswa, profile?.id, profile?.semester]); // Using profile?.id and semester to be safer
 
-    // Fetch ONLY CPMK when semester filter changes (Periodical evaluation)
+    // Watch for manual semester filter changes
     useEffect(() => {
-        // Skip if student not selected or if it's the 'all' reset from the effect above
-        if (selectedMahasiswa && semester !== "all") {
-            fetchTranskripCPMK();
-        } else if (selectedMahasiswa && semester === "all") {
-            // Refetch all to get full cumulative context if user resets to 'all'
-            // but usually fetchAllData already covered this. 
-            // To be safe and exclusive:
-            fetchTranskripCPMK();
+        // Skip if student not selected or if this is the initial set already handled by fetchAllData
+        if (selectedMahasiswa) {
+            // Check if this semester is different from what we last requested
+            if (!lastRequestRef.current ||
+                lastRequestRef.current.mhsId !== selectedMahasiswa ||
+                lastRequestRef.current.semester !== semester) {
+                // Fetch ONLY CPMK when semester changes (CPL/Profil are cumulative)
+                fetchTranskripCPMK(selectedMahasiswa, semester);
+            }
         }
-    }, [semester]);
+    }, [semester, selectedMahasiswa]);
 
-    const fetchTranskrip = async () => {
+    const fetchTranskrip = async (mhsId: string = selectedMahasiswa, targetSemester: string = semester) => {
         try {
             const params: any = {};
-            // CPL is always longitudinal (cumulative)
+            if (targetSemester && targetSemester !== 'all') params.semester = targetSemester;
 
-            const result = await api.get(`/transkrip-cpl/${selectedMahasiswa}`, { params });
+            const result = await api.get(`/transkrip-cpl/${mhsId}`, { params });
             setTranskripList(result.data?.transkrip || []);
             setTotalCurriculumCpl(result.data?.summary?.totalCurriculumCpl || 0);
-            updateStudentInfo(result.data?.mahasiswa);
+            return result.data?.mahasiswa;
         } catch (error) {
             console.error("Error fetching transkrip:", error);
             toast.error("Gagal memuat transkrip CPL");
             setTranskripList([]);
+            return null;
         }
     };
 
-    const fetchTranskripCPMK = async () => {
+    const fetchTranskripCPMK = async (mhsId: string = selectedMahasiswa, targetSemester: string = semester) => {
+        // Update tracking ref
+        lastRequestRef.current = { mhsId, semester: targetSemester };
+        const currentReq = lastRequestRef.current;
+
         try {
-            const result = await getTranskripCPMK(selectedMahasiswa, semester);
-            setTranskripCpmkList(result.data?.transkrip || []);
-            if (!transkripList.length) updateStudentInfo(result.data?.mahasiswa);
+            const result = await getTranskripCPMK(mhsId, targetSemester);
+
+            // Only update if this is still the latest request
+            if (lastRequestRef.current === currentReq) {
+                setTranskripCpmkList(result.data?.transkrip || []);
+                return result.data?.mahasiswa;
+            }
+            return null;
         } catch (error) {
             console.error("Error fetching transkrip CPMK:", error);
-            toast.error("Gagal memuat transkrip CPMK");
-            setTranskripCpmkList([]);
+            if (lastRequestRef.current === currentReq) {
+                toast.error("Gagal memuat transkrip CPMK");
+                setTranskripCpmkList([]);
+            }
+            return null;
         }
     };
 
-    const fetchTranskripProfil = async () => {
+    const fetchTranskripProfil = async (mhsId: string = selectedMahasiswa, targetSemester: string = semester) => {
         try {
-            const result = await getTranskripProfil(selectedMahasiswa);
+            const result = await getTranskripProfil(mhsId, targetSemester);
             setProfilLulusanList(result || []);
         } catch (error) {
             console.error("Error fetching transkrip profil:", error);
@@ -334,26 +350,29 @@ export function useTranskripCPL() {
         }
     };
 
-    const fetchAllData = async () => {
+    const fetchAllData = async (mhsId: string = selectedMahasiswa, sem: string = semester) => {
         setLoading(true);
         try {
-            await Promise.all([
-                fetchTranskrip(),
-                fetchTranskripCPMK(),
-                fetchTranskripProfil()
+            const [mCpl, mCpmk] = await Promise.all([
+                fetchTranskrip(mhsId, "all"),     // CPL always cumulative
+                fetchTranskripCPMK(mhsId, sem),  // CPMK uses filter (default to current)
+                fetchTranskripProfil(mhsId, "all") // Profil always cumulative
             ]);
+
+            const m = mCpmk || mCpl;
+            if (m) updateStudentInfo(m, false);
         } catch (error) {
-            console.error("Error fetching data:", error);
+            console.error("Error fetching all data:", error);
         } finally {
             setLoading(false);
         }
     };
 
-    const updateStudentInfo = (m: any) => {
+    const updateStudentInfo = (m: any, shouldUpdateSemester: boolean = true) => {
         if (m) {
             const programStudi = m.prodi?.nama || m.programStudi || "-";
             setCurrentStudent({
-                id: m.userId || m.id, // Ensure we use the User ID (which `selectedMahasiswa` is), or fallback to Profile ID
+                id: m.userId || m.id,
                 profile: {
                     namaLengkap: m.namaLengkap,
                     nim: m.nim,
@@ -363,8 +382,8 @@ export function useTranskripCPL() {
                 }
             });
 
-            // Set default semester to student's active semester if it hasn't been set yet
-            if (m.semester) {
+            // Only update semester if explicitly requested (usually on initialization)
+            if (shouldUpdateSemester && m.semester) {
                 setSemester(m.semester.toString());
             }
 

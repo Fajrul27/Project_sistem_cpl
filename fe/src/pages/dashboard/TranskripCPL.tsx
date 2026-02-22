@@ -154,9 +154,9 @@ const TranskripCPLPage = () => {
         // Keep alphanumeric and underscores, remove others
         const nama = rawName.replace(/[^a-zA-Z0-9]/g, '_');
         const nim = selectedStudent?.profile?.nim || 'NIM';
-        const sem = selectedStudent?.profile?.semester ?? 'X';
-
-        const printTitle = `${type}_${nama}_${nim}_Semester_${sem}`;
+        const currentPrintSemester = (activeTab === 'cpl') ? 'all' : semester;
+        const semSuffix = currentPrintSemester && currentPrintSemester !== 'all' ? `Semester_${currentPrintSemester}` : 'Kumulatif';
+        const printTitle = `${type}_${nama}_${nim}_${semSuffix}`;
 
         // Force update both property and DOM element
         document.title = printTitle;
@@ -526,15 +526,13 @@ const TranskripCPLPage = () => {
                                             <CardTitle>Capaian OBE</CardTitle>
                                             <CardDescription>{selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}</CardDescription>
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex items-center gap-2">
                                             <Button
-                                                variant="outline"
-                                                size="sm"
                                                 onClick={handlePrint}
-                                                disabled={loading || (activeTab === 'cpl' ? validTranskripList.length === 0 : transkripCpmkList.length === 0)}
+                                                className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95 transition-all"
                                             >
-                                                <Printer className="h-4 w-4 mr-2" />
-                                                Cetak Transkrip
+                                                <Printer className="h-4 w-4" />
+                                                Print Transkrip
                                             </Button>
                                         </div>
                                     </CardHeader>
@@ -1068,7 +1066,7 @@ const TranskripCPLPage = () => {
                                     {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CAPAIAN MATA KULIAH'}
                                 </h2>
                                 <p className="text-center text-[10px] uppercase font-semibold mb-4">
-                                    {activeTab === 'cpmk' && semester !== 'all' ? `SEMESTER ${semester}` : 'SELURUH SEMESTER (AKUMULATIF)'}
+                                    {(activeTab === 'cpl' || semester === 'all') ? 'PERIODE: SELURUH SEMESTER (AKUMULATIF)' : `PERIODE: SEMESTER ${semester}`}
                                 </p>
 
                                 {/* Student Info */}
@@ -1112,7 +1110,7 @@ const TranskripCPLPage = () => {
                                             <div className="uppercase font-medium">{selectedStudent.profile?.tahunMasuk || '-'}</div>
                                         </div>
                                         <div className="grid grid-cols-[100px_5px_1fr]">
-                                            <div>Semester</div>
+                                            <div>Semester Aktif</div>
                                             <div>:</div>
                                             <div className="uppercase font-medium">{selectedStudent.profile?.semester || '-'}</div>
                                         </div>

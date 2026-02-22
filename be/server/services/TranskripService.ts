@@ -391,7 +391,7 @@ export class TranskripService {
 
                 tahunAjaran: nt.tahunAjaranRef?.nama || '-'
             })),
-            profilLulusan: await TranskripService.getTranskripProfil(mahasiswaId)
+            profilLulusan: await TranskripService.getTranskripProfil(mahasiswaId, semester, tahunAjaran)
         };
     }
 
@@ -502,7 +502,7 @@ export class TranskripService {
 
     // --- Profil Lulusan Transcript ---
 
-    static async getTranskripProfil(mahasiswaId: string) {
+    static async getTranskripProfil(mahasiswaId: string, semester?: number, tahunAjaran?: string) {
         const mahasiswa = await prisma.profile.findUnique({
             where: { userId: mahasiswaId },
             select: { prodiId: true }
@@ -514,8 +514,12 @@ export class TranskripService {
             include: { cplMappings: { include: { cpl: true } } }
         });
 
+        const where: any = { mahasiswaId };
+        if (semester) where.semester = semester;
+        if (tahunAjaran) where.tahunAjaranId = tahunAjaran;
+
         const rawNilaiCplList = (await prisma.nilaiCpl.findMany({
-            where: { mahasiswaId },
+            where,
             include: { mataKuliah: true }
         })).filter(n => n.mataKuliah);
 
