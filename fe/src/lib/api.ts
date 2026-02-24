@@ -48,6 +48,9 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 401) {
+        clearToken();
+      }
       const message = data.error || 'Request failed';
       const detail = data.detail ? `\n${data.detail}` : '';
       throw new Error(message + detail);

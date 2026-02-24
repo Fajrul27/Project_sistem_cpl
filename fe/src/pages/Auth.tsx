@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,13 +39,20 @@ const Auth = () => {
   const [timer, setTimer] = useState(0);
   const canResend = timer === 0;
 
+  const location = useLocation();
+
   useEffect(() => {
-    // Check if user already logged in
-    const user = localStorage.getItem('user');
-    if (user) {
-      navigate("/dashboard");
-    }
-  }, [navigate]);
+    // Check if user already logged in via Supabase
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      // Only redirect to dashboard if session exists AND we weren't redirected here from a protected route
+      // (which would indicate the session is invalid or lacks permissions)
+      if (session && !location.state?.from) {
+        navigate("/dashboard");
+      }
+    };
+    checkSession();
+  }, [navigate, location.state]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
