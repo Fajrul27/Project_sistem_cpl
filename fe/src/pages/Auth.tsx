@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { supabase, fetchProdiList } from "@/lib/api";
+import SEO from "@/components/common/SEO";
 
 // const API_URL = import.meta.env.VITE_API_URL || '/api'; // No longer needed
 
@@ -174,6 +175,10 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
+      <SEO
+        title="Login ke Sistem CPL"
+        description="Masuk ke platform pengukuran Capaian Pembelajaran Lulusan untuk mengakses data akademik Anda"
+      />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">

@@ -8,6 +8,7 @@ import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import SEO from "@/components/common/SEO";
 
 import { Printer, FileText, Check, ChevronsUpDown, Briefcase, Eye, Filter, Info, ChevronDown, BookOpen, SlidersHorizontal, Search, RotateCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -208,6 +209,10 @@ const TranskripCPLPage = () => {
             title="Transkrip CPL"
             description="Rekapitulasi pencapaian kompetensi lulusan"
         >
+            <SEO
+                title={selectedStudent ? `Transkrip ${selectedStudent.profile?.namaLengkap}` : "Transkrip CPL"}
+                description={selectedStudent ? `Lihat detail pencapaian CPL dan CPMK untuk ${selectedStudent.profile?.namaLengkap} (${selectedStudent.profile?.nim})` : "Rekapitulasi pencapaian kompetensi lulusan"}
+            />
             <div className="space-y-6">
                 {canManage && (
                     <CollapsibleGuide title="Panduan Transkrip & Capaian">

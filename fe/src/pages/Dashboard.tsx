@@ -25,6 +25,7 @@ import { CompletenessCard } from "@/components/dashboard/CompletenessCard";
 import { DosenAnalysisTable } from "@/components/dashboard/DosenAnalysisTable";
 import { StudentEvaluationTable } from "@/components/dashboard/StudentEvaluationTable";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
+import SEO from "@/components/common/SEO";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -152,6 +153,10 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 relative">
+      <SEO
+        title="Dashboard Statistik"
+        description="Analisis dan statistik Capaian Pembelajaran Lulusan (CPL) secara real-time"
+      />
       {isStaff && (
         <DashboardFilterBar
           role={role || ''}
