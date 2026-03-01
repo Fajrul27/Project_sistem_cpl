@@ -36,14 +36,14 @@ const Index = () => {
         <div className="container mx-auto max-w-4xl">
           <div className="mb-6 flex justify-center animate-in zoom-in duration-500">
             <div className="p-4 bg-white/10 backdrop-blur-sm rounded-full hover:scale-110 transition-transform duration-300">
-              <GraduationCap className="h-16 w-16 text-white" />
+              <img src="/logo.png" alt="Logo UNUGHA" className="h-16 w-auto" />
             </div>
           </div>
-          
+
           <h1 className="mb-6 text-4xl font-bold text-white md:text-5xl lg:text-6xl animate-in slide-in-from-bottom duration-500">
-            Sistem Pengukuran CPL
+            Sistem Penilaian OBE
           </h1>
-          
+
           <p className="mb-8 text-lg text-white/90 md:text-xl animate-in slide-in-from-bottom duration-700">
             Platform modern untuk mengukur dan menganalisis Capaian Pembelajaran Lulusan
             dengan data akurat dan visualisasi yang informatif
@@ -102,7 +102,7 @@ const Index = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="grid gap-12 md:grid-cols-2 items-center">
             <div>
-              <h2 className="text-3xl font-bold mb-6">Mengapa Memilih Sistem CPL?</h2>
+              <h2 className="text-3xl font-bold mb-6">Mengapa Memilih Sistem Penilaian OBE?</h2>
               <div className="space-y-4">
                 {[
                   "Autentikasi multi-level (Admin, Dosen, Mahasiswa)",
@@ -155,7 +155,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t py-8 px-4">
         <div className="container mx-auto text-center text-muted-foreground">
-          <p>&copy; 2025 Sistem CPL. Platform Pengukuran Capaian Pembelajaran.</p>
+          <p>&copy; 2025 Sistem Penilaian OBE. Platform Pengukuran Capaian Pembelajaran.</p>
         </div>
       </footer>
     </div>

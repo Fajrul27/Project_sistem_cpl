@@ -24,6 +24,7 @@ export const MENU_ITEMS = [
         icon: Database,
         roles: ["admin", "kaprodi"] as UserRole[],
         items: [
+            { title: "Pengaturan Instansi", url: "/dashboard/instansi", roles: ["admin"], resource: 'settings' },
             { title: "Unit & Jenjang", url: "/dashboard/fakultas", roles: ["admin"], resource: 'fakultas' },
             { title: "Manajemen Skala Nilai", url: "/dashboard/skala-nilai", roles: ["admin", "kaprodi"], resource: 'fakultas' },
         ]

@@ -117,12 +117,12 @@ export function AppSidebar() {
         {/* Brand / Logo */}
         <div className="flex h-14 items-center border-b border-sidebar-border/40 px-3 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
-              SC
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden">
+              <img src="/logo.png" alt="Logo UNUGHA" className="h-7 w-auto object-contain" />
             </div>
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
               <span className="text-sm font-semibold leading-tight tracking-tight text-sidebar-foreground">
-                Sistem CPL
+                Sistem Penilaian OBE
               </span>
               <span className="text-[11px] text-sidebar-foreground/60 leading-tight">
                 Pengukuran CPL

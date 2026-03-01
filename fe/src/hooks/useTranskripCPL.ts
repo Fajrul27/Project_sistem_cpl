@@ -133,6 +133,28 @@ export function useTranskripCPL() {
         logoUrl: "/logo.png"
     });
 
+    const fetchUniSettings = async () => {
+        try {
+            const res = await api.get('/settings');
+            const s = res.data;
+            if (s && Object.keys(s).length > 0) {
+                const website = s.institution_website || "www.unugha.ac.id";
+                const email = s.institution_email || "kita@unugha.ac.id";
+                const phone = s.institution_phone || "0282 695415";
+
+                setSettings(prev => ({
+                    ...prev,
+                    univName: s.institution_name || "UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI CILACAP",
+                    univAddress: s.institution_address || "Jl. Kemerdekaan Barat No.17 Kesugihan Kidul, Kec. Kesugihan, Kabupaten Cilacap, Jawa Tengah 53274",
+                    univContact: `Website : ${website} / e-Mail : ${email} / Telepon : ${phone}`,
+                    logoUrl: s.institution_logo || "/logo.png"
+                }));
+            }
+        } catch (e) {
+            console.error("Error fetching uni settings:", e);
+        }
+    };
+
     // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500);
@@ -166,6 +188,8 @@ export function useTranskripCPL() {
 
             const taRes = await api.get('/references/tahun-ajaran');
             setTahunAjaranList(taRes.data || []);
+
+            await fetchUniSettings();
         } catch (e) { console.error(e); }
     };
 

@@ -7,6 +7,8 @@ import path from 'path';
 import { authSchemas } from '../schemas/auth.schema.js';
 import { EmailService } from './EmailService.js';
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Read Private Key
 const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH || path.resolve(process.cwd(), '../private.key');
@@ -161,6 +163,81 @@ export class AuthService {
                 profile: user.profile
             }
         };
+    }
+
+    static async googleLogin(idToken: string) {
+        if (!process.env.GOOGLE_CLIENT_ID) {
+            throw new Error('Konfigurasi GOOGLE_CLIENT_ID tidak ditemukan di server');
+        }
+
+        try {
+            const ticket = await googleClient.verifyIdToken({
+                idToken,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+
+            const payload = ticket.getPayload();
+            if (!payload || !payload.email) {
+                throw new Error('Payload token Google tidak valid');
+            }
+
+            const { email, name, picture } = payload;
+
+            // Cari user berdasar email
+            let user = await prisma.user.findUnique({
+                where: { email },
+                include: {
+                    role: { include: { role: true } },
+                    profile: {
+                        include: {
+                            kelasRef: true,
+                            angkatanRef: { include: { kurikulum: true } },
+                            prodi: { include: { fakultas: true } }
+                        }
+                    }
+                }
+            });
+
+            if (!user) {
+                throw new Error('Email Anda belum terdaftar di sistem ini. Silakan hubungi Admin untuk memastikan email Anda sesuai dengan data di SIAKAD.');
+            }
+
+            // Generate JWT (RS256)
+            const token = jwt.sign(
+                {
+                    userId: user.id,
+                    email: user.email,
+                    role: user.role?.role?.name || 'mahasiswa'
+                },
+                privateKey,
+                {
+                    algorithm: 'RS256',
+                    expiresIn: '7d'
+                }
+            );
+
+            // Simpan session
+            await prisma.session.create({
+                data: {
+                    userId: user.id,
+                    token,
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                }
+            });
+
+            return {
+                token,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    role: user.role?.role?.name || 'mahasiswa',
+                    profile: user.profile
+                }
+            };
+        } catch (error: any) {
+            console.error('Google verification error:', error);
+            throw new Error('Gagal login via Google: ' + error.message);
+        }
     }
 
     static async getMe(userId: string) {

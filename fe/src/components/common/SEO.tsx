@@ -15,14 +15,14 @@ const SEO = ({
     title,
     description,
     keywords = "CPL, OBE, Outcome Based Education, Kurikulum, Perguruan Tinggi, Capaian Pembelajaran Lulusan",
-    author = "Sistem CPL",
+    author = "Sistem Penilaian OBE",
     ogTitle,
     ogDescription,
     ogImage = "https://lovable.dev/opengraph-image-p98pqg.png",
     twitterCard = "summary_large_image",
 }: SEOProps) => {
-    const defaultTitle = "Sistem CPL - Pengukuran Capaian Pembelajaran Lulusan";
-    const seoTitle = title ? `${title} | Sistem CPL` : defaultTitle;
+    const defaultTitle = "Sistem Penilaian OBE - Pengukuran Capaian Pembelajaran Lulusan";
+    const seoTitle = title ? `${title} | Sistem Penilaian OBE` : defaultTitle;
     const seoDescription = description || "Platform modern untuk mengukur dan menganalisis Capaian Pembelajaran Lulusan dengan data akurat dan visualisasi informatif";
 
     return (

@@ -459,6 +459,39 @@ export const supabase = {
         };
       }
     },
+    signInWithGoogle: async (idToken: string) => {
+      try {
+        const data = await apiRequest('/auth/google', {
+          method: 'POST',
+          body: JSON.stringify({ idToken }),
+        });
+
+        const session = {
+          access_token: 'cookie',
+          user: { ...data.user }
+        };
+
+        setUser(data.user);
+
+        // Trigger auth state change callbacks
+        setTimeout(() => {
+          authCallbacks.forEach(cb => cb('SIGNED_IN', session));
+        }, 100);
+
+        return {
+          data: {
+            user: { id: data.user.id, email: data.user.email },
+            session
+          },
+          error: null
+        };
+      } catch (error: any) {
+        return {
+          data: { user: null, session: null },
+          error: { message: error.message || 'Login Google gagal' }
+        };
+      }
+    },
 
     signUp: async ({ email, password, options }: { email: string; password: string; options?: any }) => {
       try {

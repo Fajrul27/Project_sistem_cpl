@@ -17,6 +17,8 @@ import {
 } from "../components/ui/select";
 import { supabase, fetchProdiList } from "@/lib/api";
 import SEO from "@/components/common/SEO";
+import { GoogleLogin } from "@react-oauth/google";
+import { Separator } from "@/components/ui/separator";
 
 // const API_URL = import.meta.env.VITE_API_URL || '/api'; // No longer needed
 
@@ -86,6 +88,23 @@ const Auth = () => {
     } catch (error: any) {
       toast.error(error.message);
       console.error('Login error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setLoading(true);
+    try {
+      const { data, error } = await (supabase.auth as any).signInWithGoogle(credentialResponse.credential);
+      if (error) throw new Error(error.message);
+      if (data.user) {
+        toast.success("Login Google berhasil!");
+        navigate("/dashboard");
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+      console.error('Google login error:', error);
     } finally {
       setLoading(false);
     }
@@ -176,18 +195,15 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
       <SEO
-        title="Login ke Sistem CPL"
+        title="Login ke Sistem Penilaian OBE"
         description="Masuk ke platform pengukuran Capaian Pembelajaran Lulusan untuk mengakses data akademik Anda"
       />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-primary rounded-full">
-              <GraduationCap className="h-8 w-8 text-primary-foreground" />
-            </div>
+            <img src="/logo.png" alt="Logo UNUGHA" className="h-20 w-auto" />
           </div>
-          <CardTitle className="text-2xl">Sistem CPL</CardTitle>
-          <CardDescription>Pengukuran Capaian Pembelajaran Lulusan</CardDescription>
+          <CardTitle className="text-2xl">Sistem Penilaian OBE</CardTitle>
         </CardHeader>
         <CardContent>
           {authView === 'login' && (
@@ -242,6 +258,24 @@ const Auth = () => {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Loading..." : "Login"}
               </Button>
+
+              <div className="space-y-4 pt-2">
+                <div className="relative flex items-center">
+                  <span className="flex-grow border-t"></span>
+                  <span className="flex-shrink mx-4 text-xs text-muted-foreground uppercase">atau</span>
+                  <span className="flex-grow border-t"></span>
+                </div>
+
+                <div className="flex justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => toast.error("Gagal login dengan Google")}
+                    useOneTap
+                    theme="outline"
+                    shape="rectangular"
+                  />
+                </div>
+              </div>
             </form>
           )}
 

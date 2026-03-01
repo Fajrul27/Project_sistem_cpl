@@ -66,6 +66,7 @@ export const RESOURCE_CATEGORIES = [
             { id: 'role_permissions', label: 'Hak Akses Role', description: 'Pengaturan hak akses fitur untuk setiap role.' },
             { id: 'default_role_permissions', label: 'Hak Akses Default Role', description: 'Pengaturan template default hak akses role.' },
             { id: 'fakultas', label: 'Data Fakultas', description: 'Manajemen referensi data Fakultas.' },
+            { id: 'settings', label: 'Pengaturan Instansi', description: 'Manajemen pengaturan identitas instansi.' },
         ]
     },
 ];

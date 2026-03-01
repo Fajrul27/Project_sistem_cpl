@@ -1,7 +1,7 @@
 
 import { Router } from 'express';
 import { authMiddleware, requireRole } from '../middleware/auth.js';
-import { register, login, getMe, logout, loginAsUser, returnToAdmin, forgotPassword, verifyResetCode, resetPassword } from '../controllers/auth-controller.js';
+import { register, login, googleLogin, getMe, logout, loginAsUser, returnToAdmin, forgotPassword, verifyResetCode, resetPassword } from '../controllers/auth-controller.js';
 
 const router = Router();
 
@@ -10,6 +10,7 @@ router.post('/register', register);
 
 // Login
 router.post('/login', login);
+router.post('/google', googleLogin);
 
 // Forgot Password
 router.post('/forgot-password', forgotPassword);

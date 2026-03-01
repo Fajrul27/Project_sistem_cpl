@@ -72,6 +72,36 @@ export const login = async (req: Request, res: Response) => {
     }
 };
 
+// Google Login
+export const googleLogin = async (req: Request, res: Response) => {
+    try {
+        const { idToken } = req.body;
+        if (!idToken) {
+            return res.status(400).json({ error: 'ID Token wajib disertakan' });
+        }
+
+        const result = await AuthService.googleLogin(idToken);
+
+        // Set HttpOnly cookie
+        res.cookie('token', result.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        res.json({
+            message: 'Login via Google berhasil',
+            user: result.user,
+            token: result.token
+        });
+    } catch (error: any) {
+        console.error('Google login error:', error);
+        res.status(401).json({ error: error.message || 'Gagal login via Google' });
+    }
+};
+
 // Get current user
 export const getMe = async (req: Request, res: Response) => {
     try {

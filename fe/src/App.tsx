@@ -45,6 +45,7 @@ import FakultasPage from "./pages/dashboard/FakultasPage";
 import ActivityLogPage from "./pages/dashboard/ActivityLog";
 import MasterAkademikPage from "./pages/dashboard/MasterAkademikPage";
 import SkalaNilaiPage from "./pages/dashboard/SkalaNilaiPage";
+import InstansiSettings from "./pages/dashboard/InstansiSettings";
 
 
 
@@ -198,6 +199,14 @@ const App = () => (
                   element={
                     <RequireRole roles={["admin"]} resource="kaprodi_data">
                       <KaprodiDataSettings />
+                    </RequireRole>
+                  }
+                />
+                <Route
+                  path="instansi"
+                  element={
+                    <RequireRole roles={["admin"]} resource="settings">
+                      <InstansiSettings />
                     </RequireRole>
                   }
                 />
