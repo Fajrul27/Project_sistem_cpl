@@ -6,6 +6,7 @@ export type UserRole = "admin" | "dosen" | "mahasiswa" | "kaprodi" | "dekan" | n
 interface UserContextType {
     role: UserRole;
     userId: string | null;
+    email: string | null;
     profile: any;
     loading: boolean;
     refetch: () => Promise<void>;
@@ -16,22 +17,37 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider = ({ children }: { children: ReactNode }) => {
     const [role, setRole] = useState<UserRole>(null);
     const [userId, setUserId] = useState<string | null>(null);
+    const [email, setEmail] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<any>(null);
 
     const fetchUserRole = async () => {
         try {
+            // First do a quiet local check to see if we even HAVE a session
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                setRole(null);
+                setUserId(null);
+                setEmail(null);
+                setProfile(null);
+                setLoading(false);
+                return;
+            }
+
+            // If local data exists, then verify/enrich with server data
             const { data: { user } } = await supabase.auth.getUser();
 
             if (!user) {
                 setRole(null);
                 setUserId(null);
+                setEmail(null);
                 setProfile(null);
                 setLoading(false);
                 return;
             }
 
             setUserId(user.id);
+            setEmail(user.email);
             // @ts-ignore
             setProfile(user.profile || null);
 
@@ -43,10 +59,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             } else {
                 setRole(null);
             }
-        } catch (error) {
-            console.error("Error fetching role:", error);
+        } catch (error: any) {
+            // Only log if it's NOT a 401 (expected when logged out)
+            if (!error.message?.includes('401') && !error.message?.includes('Unauthorized')) {
+                console.error("Error fetching role:", error);
+            }
             setRole(null);
             setUserId(null);
+            setEmail(null);
             setProfile(null);
         } finally {
             setLoading(false);
@@ -62,6 +82,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
                 if (session?.user) {
                     const user = session.user;
                     setUserId(user.id);
+                    setEmail(user.email);
                     // @ts-ignore
                     setProfile(user.profile || null);
 
@@ -77,6 +98,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             } else if (event === 'SIGNED_OUT') {
                 setRole(null);
                 setUserId(null);
+                setEmail(null);
                 setProfile(null);
                 setLoading(false);
             }
@@ -88,7 +110,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     return (
-        <UserContext.Provider value={{ role, userId, profile, loading, refetch: fetchUserRole }}>
+        <UserContext.Provider value={{ role, userId, email, profile, loading, refetch: fetchUserRole }}>
             {children}
         </UserContext.Provider>
     );

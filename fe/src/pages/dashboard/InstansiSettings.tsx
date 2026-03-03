@@ -12,16 +12,16 @@ import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen
 const InstansiSettings = () => {
     const { settings, loading, saving, updateSettings } = useSettings();
     const [formData, setFormData] = useState({
-        institution_name: "",
-        institution_address: "",
-        institution_website: "",
-        institution_email: "",
-        institution_phone: "",
-        institution_logo: ""
+        institution_name: "UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI CILACAP",
+        institution_address: "Jl. Kemerdekaan Barat No.17 Kesugihan Kidul, Kec. Kesugihan, Kabupaten Cilacap, Jawa Tengah 53274",
+        institution_website: "www.unugha.ac.id",
+        institution_email: "kita@unugha.ac.id",
+        institution_phone: "0282 695415",
+        institution_logo: "/logo.png"
     });
 
     useEffect(() => {
-        if (settings && Object.keys(settings).length > 0) {
+        if (!loading) {
             setFormData({
                 institution_name: settings.institution_name || "UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI CILACAP",
                 institution_address: settings.institution_address || "Jl. Kemerdekaan Barat No.17 Kesugihan Kidul, Kec. Kesugihan, Kabupaten Cilacap, Jawa Tengah 53274",
@@ -31,7 +31,7 @@ const InstansiSettings = () => {
                 institution_logo: settings.institution_logo || "/logo.png"
             });
         }
-    }, [settings]);
+    }, [settings, loading]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;

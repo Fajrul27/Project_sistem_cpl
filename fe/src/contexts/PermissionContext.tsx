@@ -46,8 +46,12 @@ export const PermissionProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     useEffect(() => {
-        fetchPermissions();
-    }, [fetchPermissions]);
+        if (role) {
+            fetchPermissions();
+        } else {
+            setLoading(false);
+        }
+    }, [fetchPermissions, role]);
 
     const can = useCallback((action: string, resource: string): boolean => {
         if (!role) return false;

@@ -20,8 +20,6 @@ import SEO from "@/components/common/SEO";
 import { GoogleLogin } from "@react-oauth/google";
 import { Separator } from "@/components/ui/separator";
 
-// const API_URL = import.meta.env.VITE_API_URL || '/api'; // No longer needed
-
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -45,17 +43,15 @@ const Auth = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Check if user already logged in via Supabase
     const checkSession = async () => {
+      // Use getSession for a quiet local check first
       const { data: { session } } = await supabase.auth.getSession();
-      // Only redirect to dashboard if session exists AND we weren't redirected here from a protected route
-      // (which would indicate the session is invalid or lacks permissions)
-      if (session && !location.state?.from) {
-        navigate("/dashboard");
+      if (session && session.user && !location.state?.from) {
+        window.location.href = "/dashboard";
       }
     };
     checkSession();
-  }, [navigate, location.state]);
+  }, [location.state]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -83,7 +79,7 @@ const Auth = () => {
 
       if (data.user) {
         toast.success("Login berhasil!");
-        navigate("/dashboard");
+        window.location.href = "/dashboard";
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -96,11 +92,17 @@ const Auth = () => {
   const handleGoogleSuccess = async (credentialResponse: any) => {
     setLoading(true);
     try {
-      const { data, error } = await (supabase.auth as any).signInWithGoogle(credentialResponse.credential);
+      if (!credentialResponse.credential) {
+        throw new Error("Gagal mengambil credential dari Google");
+      }
+
+      const { data, error } = await supabase.auth.signInWithGoogle(credentialResponse.credential);
+
       if (error) throw new Error(error.message);
-      if (data.user) {
+
+      if (data?.session) {
         toast.success("Login Google berhasil!");
-        navigate("/dashboard");
+        window.location.href = "/dashboard";
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -176,7 +178,7 @@ const Auth = () => {
 
       if (data && (data as any).session) {
         toast.success("Password berhasil direset. Login otomatis...");
-        navigate("/dashboard");
+        window.location.href = "/dashboard";
       } else {
         toast.success("Password berhasil direset. Silakan login.");
         setAuthView('login');
@@ -193,214 +195,231 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-hero p-4">
-      <SEO
-        title="Login ke Sistem Penilaian OBE"
-        description="Masuk ke platform pengukuran Capaian Pembelajaran Lulusan untuk mengakses data akademik Anda"
-      />
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <img src="/logo.png" alt="Logo UNUGHA" className="h-20 w-auto" />
-          </div>
-          <CardTitle className="text-2xl">Sistem Penilaian OBE</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {authView === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="login-email" required>Email</RequiredLabel>
-                <Input
-                  id="login-email"
-                  type="email"
-                  placeholder="nama@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="bg-card"
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <RequiredLabel htmlFor="login-password" required>Password</RequiredLabel>
-                  <button
-                    type="button"
-                    onClick={() => { setAuthView('forgot_email'); setResetEmail(email); }}
-                    className="text-xs text-primary hover:underline font-medium"
-                  >
-                    Lupa Password?
-                  </button>
-                </div>
-                <div className="relative">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-slate-50 dark:bg-[#020817] transition-colors duration-500">
+      {/* Subtle Mesh Gradient for Professional Look */}
+      <div className="absolute inset-0 z-0 opacity-30 dark:opacity-10 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-secondary/20 blur-[120px]" />
+      </div>
+
+      <div className="relative z-10 w-full flex items-center justify-center">
+        <SEO
+          title="Login ke Sistem Penilaian OBE"
+          description="Masuk ke platform pengukuran Capaian Pembelajaran Lulusan untuk mengakses data akademik Anda"
+        />
+        <Card className="w-full max-w-md shadow-2xl border-slate-200/60 dark:border-slate-800/50 backdrop-blur-md bg-white/90 dark:bg-slate-900/95 transition-all duration-300">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <img src="/logo.png" alt="Logo UNUGHA" className="h-20 w-auto" />
+            </div>
+            <CardTitle className="text-2xl">Sistem Penilaian OBE</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {authView === 'login' && (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <RequiredLabel htmlFor="login-email" required>Email</RequiredLabel>
                   <Input
-                    id="login-password"
-                    type={showLoginPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    id="login-email"
+                    type="email"
+                    placeholder="nama@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="pr-10 bg-card"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowLoginPassword((prev) => !prev)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                  >
-                    {showLoginPassword ? (
-                      <EyeOff className="h-4 w-4" aria-hidden="true" />
-                    ) : (
-                      <Eye className="h-4 w-4" aria-hidden="true" />
-                    )}
-                    <span className="sr-only">Toggle password visibility</span>
-                  </button>
-                </div>
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Loading..." : "Login"}
-              </Button>
-
-              <div className="space-y-4 pt-2">
-                <div className="relative flex items-center">
-                  <span className="flex-grow border-t"></span>
-                  <span className="flex-shrink mx-4 text-xs text-muted-foreground uppercase">atau</span>
-                  <span className="flex-grow border-t"></span>
-                </div>
-
-                <div className="flex justify-center">
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => toast.error("Gagal login dengan Google")}
-                    useOneTap
-                    theme="outline"
-                    shape="rectangular"
+                    className="bg-card focus-visible:ring-slate-400"
                   />
                 </div>
-              </div>
-            </form>
-          )}
-
-          {authView === 'forgot_email' && (
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div className="text-center mb-4">
-                <h3 className="font-semibold text-lg">Reset Password</h3>
-                <p className="text-sm text-muted-foreground">Masukkan email yang terdaftar untuk menerima kode verifikasi.</p>
-              </div>
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="reset-email" required>Email</RequiredLabel>
-                <Input
-                  id="reset-email"
-                  type="email"
-                  placeholder="nama@example.com"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  required
-                  className="bg-card"
-                />
-              </div>
-              <div className="space-y-2">
+                <div className="space-y-2">
+                  <RequiredLabel htmlFor="login-password" required>Password</RequiredLabel>
+                  <div className="relative">
+                    <Input
+                      id="login-password"
+                      type={showLoginPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="pr-10 bg-card focus-visible:ring-slate-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                    >
+                      {showLoginPassword ? (
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" aria-hidden="true" />
+                      )}
+                      <span className="sr-only">Toggle password visibility</span>
+                    </button>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { setAuthView('forgot_email'); setResetEmail(email); }}
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      Lupa Password?
+                    </button>
+                  </div>
+                </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Mengirim..." : "Kirim Kode Verifikasi"}
+                  {loading ? "Loading..." : "Login"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setAuthView('login')}
-                >
-                  Kembali ke Login
-                </Button>
-              </div>
-            </form>
-          )}
 
-          {authView === 'verify_code' && (
-            <form onSubmit={handleVerifyCode} className="space-y-4">
-              <div className="text-center mb-4">
-                <h3 className="font-semibold text-lg">Verifikasi Kode</h3>
-                <p className="text-sm text-muted-foreground">Masukkan 6 digit kode yang dikirim ke <strong>{resetEmail}</strong></p>
-              </div>
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="otp-code" required>Kode Verifikasi</RequiredLabel>
-                <Input
-                  id="otp-code"
-                  type="text"
-                  placeholder="123456"
-                  value={resetCode}
-                  onChange={(e) => setResetCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  required
-                  className="bg-card text-center text-2xl tracking-[0.5em] font-mono"
-                  maxLength={6}
-                />
-              </div>
-              <div className="space-y-2">
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Verifikasi..." : "Verifikasi Kode"}
-                </Button>
-                <div className="flex gap-2">
+                <div className="space-y-4 pt-2">
+                  <div className="relative flex items-center">
+                    <span className="flex-grow border-t"></span>
+                    <span className="flex-shrink mx-4 text-xs text-muted-foreground uppercase">atau</span>
+                    <span className="flex-grow border-t"></span>
+                  </div>
+
+                  <div className="flex justify-center flex-col gap-3">
+                    <div className="flex justify-center w-full">
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => toast.error("Gagal login dengan Google")}
+                        theme="outline"
+                        shape="pill"
+                        size="large"
+                        width="350px"
+                        text="signin_with"
+                        useOneTap
+                      />
+                    </div>
+
+                    <p className="text-[10px] text-center text-muted-foreground">
+                      Pastikan Anda menggunakan email yang terdaftar di sistem.
+                    </p>
+                  </div>
+                </div>
+              </form>
+            )}
+
+            {authView === 'forgot_email' && (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="text-center mb-4">
+                  <h3 className="font-semibold text-lg">Reset Password</h3>
+                  <p className="text-sm text-muted-foreground">Masukkan email yang terdaftar untuk menerima kode verifikasi.</p>
+                </div>
+                <div className="space-y-2">
+                  <RequiredLabel htmlFor="reset-email" required>Email</RequiredLabel>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="nama@example.com"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                    className="bg-card"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Mengirim..." : "Kirim Kode Verifikasi"}
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
                     className="w-full"
-                    onClick={handleResendCode}
-                    disabled={!canResend || loading}
+                    onClick={() => setAuthView('login')}
                   >
-                    {timer > 0 ? `Kirim Ulang (${timer}s)` : "Kirim Ulang Kode"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="w-full"
-                    onClick={() => setAuthView('forgot_email')}
-                  >
-                    Ganti Email
+                    Kembali ke Login
                   </Button>
                 </div>
-              </div>
-            </form>
-          )}
+              </form>
+            )}
 
-          {authView === 'reset_password' && (
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div className="text-center mb-4">
-                <h3 className="font-semibold text-lg">Buat Password Baru</h3>
-                <p className="text-sm text-muted-foreground">Silakan masukkan password baru Anda.</p>
-              </div>
-              <div className="space-y-2">
-                <RequiredLabel htmlFor="new-password" required>Password Baru</RequiredLabel>
-                <div className="relative">
-                  <Input
-                    id="new-password"
-                    type={showNewPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    className="pr-10 bg-card"
-                    minLength={6}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPassword((prev) => !prev)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className="h-4 w-4" aria-hidden="true" />
-                    ) : (
-                      <Eye className="h-4 w-4" aria-hidden="true" />
-                    )}
-                    <span className="sr-only">Toggle password visibility</span>
-                  </button>
+            {authView === 'verify_code' && (
+              <form onSubmit={handleVerifyCode} className="space-y-4">
+                <div className="text-center mb-4">
+                  <h3 className="font-semibold text-lg">Verifikasi Kode</h3>
+                  <p className="text-sm text-muted-foreground">Masukkan 6 digit kode yang dikirim ke <strong>{resetEmail}</strong></p>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Menyimpan..." : "Simpan Password Baru"}
-                </Button>
-              </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+                <div className="space-y-2">
+                  <RequiredLabel htmlFor="otp-code" required>Kode Verifikasi</RequiredLabel>
+                  <Input
+                    id="otp-code"
+                    type="text"
+                    placeholder="123456"
+                    value={resetCode}
+                    onChange={(e) => setResetCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    required
+                    className="bg-card text-center text-2xl tracking-[0.5em] font-mono"
+                    maxLength={6}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Verifikasi..." : "Verifikasi Kode"}
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleResendCode}
+                      disabled={!canResend || loading}
+                    >
+                      {timer > 0 ? `Kirim Ulang (${timer}s)` : "Kirim Ulang Kode"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full"
+                      onClick={() => setAuthView('forgot_email')}
+                    >
+                      Ganti Email
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            )}
+
+            {authView === 'reset_password' && (
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="text-center mb-4">
+                  <h3 className="font-semibold text-lg">Buat Password Baru</h3>
+                  <p className="text-sm text-muted-foreground">Silakan masukkan password baru Anda.</p>
+                </div>
+                <div className="space-y-2">
+                  <RequiredLabel htmlFor="new-password" required>Password Baru</RequiredLabel>
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      type={showNewPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      className="pr-10 bg-card"
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                    >
+                      {showNewPassword ? (
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" aria-hidden="true" />
+                      )}
+                      <span className="sr-only">Toggle password visibility</span>
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Menyimpan..." : "Simpan Password Baru"}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

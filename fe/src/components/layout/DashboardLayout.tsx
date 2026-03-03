@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, LogOut } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+import { useUser } from "@/contexts/UserContext";
+
 interface DashboardLayoutProps {
   children?: ReactNode;
   title?: string;
@@ -53,10 +55,7 @@ export function useDashboardLayoutContext() {
 
 export function DashboardLayout({ children, title, description, actions }: DashboardLayoutProps) {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const { role } = useUserRole();
+  const { role, profile, userId, email, loading: userLoading, refetch } = useUser();
   const { isImpersonating, originalAdmin, returnToAdmin, loading: impersonationLoading } = useImpersonation();
   const [pageMeta, setPageMeta] = useState<DashboardPageMeta>({
     title,
@@ -85,42 +84,15 @@ export function DashboardLayout({ children, title, description, actions }: Dashb
   );
 
   useEffect(() => {
-    checkUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT") {
-        navigate("/auth");
-      }
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  const checkUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // If we're on dashboard but userLoading finishes and there's no role,
+    // RequireRole will handle it, but we can also pro-actively navigate
+    if (!userLoading && !role) {
       navigate("/auth");
-      return;
     }
-    setUser(session.user);
+  }, [role, userLoading, navigate]);
 
-    // Fetch user profile from backend
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        setProfile(userData.user.profile);
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
-
-    setLoading(false);
-  };
-
-
-  if (loading) {
-    return <LoadingScreen message="Memuat dashboard..." />;
+  if (userLoading) {
+    return <LoadingScreen message="Memuat sesi..." />;
   }
 
   const content = children ?? <Outlet />;
@@ -165,9 +137,9 @@ export function DashboardLayout({ children, title, description, actions }: Dashb
               <DashboardNavbar
                 title={pageMeta.title}
                 actions={pageMeta.actions}
-                user={user}
+                user={{ id: userId, email }}
                 profile={profile}
-                role={role}
+                role={role as any}
               />
             </div>
 

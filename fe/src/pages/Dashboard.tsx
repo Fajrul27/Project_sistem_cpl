@@ -265,7 +265,7 @@ const Dashboard = () => {
                   onClick={(data) => {
                     if (data && data.activePayload && data.activePayload.length > 0) {
                       const clickedCplName = data.activePayload[0].payload.name;
-                      toast.info(`Filter trend untuk ${clickedCplName} (Fitur Drill-down)`);
+                      toast.info(`Tren untuk ${clickedCplName}`);
                     }
                   }}
                   className="cursor-pointer"
@@ -352,18 +352,18 @@ const Dashboard = () => {
                       </div>
 
                       <div className="relative">
-                        <div className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-primary/15 text-primary uppercase tracking-[0.15em] mb-4">
-                          Best Fit Recommendation
+                        <div className="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-bold bg-primary text-primary-foreground uppercase tracking-wider mb-4 shadow-sm shadow-primary/20">
+                          Rekomendasi Terbaik
                         </div>
 
                         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                          <div className="flex-1 space-y-1">
-                            <h4 className="text-2xl font-black tracking-tight text-foreground leading-none">{top.name}</h4>
-                            <p className="text-xs text-muted-foreground font-medium">Profil ini memiliki keselarasan tertinggi dengan kompetensi Anda.</p>
+                          <div className="flex-1 space-y-2">
+                            <h4 className="text-2xl font-bold tracking-tight text-foreground leading-tight">{top.name}</h4>
+                            <p className="text-sm text-muted-foreground leading-relaxed">Profil ini memiliki tingkat keselarasan kompetensi paling optimal berdasarkan capaian Anda saat ini.</p>
                           </div>
-                          <div className="flex flex-row sm:flex-col items-baseline sm:items-end gap-2 sm:gap-0 h-fit">
-                            <span className="text-4xl font-black text-primary tracking-tighter">{top.nilai}%</span>
-                            <span className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">Match Score</span>
+                          <div className="flex flex-col items-end whitespace-nowrap">
+                            <span className="text-4xl font-extrabold text-primary tracking-tighter">{top.nilai}%</span>
+                            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Skor Kecocokan</span>
                           </div>
                         </div>
                       </div>
@@ -379,13 +379,13 @@ const Dashboard = () => {
                             <span className="text-sm font-bold text-foreground/90 group-hover/item:text-primary transition-colors">
                               {pl.name}
                             </span>
-                            <span className="text-xs font-black text-muted-foreground group-hover/item:text-foreground transition-colors tabular-nums">
+                            <span className="text-sm font-bold text-primary tabular-nums">
                               {pl.nilai}%
                             </span>
                           </div>
-                          <div className="h-2 w-full bg-muted/50 rounded-full overflow-hidden shadow-inner border border-muted/20">
+                          <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                             <div
-                              className={`h-full bg-gradient-to-r ${pl.nilai >= 80 ? 'from-primary to-blue-500' : pl.nilai >= 70 ? 'from-emerald-500 to-teal-400' : 'from-orange-400 to-amber-300'} transition-all duration-1000 ease-out`}
+                              className={`h-full bg-primary transition-all duration-1000 ease-out`}
                               style={{ width: `${pl.nilai}%` }}
                             />
                           </div>
@@ -459,7 +459,7 @@ const Dashboard = () => {
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Star className="h-5 w-5 text-yellow-500" />
+                  <TrendingUp className="h-5 w-5 text-primary" />
                   Top 5 Capaian Teratas
                 </CardTitle>
                 <CardDescription>Kompetensi dengan performa terbaik Anda</CardDescription>
@@ -469,13 +469,13 @@ const Dashboard = () => {
                   <div className="space-y-3">
                     {performanceData.map((item: any, index: number) => (
                       <div key={index} className="flex items-center justify-between p-3 rounded-lg border bg-card/50 hover:bg-accent/10 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                        <div className="flex items-center gap-4">
+                          <div className="h-8 w-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-600 dark:text-slate-400 group-hover:bg-primary group-hover:text-white transition-colors">
                             {index + 1}
                           </div>
                           <div>
-                            <p className="font-semibold text-sm">{item.name}</p>
-                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{item.status}</p>
+                            <p className="font-bold text-sm text-foreground">{item.name}</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{item.status}</p>
                           </div>
                         </div>
                         <div className="text-right">

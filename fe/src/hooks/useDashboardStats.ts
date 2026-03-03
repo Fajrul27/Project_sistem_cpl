@@ -75,7 +75,7 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
                             .slice(0, 5)
                             .map((item: any) => ({
                                 ...item,
-                                status: item.nilai >= 80 ? "Excellent" : item.nilai >= 70 ? "Good" : "Need Improvement"
+                                status: item.nilai >= 80 ? "Sangat Baik" : item.nilai >= 70 ? "Baik" : "Perlu Peningkatan"
                             }));
                         setPerformanceData(perfData);
 

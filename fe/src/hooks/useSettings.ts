@@ -15,7 +15,9 @@ export function useSettings() {
         setLoading(true);
         try {
             const response = await api.get("/settings");
-            setSettings(response.data || {});
+            // The backend returns { status: 'success', data: { ... } }
+            const data = response.data || {};
+            setSettings(data);
         } catch (error) {
             console.error("Error fetching settings:", error);
             // Don't show toast error on initial load as it might be expected to be empty

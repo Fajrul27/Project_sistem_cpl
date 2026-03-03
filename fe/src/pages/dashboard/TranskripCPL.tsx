@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import SEO from "@/components/common/SEO";
 
-import { Printer, FileText, Check, ChevronsUpDown, Briefcase, Eye, Filter, Info, ChevronDown, BookOpen, SlidersHorizontal, Search, RotateCcw } from "lucide-react";
+import { Printer, FileText, Check, ChevronsUpDown, Briefcase, Eye, Filter, Info, ChevronDown, BookOpen, SlidersHorizontal, Search, RotateCcw, Settings2, Settings } from "lucide-react";
+import { Input } from "@/components/ui/input";
+
 import { Progress } from "@/components/ui/progress";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -156,8 +158,8 @@ const TranskripCPLPage = () => {
         const nama = rawName.replace(/[^a-zA-Z0-9]/g, '_');
         const nim = selectedStudent?.profile?.nim || 'NIM';
         const currentPrintSemester = (activeTab === 'cpl') ? 'all' : semester;
-        const semSuffix = currentPrintSemester && currentPrintSemester !== 'all' ? `Semester_${currentPrintSemester}` : 'Kumulatif';
-        const printTitle = `${type}_${nama}_${nim}_${semSuffix}`;
+        const semSuffix = currentPrintSemester && currentPrintSemester !== 'all' ? `Semester_${currentPrintSemester} ` : 'Kumulatif';
+        const printTitle = `${type}_${nama}_${nim}_${semSuffix} `;
 
         // Force update both property and DOM element
         document.title = printTitle;
@@ -175,6 +177,43 @@ const TranskripCPLPage = () => {
     const [selectedProfilDetail, setSelectedProfilDetail] = useState<any | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailData, setDetailData] = useState<any[]>([]);
+
+    // Print Configuration State
+    const [isPrintConfigOpen, setIsPrintConfigOpen] = useState(false);
+    const [printConfig, setPrintConfig] = useState({
+        tempatLahir: "-",
+        tanggalLahir: "-",
+        jenjangPendidikan: "SARJANA",
+        programStudi: "",
+        univName: "",
+        univAddress: "",
+        univContact: "",
+        kaprodiName: "",
+        kaprodiNidn: "",
+        logoUrl: "/logo.png"
+    });
+
+    // Function to reset to system defaults
+    const resetToSystemDefaults = useCallback(() => {
+        if (settings) {
+            setPrintConfig(prev => ({
+                ...prev,
+                univName: settings.univName || "UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI CILACAP",
+                univAddress: settings.univAddress || "Jl. Kemerdekaan Barat No.17 Kesugihan Kidul, Kec. Kesugihan, Kabupaten Cilacap, Jawa Tengah 53274",
+                univContact: settings.univContact || "Website : www.unugha.ac.id / e-Mail : kita@unugha.ac.id / Telepon : 0282 695415",
+                logoUrl: settings.logoUrl || "/logo.png",
+                kaprodiName: kaprodiData?.namaKaprodi || settings.kaprodiName || "",
+                kaprodiNidn: kaprodiData?.nidnKaprodi || settings.kaprodiNip || "",
+                programStudi: selectedStudent?.profile?.programStudi || ""
+            }));
+        }
+    }, [settings, kaprodiData, selectedStudent]);
+
+    // Initial sync
+    useEffect(() => {
+        resetToSystemDefaults();
+    }, [resetToSystemDefaults]);
+
 
     const handleViewDetail = async (profil: any) => {
         if (!selectedStudent) return;
@@ -210,7 +249,7 @@ const TranskripCPLPage = () => {
             description="Rekapitulasi pencapaian kompetensi lulusan"
         >
             <SEO
-                title={selectedStudent ? `Transkrip ${selectedStudent.profile?.namaLengkap}` : "Transkrip CPL"}
+                title={selectedStudent ? `Transkrip ${selectedStudent.profile?.namaLengkap} ` : "Transkrip CPL"}
                 description={selectedStudent ? `Lihat detail pencapaian CPL dan CPMK untuk ${selectedStudent.profile?.namaLengkap} (${selectedStudent.profile?.nim})` : "Rekapitulasi pencapaian kompetensi lulusan"}
             />
             <div className="space-y-6">
@@ -369,11 +408,23 @@ const TranskripCPLPage = () => {
 
 
 
-                        <Tabs defaultValue="cpl" className="w-full" onValueChange={setActiveTab} value={activeTab}>
-                            <TabsList className="grid w-full grid-cols-2 mb-4">
-                                <TabsTrigger value="cpl">Capaian Lulusan (CPL)</TabsTrigger>
-                                <TabsTrigger value="cpmk">Capaian Mata Kuliah (CPMK)</TabsTrigger>
-                            </TabsList>
+                        <Tabs defaultValue="cpl" className="w-full mt-6" onValueChange={setActiveTab} value={activeTab}>
+                            <div className="w-full mb-6">
+                                <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/40 backdrop-blur-sm border border-border/60 h-11 rounded-xl shadow-inner relative overflow-hidden">
+                                    <TabsTrigger
+                                        value="cpl"
+                                        className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-500 font-bold h-9 text-xs sm:text-sm tracking-wide z-10"
+                                    >
+                                        Capaian Lulusan (CPL)
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="cpmk"
+                                        className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-500 font-bold h-9 text-xs sm:text-sm tracking-wide z-10"
+                                    >
+                                        Capaian Makul (CPMK)
+                                    </TabsTrigger>
+                                </TabsList>
+                            </div>
 
                             <TabsContent value="cpl" className="animate-in fade-in slide-in-from-top-4 duration-500">
 
@@ -393,11 +444,11 @@ const TranskripCPLPage = () => {
                                                 const lowest = sorted[sorted.length - 1];
                                                 return (
                                                     <>
-                                                        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-100 dark:border-emerald-800/50 shadow-sm">
-                                                            <div className="text-sm text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-tight mb-1">CPL Tertinggi</div>
-                                                            <div className="text-3xl font-black text-emerald-700 dark:text-emerald-300">{highest.nilaiAkhir.toFixed(2)}</div>
-                                                            <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-bold">{highest.cpl.kodeCpl}</div>
-                                                            <div className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 line-clamp-2 mt-1 italic">"{highest.cpl.deskripsi}"</div>
+                                                        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800/50 shadow-sm">
+                                                            <div className="text-sm text-blue-600 dark:text-blue-400 font-bold uppercase tracking-tight mb-1">CPL Tertinggi</div>
+                                                            <div className="text-3xl font-black text-blue-700 dark:text-blue-300">{highest.nilaiAkhir.toFixed(2)}</div>
+                                                            <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-bold">{highest.cpl.kodeCpl}</div>
+                                                            <div className="text-[10px] text-blue-600/80 dark:text-blue-400/80 line-clamp-2 mt-1 italic">"{highest.cpl.deskripsi}"</div>
                                                         </div>
                                                         <div className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-lg border border-rose-100 dark:border-rose-800/50 shadow-sm">
                                                             <div className="text-sm text-rose-600 dark:text-rose-400 font-bold uppercase tracking-tight mb-1">CPL Terendah</div>
@@ -534,10 +585,10 @@ const TranskripCPLPage = () => {
                                         <div className="flex items-center gap-2">
                                             <Button
                                                 onClick={handlePrint}
-                                                className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95 transition-all"
+                                                className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95 transition-all h-10 px-4"
                                             >
                                                 <Printer className="h-4 w-4" />
-                                                Print Transkrip
+                                                Print Transkip
                                             </Button>
                                         </div>
                                     </CardHeader>
@@ -617,7 +668,7 @@ const TranskripCPLPage = () => {
                                             <div className="flex items-center justify-between">
                                                 <CardTitle className="text-sm font-medium">Analisis Mata Kuliah</CardTitle>
                                                 <Badge variant="outline" className="text-[9px] font-normal opacity-70">
-                                                    {semester === 'all' ? 'Kumulatif' : `Smt ${semester}`}
+                                                    {semester === 'all' ? 'Kumulatif' : `Smt ${semester} `}
                                                 </Badge>
                                             </div>
                                             <CardDescription>Nilai Mata Kuliah Tertinggi & Terendah</CardDescription>
@@ -652,17 +703,17 @@ const TranskripCPLPage = () => {
 
                                                 return (
                                                     <>
-                                                        <div className="bg-violet-50 dark:bg-violet-900/20 p-4 rounded-lg border border-violet-100 dark:border-violet-800/50 shadow-sm">
-                                                            <div className="text-sm text-violet-600 dark:text-violet-400 font-bold uppercase tracking-tight mb-1">Nilai Makul Tertinggi</div>
-                                                            <div className="text-3xl font-black text-violet-700 dark:text-violet-300">{highest.average.toFixed(2)}</div>
-                                                            <div className="text-xs text-violet-600 dark:text-violet-400 mt-1 font-bold">{highest.kodeMk}</div>
-                                                            <div className="text-[10px] text-violet-600/80 dark:text-violet-400/80 line-clamp-2 mt-1 italic font-medium">"{highest.namaMk}"</div>
+                                                        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800/50 shadow-sm">
+                                                            <div className="text-sm text-blue-600 dark:text-blue-400 font-bold uppercase tracking-tight mb-1">Nilai Makul Tertinggi</div>
+                                                            <div className="text-3xl font-black text-blue-700 dark:text-blue-300">{highest.average.toFixed(2)}</div>
+                                                            <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-bold">{highest.kodeMk}</div>
+                                                            <div className="text-[10px] text-blue-600/80 dark:text-blue-400/80 line-clamp-2 mt-1 italic font-medium">"{highest.namaMk}"</div>
                                                         </div>
-                                                        <div className="bg-slate-50 dark:bg-slate-900/20 p-4 rounded-lg border border-slate-200 dark:border-slate-800/50 shadow-sm">
-                                                            <div className="text-sm text-slate-600 dark:text-slate-400 font-bold uppercase tracking-tight mb-1">Nilai Makul Terendah</div>
-                                                            <div className="text-3xl font-black text-slate-700 dark:text-slate-300">{lowest.average.toFixed(2)}</div>
-                                                            <div className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-bold">{lowest.kodeMk}</div>
-                                                            <div className="text-[10px] text-slate-600/80 dark:text-slate-400/80 line-clamp-2 mt-1 italic font-medium">"{lowest.namaMk}"</div>
+                                                        <div className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-lg border border-rose-100 dark:border-rose-800/50 shadow-sm">
+                                                            <div className="text-sm text-rose-600 dark:text-rose-400 font-bold uppercase tracking-tight mb-1">Nilai Makul Terendah</div>
+                                                            <div className="text-3xl font-black text-rose-700 dark:text-rose-300">{lowest.average.toFixed(2)}</div>
+                                                            <div className="text-xs text-rose-600 dark:text-rose-400 mt-1 font-bold">{lowest.kodeMk}</div>
+                                                            <div className="text-[10px] text-rose-600/80 dark:text-rose-400/80 line-clamp-2 mt-1 italic font-medium">"{lowest.namaMk}"</div>
                                                         </div>
                                                     </>
                                                 );
@@ -674,7 +725,7 @@ const TranskripCPLPage = () => {
                                             <div className="flex items-center justify-between">
                                                 <CardTitle className="text-sm font-medium">Peta Radar Mata Kuliah</CardTitle>
                                                 <Badge variant="outline" className="text-[9px] font-normal opacity-70">
-                                                    {semester === 'all' ? 'Kumulatif' : `Smt ${semester}`}
+                                                    {semester === 'all' ? 'Kumulatif' : `Smt ${semester} `}
                                                 </Badge>
                                             </div>
                                             <CardDescription>Sebaran rata-rata nilai per Mata Kuliah</CardDescription>
@@ -729,16 +780,16 @@ const TranskripCPLPage = () => {
                                                                 <Radar
                                                                     name="Rata-rata Nilai"
                                                                     dataKey="A"
-                                                                    stroke="#7c3aed"
+                                                                    stroke="#2563eb"
                                                                     strokeWidth={3}
-                                                                    fill="#8b5cf6"
+                                                                    fill="#3b82f6"
                                                                     fillOpacity={0.4}
-                                                                    dot={{ r: 3, fill: '#7c3aed', stroke: '#fff', strokeWidth: 1.5 }}
+                                                                    dot={{ r: 3, fill: '#2563eb', stroke: '#fff', strokeWidth: 1.5 }}
                                                                     activeDot={{ r: 5 }}
                                                                 />
                                                                 <Tooltip
                                                                     contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                                    itemStyle={{ color: '#7c3aed', fontWeight: 600 }}
+                                                                    itemStyle={{ color: '#2563eb', fontWeight: 600 }}
                                                                 />
                                                             </RadarChart>
                                                         </ResponsiveContainer>
@@ -764,16 +815,15 @@ const TranskripCPLPage = () => {
                                         </div>
                                         <div className="flex gap-2">
                                             <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-9"
                                                 onClick={handlePrint}
+                                                className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95 transition-all h-10 px-4"
                                                 disabled={loading || (activeTab === 'cpl' ? validTranskripList.length === 0 : transkripCpmkList.length === 0)}
                                             >
-                                                <Printer className="h-4 w-4 mr-2" />
-                                                Cetak Transkrip
+                                                <Printer className="h-4 w-4" />
+                                                Print Transkip
                                             </Button>
                                         </div>
+
                                     </CardHeader>
                                     <CardContent>
                                         {loading ? (
@@ -894,7 +944,7 @@ const TranskripCPLPage = () => {
                                             const contributionValue = detailData.length > 0 ? (Number(item.nilaiAkhir) / detailData.length).toFixed(2) : "0.00";
 
                                             return (
-                                                <AccordionItem key={index} value={`item-${index}`} className="border rounded-lg px-0 overflow-hidden shadow-sm">
+                                                <AccordionItem key={index} value={`item - ${index} `} className="border rounded-lg px-0 overflow-hidden shadow-sm">
                                                     <AccordionTrigger className="hover:no-underline px-4 py-3 bg-card data-[state=open]:bg-muted/30">
                                                         <div className="flex flex-1 items-center justify-between mr-4 text-left">
                                                             <div className="space-y-1">
@@ -928,8 +978,8 @@ const TranskripCPLPage = () => {
                                                                     <div className="flex items-center gap-2 text-[10px] sm:text-xs font-mono text-slate-700 dark:text-slate-300">
                                                                         <span>Nilai CPL = </span>
                                                                         <div className="flex flex-col items-center">
-                                                                            <span className="border-b border-slate-600 dark:border-slate-400 px-1">Σ (Nilai MK × SKS × Bobot)</span>
-                                                                            <span>Σ (SKS × Bobot)</span>
+                                                                            <span className="border-b border-slate-600 dark:border-slate-400 px-1">Σ (Nilai MK × SKS)</span>
+                                                                            <span>Σ SKS</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -958,8 +1008,6 @@ const TranskripCPLPage = () => {
                                                                                             <Badge variant="secondary" className="h-4 px-1 text-[9px] font-normal">Sem {mk.mataKuliah?.semester || mk.semester}</Badge>
                                                                                             <span>•</span>
                                                                                             <span>{mk.mataKuliah?.sks || mk.sks || 0} SKS</span>
-                                                                                            <span>•</span>
-                                                                                            <span>Bobot: {mk.bobot || 0}</span>
                                                                                         </div>
                                                                                     </div>
                                                                                     <Badge className={cn(
@@ -994,133 +1042,300 @@ const TranskripCPLPage = () => {
                     </DialogContent>
                 </Dialog>
 
+                {/* Edit Print Config Dialog */}
+                <Dialog open={isPrintConfigOpen} onOpenChange={setIsPrintConfigOpen}>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Settings2 className="h-5 w-5 text-primary" />
+                                Edit Header & Informasi Laporan
+                            </DialogTitle>
+                            <DialogDescription>
+                                Perubahan di sini hanya bersifat sementara untuk sesi cetak ini. Untuk perubahan permanen, silakan ke menu Pengaturan.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-6 py-4">
+                            {/* University Section */}
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-bold flex items-center gap-2 border-b pb-2">
+                                    <BookOpen className="h-4 w-4" />
+                                    Identitas Instansi
+                                </h3>
+                                <div className="grid gap-3">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Nama Universitas</Label>
+                                        <Input
+                                            value={printConfig.univName}
+                                            onChange={(e) => setPrintConfig({ ...printConfig, univName: e.target.value })}
+                                            placeholder="Nama Universitas"
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Alamat Universitas</Label>
+                                        <Input
+                                            value={printConfig.univAddress}
+                                            onChange={(e) => setPrintConfig({ ...printConfig, univAddress: e.target.value })}
+                                            placeholder="Alamat Universitas"
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Kontak (Website/Email/Telp)</Label>
+                                        <Input
+                                            value={printConfig.univContact}
+                                            onChange={(e) => setPrintConfig({ ...printConfig, univContact: e.target.value })}
+                                            placeholder="Kontak Universitas"
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Student Birth Info */}
+                            <div className="space-y-4 pt-1">
+                                <h3 className="text-sm font-bold flex items-center gap-2 border-b pb-2">
+                                    <Search className="h-4 w-4" />
+                                    Informasi Tambahan Mahasiswa
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Program Studi</Label>
+                                        <Input
+                                            value={printConfig.programStudi}
+                                            onChange={(e) => setPrintConfig({ ...printConfig, programStudi: e.target.value })}
+                                            placeholder="Nama Program Studi"
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Jenjang Pendidikan</Label>
+                                        <Input
+                                            value={printConfig.jenjangPendidikan}
+                                            onChange={(e) => setPrintConfig({ ...printConfig, jenjangPendidikan: e.target.value })}
+                                            placeholder="Contoh: SARJANA (S1)"
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Tempat Lahir</Label>
+                                        <Input
+                                            value={printConfig.tempatLahir}
+                                            onChange={(e) => setPrintConfig({ ...printConfig, tempatLahir: e.target.value })}
+                                            placeholder="Contoh: Cilacap"
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Tanggal Lahir</Label>
+                                        <Input
+                                            value={printConfig.tanggalLahir}
+                                            onChange={(e) => setPrintConfig({ ...printConfig, tanggalLahir: e.target.value })}
+                                            placeholder="Contoh: 17 Agustus 1999"
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            {/* Signature Section */}
+                            <div className="space-y-4 pt-1">
+                                <h3 className="text-sm font-bold flex items-center gap-2 border-b pb-2">
+                                    <Check className="h-4 w-4" />
+                                    Tanda Tangan (Ketua Program Studi)
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">Nama Kaprodi</Label>
+                                        <Input
+                                            value={printConfig.kaprodiName}
+                                            onChange={(e) => setPrintConfig({ ...printConfig, kaprodiName: e.target.value })}
+                                            placeholder="Nama Kaprodi"
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs">NIP/NIDN</Label>
+                                        <Input
+                                            value={printConfig.kaprodiNidn}
+                                            onChange={(e) => setPrintConfig({ ...printConfig, kaprodiNidn: e.target.value })}
+                                            placeholder="NIP/NIDN"
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <DialogFooter className="gap-2 sm:gap-0">
+                            <div className="flex-1">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={resetToSystemDefaults}
+                                    className="text-xs text-muted-foreground hover:text-primary"
+                                >
+                                    <RotateCcw className="h-3 w-3 mr-1.5" />
+                                    Reset ke Data Sistem
+                                </Button>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setIsPrintConfigOpen(false)}>Batal</Button>
+                                <Button onClick={() => setIsPrintConfigOpen(false)}>Terapkan Perubahan</Button>
+                            </div>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+
+
                 {/* PRINT LAYOUT PORTAL */}
                 {
                     selectedStudent && createPortal(
                         <div id="print-root" className="bg-white text-black">
                             <style>{`
-                    @media print {
-                        @page { 
-                            size: A4;
-                            margin: 20mm;
-                        }
-                        
-                        body, html { 
-                            margin: 0; 
-                            padding: 0;
-                            background-color: white !important;
-                            height: 100% !important;
-                            overflow: visible !important;
-                        }
+@media print {
+    @page {
+        size: A4;
+        margin-top: 25mm !important; /* Set page 2 and beyond to 25mm */
+        margin-bottom: 20mm !important;
+        margin-left: 15mm !important;
+        margin-right: 15mm !important;
+    }
 
-                        /* HIDE EVERYTHING ELSE */
-                        body > *:not(#print-root) {
-                            display: none !important;
-                        }
+    @page :first {
+        margin-top: 15mm !important; /* Keep page 1 at 15mm */
+    }
 
-                        /* SHOW PRINT ROOT */
-                        #print-root {
-                            display: block !important;
-                            width: 100%;
-                            height: auto;
-                            margin: 0;
-                            padding: 0;
-                            background-color: white !important;
-                            /* Reset positioning */
-                            position: static !important;
-                            overflow: visible !important;
-                            color: black;
-                        }
+    * {
+        box-sizing: border-box !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
 
-                        table {
-                            width: 100%;
-                            border-collapse: collapse;
-                        }
-                        
-                        * {
-                            -webkit-print-color-adjust: exact !important;
-                            print-color-adjust: exact !important;
-                            color-adjust: exact !important;
-                        }
+    /* Force tables to have top spacing when they break */
+    thead {
+        display: table-header-group;
+    }
+    
+    tr {
+        page-break-inside: avoid;
+    }
+
+    /* Secret padding at top of headers so breaks aren't flushed */
+    th {
+        padding-top: 8px !important;
+    }
+
+    body, html {
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: white !important;
+        width: 100% !important;
+    }
+
+    /* HIDE EVERYTHING ELSE */
+    body > *:not(#print-root) {
+        display: none !important;
+    }
+
+    /* SHOW PRINT ROOT */
+    #print-root {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto;
+        margin: 0 !important;
+        padding: 0 !important; /* Remove internal padding since @page handles it now */
+        background-color: white !important;
+        position: static !important;
+        overflow-x: hidden !important; 
+        color: black;
+    }
                     }
-                    
-                    /* Hide print root on screen */
-                    @media screen {
-                        #print-root {
-                            display: none !important;
-                        }
-                    }
-                `}</style>
+
+/* Hide print root on screen */
+@media screen {
+    #print-root {
+        display: none !important;
+    }
+}
+`}</style>
                             <div className="">
                                 {/* Header */}
                                 <div className="flex items-center justify-between mb-2 relative border-b-2 border-black pb-2">
-                                    <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                                        <img src={settings.logoUrl || "/logo.png"} alt="Logo" className="w-full h-full object-contain" />
+                                    <div className="w-16 h-16 flex-shrink-0 flex items-center justify-center">
+                                        <img src={printConfig.logoUrl || "/logo.png"} alt="Logo" className="w-full h-full object-contain" />
                                     </div>
                                     <div className="flex-1 text-center px-2">
-                                        <h1 className="text-base font-bold uppercase tracking-wide leading-tight">{settings.univName}</h1>
-                                        <p className="text-[10px] mt-1 leading-tight">{settings.univAddress}</p>
-                                        <p className="text-[10px] mt-1 leading-tight">{settings.univContact}</p>
+                                        <h1 className="text-sm font-bold uppercase tracking-wide leading-tight">{printConfig.univName}</h1>
+                                        <p className="text-[9px] mt-1 leading-tight">{printConfig.univAddress}</p>
+                                        <p className="text-[9px] mt-1 leading-tight">{printConfig.univContact}</p>
                                     </div>
-                                    <div className="w-20 h-20 flex-shrink-0"></div> {/* Spacer for centering */}
+                                    <div className="w-16 h-16 flex-shrink-0"></div> {/* Spacer for centering */}
                                 </div>
 
-                                <div className="border-b border-black mb-4"></div>
+                                <div className="border-b border-black mb-3"></div>
 
-                                <h2 className="text-center text-base font-bold mb-1 uppercase">
+                                <h2 className="text-center text-sm font-bold mb-0.5 uppercase">
                                     {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CAPAIAN MATA KULIAH'}
                                 </h2>
-                                <p className="text-center text-[10px] uppercase font-semibold mb-4">
-                                    {(activeTab === 'cpl' || semester === 'all') ? 'PERIODE: SELURUH SEMESTER (AKUMULATIF)' : `PERIODE: SEMESTER ${semester}`}
+                                <p className="text-center text-[9px] uppercase font-semibold mb-3">
+                                    {(activeTab === 'cpl' || semester === 'all') ? 'PERIODE: SELURUH SEMESTER (AKUMULATIF)' : `PERIODE: SEMESTER ${semester} `}
                                 </p>
 
                                 {/* Student Info */}
-                                <div className="grid grid-cols-2 gap-x-8 mb-4 text-[11px]">
-                                    <div className="space-y-1">
-                                        <div className="grid grid-cols-[100px_5px_1fr]">
+                                <div className="grid grid-cols-2 gap-x-8 mb-3 text-[9.5px]">
+                                    <div className="space-y-0.5">
+                                        <div className="grid grid-cols-[90px_5px_1fr]">
                                             <div>Program Studi</div>
                                             <div>:</div>
-                                            <div className="uppercase font-medium">{selectedStudent.profile?.programStudi || '-'}</div>
+                                            <div className="uppercase font-medium">{printConfig.programStudi || selectedStudent.profile?.programStudi || '-'}</div>
                                         </div>
-                                        <div className="grid grid-cols-[100px_5px_1fr]">
+
+                                        <div className="grid grid-cols-[90px_5px_1fr]">
                                             <div>NIM</div>
                                             <div>:</div>
                                             <div className="uppercase font-medium">{selectedStudent.profile?.nim || '-'}</div>
                                         </div>
-                                        <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div className="grid grid-cols-[90px_5px_1fr]">
                                             <div>Tempat Lahir</div>
                                             <div>:</div>
-                                            <div className="uppercase font-medium">-</div>
+                                            <div className="uppercase font-medium">{printConfig.tempatLahir}</div>
                                         </div>
-                                        <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div className="grid grid-cols-[90px_5px_1fr]">
                                             <div>Tanggal Lahir</div>
                                             <div>:</div>
-                                            <div className="uppercase font-medium">-</div>
+                                            <div className="uppercase font-medium">{printConfig.tanggalLahir}</div>
                                         </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <div className="grid grid-cols-[100px_5px_1fr]">
+                                    <div className="space-y-0.5">
+                                        <div className="grid grid-cols-[90px_5px_1fr]">
                                             <div>Jenjang Pendidikan</div>
                                             <div>:</div>
-                                            <div className="uppercase font-medium">SARJANA</div>
+                                            <div className="uppercase font-medium">{printConfig.jenjangPendidikan}</div>
                                         </div>
-                                        <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div className="grid grid-cols-[90px_5px_1fr]">
                                             <div>Nama</div>
                                             <div>:</div>
                                             <div className="uppercase font-medium">{selectedStudent.profile?.namaLengkap || '-'}</div>
                                         </div>
-                                        <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div className="grid grid-cols-[90px_5px_1fr]">
                                             <div>Tahun Masuk</div>
                                             <div>:</div>
                                             <div className="uppercase font-medium">{selectedStudent.profile?.tahunMasuk || '-'}</div>
                                         </div>
-                                        <div className="grid grid-cols-[100px_5px_1fr]">
+                                        <div className="grid grid-cols-[90px_5px_1fr]">
                                             <div>Semester Aktif</div>
                                             <div>:</div>
                                             <div className="uppercase font-medium">{selectedStudent.profile?.semester || '-'}</div>
                                         </div>
                                     </div>
                                 </div>
+
 
                                 {/* Analysis & Radar Chart for Print */}
                                 {activeTab === 'cpl' && validTranskripList.length > 0 && (() => {
@@ -1135,11 +1350,11 @@ const TranskripCPLPage = () => {
                                                 <h3 className="text-xs font-bold uppercase">ANALISIS CAPAIAN</h3>
                                                 <div className="text-[8px] text-slate-500 italic mb-2">CPL Tertinggi & Terendah</div>
                                                 <div className="flex-1 flex flex-col justify-center space-y-3">
-                                                    <div className="bg-emerald-50 p-3 border border-emerald-300 rounded shadow-sm">
-                                                        <div className="text-[9px] font-bold text-emerald-800 uppercase tracking-wider mb-1">CPL TERTINGGI</div>
-                                                        <div className="text-2xl font-black text-emerald-900 leading-tight">{highest.nilaiAkhir.toFixed(2)}</div>
-                                                        <div className="text-[10px] font-bold text-emerald-700 mb-1">{highest.cpl.kodeCpl}</div>
-                                                        <div className="text-[8px] text-emerald-800/80 leading-snug font-medium italic line-clamp-2">"{highest.cpl.deskripsi}"</div>
+                                                    <div className="bg-blue-50 p-3 border border-blue-300 rounded shadow-sm">
+                                                        <div className="text-[9px] font-bold text-blue-800 uppercase tracking-wider mb-1">CPL TERTINGGI</div>
+                                                        <div className="text-2xl font-black text-blue-900 leading-tight">{highest.nilaiAkhir.toFixed(2)}</div>
+                                                        <div className="text-[10px] font-bold text-blue-700 mb-1">{highest.cpl.kodeCpl}</div>
+                                                        <div className="text-[8px] text-blue-800/80 leading-snug font-medium italic line-clamp-2">"{highest.cpl.deskripsi}"</div>
                                                     </div>
                                                     <div className="bg-rose-50 p-3 border border-rose-300 rounded shadow-sm">
                                                         <div className="text-[9px] font-bold text-rose-800 uppercase tracking-wider mb-1">CPL TERENDAH</div>
@@ -1151,11 +1366,11 @@ const TranskripCPLPage = () => {
                                             </div>
 
                                             {/* Radar Chart Section */}
-                                            <div className="border border-black p-3 flex flex-col">
-                                                <h3 className="text-xs font-bold uppercase">PETA RADAR CPL</h3>
-                                                <div className="text-[8px] text-slate-500 italic mb-2">Visualisasi Sebaran Capaian Lulusan</div>
-                                                <div className="relative flex-1 flex justify-center items-center" style={{ minHeight: '170px' }}>
-                                                    <svg viewBox="0 0 200 170" className="w-full h-full max-h-[170px]">
+                                            <div className="border border-black p-2 flex flex-col">
+                                                <h3 className="text-[10px] font-bold uppercase">PETA RADAR CPL</h3>
+                                                <div className="text-[7px] text-slate-500 italic mb-1">Visualisasi Sebaran Capaian Lulusan</div>
+                                                <div className="relative flex-1 flex justify-center items-center" style={{ minHeight: '180px' }}>
+                                                    <svg viewBox="0 0 200 180" className="w-full h-full max-h-[180px]">
                                                         {/* Create radar chart visualization */}
                                                         {(() => {
                                                             const data = validTranskripList.map(i => ({
@@ -1164,7 +1379,7 @@ const TranskripCPLPage = () => {
                                                             }));
                                                             const numPoints = data.length;
                                                             const centerX = 100;
-                                                            const centerY = 85; // Center of 170 height
+                                                            const centerY = 90; // Center of 180 height
                                                             const radius = 70;
                                                             const labelRadius = 82;
 
@@ -1183,7 +1398,7 @@ const TranskripCPLPage = () => {
                                                                 };
                                                             });
 
-                                                            const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z';
+                                                            const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y} `).join(' ') + ' Z';
 
                                                             return (
                                                                 <>
@@ -1191,7 +1406,7 @@ const TranskripCPLPage = () => {
                                                                     {[0.25, 0.5, 0.75, 1].map((scale) => {
                                                                         const gridPoints = points.map(p => {
                                                                             const angle = (Math.PI * 2 * points.indexOf(p)) / numPoints - Math.PI / 2;
-                                                                            return `${centerX + Math.cos(angle) * (radius * scale)},${centerY + Math.sin(angle) * (radius * scale)}`;
+                                                                            return `${centerX + Math.cos(angle) * (radius * scale)},${centerY + Math.sin(angle) * (radius * scale)} `;
                                                                         }).join(' ');
                                                                         return (
                                                                             <polygon
@@ -1302,31 +1517,31 @@ const TranskripCPLPage = () => {
                                                 <h3 className="text-xs font-bold uppercase">ANALISIS MATA KULIAH</h3>
                                                 <div className="text-[8px] text-slate-500 italic mb-2">Nilai Mata Kuliah Tertinggi & Terendah</div>
                                                 <div className="flex-1 flex flex-col justify-center space-y-3">
-                                                    <div className="bg-violet-50 p-3 border border-violet-300 rounded shadow-sm">
-                                                        <div className="text-[9px] font-bold text-violet-800 uppercase tracking-wider mb-1">Nilai Makul Tertinggi</div>
-                                                        <div className="text-2xl font-black text-violet-900 leading-tight">{highest.average.toFixed(2)}</div>
-                                                        <div className="text-[10px] font-bold text-violet-700 mb-1">{highest.kodeMk}</div>
-                                                        <div className="text-[8px] text-violet-800/80 leading-snug font-medium italic line-clamp-2">"{highest.namaMk}"</div>
+                                                    <div className="bg-blue-50 p-3 border border-blue-300 rounded shadow-sm">
+                                                        <div className="text-[9px] font-bold text-blue-800 uppercase tracking-wider mb-1">Nilai Makul Tertinggi</div>
+                                                        <div className="text-2xl font-black text-blue-900 leading-tight">{highest.average.toFixed(2)}</div>
+                                                        <div className="text-[10px] font-bold text-blue-700 mb-1">{highest.kodeMk}</div>
+                                                        <div className="text-[8px] text-blue-800/80 leading-snug font-medium italic line-clamp-2">"{highest.namaMk}"</div>
                                                     </div>
-                                                    <div className="bg-slate-50 p-3 border border-slate-300 rounded shadow-sm">
-                                                        <div className="text-[9px] font-bold text-slate-800 uppercase tracking-wider mb-1">Nilai Makul Terendah</div>
-                                                        <div className="text-2xl font-black text-slate-900 leading-tight">{lowest.average.toFixed(2)}</div>
-                                                        <div className="text-[10px] font-bold text-slate-700 mb-1">{lowest.kodeMk}</div>
-                                                        <div className="text-[8px] text-slate-800/80 leading-snug font-medium italic line-clamp-2">"{lowest.namaMk}"</div>
+                                                    <div className="bg-rose-50 p-3 border border-rose-300 rounded shadow-sm">
+                                                        <div className="text-[9px] font-bold text-rose-800 uppercase tracking-wider mb-1">Nilai Makul Terendah</div>
+                                                        <div className="text-2xl font-black text-rose-900 leading-tight">{lowest.average.toFixed(2)}</div>
+                                                        <div className="text-[10px] font-bold text-rose-700 mb-1">{lowest.kodeMk}</div>
+                                                        <div className="text-[8px] text-rose-800/80 leading-snug font-medium italic line-clamp-2">"{lowest.namaMk}"</div>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Radar Chart Section */}
-                                            <div className="border border-black p-3 flex flex-col">
-                                                <h3 className="text-xs font-bold uppercase">PETA RADAR MATA KULIAH</h3>
-                                                <div className="text-[8px] text-slate-500 italic mb-2">Sebaran Rata-rata Nilai per MK (Sample 10 Data)</div>
-                                                <div className="relative flex-1 flex justify-center items-center" style={{ minHeight: '170px' }}>
-                                                    <svg viewBox="0 0 200 170" className="w-full h-full max-h-[170px]">
+                                            <div className="border border-black p-2 flex flex-col">
+                                                <h3 className="text-[10px] font-bold uppercase">PETA RADAR MATA KULIAH</h3>
+                                                <div className="text-[7px] text-slate-500 italic mb-1">Sebaran Rata-rata Nilai per MK (Sample 10 Data)</div>
+                                                <div className="relative flex-1 flex justify-center items-center" style={{ minHeight: '180px' }}>
+                                                    <svg viewBox="0 0 200 180" className="w-full h-full max-h-[180px]">
                                                         {(() => {
                                                             const numPoints = radarData.length;
                                                             const centerX = 100;
-                                                            const centerY = 85; // Center of 170 height
+                                                            const centerY = 90; // Center of 180 height
                                                             const radius = 70;
                                                             const labelRadius = 82;
 
@@ -1344,7 +1559,7 @@ const TranskripCPLPage = () => {
                                                                 };
                                                             });
 
-                                                            const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z';
+                                                            const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y} `).join(' ') + ' Z';
 
                                                             return (
                                                                 <>
@@ -1352,7 +1567,7 @@ const TranskripCPLPage = () => {
                                                                     {[0.25, 0.5, 0.75, 1].map((scale) => {
                                                                         const gridPoints = points.map(p => {
                                                                             const angle = (Math.PI * 2 * points.indexOf(p)) / numPoints - Math.PI / 2;
-                                                                            return `${centerX + Math.cos(angle) * (radius * scale)},${centerY + Math.sin(angle) * (radius * scale)}`;
+                                                                            return `${centerX + Math.cos(angle) * (radius * scale)},${centerY + Math.sin(angle) * (radius * scale)} `;
                                                                         }).join(' ');
                                                                         return (
                                                                             <polygon
@@ -1371,11 +1586,11 @@ const TranskripCPLPage = () => {
                                                                     ))}
 
                                                                     {/* Data polygon */}
-                                                                    <path d={pathData} fill="#8b5cf6" fillOpacity="0.4" stroke="#7c3aed" strokeWidth="1.5" />
+                                                                    <path d={pathData} fill="#3b82f6" fillOpacity="0.5" stroke="#2563eb" strokeWidth="1.5" strokeLinejoin="round" />
 
                                                                     {/* Points */}
                                                                     {points.map((p, idx) => (
-                                                                        <circle key={idx} cx={p.x} cy={p.y} r="1.5" fill="#7c3aed" stroke="white" strokeWidth="0.5" />
+                                                                        <circle key={idx} cx={p.x} cy={p.y} r="2" fill="#2563eb" stroke="white" strokeWidth="0.5" />
                                                                     ))}
 
                                                                     {/* Labels */}
@@ -1418,11 +1633,11 @@ const TranskripCPLPage = () => {
 
                                 {/* Table */}
                                 <div className="mb-4">
-                                    <table className="w-full border-collapse border border-black text-[10px]">
+                                    <table className="w-full border-collapse border border-black text-[9px]">
                                         <thead>
                                             <tr className="bg-gray-100">
                                                 <th className="border border-black p-1 w-8 text-center">NO</th>
-                                                <th className="border border-black p-1 text-center" style={{ width: activeTab === 'cpl' ? '80px' : '140px' }}>{activeTab === 'cpl' ? 'KODE CPL' : 'MATA KULIAH'}</th>
+                                                <th className="border border-black p-1 text-center" style={{ width: activeTab === 'cpl' ? '80px' : '150px' }}>{activeTab === 'cpl' ? 'KODE CPL' : 'MATA KULIAH'}</th>
                                                 <th className="border border-black p-1 text-left">{activeTab === 'cpl' ? 'CAPAIAN PEMBELAJARAN' : 'CPMK'}</th>
                                                 <th className="border border-black p-1 w-12 text-center">NILAI</th>
                                                 <th className="border border-black p-1 w-10 text-center">HURUF</th>
@@ -1437,7 +1652,7 @@ const TranskripCPLPage = () => {
                                                         <td className="border border-black p-1 text-center">{item.cpl.kodeCpl}</td>
                                                         <td className="border border-black p-1">
                                                             <div className="font-bold mb-0.5">{item.cpl.deskripsi}</div>
-                                                            <div className="text-[9px] text-gray-600">
+                                                            <div className="text-[8px] text-gray-600">
                                                                 MK: {item.mataKuliahList && item.mataKuliahList.length > 0
                                                                     ? item.mataKuliahList.map((mk) => mk.namaMk).join(', ')
                                                                     : (item.mataKuliah?.namaMk || '-')}
@@ -1459,12 +1674,13 @@ const TranskripCPLPage = () => {
                                                         )}
                                                         {item.rowSpan !== 0 && (
                                                             <td className="border border-black p-1 align-top" rowSpan={item.rowSpan}>
-                                                                <div className="font-medium">{item.mataKuliah.kodeMk} - {item.mataKuliah.namaMk}</div>
+                                                                <div className="font-medium text-[8px]">{item.mataKuliah.kodeMk}</div>
+                                                                <div className="font-bold">{item.mataKuliah.namaMk}</div>
                                                             </td>
                                                         )}
-                                                        <td className={`border border-black p-1`}>
-                                                            <div className="font-bold">{item.kodeCpmk}</div>
-                                                            <div className="text-[9px] italic leading-tight">{item.deskripsi}</div>
+                                                        <td className="border border-black p-1">
+                                                            <div className="font-bold mb-0.5">{item.kodeCpmk}</div>
+                                                            <div className="text-[8px] italic leading-relaxed text-gray-700">{item.deskripsi}</div>
                                                         </td>
                                                         {item.rowSpan !== 0 && (
                                                             <>
@@ -1499,18 +1715,19 @@ const TranskripCPLPage = () => {
                                     </div>
 
                                     <div className="text-center text-[10px]">
-                                        <div className="mb-12">
+                                        <div className="mb-16">
                                             <div>Cilacap, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
                                             <div className="font-bold">Ketua Program Studi</div>
                                             <div className="italic">{selectedStudent?.profile?.programStudi || '........................'}</div>
                                         </div>
                                         <div>
                                             <div className="font-bold underline uppercase">
-                                                {kaprodiData?.namaKaprodi || settings.kaprodiName || "( ........................................................ )"}
+                                                {printConfig.kaprodiName || "( ........................................................ )"}
                                             </div>
                                             <div>
-                                                NIDN. {kaprodiData?.nidnKaprodi || settings.kaprodiNip || "........................"}
+                                                NIDN. {printConfig.kaprodiNidn || "........................"}
                                             </div>
+
                                         </div>
                                     </div>
                                 </div>
