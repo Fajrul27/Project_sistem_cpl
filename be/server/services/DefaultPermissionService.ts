@@ -66,7 +66,7 @@ export class DefaultPermissionService {
                 if (role === 'kaprodi') {
                     // Full CRUD + view_all access
                     // Full CRUD + view_all access
-                    if (['analisis_cpl', 'cpl', 'cpmk', 'dosen_pengampu', 'evaluasi_cpl', 'mahasiswa', 'mata_kuliah', 'nilai_teknik', 'profil_lulusan', 'visi_misi'].includes(resource)) {
+                    if (['analisis_cpl', 'cpl', 'cpmk', 'dosen_pengampu', 'evaluasi_cpl', 'mahasiswa', 'mata_kuliah', 'nilai_teknik', 'profil_lulusan', 'visi_misi', 'kaprodi_data'].includes(resource)) {
                         return ['view', 'create', 'edit', 'delete', 'view_all'].includes(action);
                     }
                     // Tahun Ajaran: View only (Admin manages this)
@@ -86,7 +86,10 @@ export class DefaultPermissionService {
                         return ['view', 'view_all'].includes(action);
                     }
                     // View only
-                    if (['settings', 'transkrip_cpl', 'users'].includes(resource)) {
+                    if (['settings'].includes(resource)) {
+                        return ['view', 'edit'].includes(action);
+                    }
+                    if (['transkrip_cpl', 'users'].includes(resource)) {
                         return action === 'view';
                     }
                     return false;

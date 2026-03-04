@@ -13,13 +13,13 @@ const router = Router();
 // Get kaprodi data by program studi
 router.get('/:programStudi', authMiddleware, getKaprodiByProgramStudi);
 
-// Get all kaprodi data (Admin only)
-router.get('/', authMiddleware, requireRole('admin'), getAllKaprodiData);
+// Get all kaprodi data (Admin & Kaprodi)
+router.get('/', authMiddleware, requireRole('admin', 'kaprodi'), getAllKaprodiData);
 
-// Create or update kaprodi data (Admin only)
-router.post('/', authMiddleware, requireRole('admin'), createOrUpdateKaprodiData);
+// Create or update kaprodi data (Admin & Kaprodi)
+router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), createOrUpdateKaprodiData);
 
-// Delete kaprodi data (Admin only)
-router.delete('/:id', authMiddleware, requireRole('admin'), deleteKaprodiData);
+// Delete kaprodi data (Admin & Kaprodi)
+router.delete('/:id', authMiddleware, requireRole('admin', 'kaprodi'), deleteKaprodiData);
 
 export default router;

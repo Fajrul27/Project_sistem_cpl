@@ -24,7 +24,7 @@ export const MENU_ITEMS = [
         icon: Database,
         roles: ["admin", "kaprodi"] as UserRole[],
         items: [
-            { title: "Pengaturan Instansi", url: "/dashboard/instansi", roles: ["admin"], resource: 'settings' },
+            { title: "Pengaturan Instansi", url: "/dashboard/instansi", roles: ["admin", "kaprodi"], resource: 'settings' },
             { title: "Unit & Jenjang", url: "/dashboard/fakultas", roles: ["admin"], resource: 'fakultas' },
             { title: "Manajemen Skala Nilai", url: "/dashboard/skala-nilai", roles: ["admin", "kaprodi"], resource: 'fakultas' },
         ]
@@ -74,7 +74,7 @@ export const MENU_ITEMS = [
         roles: ["admin", "dosen", "kaprodi"] as UserRole[],
         items: [
             { title: "Dosen Pengampu", url: "/dashboard/dosen-pengampu", roles: ["admin", "kaprodi"], resource: 'dosen_pengampu' },
-            { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", roles: ["admin"], resource: 'kaprodi_data' },
+            { title: "Data Kaprodi", url: "/dashboard/kaprodi-data", roles: ["admin", "kaprodi"], resource: 'kaprodi_data' },
             { title: "Data Mahasiswa", url: "/dashboard/mahasiswa", roles: ["admin", "dosen", "kaprodi"], resource: 'mahasiswa' },
             { title: "Akun Pengguna", url: "/dashboard/users", roles: ["admin"], resource: 'users' },
         ]
