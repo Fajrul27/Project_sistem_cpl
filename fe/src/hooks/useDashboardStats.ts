@@ -119,8 +119,21 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
         if (!normalizedRole || normalizedRole === 'mahasiswa') return;
 
         try {
-            // Stats call - only if it's not a student
-            const statsRes = await fetchDashboardStats(activeFilters);
+            const isManager = normalizedRole === 'admin' || normalizedRole === 'kaprodi';
+
+            // OPTIMIZED: Parallelize all relevant data fetching
+            let statsRes, dosenRes, studentRes;
+
+            if (isManager) {
+                [statsRes, dosenRes, studentRes] = await Promise.all([
+                    fetchDashboardStats(activeFilters),
+                    fetchDosenAnalysis(activeFilters).catch(() => ({ data: [] })),
+                    fetchStudentEvaluation(activeFilters).catch(() => ({ data: [] }))
+                ]);
+            } else {
+                statsRes = await fetchDashboardStats(activeFilters);
+            }
+
             const data = statsRes.data;
 
             if (data) {
@@ -145,17 +158,9 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
                 setCompleteness(data.completeness || null);
             }
 
-            // Only fetch management data for admin or kaprodi roles
-            const isManager = normalizedRole === 'admin' || normalizedRole === 'kaprodi';
-
             if (isManager) {
-                const [dosenRes, studentRes] = await Promise.all([
-                    fetchDosenAnalysis(activeFilters).catch(() => ({ data: [] })),
-                    fetchStudentEvaluation(activeFilters).catch(() => ({ data: [] }))
-                ]);
-
-                if (dosenRes.data) setDosenAnalysis(dosenRes.data);
-                if (studentRes.data) setStudentEvaluation(studentRes.data);
+                if (dosenRes?.data) setDosenAnalysis(dosenRes.data);
+                if (studentRes?.data) setStudentEvaluation(studentRes.data);
             }
 
         } catch (error: any) {

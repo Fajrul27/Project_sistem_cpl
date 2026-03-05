@@ -199,27 +199,13 @@ export class DashboardService {
 
         // --- DATA FETCHING ---
 
-
-        // BEFORE OPTIMIZATION: Sequential execution with unnecessary queries (very slow!)
-        const dbUserCount = await prisma.user.count({ where: userFilter });
-
-        // Unnecessary query 1: Fetch first user (wasteful!)
-        await prisma.user.findFirst({ where: userFilter });
-
-        const cplCount = await prisma.cpl.count({ where: cplFilter });
-
-        // Unnecessary query 2: Fetch first CPL (wasteful!) 
-        await prisma.cpl.findFirst({ where: cplFilter });
-
-        const mataKuliahCount = await prisma.mataKuliah.count({ where: mkFilter });
-
-        // Unnecessary query 3: Fetch first MK (wasteful!)
-        await prisma.mataKuliah.findFirst({ where: mkFilter });
-
-        const nilaiCount = await prisma.nilaiCpl.count({ where: nilaiFilter });
-
-        // Unnecessary query 4: Fetch first nilai (wasteful!)
-        await prisma.nilaiCpl.findFirst({ where: nilaiFilter });
+        // OPTIMIZED: Parallel execution using Promise.all
+        const [dbUserCount, cplCount, mataKuliahCount, nilaiCount] = await Promise.all([
+            prisma.user.count({ where: userFilter }),
+            prisma.cpl.count({ where: cplFilter }),
+            prisma.mataKuliah.count({ where: mkFilter }),
+            prisma.nilaiCpl.count({ where: nilaiFilter })
+        ]);
 
         const userCount = customUserCount !== null ? customUserCount : dbUserCount;
 
@@ -232,43 +218,39 @@ export class DashboardService {
         };
 
         if (userRole !== 'mahasiswa') {
-            // BEFORE OPTIMIZATION: Sequential execution (slower)
-            const cplEmptyList = await prisma.cpl.findMany({
-                where: {
-                    ...cplFilter,
-                    nilaiCpl: { none: {} }
-                },
-                select: { id: true, kodeCpl: true, deskripsi: true }
-            });
+            // OPTIMIZED: Include all required fields in the initial fetch to avoid N+1 queries
+            const [cplEmptyList, mkUnmappedList, studentsWithGrades] = await Promise.all([
+                prisma.cpl.findMany({
+                    where: {
+                        ...cplFilter,
+                        nilaiCpl: { none: {} }
+                    },
+                    select: {
+                        id: true,
+                        kodeCpl: true,
+                        deskripsi: true,
+                        kategori: true // Fetched here instead of loop
+                    }
+                }),
+                prisma.mataKuliah.findMany({
+                    where: {
+                        ...mkFilter,
+                        cpmk: { none: {} }
+                    },
+                    select: {
+                        id: true,
+                        kodeMk: true,
+                        namaMk: true,
+                        sks: true, // Fetched here instead of loop
+                        semester: true // Fetched here instead of loop
+                    }
+                }),
+                prisma.nilaiCpl.groupBy({
+                    by: ['mahasiswaId'],
+                    where: nilaiFilter,
+                })
+            ]);
 
-            // N+1 QUERY PROBLEM: Fetch additional details one by one (very slow!)
-            for (const cpl of cplEmptyList) {
-                await prisma.cpl.findUnique({
-                    where: { id: cpl.id },
-                    select: { kategori: true, deskripsi: true }
-                });
-            }
-
-            const mkUnmappedList = await prisma.mataKuliah.findMany({
-                where: {
-                    ...mkFilter,
-                    cpmk: { none: {} }
-                },
-                select: { id: true, kodeMk: true, namaMk: true }
-            });
-
-            // N+1 QUERY PROBLEM: Fetch additional details one by one (very slow!)
-            for (const mk of mkUnmappedList) {
-                await prisma.mataKuliah.findUnique({
-                    where: { id: mk.id },
-                    select: { sks: true, semester: true }
-                });
-            }
-
-            const studentsWithGrades = await prisma.nilaiCpl.groupBy({
-                by: ['mahasiswaId'],
-                where: nilaiFilter,
-            });
             const progressPengisian = userCount > 0 ? (studentsWithGrades.length / userCount) * 100 : 0;
 
             completeness = {
@@ -380,10 +362,13 @@ export class DashboardService {
             .sort((a, b) => a.rawSemester - b.rawSemester);
 
         // 3. Distribution
-        const distExcellent = await prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 85 } } });
-        const distGood = await prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 70, lt: 85 } } });
-        const distFair = await prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 60, lt: 70 } } });
-        const distPoor = await prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { lt: 60 } } });
+        // OPTIMIZED: Use parallel Promise.all for counting segments
+        const [distExcellent, distGood, distFair, distPoor] = await Promise.all([
+            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 85 } } }),
+            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 70, lt: 85 } } }),
+            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 60, lt: 70 } } }),
+            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { lt: 60 } } })
+        ]);
         const distTotal = distExcellent + distGood + distFair + distPoor;
 
         const distributionData = [
