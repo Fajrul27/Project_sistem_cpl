@@ -113,12 +113,19 @@ export function useProfile() {
         if (!profile?.id) return false;
         try {
             setLoading(true);
-            await api.put(`/profiles/${profile.id}`, formData);
-            toast.success("Profil berhasil diperbarui");
-            await fetchUserData(); // Refresh data
+            const response = await api.put(`/profiles/${profile.id}`, formData);
+            
+            // Directly update state from response
+            if (response.data) {
+                setProfile(response.data);
+                console.log('Profile updated successfully:', response.data);
+            }
+            
+            toast.success(response.message || "Profil berhasil diperbarui");
             return true;
         } catch (e: any) {
             toast.error("Gagal memperbarui profil: " + (e.response?.data?.error || e.message));
+            console.error('Update profile error:', e);
             return false;
         } finally {
             setLoading(false);

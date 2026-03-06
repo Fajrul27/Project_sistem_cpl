@@ -38,49 +38,76 @@ export const updateProfile = async (req: Request, res: Response) => {
             return res.status(403).json({ error: 'Tidak memiliki akses untuk mengupdate profile ini' });
         }
 
-        // Prepare update data
-        const updateData: any = {
-            namaLengkap,
-            nim: nim || null,
-            nip: nip || null,
-            programStudi: programStudi || null,
-            tahunMasuk: tahunMasuk ? parseInt(tahunMasuk) : null,
-            alamat: alamat || null,
-            noTelepon: noTelepon || null,
-            prodiId: prodiId || null,
-            fakultasId: fakultasId || null,
-            semesterId: semesterId || null,
-            kelasId: kelasId || null,
-            angkatanId: angkatanId || null
-        };
+        // Prepare update data - only include fields that are provided
+        const updateData: any = {};
+        
+        if (namaLengkap !== undefined) updateData.namaLengkap = namaLengkap || null;
+        if (nim !== undefined) updateData.nim = nim || null;
+        if (nip !== undefined) updateData.nip = nip || null;
+        if (programStudi !== undefined) updateData.programStudi = programStudi || null;
+        if (tahunMasuk !== undefined) updateData.tahunMasuk = tahunMasuk ? parseInt(tahunMasuk) : null;
+        if (alamat !== undefined) updateData.alamat = alamat || null;
+        if (noTelepon !== undefined) updateData.noTelepon = noTelepon || null;
+        if (prodiId !== undefined) updateData.prodiId = prodiId || null;
+        if (fakultasId !== undefined) updateData.fakultasId = fakultasId || null;
+        if (semesterId !== undefined) updateData.semesterId = semesterId || null;
+        if (kelasId !== undefined) updateData.kelasId = kelasId || null;
+        if (angkatanId !== undefined) updateData.angkatanId = angkatanId || null;
 
         // Handle semester logic
-        if (semesterId) {
-            const semesterRef = await prisma.semester.findUnique({
-                where: { id: semesterId }
-            });
-            if (semesterRef) {
-                updateData.semester = semesterRef.angka;
+        if (semesterId !== undefined) {
+            if (semesterId) {
+                const semesterRef = await prisma.semester.findUnique({
+                    where: { id: semesterId }
+                });
+                if (semesterRef) {
+                    updateData.semester = semesterRef.angka;
+                }
+            } else {
+                updateData.semester = null;
+                updateData.semesterId = null;
             }
-        } else if (semester) {
+        } else if (semester !== undefined) {
             // Fallback: if only semester int is provided, try to find matching semesterId
-            updateData.semester = parseInt(semester);
-            const semesterRef = await prisma.semester.findUnique({
-                where: { angka: parseInt(semester) }
-            });
-            if (semesterRef) {
-                updateData.semesterId = semesterRef.id;
+            if (semester) {
+                updateData.semester = parseInt(semester);
+                const semesterRef = await prisma.semester.findUnique({
+                    where: { angka: parseInt(semester) }
+                });
+                if (semesterRef) {
+                    updateData.semesterId = semesterRef.id;
+                }
+            } else {
+                updateData.semester = null;
+                updateData.semesterId = null;
             }
-        } else {
-            updateData.semester = null;
-            updateData.semesterId = null;
+        }
+
+        // Only update if there are fields to update
+        if (Object.keys(updateData).length === 0) {
+            return res.json({
+                data: profile,
+                message: 'Tidak ada perubahan untuk disimpan'
+            });
         }
 
         // Update profile
         const updatedProfile = await prisma.profile.update({
             where: { id },
-            data: updateData
+            data: updateData,
+            include: {
+                prodi: {
+                    include: {
+                        fakultas: true
+                    }
+                },
+                kelasRef: true,
+                semesterRef: true,
+                angkatanRef: true
+            }
         });
+
+        console.log('Profile updated:', { id, updatedFields: Object.keys(updateData), newData: updatedProfile });
 
         res.json({
             data: updatedProfile,
