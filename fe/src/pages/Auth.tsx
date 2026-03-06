@@ -48,57 +48,30 @@ const Auth = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && session.user && !location.state?.from) {
+    // Cek session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && !location.state?.from) {
         window.location.href = "/dashboard";
       }
-    };
-    checkSession();
+    });
 
-    // --- Optimized Google GSI ready detection (event-driven, no polling) ---
+    // Google GSI sudah di-preload di index.html — tinggal tunggu siap
     const markReady = () => setGoogleReady(true);
 
-    // 1. Immediate check — jika script sudah ada di cache browser
     if ((window as any).google?.accounts?.id) {
+      // Kasus terbaik: script sudah cached → langsung siap
       markReady();
-      return;
-    }
-
-    // 2. Cek apakah tag <script> GSI sudah ada di DOM (namun belum selesai load)
-    const existingScript = document.querySelector<HTMLScriptElement>(
-      'script[src*="accounts.google.com/gsi/client"]'
-    );
-    if (existingScript) {
-      existingScript.addEventListener('load', markReady, { once: true });
-      // Guard: mungkin googleReady setelah script selesai load tepat sebelum listener terpasang
-      if ((window as any).google?.accounts?.id) markReady();
     } else {
-      // 3. Script belum ada — gunakan MutationObserver untuk mendeteksi saat
-      //    @react-oauth/google menambahkan tag <script> ke document.head
-      const observer = new MutationObserver(() => {
-        const gsiScript = document.querySelector<HTMLScriptElement>(
-          'script[src*="accounts.google.com/gsi/client"]'
-        );
-        if (gsiScript) {
-          observer.disconnect();
-          gsiScript.addEventListener('load', markReady, { once: true });
-          // Guard: script mungkin sudah selesai load saat kita menemukan tagnya
-          if ((window as any).google?.accounts?.id) markReady();
-        }
-      });
-      observer.observe(document.head, { childList: true });
-
-      // 4. Fallback: 5 detik jika ada masalah network / observer tidak terpicu
-      const fallback = setTimeout(() => {
-        observer.disconnect();
-        markReady();
-      }, 5000);
-
-      return () => {
-        observer.disconnect();
-        clearTimeout(fallback);
-      };
+      // Script masih load — listen ke tag yang sudah ada di DOM (dari preload)
+      const gsiScript = document.querySelector<HTMLScriptElement>(
+        'script[src*="accounts.google.com/gsi/client"]'
+      );
+      if (gsiScript) {
+        gsiScript.addEventListener('load', markReady, { once: true });
+      }
+      // Fallback 5 detik jika ada masalah network
+      const fallback = setTimeout(markReady, 5000);
+      return () => clearTimeout(fallback);
     }
   }, []);
 

@@ -13,6 +13,10 @@
   <link rel="icon" type="image/png" href="/logo.png" />
   <link rel="canonical" href="https://obeunugha.my.id/" />
 
+  <!-- Preload Google GSI script agar siap sebelum React boot (optimasi login Google) -->
+  <link rel="preload" href="https://accounts.google.com/gsi/client" as="script" crossorigin="anonymous" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <meta property="og:title" content="Sistem CPL OBE UNUGHA - Platform Pengukuran Capaian Pembelajaran" />
   <meta property="og:description"
     content="Platform modern untuk mengukur CPL dengan analisis mendalam dan laporan lengkap berbasis OBE di UNUGHA." />
