@@ -188,7 +188,8 @@ export async function createUserWithRole(
     body: JSON.stringify({
       email,
       password,
-      fullName,
+      namaLengkap: fullName,
+      role: role || 'mahasiswa',
       prodiId: profileData?.prodiId,
       fakultasId: profileData?.fakultasId
     })
@@ -500,7 +501,8 @@ export const supabase = {
           body: JSON.stringify({
             email,
             password,
-            fullName: options?.data?.full_name,
+            namaLengkap: options?.data?.full_name || email.split('@')[0],
+            role: 'mahasiswa',
             prodiId: options?.data?.prodiId
           }),
         });

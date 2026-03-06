@@ -11,7 +11,7 @@ export const authSchemas = {
         email: z.string().email("Email tidak valid"),
         password: z.string().min(6, "Password minimal 6 karakter"),
         namaLengkap: z.string().min(3, "Nama lengkap wajib diisi"),
-        role: z.enum(["admin", "dosen", "mahasiswa", "kaprodi", "dekan"]),
+        role: z.enum(["admin", "dosen", "mahasiswa", "kaprodi", "dekan"]).optional().default("mahasiswa"),
         nip: z.string().optional(),
         nim: z.string().optional()
     })
