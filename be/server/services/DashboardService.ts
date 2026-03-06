@@ -241,8 +241,10 @@ export class DashboardService {
                         id: true,
                         kodeMk: true,
                         namaMk: true,
-                        sks: true, // Fetched here instead of loop
-                        semester: true // Fetched here instead of loop
+                        sks: true,
+                        semester: true,
+                        prodiId: true,
+                        prodi: { select: { fakultasId: true } }
                     }
                 }),
                 prisma.nilaiCpl.groupBy({

@@ -21,7 +21,14 @@ interface CompletenessCardProps {
         dosenNoInput: number;
         progressPengisian: number;
         cplEmptyList?: Array<{ id: string, kodeCpl: string, deskripsi: string }>;
-        mkUnmappedList?: Array<{ id: string, kodeMk: string, namaMk: string }>;
+        mkUnmappedList?: Array<{
+            id: string,
+            kodeMk: string,
+            namaMk: string,
+            prodiId?: string,
+            semester?: number,
+            prodi?: { fakultasId: string }
+        }>;
     };
 }
 
@@ -36,12 +43,19 @@ export const CompletenessCard = ({ data }: CompletenessCardProps) => {
         setDialogOpen(true);
     };
 
-    const handleItemClick = (type: 'cpl' | 'mk', id: string) => {
+    const handleItemClick = (type: 'cpl' | 'mk', id: string, extra?: any) => {
         setDialogOpen(false);
         if (type === 'cpl') {
             navigate(`/dashboard/cpl/${id}`);
         } else {
-            navigate(`/dashboard/mata-kuliah`);
+            // Build query params for MK list
+            const params = new URLSearchParams();
+            if (extra?.kodeMk) params.set("q", extra.kodeMk);
+            if (extra?.prodiId) params.set("prodiId", extra.prodiId);
+            if (extra?.semester) params.set("semester", extra.semester.toString());
+            if (extra?.prodi?.fakultasId) params.set("fakultasId", extra.prodi.fakultasId);
+
+            navigate(`/dashboard/mata-kuliah?${params.toString()}`);
         }
     };
 
@@ -116,49 +130,51 @@ export const CompletenessCard = ({ data }: CompletenessCardProps) => {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <ScrollArea className="flex-1 p-6 pt-0 min-h-0">
-                        <div className="space-y-3">
-                            {dialogType === 'cpl' ? (
-                                cplList.length > 0 ? (
-                                    cplList.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group/item"
-                                            onClick={() => handleItemClick('cpl', item.id)}
-                                        >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <Badge variant="outline" className="font-bold border-red-200 text-red-700 bg-red-50 group-hover/item:bg-red-100 transition-colors">{item.kodeCpl}</Badge>
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                        <ScrollArea className="h-full">
+                            <div className="p-6 pt-0 space-y-3">
+                                {dialogType === 'cpl' ? (
+                                    cplList.length > 0 ? (
+                                        cplList.map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group/item"
+                                                onClick={() => handleItemClick('cpl', item.id)}
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <Badge variant="outline" className="font-bold border-red-200 text-red-700 bg-red-50 group-hover/item:bg-red-100 transition-colors">{item.kodeCpl}</Badge>
+                                                </div>
+                                                <p className="text-sm mt-1.5 text-muted-foreground line-clamp-2">{item.deskripsi}</p>
                                             </div>
-                                            <p className="text-sm mt-1.5 text-muted-foreground line-clamp-2">{item.deskripsi}</p>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            Tidak ada data ditemukan
                                         </div>
-                                    ))
+                                    )
                                 ) : (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        Tidak ada data ditemukan
-                                    </div>
-                                )
-                            ) : (
-                                mkList.length > 0 ? (
-                                    mkList.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group/item"
-                                            onClick={() => handleItemClick('mk', item.id)}
-                                        >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <Badge variant="outline" className="font-bold border-amber-200 text-amber-700 bg-amber-50 group-hover/item:bg-amber-100 transition-colors">{item.kodeMk}</Badge>
+                                    mkList.length > 0 ? (
+                                        mkList.map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group/item"
+                                                onClick={() => handleItemClick('mk', item.id, item)}
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <Badge variant="outline" className="font-bold border-amber-200 text-amber-700 bg-amber-50 group-hover/item:bg-amber-100 transition-colors">{item.kodeMk}</Badge>
+                                                </div>
+                                                <p className="text-sm font-medium mt-1">{item.namaMk}</p>
                                             </div>
-                                            <p className="text-sm font-medium mt-1">{item.namaMk}</p>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            Tidak ada data ditemukan
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        Tidak ada data ditemukan
-                                    </div>
-                                )
-                            )}
-                        </div>
-                    </ScrollArea>
+                                    )
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </div>
                 </DialogContent>
             </Dialog>
         </>
