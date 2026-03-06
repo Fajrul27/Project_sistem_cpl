@@ -87,6 +87,7 @@ export const StaffList = () => {
 
     const [showCreate, setShowCreate] = useState(false);
     const [formKey, setFormKey] = useState(0);
+    const [fieldsReadOnly, setFieldsReadOnly] = useState(true);
     const [editingUser, setEditingUser] = useState<UserRow | null>(null);
 
     const [newUser, setNewUser] = useState<NewUserForm>({
@@ -296,7 +297,8 @@ export const StaffList = () => {
     // Clear form & remount when opening create dialog
     useEffect(() => {
         if (showCreate) {
-            setFormKey(prev => prev + 1); // forces React to remount form elements
+            setFormKey(prev => prev + 1);
+            setFieldsReadOnly(true); // cegah browser autofill dulu
             setNewUser({
                 fullName: "",
                 email: "",
@@ -306,6 +308,9 @@ export const StaffList = () => {
                 prodiId: programFilter === "all" ? "" : programFilter,
                 identityNumber: "",
             });
+            // Lepas readOnly setelah browser sudah "menyerah" autofill
+            const timer = setTimeout(() => setFieldsReadOnly(false), 200);
+            return () => clearTimeout(timer);
         }
     }, [showCreate, roleFilter, facultyFilter, programFilter]);
 
@@ -663,13 +668,14 @@ export const StaffList = () => {
                             <div className="space-y-2">
                                 <RequiredLabel required>Email</RequiredLabel>
                                 <Input
-                                    type="email"
+                                    type="text"
                                     placeholder="nama@example.com"
                                     value={newUser.email}
                                     onChange={e => setNewUser({ ...newUser, email: e.target.value })}
                                     required
                                     autoComplete="new-password"
                                     name="new-email"
+                                    readOnly={fieldsReadOnly}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -682,6 +688,8 @@ export const StaffList = () => {
                                     required
                                     minLength={6}
                                     autoComplete="new-password"
+                                    name="new-password"
+                                    readOnly={fieldsReadOnly}
                                 />
                             </div>
                             <div className="space-y-2">
