@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, AlertCircle, FileWarning, Search, X } from "lucide-react";
@@ -25,6 +26,7 @@ interface CompletenessCardProps {
 }
 
 export const CompletenessCard = ({ data }: CompletenessCardProps) => {
+    const navigate = useNavigate();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogType, setDialogType] = useState<'cpl' | 'mk' | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
@@ -32,6 +34,15 @@ export const CompletenessCard = ({ data }: CompletenessCardProps) => {
     const handleOpenDialog = (type: 'cpl' | 'mk') => {
         setDialogType(type);
         setDialogOpen(true);
+    };
+
+    const handleItemClick = (type: 'cpl' | 'mk', id: string) => {
+        setDialogOpen(false);
+        if (type === 'cpl') {
+            navigate(`/dashboard/cpl/${id}`);
+        } else {
+            navigate(`/dashboard/mata-kuliah`);
+        }
     };
 
     const cplList = data.cplEmptyList || [];
@@ -105,14 +116,18 @@ export const CompletenessCard = ({ data }: CompletenessCardProps) => {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <ScrollArea className="flex-1 p-6 pt-0">
+                    <ScrollArea className="flex-1 p-6 pt-0 min-h-0">
                         <div className="space-y-3">
                             {dialogType === 'cpl' ? (
                                 cplList.length > 0 ? (
                                     cplList.map((item) => (
-                                        <div key={item.id} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                                        <div
+                                            key={item.id}
+                                            className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group/item"
+                                            onClick={() => handleItemClick('cpl', item.id)}
+                                        >
                                             <div className="flex items-start justify-between gap-2">
-                                                <Badge variant="outline" className="font-bold border-red-200 text-red-700 bg-red-50">{item.kodeCpl}</Badge>
+                                                <Badge variant="outline" className="font-bold border-red-200 text-red-700 bg-red-50 group-hover/item:bg-red-100 transition-colors">{item.kodeCpl}</Badge>
                                             </div>
                                             <p className="text-sm mt-1.5 text-muted-foreground line-clamp-2">{item.deskripsi}</p>
                                         </div>
@@ -125,9 +140,13 @@ export const CompletenessCard = ({ data }: CompletenessCardProps) => {
                             ) : (
                                 mkList.length > 0 ? (
                                     mkList.map((item) => (
-                                        <div key={item.id} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                                        <div
+                                            key={item.id}
+                                            className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group/item"
+                                            onClick={() => handleItemClick('mk', item.id)}
+                                        >
                                             <div className="flex items-start justify-between gap-2">
-                                                <Badge variant="outline" className="font-bold border-amber-200 text-amber-700 bg-amber-50">{item.kodeMk}</Badge>
+                                                <Badge variant="outline" className="font-bold border-amber-200 text-amber-700 bg-amber-50 group-hover/item:bg-amber-100 transition-colors">{item.kodeMk}</Badge>
                                             </div>
                                             <p className="text-sm font-medium mt-1">{item.namaMk}</p>
                                         </div>
