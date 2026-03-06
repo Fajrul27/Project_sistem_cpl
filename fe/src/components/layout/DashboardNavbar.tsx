@@ -33,7 +33,10 @@ export function DashboardNavbar({ title, actions, user, profile, role }: NavbarP
       if (error) throw error;
 
       toast.success("Logout berhasil");
-      navigate("/auth");
+      // Full page refresh agar browser tidak auto-fill email & password dari sesi sebelumnya
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 500);
     } catch (error) {
       toast.error("Gagal logout");
     }
