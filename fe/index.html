@@ -13,9 +13,9 @@
   <link rel="icon" type="image/png" href="/logo.png" />
   <link rel="canonical" href="https://obeunugha.my.id/" />
 
-  <!-- Preload Google GSI script agar siap sebelum React boot (optimasi login Google) -->
-  <link rel="preload" href="https://accounts.google.com/gsi/client" as="script" crossorigin="anonymous" />
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- DNS prefetch & preconnect untuk Google OAuth — mempercepat koneksi tanpa CORS issue -->
+  <link rel="dns-prefetch" href="https://accounts.google.com" />
+  <link rel="preconnect" href="https://accounts.google.com" />
 
   <meta property="og:title" content="Sistem CPL OBE UNUGHA - Platform Pengukuran Capaian Pembelajaran" />
   <meta property="og:description"

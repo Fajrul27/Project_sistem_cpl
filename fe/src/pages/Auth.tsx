@@ -55,24 +55,40 @@ const Auth = () => {
       }
     });
 
-    // Google GSI sudah di-preload di index.html — tinggal tunggu siap
+    // Event-driven Google GSI detection — @react-oauth/google mengelola loading script
     const markReady = () => setGoogleReady(true);
 
+    // Immediate: script sudah cached oleh browser
     if ((window as any).google?.accounts?.id) {
-      // Kasus terbaik: script sudah cached → langsung siap
       markReady();
-    } else {
-      // Script masih load — listen ke tag yang sudah ada di DOM (dari preload)
-      const gsiScript = document.querySelector<HTMLScriptElement>(
-        'script[src*="accounts.google.com/gsi/client"]'
-      );
-      if (gsiScript) {
-        gsiScript.addEventListener('load', markReady, { once: true });
-      }
-      // Fallback 5 detik jika ada masalah network
+      return;
+    }
+
+    // Script sudah ada di DOM tapi belum selesai load
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[src*="accounts.google.com/gsi/client"]'
+    );
+    if (existing) {
+      existing.addEventListener('load', markReady, { once: true });
       const fallback = setTimeout(markReady, 5000);
       return () => clearTimeout(fallback);
     }
+
+    // Script belum ada — MutationObserver untuk menangkap saat library menambahkannya
+    const observer = new MutationObserver(() => {
+      const gsi = document.querySelector<HTMLScriptElement>(
+        'script[src*="accounts.google.com/gsi/client"]'
+      );
+      if (gsi) {
+        observer.disconnect();
+        gsi.addEventListener('load', markReady, { once: true });
+        if ((window as any).google?.accounts?.id) markReady();
+      }
+    });
+    observer.observe(document.head, { childList: true });
+
+    const fallback = setTimeout(() => { observer.disconnect(); markReady(); }, 5000);
+    return () => { observer.disconnect(); clearTimeout(fallback); };
   }, []);
 
   useEffect(() => {
