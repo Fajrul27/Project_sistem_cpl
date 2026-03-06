@@ -7,7 +7,7 @@ import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { GraduationCap, Eye, EyeOff } from "lucide-react";
+import { GraduationCap, Eye, EyeOff, AlertCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
   // Login State
   const [email, setEmail] = useState("");
@@ -276,18 +277,27 @@ const Auth = () => {
                   </div>
 
                   <div className="flex justify-center flex-col gap-3">
-                    <div className="flex justify-center w-full">
-                      <GoogleLogin
-                        onSuccess={handleGoogleSuccess}
-                        onError={() => toast.error("Gagal login dengan Google")}
-                        theme="outline"
-                        shape="pill"
-                        size="large"
-                        width="350px"
-                        text="signin_with"
-                        useOneTap
-                      />
-                    </div>
+                    {googleClientId ? (
+                      <div className="flex justify-center w-full">
+                        <GoogleLogin
+                          onSuccess={handleGoogleSuccess}
+                          onError={() => toast.error("Gagal login dengan Google")}
+                          theme="outline"
+                          shape="pill"
+                          size="large"
+                          width="350px"
+                          text="signin_with"
+                          useOneTap
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+                        <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <p className="text-xs text-red-600 dark:text-red-400">
+                          Google Sign-In tidak tersedia. Hubungi administrator untuk konfigurasi.
+                        </p>
+                      </div>
+                    )}
 
                     <p className="text-[10px] text-center text-muted-foreground">
                       Pastikan Anda menggunakan email yang terdaftar di sistem.

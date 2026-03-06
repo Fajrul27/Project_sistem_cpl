@@ -8,9 +8,11 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-# Set API URL for production build (default to relative /api)
+# Set environment variables for production build
 ARG VITE_API_URL=/api
+ARG VITE_GOOGLE_CLIENT_ID=740401836948-58gicuta3mgurqhe3igdfuf4cgol0dgj.apps.googleusercontent.com
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
 RUN npm run build
 

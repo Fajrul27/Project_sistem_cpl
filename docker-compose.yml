@@ -41,7 +41,11 @@ services:
     command: sh -c "npx prisma generate && npm start"
 
   fe:
-    build: ./fe
+    build:
+      context: ./fe
+      args:
+        VITE_API_URL: /api
+        VITE_GOOGLE_CLIENT_ID: 740401836948-58gicuta3mgurqhe3igdfuf4cgol0dgj.apps.googleusercontent.com
     container_name: sistem_cpl_fe
     restart: always
     ports:
