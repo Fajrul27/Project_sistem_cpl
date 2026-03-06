@@ -58,7 +58,7 @@ const Auth = () => {
 
     // Remount GoogleLogin setelah komponen mount agar script GSI Google ter-inisialisasi ulang
     // Memperbaiki masalah "client_id undefined" setelah redirect dari logout
-    const t = setTimeout(() => setGoogleKey(prev => prev + 1), 300);
+    const t = setTimeout(() => setGoogleKey(prev => prev + 1), 500);
     return () => clearTimeout(t);
   }, []);
 
@@ -296,7 +296,6 @@ const Auth = () => {
                           size="large"
                           width="350px"
                           text="signin_with"
-                          useOneTap
                         />
                       </div>
                     ) : (

@@ -29,13 +29,14 @@ export function DashboardNavbar({ title, actions, user, profile, role }: NavbarP
 
   const handleLogout = async () => {
     try {
+      // Logout dan bersihkan semua session
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
       toast.success("Logout berhasil");
-      // Full page refresh agar browser tidak auto-fill email & password dari sesi sebelumnya
+      // replace() agar tidak ada history entry sisa yang bisa mempengaruhi GSI state
       setTimeout(() => {
-        window.location.href = "/auth";
+        window.location.replace("/auth");
       }, 500);
     } catch (error) {
       toast.error("Gagal logout");
