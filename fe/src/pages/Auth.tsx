@@ -25,6 +25,9 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
+  // Key trick: increment setelah mount agar GoogleLogin remount dan re-init script Google
+  const [googleKey, setGoogleKey] = useState(0);
+
   // Login State
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -52,7 +55,12 @@ const Auth = () => {
       }
     };
     checkSession();
-  }, [location.state]);
+
+    // Remount GoogleLogin setelah komponen mount agar script GSI Google ter-inisialisasi ulang
+    // Memperbaiki masalah "client_id undefined" setelah redirect dari logout
+    const t = setTimeout(() => setGoogleKey(prev => prev + 1), 300);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -280,6 +288,7 @@ const Auth = () => {
                     {googleClientId ? (
                       <div className="flex justify-center w-full">
                         <GoogleLogin
+                          key={googleKey}
                           onSuccess={handleGoogleSuccess}
                           onError={() => toast.error("Gagal login dengan Google")}
                           theme="outline"

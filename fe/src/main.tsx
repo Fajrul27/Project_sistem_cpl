@@ -14,12 +14,20 @@ if (!GOOGLE_CLIENT_ID) {
   console.warn("⚠️  VITE_GOOGLE_CLIENT_ID is not set. Google Sign-In will not work.");
 }
 
-createRoot(document.getElementById("root")!).render(
+const AppWrapper = () => (
   <HelmetProvider>
     <ThemeProvider>
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      {GOOGLE_CLIENT_ID ? (
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          <App />
+        </GoogleOAuthProvider>
+      ) : (
+        // Render App tanpa GoogleOAuthProvider jika clientId tidak tersedia
+        // agar tidak terjadi error "client_id is required" dari library
         <App />
-      </GoogleOAuthProvider>
+      )}
     </ThemeProvider>
   </HelmetProvider>
 );
+
+createRoot(document.getElementById("root")!).render(<AppWrapper />);
