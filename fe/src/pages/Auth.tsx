@@ -49,7 +49,6 @@ const Auth = () => {
 
   useEffect(() => {
     const checkSession = async () => {
-      // Use getSession for a quiet local check first
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user && !location.state?.from) {
         window.location.href = "/dashboard";
@@ -57,22 +56,50 @@ const Auth = () => {
     };
     checkSession();
 
-    // Polling: cek setiap 100ms apakah Google GSI script sudah siap
-    // Ini jauh lebih andal dari fixed timeout, terutama setelah redirect logout
-    let elapsed = 0;
-    const interval = setInterval(() => {
-      elapsed += 100;
-      if ((window as any).google?.accounts?.id) {
-        setGoogleReady(true);
-        clearInterval(interval);
-      } else if (elapsed >= 8000) {
-        // Fallback: setelah 8 detik tampilkan tombol walau belum siap
-        setGoogleReady(true);
-        clearInterval(interval);
-      }
-    }, 100);
+    // --- Optimized Google GSI ready detection (event-driven, no polling) ---
+    const markReady = () => setGoogleReady(true);
 
-    return () => clearInterval(interval);
+    // 1. Immediate check — jika script sudah ada di cache browser
+    if ((window as any).google?.accounts?.id) {
+      markReady();
+      return;
+    }
+
+    // 2. Cek apakah tag <script> GSI sudah ada di DOM (namun belum selesai load)
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[src*="accounts.google.com/gsi/client"]'
+    );
+    if (existingScript) {
+      existingScript.addEventListener('load', markReady, { once: true });
+      // Guard: mungkin googleReady setelah script selesai load tepat sebelum listener terpasang
+      if ((window as any).google?.accounts?.id) markReady();
+    } else {
+      // 3. Script belum ada — gunakan MutationObserver untuk mendeteksi saat
+      //    @react-oauth/google menambahkan tag <script> ke document.head
+      const observer = new MutationObserver(() => {
+        const gsiScript = document.querySelector<HTMLScriptElement>(
+          'script[src*="accounts.google.com/gsi/client"]'
+        );
+        if (gsiScript) {
+          observer.disconnect();
+          gsiScript.addEventListener('load', markReady, { once: true });
+          // Guard: script mungkin sudah selesai load saat kita menemukan tagnya
+          if ((window as any).google?.accounts?.id) markReady();
+        }
+      });
+      observer.observe(document.head, { childList: true });
+
+      // 4. Fallback: 5 detik jika ada masalah network / observer tidak terpicu
+      const fallback = setTimeout(() => {
+        observer.disconnect();
+        markReady();
+      }, 5000);
+
+      return () => {
+        observer.disconnect();
+        clearTimeout(fallback);
+      };
+    }
   }, []);
 
   useEffect(() => {
