@@ -86,6 +86,7 @@ export const StaffList = () => {
     const [programFilter, setProgramFilter] = useState<string>("all");
 
     const [showCreate, setShowCreate] = useState(false);
+    const [formKey, setFormKey] = useState(0);
     const [editingUser, setEditingUser] = useState<UserRow | null>(null);
 
     const [newUser, setNewUser] = useState<NewUserForm>({
@@ -292,9 +293,10 @@ export const StaffList = () => {
         }));
     }, [roleFilter, facultyFilter, programFilter]);
 
-    // Clear form when opening create dialog
+    // Clear form & remount when opening create dialog
     useEffect(() => {
         if (showCreate) {
+            setFormKey(prev => prev + 1); // forces React to remount form elements
             setNewUser({
                 fullName: "",
                 email: "",
@@ -639,7 +641,8 @@ export const StaffList = () => {
                         <DialogTitle>Tambah Staff/Dosen Baru</DialogTitle>
                         <DialogDescription>Daftarkan akun staff baru dengan role tertentu.</DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleCreateUser} className="space-y-4 py-4">
+                    {/* key={formKey} memaksa React remount form tiap buka dialog agar browser tidak auto-fill */}
+                    <form key={formKey} onSubmit={handleCreateUser} className="space-y-4 py-4" autoComplete="off">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Role</Label>
@@ -665,7 +668,8 @@ export const StaffList = () => {
                                     value={newUser.email}
                                     onChange={e => setNewUser({ ...newUser, email: e.target.value })}
                                     required
-                                    autoComplete="off"
+                                    autoComplete="new-password"
+                                    name="new-email"
                                 />
                             </div>
                             <div className="space-y-2">
