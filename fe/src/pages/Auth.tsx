@@ -25,8 +25,9 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
-  // Key trick: increment setelah mount agar GoogleLogin remount dan re-init script Google
-  const [googleKey, setGoogleKey] = useState(0);
+  // Tunggu Google GSI script benar-benar siap sebelum render GoogleLogin
+  // Polling aktif jauh lebih andal daripada fixed timeout
+  const [googleReady, setGoogleReady] = useState(false);
 
   // Login State
   const [email, setEmail] = useState("");
@@ -56,10 +57,22 @@ const Auth = () => {
     };
     checkSession();
 
-    // Remount GoogleLogin setelah komponen mount agar script GSI Google ter-inisialisasi ulang
-    // Memperbaiki masalah "client_id undefined" setelah redirect dari logout
-    const t = setTimeout(() => setGoogleKey(prev => prev + 1), 500);
-    return () => clearTimeout(t);
+    // Polling: cek setiap 100ms apakah Google GSI script sudah siap
+    // Ini jauh lebih andal dari fixed timeout, terutama setelah redirect logout
+    let elapsed = 0;
+    const interval = setInterval(() => {
+      elapsed += 100;
+      if ((window as any).google?.accounts?.id) {
+        setGoogleReady(true);
+        clearInterval(interval);
+      } else if (elapsed >= 8000) {
+        // Fallback: setelah 8 detik tampilkan tombol walau belum siap
+        setGoogleReady(true);
+        clearInterval(interval);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -286,17 +299,24 @@ const Auth = () => {
 
                   <div className="flex justify-center flex-col gap-3">
                     {googleClientId ? (
-                      <div className="flex justify-center w-full">
-                        <GoogleLogin
-                          key={googleKey}
-                          onSuccess={handleGoogleSuccess}
-                          onError={() => toast.error("Gagal login dengan Google")}
-                          theme="outline"
-                          shape="pill"
-                          size="large"
-                          width="350px"
-                          text="signin_with"
-                        />
+                      <div className="flex justify-center w-full min-h-[44px]">
+                        {googleReady ? (
+                          <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={() => toast.error("Gagal login dengan Google")}
+                            theme="outline"
+                            shape="pill"
+                            size="large"
+                            width="350px"
+                            text="signin_with"
+                          />
+                        ) : (
+                          // Skeleton loading sementara script Google dimuat
+                          <div className="flex items-center gap-2 h-11 px-6 rounded-full border border-border bg-card animate-pulse w-[350px]">
+                            <div className="w-5 h-5 rounded-full bg-muted" />
+                            <div className="h-3 bg-muted rounded w-32" />
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
