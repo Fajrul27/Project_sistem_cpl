@@ -650,40 +650,42 @@ export const StaffList = () => {
                             </div>
                             <div className="space-y-2">
                                 <RequiredLabel required>Nama Lengkap</RequiredLabel>
-                                <Input 
+                                <Input
                                     placeholder="Masukkan nama lengkap"
-                                    value={newUser.fullName} 
-                                    onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} 
-                                    required 
+                                    value={newUser.fullName}
+                                    onChange={e => setNewUser({ ...newUser, fullName: e.target.value })}
+                                    required
                                 />
                             </div>
                             <div className="space-y-2">
                                 <RequiredLabel required>Email</RequiredLabel>
-                                <Input 
-                                    type="email" 
+                                <Input
+                                    type="email"
                                     placeholder="nama@example.com"
-                                    value={newUser.email} 
-                                    onChange={e => setNewUser({ ...newUser, email: e.target.value })} 
-                                    required 
+                                    value={newUser.email}
+                                    onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                                    required
+                                    autoComplete="off"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <RequiredLabel required>Password</RequiredLabel>
-                                <Input 
-                                    type="password" 
+                                <Input
+                                    type="password"
                                     placeholder="Minimal 6 karakter"
-                                    value={newUser.password} 
-                                    onChange={e => setNewUser({ ...newUser, password: e.target.value })} 
-                                    required 
-                                    minLength={6} 
+                                    value={newUser.password}
+                                    onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                    required
+                                    minLength={6}
+                                    autoComplete="new-password"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <Label>NIP/NIDN</Label>
-                                <Input 
+                                <Input
                                     placeholder="Nomor induk pegawai"
-                                    value={newUser.identityNumber} 
-                                    onChange={e => setNewUser({ ...newUser, identityNumber: e.target.value })} 
+                                    value={newUser.identityNumber}
+                                    onChange={e => setNewUser({ ...newUser, identityNumber: e.target.value })}
                                 />
                             </div>
                         </div>
