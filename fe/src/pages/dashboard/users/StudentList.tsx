@@ -637,9 +637,9 @@ export const StudentList = () => {
                         <DialogContent>
                             <DialogHeader><DialogTitle>Edit Mahasiswa</DialogTitle></DialogHeader>
                             <div className="space-y-4">
-                                <div className="space-y-2"><Label>Nama</Label><Input value={editData.fullName} onChange={e => setEditData({ ...editData, fullName: e.target.value })} /></div>
-                                <div className="space-y-2"><Label>Email</Label><Input value={editData.email} onChange={e => setEditData({ ...editData, email: e.target.value })} /></div>
-                                <div className="space-y-2"><Label>NIM</Label><Input value={editData.identityNumber} onChange={e => setEditData({ ...editData, identityNumber: e.target.value })} /></div>
+                                <div className="space-y-2"><Label>Nama</Label><Input placeholder="Nama lengkap mahasiswa" value={editData.fullName} onChange={e => setEditData({ ...editData, fullName: e.target.value })} /></div>
+                                <div className="space-y-2"><Label>Email</Label><Input placeholder="contoh@email.com" value={editData.email} onChange={e => setEditData({ ...editData, email: e.target.value })} /></div>
+                                <div className="space-y-2"><Label>NIM</Label><Input placeholder="Nomor Induk Mahasiswa" value={editData.identityNumber} onChange={e => setEditData({ ...editData, identityNumber: e.target.value })} /></div>
                                 <div className="space-y-2"><Label>Fakultas</Label>
                                     <Select value={editData.fakultas} onValueChange={v => setEditData({ ...editData, fakultas: v, prodi: "" })}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -653,7 +653,7 @@ export const StudentList = () => {
                                     </Select>
                                 </div>
                                 <div className="grid grid-cols-3 gap-4">
-                                    <div className="space-y-2"><Label>Semester</Label><Input value={editData.semester} onChange={e => setEditData({ ...editData, semester: e.target.value })} /></div>
+                                    <div className="space-y-2"><Label>Semester</Label><Input placeholder="1 - 14" value={editData.semester} onChange={e => setEditData({ ...editData, semester: e.target.value })} /></div>
                                     <div className="space-y-2"><Label>Kelas</Label>
                                         <Select value={editData.kelasId} onValueChange={v => setEditData({ ...editData, kelasId: v })}>
                                             <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
@@ -721,19 +721,19 @@ export const StudentList = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <RequiredLabel required>Nama Lengkap</RequiredLabel>
-                                <Input value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} required />
+                                <Input placeholder="Nama lengkap mahasiswa" value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} required autoComplete="off" />
                             </div>
                             <div className="space-y-2">
                                 <RequiredLabel required>Email</RequiredLabel>
-                                <Input type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required />
+                                <Input type="email" placeholder="contoh@email.com" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required autoComplete="off" />
                             </div>
                             <div className="space-y-2">
                                 <RequiredLabel required>Password</RequiredLabel>
-                                <Input type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} required minLength={6} />
+                                <Input type="password" placeholder="Min. 6 karakter" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} required minLength={6} autoComplete="new-password" />
                             </div>
                             <div className="space-y-2">
                                 <RequiredLabel required>NIM</RequiredLabel>
-                                <Input value={newUser.identityNumber} onChange={e => setNewUser({ ...newUser, identityNumber: e.target.value })} required />
+                                <Input placeholder="Nomor Induk Mahasiswa" value={newUser.identityNumber} onChange={e => setNewUser({ ...newUser, identityNumber: e.target.value })} required autoComplete="off" />
                             </div>
                         </div>
 
@@ -758,7 +758,7 @@ export const StudentList = () => {
                             </div>
                             <div className="space-y-2">
                                 <Label>Semester</Label>
-                                <Input type="number" min="1" max="14" value={newUser.semester} onChange={e => setNewUser({ ...newUser, semester: e.target.value })} />
+                                <Input type="number" min="1" max="14" placeholder="1 - 14" value={newUser.semester} onChange={e => setNewUser({ ...newUser, semester: e.target.value })} autoComplete="off" />
                             </div>
                             <div className="space-y-2">
                                 <Label>Kelas</Label>

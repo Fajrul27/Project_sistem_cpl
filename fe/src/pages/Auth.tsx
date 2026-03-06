@@ -264,6 +264,7 @@ const Auth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    autoComplete="email"
                     className="bg-card focus-visible:ring-slate-400"
                   />
                 </div>
@@ -277,6 +278,7 @@ const Auth = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      autoComplete="current-password"
                       className="pr-10 bg-card focus-visible:ring-slate-400"
                     />
                     <button
