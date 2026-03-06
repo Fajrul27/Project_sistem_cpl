@@ -292,6 +292,21 @@ export const StaffList = () => {
         }));
     }, [roleFilter, facultyFilter, programFilter]);
 
+    // Clear form when opening create dialog
+    useEffect(() => {
+        if (showCreate) {
+            setNewUser({
+                fullName: "",
+                email: "",
+                password: "",
+                role: roleFilter || "dosen",
+                fakultasId: facultyFilter === "all" ? "" : facultyFilter,
+                prodiId: programFilter === "all" ? "" : programFilter,
+                identityNumber: "",
+            });
+        }
+    }, [showCreate, roleFilter, facultyFilter, programFilter]);
+
     const selectedFakultas = fakultasList.find(f => f.id === newUser.fakultasId);
     const selectedEditFakultas = fakultasList.find(f => f.id === editData.fakultas);
     const selectedFacultyFilter = facultyFilter === "all" ? undefined : fakultasList.find(f => f.id === facultyFilter);
@@ -334,7 +349,9 @@ export const StaffList = () => {
         try {
             await updateUser(editingUser.id, {
                 email: editData.email,
-                fullName: editData.fullName,
+                profile: {
+                    namaLengkap: editData.fullName
+                },
                 role: editData.role !== editingUser.role ? editData.role : undefined
             });
             if (editingUser.profileId) {
@@ -344,11 +361,12 @@ export const StaffList = () => {
                     prodiId: editData.prodi || null
                 });
             }
-            toast.success(`Data staff "${editingUser?.namaLengkap || editingUser?.email || 'Unknown'}" berhasil diperbarui`);
+            toast.success(`Data staff "${editData.fullName}" berhasil diperbarui`);
             setEditingUser(null);
             loadUsers();
         } catch (err: any) {
-            toast.error("Failed to update");
+            toast.error("Gagal mengupdate user: " + (err.message || "Unknown error"));
+            console.error("Update user error:", err);
         } finally {
             setSavingEdit(false);
         }
@@ -632,19 +650,41 @@ export const StaffList = () => {
                             </div>
                             <div className="space-y-2">
                                 <RequiredLabel required>Nama Lengkap</RequiredLabel>
-                                <Input value={newUser.fullName} onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} required />
+                                <Input 
+                                    placeholder="Masukkan nama lengkap"
+                                    value={newUser.fullName} 
+                                    onChange={e => setNewUser({ ...newUser, fullName: e.target.value })} 
+                                    required 
+                                />
                             </div>
                             <div className="space-y-2">
                                 <RequiredLabel required>Email</RequiredLabel>
-                                <Input type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required />
+                                <Input 
+                                    type="email" 
+                                    placeholder="nama@example.com"
+                                    value={newUser.email} 
+                                    onChange={e => setNewUser({ ...newUser, email: e.target.value })} 
+                                    required 
+                                />
                             </div>
                             <div className="space-y-2">
                                 <RequiredLabel required>Password</RequiredLabel>
-                                <Input type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} required minLength={6} />
+                                <Input 
+                                    type="password" 
+                                    placeholder="Minimal 6 karakter"
+                                    value={newUser.password} 
+                                    onChange={e => setNewUser({ ...newUser, password: e.target.value })} 
+                                    required 
+                                    minLength={6} 
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>NIP/NIDN</Label>
-                                <Input value={newUser.identityNumber} onChange={e => setNewUser({ ...newUser, identityNumber: e.target.value })} />
+                                <Input 
+                                    placeholder="Nomor induk pegawai"
+                                    value={newUser.identityNumber} 
+                                    onChange={e => setNewUser({ ...newUser, identityNumber: e.target.value })} 
+                                />
                             </div>
                         </div>
 
@@ -653,14 +693,14 @@ export const StaffList = () => {
                                 <div className="space-y-2">
                                     <Label>Fakultas</Label>
                                     <Select value={newUser.fakultasId} onValueChange={v => setNewUser({ ...newUser, fakultasId: v, prodiId: "" })}>
-                                        <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder="Pilih Fakultas..." /></SelectTrigger>
                                         <SelectContent>{fakultasList.map(f => <SelectItem key={f.id} value={f.id}>{f.nama}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Prodi</Label>
                                     <Select value={newUser.prodiId} onValueChange={v => setNewUser({ ...newUser, prodiId: v })} disabled={!newUser.fakultasId}>
-                                        <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder="Pilih Prodi..." /></SelectTrigger>
                                         <SelectContent>{selectedFakultas?.prodi.map(p => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </div>
