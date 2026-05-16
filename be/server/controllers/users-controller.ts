@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/UserService.js';
+import { getCellValue } from '../utils/excel-utils.js';
 
 // Get all users (admin only)
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -210,10 +211,17 @@ export const importMahasiswa = async (req: Request, res: Response) => {
             if (rowNumber === 2) continue;
             if (!row || row.length === 0) continue;
 
-            const [, email, nim, namaLengkap, semester, programStudi, kelas] = row;
+            const email = getCellValue(row[2]);
+            const nim = getCellValue(row[3]);
+            const namaLengkap = getCellValue(row[4]);
+            const semester = getCellValue(row[5]);
+            const programStudi = getCellValue(row[6]);
+            const kelas = getCellValue(row[7]);
 
             if (!email || !nim || !namaLengkap) {
-                errors.push(`Baris ${rowNumber}: Email, NIM, dan Nama Lengkap harus diisi`);
+                if (email || nim || namaLengkap) {
+                    errors.push(`Baris ${rowNumber}: Email, NIM, dan Nama Lengkap harus diisi`);
+                }
                 continue;
             }
 
@@ -290,7 +298,7 @@ export const importMahasiswa = async (req: Request, res: Response) => {
 
         res.json({
             message: `Import selesai. ${successes.length} data berhasil diproses.`,
-            success: successes.length,
+            successCount: successes.length,
             errors: errors.length > 0 ? errors : undefined,
             note: 'Password default untuk mahasiswa baru: password123'
         });
@@ -298,5 +306,232 @@ export const importMahasiswa = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Import Mahasiswa error:', error);
         res.status(500).json({ error: 'Gagal import data Mahasiswa' });
+    }
+};
+
+// Generate Template Excel for Mahasiswa
+export const getTemplateMahasiswa = async (req: Request, res: Response) => {
+    try {
+        const ExcelJS = (await import('exceljs')).default;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Mahasiswa');
+
+        worksheet.columns = [
+            { header: 'No', key: 'no', width: 5 },
+            { header: 'Email', key: 'email', width: 30 },
+            { header: 'NIM', key: 'nim', width: 20 },
+            { header: 'Nama Lengkap', key: 'namaLengkap', width: 40 },
+            { header: 'Semester', key: 'semester', width: 10 },
+            { header: 'Program Studi', key: 'programStudi', width: 30 },
+            { header: 'Kelas', key: 'kelas', width: 15 }
+        ];
+
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Add dummy row for example
+        worksheet.addRow({
+            no: 1,
+            email: 'mahasiswa@example.com',
+            nim: '123456789',
+            namaLengkap: 'Budi Santoso',
+            semester: 1,
+            programStudi: 'S1 Teknik Informatika',
+            kelas: 'TI-A'
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Disposition', `attachment; filename="template_mahasiswa.xlsx"`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+    } catch (error) {
+        console.error('Get Template Mahasiswa error:', error);
+        res.status(500).json({ error: 'Gagal generate template' });
+    }
+};
+
+// Generate Template Excel for Staff
+export const getTemplateStaff = async (req: Request, res: Response) => {
+    try {
+        const ExcelJS = (await import('exceljs')).default;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Staff');
+
+        worksheet.columns = [
+            { header: 'No', key: 'no', width: 5 },
+            { header: 'Email', key: 'email', width: 30 },
+            { header: 'NIP/NIDN', key: 'nip', width: 20 },
+            { header: 'Nama Lengkap', key: 'namaLengkap', width: 40 },
+            { header: 'Role', key: 'role', width: 20 },
+            { header: 'Program Studi', key: 'programStudi', width: 30 },
+            { header: 'Fakultas', key: 'fakultas', width: 30 }
+        ];
+
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Add dummy row for example
+        worksheet.addRow({
+            no: 1,
+            email: 'dosen@example.com',
+            nip: '198001012005011001',
+            namaLengkap: 'Dr. Joko, S.T., M.T.',
+            role: 'dosen',
+            programStudi: 'S1 Teknik Informatika',
+            fakultas: 'Fakultas Teknik'
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Disposition', `attachment; filename="template_staff.xlsx"`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+    } catch (error) {
+        console.error('Get Template Staff error:', error);
+        res.status(500).json({ error: 'Gagal generate template' });
+    }
+};
+
+// Import Staff from Excel
+export const importStaff = async (req: Request, res: Response) => {
+    try {
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).json({ error: 'File Excel harus diupload' });
+        }
+
+        const ExcelJS = (await import('exceljs')).default;
+        const prisma = (await import('../lib/prisma.js')).prisma;
+        const bcrypt = (await import('bcryptjs')).default;
+
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(file.buffer as any);
+        const worksheet = workbook.getWorksheet('Staff');
+
+        if (!worksheet) {
+            return res.status(400).json({ error: 'Sheet "Staff" tidak ditemukan dalam file Excel' });
+        }
+
+        const errors: string[] = [];
+        const successes: any[] = [];
+        let rowNumber = 1;
+
+        for (const row of worksheet.getSheetValues() as any[]) {
+            rowNumber++;
+            if (rowNumber === 2) continue;
+            if (!row || row.length === 0) continue;
+
+            const email = getCellValue(row[2]);
+            const nip = getCellValue(row[3]);
+            const namaLengkap = getCellValue(row[4]);
+            const role = getCellValue(row[5]);
+            const programStudi = getCellValue(row[6]);
+            const fakultas = getCellValue(row[7]);
+
+            if (!email || !namaLengkap || !role) {
+                if (email || namaLengkap || role) {
+                    errors.push(`Baris ${rowNumber}: Email, Nama Lengkap, dan Role harus diisi`);
+                }
+                continue;
+            }
+
+            try {
+                let prodiId, fakultasId;
+
+                if (programStudi) {
+                    const prodiData = await prisma.prodi.findFirst({
+                        where: { nama: programStudi as string }
+                    });
+                    prodiId = prodiData?.id;
+                }
+
+                if (fakultas) {
+                    const fakultasData = await prisma.fakultas.findFirst({
+                        where: { nama: fakultas as string }
+                    });
+                    fakultasId = fakultasData?.id;
+                }
+
+                const existingUser = await prisma.user.findUnique({
+                    where: { email: email as string }
+                });
+
+                if (existingUser) {
+                    // Update existing
+                    await prisma.user.update({
+                        where: { id: existingUser.id },
+                        data: {
+                            profile: {
+                                update: {
+                                    nip: nip as string,
+                                    nidn: nip as string,
+                                    namaLengkap: namaLengkap as string,
+                                    prodiId,
+                                    fakultasId
+                                }
+                            }
+                        }
+                    });
+                    successes.push({ row: rowNumber, email, action: 'updated' });
+                } else {
+                    // Create new
+                    const hashedPassword = await bcrypt.hash('password123', 10);
+                    // Check if role exists
+                    const roleData = await prisma.role.findUnique({
+                        where: { name: (role as string).toLowerCase() }
+                    });
+                    if (!roleData) {
+                        errors.push(`Baris ${rowNumber}: Role ${role} tidak valid`);
+                        continue;
+                    }
+
+                    await prisma.user.create({
+                        data: {
+                            email: email as string,
+                            passwordHash: hashedPassword,
+                            role: {
+                                create: {
+                                    role: {
+                                        connect: { name: (role as string).toLowerCase() }
+                                    }
+                                }
+                            },
+                            profile: {
+                                create: {
+                                    nip: nip as string,
+                                    nidn: nip as string,
+                                    namaLengkap: namaLengkap as string,
+                                    prodiId,
+                                    fakultasId
+                                }
+                            }
+                        }
+                    });
+                    successes.push({ row: rowNumber, email, action: 'created' });
+                }
+
+            } catch (error: any) {
+                errors.push(`Baris ${rowNumber} (${email}): ${error.message || 'Gagal menyimpan data'}`);
+            }
+        }
+
+        res.json({
+            message: `Import selesai. ${successes.length} data berhasil diproses.`,
+            successCount: successes.length,
+            errors: errors.length > 0 ? errors : undefined,
+            note: 'Password default untuk staff baru: password123'
+        });
+
+    } catch (error) {
+        console.error('Import Staff error:', error);
+        res.status(500).json({ error: 'Gagal import data Staff' });
     }
 };

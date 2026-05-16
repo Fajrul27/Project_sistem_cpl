@@ -11,7 +11,8 @@ import {
   updateMataKuliah,
   deleteMataKuliah,
   exportMataKuliah,
-  importMataKuliah
+  importMataKuliah,
+  getTemplateMataKuliah
 } from '../controllers/mata-kuliah-controller.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -44,5 +45,8 @@ router.get('/export/excel', authMiddleware, exportMataKuliah);
 
 // Import Mata Kuliah from Excel
 router.post('/import/excel', authMiddleware, requireRole('admin', 'kaprodi'), upload.single('file'), importMataKuliah);
+
+// Template Mata Kuliah
+router.get('/template/excel', authMiddleware, requireRole('admin', 'kaprodi'), getTemplateMataKuliah);
 
 export default router;

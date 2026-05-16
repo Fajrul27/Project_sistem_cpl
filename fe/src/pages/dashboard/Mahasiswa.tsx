@@ -78,6 +78,28 @@ const MahasiswaPage = () => {
     }
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${API_URL}/users/template/mahasiswa`, { credentials: 'include' });
+      if (!response.ok) throw new Error('Gagal download template');
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `Template_Import_Mahasiswa.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+
+      toast.success('Template berhasil diunduh');
+    } catch (error) {
+      toast.error('Gagal download template Mahasiswa');
+    }
+  };
+
   const handleImportClick = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -106,7 +128,7 @@ const MahasiswaPage = () => {
           result.errors.slice(0, 3).forEach((err: string) => toast.error(err));
         }
 
-        window.location.reload();
+        initializeData();
       } catch (error: any) {
         toast.error(error.message || 'Gagal import data Mahasiswa');
       } finally {
@@ -327,10 +349,16 @@ const MahasiswaPage = () => {
                     Export
                   </Button>
                   {(role === 'admin' || role === 'kaprodi') && (
-                    <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      {importing ? 'Importing...' : 'Import'}
-                    </Button>
+                    <>
+                      <Button size="sm" variant="outline" onClick={handleDownloadTemplate} disabled={loading}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Template
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        {importing ? 'Importing...' : 'Import'}
+                      </Button>
+                    </>
                   )}
                 </div>
               </CardHeader>

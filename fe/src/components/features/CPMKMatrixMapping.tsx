@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/common/LoadingScreen";
 import { toast } from "sonner";
 import { Info, Save, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
+import { clearCpmkCache } from "@/hooks/useCPMK";
 import {
     Tooltip,
     TooltipContent,
@@ -27,7 +28,7 @@ interface MatrixProps {
 
 interface CellData {
     isMapped: boolean;
-    bobot: number;
+    bobot: number | string;
     mappingId: string | null;
     isDirty: boolean;
 }
@@ -202,7 +203,7 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
                     [cplId]: {
                         ...cell,
                         isMapped: !cell.isMapped,
-                        bobot: !cell.isMapped ? 0 : 0, // Reset to 0 if unchecked, or 0 if checked (user inputs manually)
+                        bobot: !cell.isMapped ? "" : 0, // Use empty string when enabling to allow fresh input
                         isDirty: true
                     }
                 }
@@ -213,9 +214,37 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
     const handleBobotChange = (cpmkId: string, cplId: string, val: string) => {
         if (readOnly) return;
 
+        // Allow empty string for better UX (deletable value)
+        if (val === "") {
+            setMatrix(prev => ({
+                ...prev,
+                [cpmkId]: {
+                    ...prev[cpmkId],
+                    [cplId]: {
+                        ...prev[cpmkId][cplId],
+                        bobot: "",
+                        isDirty: true
+                    }
+                }
+            }));
+            return;
+        }
+
         let numVal = Number(val);
+        if (isNaN(numVal)) return;
         if (numVal < 0) numVal = 0;
         if (numVal > 100) numVal = 100;
+
+        // Calculate what the new total WOULD be
+        const currentOthersTotal = Object.entries(matrix[cpmkId])
+            .filter(([cplIdKey, cell]) => cplIdKey !== cplId && cell.isMapped)
+            .reduce((sum, [_, cell]) => sum + (cell.bobot === "" ? 0 : Number(cell.bobot)), 0);
+
+        if (currentOthersTotal + numVal > 100) {
+            toast.warning(`Total bobot untuk CPMK ini melebihi 100% (saat ini: ${(currentOthersTotal + numVal).toFixed(2)}%)`, {
+                id: `warning-${cpmkId}`
+            });
+        }
 
         setMatrix(prev => ({
             ...prev,
@@ -232,6 +261,21 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
 
     const saveChanges = async () => {
         if (readOnly) return;
+
+        // Validate all totals before saving
+        const invalidCpmks: string[] = [];
+        Object.entries(rowTotals).forEach(([cpmkId, total]) => {
+            if (total > 100.01) { // Allowance for float
+                const cpmk = cpmks.find(c => c.id === cpmkId);
+                invalidCpmks.push(cpmk?.kodeCpmk || cpmkId);
+            }
+        });
+
+        if (invalidCpmks.length > 0) {
+            toast.error(`Gagal menyimpan: Total bobot pada ${invalidCpmks.join(', ')} melebihi 100%`);
+            return;
+        }
+
         setSaving(true);
         try {
             const promises: Promise<any>[] = [];
@@ -239,11 +283,12 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
                 for (const cplId of Object.keys(matrix[cpmkId])) {
                     const cell = matrix[cpmkId][cplId];
                     if (cell.isDirty) {
+                        const finalBobot = cell.bobot === "" ? 0 : Number(cell.bobot);
                         if (cell.isMapped) {
                             if (cell.mappingId) {
-                                promises.push(api.put(`/cpmk-mapping/${cell.mappingId}`, { bobotPersentase: cell.bobot }));
+                                promises.push(api.put(`/cpmk-mapping/${cell.mappingId}`, { bobotPersentase: finalBobot }));
                             } else {
-                                promises.push(api.post('/cpmk-mapping', { cpmkId, cplId, bobotPersentase: cell.bobot }));
+                                promises.push(api.post('/cpmk-mapping', { cpmkId, cplId, bobotPersentase: finalBobot }));
                             }
                         } else {
                             if (cell.mappingId) {
@@ -254,6 +299,7 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
                 }
             }
             await Promise.all(promises);
+            clearCpmkCache();
             toast.success("Perubahan berhasil disimpan");
             fetchData();
         } catch (error) {
@@ -270,7 +316,7 @@ export function CPMKMatrixMapping({ mataKuliahId, prodiId, readOnly = false, onB
         Object.keys(matrix).forEach(cpmkId => {
             totals[cpmkId] = Object.values(matrix[cpmkId])
                 .filter(cell => cell.isMapped)
-                .reduce((sum, cell) => sum + cell.bobot, 0);
+                .reduce((sum, cell) => sum + (cell.bobot === "" ? 0 : Number(cell.bobot)), 0);
         });
         return totals;
     }, [matrix]);

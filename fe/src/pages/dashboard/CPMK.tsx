@@ -59,7 +59,8 @@ const CPMKPage = () => {
         setSelectedProdi,
         setMataKuliahFilter,
         resetFilters,
-        pagination
+        pagination,
+        fetchCpmk
     } = useCPMK();
 
     const [submitting, setSubmitting] = useState(false);
@@ -67,6 +68,7 @@ const CPMKPage = () => {
     const [editingCpmk, setEditingCpmk] = useState<Cpmk | null>(null);
     const [importing, setImporting] = useState(false);
     const [comboboxOpen, setComboboxOpen] = useState(false);
+    const [filterMkComboboxOpen, setFilterMkComboboxOpen] = useState(false);
 
     const handleExport = async () => {
         try {
@@ -92,6 +94,27 @@ const CPMKPage = () => {
             toast.success('Data CPMK berhasil diexport');
         } catch (error) {
             toast.error('Gagal export data CPMK');
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch('/api/cpmk/template/excel', { credentials: 'include' });
+            if (!response.ok) throw new Error('Gagal download template');
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `Template_Import_CPMK.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+
+            toast.success('Template berhasil diunduh');
+        } catch (error) {
+            toast.error('Gagal download template CPMK');
         }
     };
 
@@ -121,8 +144,8 @@ const CPMKPage = () => {
                 if (result.errors && result.errors.length > 0) {
                     result.errors.slice(0, 3).forEach((err: string) => toast.error(err));
                 }
-
-                window.location.reload();
+                
+                fetchCpmk(true);
             } catch (error: any) {
                 toast.error(error.message || 'Gagal import data CPMK');
             } finally {
@@ -131,28 +154,17 @@ const CPMKPage = () => {
         };
         input.click();
     };
-    const [searchParams] = useSearchParams();
-    const [viewMode, setViewMode] = useState<"list" | "matrix">("list");
+    const [searchParams, setSearchParams] = useSearchParams();
+    const viewMode = (searchParams.get("view") as "list" | "matrix") || "list";
     const [cpmkIdFromUrl, setCpmkIdFromUrl] = useState<string | null>(null);
 
     // Handle URL params for direct navigation to matrix view
     useEffect(() => {
-        const viewParam = searchParams.get("view");
-        const mkIdParam = searchParams.get("mkId");
         const cpmkIdParam = searchParams.get("cpmkId");
-
-        if (viewParam === "matrix") {
-            setViewMode("matrix");
-        }
-
-        if (mkIdParam) {
-            setMataKuliahFilter(mkIdParam);
-        }
-
         if (cpmkIdParam) {
             setCpmkIdFromUrl(cpmkIdParam);
         }
-    }, [searchParams, setMataKuliahFilter]);
+    }, [searchParams]);
 
     const [formData, setFormData] = useState({
         kodeCpmk: "",
@@ -392,6 +404,12 @@ const CPMKPage = () => {
             }
         }
     }, [filters.mataKuliahFilter, viewMode, role, uniqueMataKuliahOptions, cpmkList, prodiList]);
+    // Force refresh list when switching back from matrix mode to ensure counts are updated
+    useEffect(() => {
+        if (viewMode === 'list') {
+            fetchCpmk(true);
+        }
+    }, [viewMode, fetchCpmk]);
 
     return (
         <DashboardPage
@@ -414,7 +432,16 @@ const CPMKPage = () => {
 
                 {/* View Mode Switcher */}
                 <div className="flex items-center space-x-4 border-b pb-4">
-                    <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "list" | "matrix")} className="w-[400px]">
+                    <Tabs 
+                        value={viewMode} 
+                        onValueChange={(v) => {
+                            const params = new URLSearchParams(searchParams);
+                            if (v === 'matrix') params.set('view', 'matrix');
+                            else params.delete('view');
+                            setSearchParams(params, { replace: true });
+                        }} 
+                        className="w-[400px]"
+                    >
                         <TabsList>
                             <TabsTrigger value="list" className="flex items-center gap-2">
                                 <ListIcon className="w-4 h-4" /> Daftar CPMK
@@ -503,42 +530,84 @@ const CPMKPage = () => {
 
                                     <div className="space-y-1">
                                         <Label className="text-xs font-medium">Mata Kuliah</Label>
-                                        <Select
-                                            value={filters.mataKuliahFilter !== 'all' ? filters.mataKuliahFilter : undefined}
-                                            onValueChange={setMataKuliahFilter}
-                                        >
-                                            <SelectTrigger className="w-full bg-background">
-                                                <SelectValue
-                                                    placeholder={(() => {
-                                                        if (filters.mataKuliahFilter !== 'all') {
+                                        <Popover open={filterMkComboboxOpen} onOpenChange={setFilterMkComboboxOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    aria-expanded={filterMkComboboxOpen}
+                                                    className="w-full justify-between bg-background font-normal"
+                                                >
+                                                    {filters.mataKuliahFilter !== 'all'
+                                                        ? (() => {
                                                             const selectedMk = uniqueMataKuliahOptions.find((mk: any) =>
                                                                 (mk.mataKuliah?.id || mk.id) === filters.mataKuliahFilter
                                                             );
                                                             if (selectedMk) {
                                                                 const nama = selectedMk.mataKuliah?.namaMk || selectedMk.namaMk;
                                                                 const semester = selectedMk.mataKuliah?.semester || selectedMk.semester;
-                                                                return `${nama} ${semester ? `(Semester ${semester})` : ''}`;
+                                                                return `${nama} ${semester ? `(Smtr ${semester})` : ''}`;
                                                             }
-                                                        }
-                                                        return "Semua Mata Kuliah";
-                                                    })()}
-                                                />
-                                            </SelectTrigger>
-                                            <SelectContent className="max-h-[300px]">
-                                                <SelectItem value="all">Semua Mata Kuliah</SelectItem>
-                                                {uniqueMataKuliahOptions.map((mk: any) => {
-                                                    const id = mk.mataKuliah?.id || mk.id;
-                                                    const nama = mk.mataKuliah?.namaMk || mk.namaMk;
-                                                    const semester = mk.mataKuliah?.semester || mk.semester;
+                                                            return "Pilih Mata Kuliah...";
+                                                        })()
+                                                        : "Semua Mata Kuliah"}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                                <Command filter={(value, search) => {
+                                                    if (value.toLowerCase().includes(search.toLowerCase())) return 1
+                                                    return 0
+                                                }}>
+                                                    <CommandInput placeholder="Cari mata kuliah..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>Mata kuliah tidak ditemukan.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            <CommandItem
+                                                                value="all"
+                                                                onSelect={() => {
+                                                                    setMataKuliahFilter("all")
+                                                                    setFilterMkComboboxOpen(false)
+                                                                }}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        filters.mataKuliahFilter === "all" ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                Semua Mata Kuliah
+                                                            </CommandItem>
+                                                            {uniqueMataKuliahOptions.map((mk: any) => {
+                                                                const id = mk.mataKuliah?.id || mk.id;
+                                                                const nama = mk.mataKuliah?.namaMk || mk.namaMk;
+                                                                const semester = mk.mataKuliah?.semester || mk.semester;
+                                                                const kode = mk.mataKuliah?.kodeMk || mk.kodeMk;
 
-                                                    return (
-                                                        <SelectItem key={id} value={id}>
-                                                            {nama} {semester ? `(Semester ${semester})` : ''}
-                                                        </SelectItem>
-                                                    );
-                                                })}
-                                            </SelectContent>
-                                        </Select>
+                                                                return (
+                                                                    <CommandItem
+                                                                        key={id}
+                                                                        value={`${kode} ${nama} ${semester ? `Semester ${semester}` : ''}`}
+                                                                        onSelect={() => {
+                                                                            setMataKuliahFilter(id)
+                                                                            setFilterMkComboboxOpen(false)
+                                                                        }}
+                                                                    >
+                                                                        <Check
+                                                                            className={cn(
+                                                                                "mr-2 h-4 w-4",
+                                                                                filters.mataKuliahFilter === id ? "opacity-100" : "opacity-0"
+                                                                            )}
+                                                                        />
+                                                                        {nama} {semester ? `(Smtr ${semester})` : ''}
+                                                                    </CommandItem>
+                                                                );
+                                                            })}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                 </PopoverContent>
                             </Popover>
@@ -570,10 +639,16 @@ const CPMKPage = () => {
                                         Export
                                     </Button>
                                     {canEdit && (
-                                        <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
-                                            <Upload className="h-4 w-4 mr-2" />
-                                            {importing ? 'Importing...' : 'Import'}
-                                        </Button>
+                                        <>
+                                            <Button size="sm" variant="outline" onClick={handleDownloadTemplate} disabled={importing}>
+                                                <Download className="h-4 w-4 mr-2" />
+                                                Template
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
+                                                <Upload className="h-4 w-4 mr-2" />
+                                                {importing ? 'Importing...' : 'Import'}
+                                            </Button>
+                                        </>
                                     )}
                                     {canEdit && (
                                         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -630,7 +705,10 @@ const CPMKPage = () => {
                                                                 </Button>
                                                             </PopoverTrigger>
                                                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                                <Command>
+                                                                <Command filter={(value, search) => {
+                                                                    if (value.toLowerCase().includes(search.toLowerCase())) return 1
+                                                                    return 0
+                                                                }}>
                                                                     <CommandInput placeholder="Cari mata kuliah..." />
                                                                     <CommandList>
                                                                         <CommandEmpty>Mata kuliah tidak ditemukan.</CommandEmpty>
@@ -922,41 +1000,84 @@ const CPMKPage = () => {
 
                                     <div className="space-y-1">
                                         <Label className="text-xs font-medium">Mata Kuliah</Label>
-                                        <Select
-                                            value={filters.mataKuliahFilter !== 'all' ? filters.mataKuliahFilter : undefined}
-                                            onValueChange={setMataKuliahFilter}
-                                        >
-                                            <SelectTrigger className="w-full bg-background">
-                                                <SelectValue
-                                                    placeholder={(() => {
-                                                        if (filters.mataKuliahFilter !== 'all') {
+                                        <Popover open={filterMkComboboxOpen} onOpenChange={setFilterMkComboboxOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    aria-expanded={filterMkComboboxOpen}
+                                                    className="w-full justify-between bg-background font-normal"
+                                                >
+                                                    {filters.mataKuliahFilter !== 'all'
+                                                        ? (() => {
                                                             const selectedMk = uniqueMataKuliahOptions.find((mk: any) =>
                                                                 (mk.mataKuliah?.id || mk.id) === filters.mataKuliahFilter
                                                             );
                                                             if (selectedMk) {
                                                                 const nama = selectedMk.mataKuliah?.namaMk || selectedMk.namaMk;
                                                                 const semester = selectedMk.mataKuliah?.semester || selectedMk.semester;
-                                                                return `${nama} ${semester ? `(Semester ${semester})` : ''}`;
+                                                                return `${nama} ${semester ? `(Smtr ${semester})` : ''}`;
                                                             }
-                                                        }
-                                                        return "Semua Mata Kuliah";
-                                                    })()}
-                                                />
-                                            </SelectTrigger>
-                                            <SelectContent className="max-h-[300px]">
-                                                <SelectItem value="all">Semua Mata Kuliah</SelectItem>
-                                                {uniqueMataKuliahOptions.map((mk: any) => {
-                                                    const id = mk.mataKuliah?.id || mk.id;
-                                                    const nama = mk.mataKuliah?.namaMk || mk.namaMk;
-                                                    const semester = mk.mataKuliah?.semester || mk.semester;
-                                                    return (
-                                                        <SelectItem key={id} value={id}>
-                                                            {nama} {semester ? `(Semester ${semester})` : ''}
-                                                        </SelectItem>
-                                                    );
-                                                })}
-                                            </SelectContent>
-                                        </Select>
+                                                            return "Pilih Mata Kuliah...";
+                                                        })()
+                                                        : "Semua Mata Kuliah"}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                                <Command filter={(value, search) => {
+                                                    if (value.toLowerCase().includes(search.toLowerCase())) return 1
+                                                    return 0
+                                                }}>
+                                                    <CommandInput placeholder="Cari mata kuliah..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>Mata kuliah tidak ditemukan.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            <CommandItem
+                                                                value="all"
+                                                                onSelect={() => {
+                                                                    setMataKuliahFilter("all")
+                                                                    setFilterMkComboboxOpen(false)
+                                                                }}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        filters.mataKuliahFilter === "all" ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                Semua Mata Kuliah
+                                                            </CommandItem>
+                                                            {uniqueMataKuliahOptions.map((mk: any) => {
+                                                                const id = mk.mataKuliah?.id || mk.id;
+                                                                const nama = mk.mataKuliah?.namaMk || mk.namaMk;
+                                                                const semester = mk.mataKuliah?.semester || mk.semester;
+                                                                const kode = mk.mataKuliah?.kodeMk || mk.kodeMk;
+
+                                                                return (
+                                                                    <CommandItem
+                                                                        key={id}
+                                                                        value={`${kode} ${nama} ${semester ? `Semester ${semester}` : ''}`}
+                                                                        onSelect={() => {
+                                                                            setMataKuliahFilter(id)
+                                                                            setFilterMkComboboxOpen(false)
+                                                                        }}
+                                                                    >
+                                                                        <Check
+                                                                            className={cn(
+                                                                                "mr-2 h-4 w-4",
+                                                                                filters.mataKuliahFilter === id ? "opacity-100" : "opacity-0"
+                                                                            )}
+                                                                        />
+                                                                        {nama} {semester ? `(Smtr ${semester})` : ''}
+                                                                    </CommandItem>
+                                                                );
+                                                            })}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                 </PopoverContent>
                             </Popover>

@@ -49,8 +49,8 @@ export const academicSchemas = {
         deskripsi: z.string().min(1),
         mataKuliahId: commonSchema.uuid,
         isActive: z.boolean().optional(),
-        levelTaksonomi: z.string().optional(),
-        levelTaksonomiId: commonSchema.uuid.optional(),
+        levelTaksonomi: z.string().nullable().optional(),
+        levelTaksonomiId: commonSchema.uuid.nullable().optional(),
         cplIds: z.array(z.string()).optional() // For mappings
     }),
 

@@ -21,13 +21,16 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Trash2, CheckCircle, XCircle, Search, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle, XCircle, Search, Loader2, Download, Upload } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { RequiredLabel } from "@/components/common/RequiredLabel";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePermission } from "@/contexts/PermissionContext";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { ImportResultDialog } from "@/components/common/ImportResultDialog";
+import { toast } from "sonner";
+
 import {
     AlertDialog,
     AlertDialogAction,
@@ -60,6 +63,95 @@ export default function TahunAjaranPage({ isTabContent = false }: { isTabContent
         nama: "",
         isActive: false
     });
+
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<any>(null);
+
+    const handleExport = async () => {
+        try {
+            const response = await fetch('/api/tahun-ajaran/export/excel', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal export data');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `data_tahun_ajaran_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success('Data berhasil diexport');
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error('Gagal export data');
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch('/api/tahun-ajaran/template/excel', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal download template');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template_tahun_ajaran.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success('Template berhasil diunduh');
+        } catch (error) {
+            console.error('Template error:', error);
+            toast.error('Gagal download template');
+        }
+    };
+
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.xls';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            setImporting(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/tahun-ajaran/import/excel', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+                setImportResult(result);
+                toast.success('Import selesai');
+                loadParams();
+            } catch (error: any) {
+                console.error('Import error:', error);
+                toast.error(error.message || 'Gagal import data');
+            } finally {
+                setImporting(false);
+            }
+        };
+        input.click();
+    };
+
 
     const handleOpenAdd = () => {
         setFormData({ nama: "", isActive: false });
@@ -115,13 +207,27 @@ export default function TahunAjaranPage({ isTabContent = false }: { isTabContent
                         <CardTitle>Daftar Tahun Ajaran</CardTitle>
                         <CardDescription>Total {filteredList.length} periode terdaftar</CardDescription>
                     </div>
-                    {canManage && (
-                        <Button onClick={handleOpenAdd} size="sm">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Tambah Tahun
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={handleExport}>
+                            <Download className="w-4 h-4 mr-2" /> Export
                         </Button>
-                    )}
+                        {canManage && (
+                            <>
+                                <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                                    <Download className="w-4 h-4 mr-2" /> Template
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={handleImportClick} disabled={importing}>
+                                    <Upload className="w-4 h-4 mr-2" /> {importing ? 'Importing...' : 'Import'}
+                                </Button>
+                                <Button onClick={handleOpenAdd} size="sm">
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Tambah Tahun
+                                </Button>
+                            </>
+                        )}
+                    </div>
                 </CardHeader>
+
                 <CardContent>
                     <div className="flex items-center pb-4">
                         <div className="relative flex-1 max-w-sm">
@@ -278,7 +384,16 @@ export default function TahunAjaranPage({ isTabContent = false }: { isTabContent
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <ImportResultDialog
+                open={!!importResult}
+                onOpenChange={(open) => !open && setImportResult(null)}
+                result={importResult}
+                title="Hasil Import Tahun Ajaran"
+                description="Proses import data tahun ajaran telah selesai."
+            />
         </div>
+
     );
 
     if (isTabContent) {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllKrs, importKrs, deleteKrs, createKrs } from '@/controllers/krs-controller.js';
+import { getAllKrs, importKrs, deleteKrs, createKrs, exportKrs } from '@/controllers/krs-controller.js';
 import { authMiddleware, requireRole } from '@/middleware/auth.js';
 import multer from 'multer';
 
@@ -11,6 +11,7 @@ router.use(authMiddleware);
 
 // Only admin and kaprodi can manage KRS
 router.get('/', requireRole('admin', 'kaprodi'), getAllKrs);
+router.get('/export', requireRole('admin', 'kaprodi'), exportKrs);
 router.post('/', requireRole('admin', 'kaprodi'), createKrs);
 router.post('/import', requireRole('admin', 'kaprodi'), upload.single('file'), importKrs);
 router.delete('/:id', requireRole('admin', 'kaprodi'), deleteKrs);

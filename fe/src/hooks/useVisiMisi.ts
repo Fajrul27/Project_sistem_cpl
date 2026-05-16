@@ -152,6 +152,11 @@ export function useVisiMisi() {
 
     const handleSave = async () => {
         try {
+            if (!formData.teks || formData.teks.trim() === "") {
+                toast.error("Teks tidak boleh kosong");
+                return;
+            }
+
             const payload = {
                 ...formData,
                 prodiId: role === "kaprodi" ? profile?.prodiId : (formData.prodiId || selectedProdi)
@@ -159,6 +164,11 @@ export function useVisiMisi() {
 
             if (!payload.prodiId) {
                 toast.error("Prodi harus dipilih");
+                return;
+            }
+
+            if (!payload.teks || payload.teks.trim().length === 0) {
+                toast.error("Teks tidak boleh kosong");
                 return;
             }
 
@@ -243,6 +253,7 @@ export function useVisiMisi() {
         handleSave,
         handleDelete,
         openEdit,
-        openAdd
+        openAdd,
+        fetchVisiMisi
     };
 }

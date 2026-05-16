@@ -9,7 +9,10 @@ import {
   updateUser,
   deleteUser,
   exportMahasiswa,
-  importMahasiswa
+  importMahasiswa,
+  getTemplateMahasiswa,
+  getTemplateStaff,
+  importStaff
 } from '../controllers/users-controller.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -47,5 +50,14 @@ router.get('/export/mahasiswa', authMiddleware, requirePermission('view', 'mahas
 
 // Import Mahasiswa from Excel
 router.post('/import/mahasiswa', authMiddleware, requirePermission('edit', 'mahasiswa'), upload.single('file'), importMahasiswa);
+
+// Template Mahasiswa
+router.get('/template/mahasiswa', authMiddleware, requirePermission('edit', 'mahasiswa'), getTemplateMahasiswa);
+
+// Template Staff
+router.get('/template/staff', authMiddleware, requirePermission('edit', 'users'), getTemplateStaff);
+
+// Import Staff from Excel
+router.post('/import/staff', authMiddleware, requirePermission('edit', 'users'), upload.single('file'), importStaff);
 
 export default router;

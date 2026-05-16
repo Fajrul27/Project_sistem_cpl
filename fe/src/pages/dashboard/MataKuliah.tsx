@@ -70,6 +70,28 @@ const MataKuliahPage = () => {
   const [loadingMappings, setLoadingMappings] = useState(false);
   const [importResult, setImportResult] = useState<{ successCount: number; errors?: string[] } | null>(null);
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${API_URL}/mata-kuliah/template/excel`, { credentials: 'include' });
+      if (!response.ok) throw new Error('Gagal download template');
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `Template_Import_Mata_Kuliah.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+
+      toast.success('Template berhasil diunduh');
+    } catch (error) {
+      toast.error('Gagal download template Mata Kuliah');
+    }
+  };
+
   // Helper validation for filter completeness
   const isFilterComplete = (() => {
     const normalizedRole = role?.toLowerCase();
@@ -467,7 +489,9 @@ const MataKuliahPage = () => {
                       <SelectContent>
                         <SelectItem value="all">Semua Semester</SelectItem>
                         {semesterList.map((s: any) => (
-                          <SelectItem key={s.id || s} value={s.id?.toString() || s.toString()}>{s.nama || `Semester ${s}`}</SelectItem>
+                          <SelectItem key={s.id || s} value={(s.angka?.toString() || s.id?.toString() || s.toString())}>
+                            {s.nama || `Semester ${s}`}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -546,16 +570,27 @@ const MataKuliahPage = () => {
                         Export
                       </Button>
                     )}
-                    {can('edit', 'mata_kuliah') && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleImportClick}
-                        disabled={importing}
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        {importing ? 'Importing...' : 'Import'}
-                      </Button>
+                    {can('create', 'mata_kuliah') && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleDownloadTemplate}
+                          disabled={importing}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Template
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleImportClick}
+                          disabled={importing}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          {importing ? 'Importing...' : 'Import'}
+                        </Button>
+                      </>
                     )}
                     {can('create', 'mata_kuliah') && (
                       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

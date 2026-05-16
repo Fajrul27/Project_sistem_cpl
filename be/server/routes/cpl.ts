@@ -13,7 +13,8 @@ import {
   updateCpl,
   deleteCpl,
   exportCpl,
-  importCpl
+  importCpl,
+  getTemplateCpl
 } from '../controllers/cpl-controller.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -43,5 +44,6 @@ router.get('/export/excel', authMiddleware, exportCpl);
 
 // Import CPL from Excel
 router.post('/import/excel', authMiddleware, requireRole('admin', 'kaprodi'), upload.single('file'), importCpl);
+router.get('/template/excel', authMiddleware, requireRole('admin', 'kaprodi'), getTemplateCpl);
 
 export default router;

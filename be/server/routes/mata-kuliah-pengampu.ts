@@ -7,8 +7,15 @@ import {
     assignDosenToMataKuliah,
     removeDosenFromMataKuliah,
     getPesertaByMataKuliah,
-    getAllAssignments
+    getAllAssignments,
+    exportPengampu,
+    importPengampu,
+    getTemplatePengampu
 } from '../controllers/mata-kuliah-pengampu-controller.js';
+import multer from 'multer';
+
+const upload = multer({ storage: multer.memoryStorage() });
+
 
 const router = Router();
 
@@ -29,5 +36,11 @@ router.delete('/:id', authMiddleware, requireRole('admin', 'kaprodi'), removeDos
 
 // Get daftar peserta (mahasiswa) untuk mata kuliah yang diampu dosen
 router.get('/peserta/:mataKuliahId', authMiddleware, requireRole('dosen'), getPesertaByMataKuliah);
+
+// Export/Import routes
+router.get('/export/excel', authMiddleware, requireRole('admin', 'kaprodi'), exportPengampu);
+router.get('/template/excel', authMiddleware, requireRole('admin', 'kaprodi'), getTemplatePengampu);
+router.post('/import/excel', authMiddleware, requireRole('admin', 'kaprodi'), upload.single('file'), importPengampu);
+
 
 export default router;

@@ -23,8 +23,8 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    // Allow any localhost origin
-    if (origin.startsWith('http://localhost:')) {
+    // Allow any localhost or 127.0.0.1 origin
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
       return callback(null, true);
     }
 
@@ -94,10 +94,34 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Start server
-app.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Database: MySQL + Prisma`);
-});
+const startServer = async () => {
+  try {
+    const server = app.listen(Number(PORT), '0.0.0.0', () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔗 Database: MySQL + Prisma`);
+      console.log(`🌐 Host: 0.0.0.0 (IPv4 Only)`);
+    });
+
+    // Handle graceful shutdown
+    const shutdown = () => {
+      console.log('Signal received: closing HTTP server');
+      server.close(async () => {
+        console.log('HTTP server closed');
+        await prisma.$disconnect();
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 export default app;

@@ -278,7 +278,7 @@ export async function recalculateCpmkBulk(cpmkId: string) {
 
         // 2. Find all students who have grades for this CPMK's teknik penilaian
         // We need distinct students, semester, and tahunAjaran
-        const teknikIds = cpmk.teknikPenilaian.map(t => t.id);
+        const teknikIds = cpmk.teknikPenilaian.map((t: any) => t.id);
 
         const grades = await prisma.nilaiTeknikPenilaian.findMany({
             where: {
@@ -299,7 +299,7 @@ export async function recalculateCpmkBulk(cpmkId: string) {
         const BATCH_SIZE = 10;
         for (let i = 0; i < grades.length; i += BATCH_SIZE) {
             const batch = grades.slice(i, i + BATCH_SIZE);
-            await Promise.all(batch.map(g =>
+            await Promise.all(batch.map((g: any) =>
                 g.tahunAjaranId ? calculateNilaiCpmk(g.mahasiswaId, cpmkId, g.mataKuliahId, g.semester, g.tahunAjaranId) : Promise.resolve()
             ));
         }

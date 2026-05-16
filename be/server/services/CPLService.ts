@@ -64,8 +64,8 @@ export class CPLService {
                 ...(where.AND || []),
                 {
                     OR: [
-                        { kategori: kategori },
-                        { kategoriRef: { nama: kategori } }
+                        { kategori: { contains: kategori } },
+                        { kategoriRef: { nama: { contains: kategori } } }
                     ]
                 }
             ];

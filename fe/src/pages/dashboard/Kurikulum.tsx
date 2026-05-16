@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Search, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, AlertCircle, Download, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { ImportResultDialog } from "@/components/common/ImportResultDialog";
+
 
 import {
     Card,
@@ -70,6 +72,95 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedKurikulum, setSelectedKurikulum] = useState<Kurikulum | null>(null);
+
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<any>(null);
+
+    const handleExport = async () => {
+        try {
+            const response = await fetch('/api/kurikulum/export/excel', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal export data');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `data_kurikulum_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success('Data berhasil diexport');
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error('Gagal export data');
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch('/api/kurikulum/template/excel', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal download template');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template_kurikulum.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success('Template berhasil diunduh');
+        } catch (error) {
+            console.error('Template error:', error);
+            toast.error('Gagal download template');
+        }
+    };
+
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.xls';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            setImporting(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/kurikulum/import/excel', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+                setImportResult(result);
+                toast.success('Import selesai');
+                fetchData();
+            } catch (error: any) {
+                console.error('Import error:', error);
+                toast.error(error.message || 'Gagal import data');
+            } finally {
+                setImporting(false);
+            }
+        };
+        input.click();
+    };
+
 
     const {
         register: registerAdd,
@@ -220,82 +311,98 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
                             Total {filteredList.length} kurikulum terdaftar
                         </CardDescription>
                     </div>
-                    {can('create', 'kurikulum') && (
-                        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Tambah Kurikulum
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={handleExport}>
+                            <Download className="w-4 h-4 mr-2" /> Export
+                        </Button>
+                        {canManage && (
+                            <>
+                                <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                                    <Download className="w-4 h-4 mr-2" /> Template
                                 </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Tambah Kurikulum Baru</DialogTitle>
-                                    <DialogDescription>
-                                        Masukkan detail kurikulum baru di bawah ini.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <form onSubmit={handleSubmitAdd(onAddSubmit)} className="space-y-4">
-                                    <div className="space-y-2">
-                                        <RequiredLabel htmlFor="nama" required>Nama Kurikulum</RequiredLabel>
-                                        <Input
-                                            id="nama"
-                                            placeholder="Contoh: Kurikulum 2024"
-                                            {...registerAdd("nama", { required: "Nama kurikulum wajib diisi" })}
-                                        />
-                                        {errorsAdd.nama && (
-                                            <p className="text-sm text-destructive">{errorsAdd.nama.message}</p>
-                                        )}
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                                <Button variant="outline" size="sm" onClick={handleImportClick} disabled={importing}>
+                                    <Upload className="w-4 h-4 mr-2" /> {importing ? 'Importing...' : 'Import'}
+                                </Button>
+                            </>
+                        )}
+                        {can('create', 'kurikulum') && (
+                            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button size="sm">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Tambah Kurikulum
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Tambah Kurikulum Baru</DialogTitle>
+                                        <DialogDescription>
+                                            Masukkan detail kurikulum baru di bawah ini.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <form onSubmit={handleSubmitAdd(onAddSubmit)} className="space-y-4">
                                         <div className="space-y-2">
-                                            <RequiredLabel htmlFor="tahunMulai" required>Tahun Mulai</RequiredLabel>
+                                            <RequiredLabel htmlFor="nama" required>Nama Kurikulum</RequiredLabel>
                                             <Input
-                                                id="tahunMulai"
-                                                type="number"
-                                                placeholder="2024"
-                                                {...registerAdd("tahunMulai", {
-                                                    required: "Tahun mulai wajib diisi",
-                                                    min: { value: 2000, message: "Tahun tidak valid" }
-                                                })}
+                                                id="nama"
+                                                placeholder="Contoh: Kurikulum 2024"
+                                                {...registerAdd("nama", { required: "Nama kurikulum wajib diisi" })}
                                             />
-                                            {errorsAdd.tahunMulai && (
-                                                <p className="text-sm text-destructive">{errorsAdd.tahunMulai.message}</p>
+                                            {errorsAdd.nama && (
+                                                <p className="text-sm text-destructive">{errorsAdd.nama.message}</p>
                                             )}
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="tahunSelesai">Tahun Selesai (Opsional)</Label>
-                                            <Input
-                                                id="tahunSelesai"
-                                                type="number"
-                                                placeholder="2028"
-                                                {...registerAdd("tahunSelesai")}
-                                            />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <RequiredLabel htmlFor="tahunMulai" required>Tahun Mulai</RequiredLabel>
+                                                <Input
+                                                    id="tahunMulai"
+                                                    type="number"
+                                                    placeholder="2024"
+                                                    {...registerAdd("tahunMulai", {
+                                                        required: "Tahun mulai wajib diisi",
+                                                        min: { value: 2000, message: "Tahun tidak valid" }
+                                                    })}
+                                                />
+                                                {errorsAdd.tahunMulai && (
+                                                    <p className="text-sm text-destructive">{errorsAdd.tahunMulai.message}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="tahunSelesai">Tahun Selesai (Opsional)</Label>
+                                                <Input
+                                                    id="tahunSelesai"
+                                                    type="number"
+                                                    placeholder="2028"
+                                                    {...registerAdd("tahunSelesai")}
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Switch
-                                            id="add-isActive"
-                                            checked={addIsActive}
-                                            onCheckedChange={(checked) => setValueAdd('isActive', checked)}
-                                        />
-                                        <Label htmlFor="add-isActive">
-                                            {addIsActive ? "Active" : "Inactive"}
-                                        </Label>
-                                    </div>
-                                    <DialogFooter>
-                                        <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                                            Batal
-                                        </Button>
-                                        <Button type="submit" disabled={isSubmittingAdd}>
-                                            {isSubmittingAdd ? "Menyimpan..." : "Simpan"}
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-                    )}
+                                        <div className="flex items-center space-x-2">
+                                            <Switch
+                                                id="add-isActive"
+                                                checked={addIsActive}
+                                                onCheckedChange={(checked) => setValueAdd('isActive', checked)}
+                                            />
+                                            <Label htmlFor="add-isActive">
+                                                {addIsActive ? "Active" : "Inactive"}
+                                            </Label>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                                                Batal
+                                            </Button>
+                                            <Button type="submit" disabled={isSubmittingAdd}>
+                                                {isSubmittingAdd ? "Menyimpan..." : "Simpan"}
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                    </div>
                 </CardHeader>
+
                 <CardContent>
                     <div className="flex items-center justify-between py-4">
                         <div className="relative w-full md:w-72">
@@ -483,6 +590,15 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <ImportResultDialog
+                open={!!importResult}
+                onOpenChange={(open) => !open && setImportResult(null)}
+                result={importResult}
+                title="Hasil Import Kurikulum"
+                description="Proses import data kurikulum telah selesai."
+            />
         </div>
+
     );
 }

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { MataKuliahService } from '../services/MataKuliahService.js';
 import ExcelJS from 'exceljs';
 import { prisma } from '../lib/prisma.js';
+import { getCellValue } from '../utils/excel-utils.js';
 
 // Get all Mata Kuliah (filtered by access)
 // Get all Mata Kuliah (filtered by access)
@@ -245,20 +246,26 @@ export const importMataKuliah = async (req: Request, res: Response) => {
 
         const errors: string[] = [];
         const successes: any[] = [];
-        let rowNumber = 1; // Start from header
+        const sheetValues = worksheet.getSheetValues() as any[];
 
         // Process each row (skip header)
-        for (const row of worksheet.getSheetValues() as any[]) {
-            rowNumber++;
-            if (rowNumber === 2) continue; // Skip header row
-
+        for (let i = 2; i < sheetValues.length; i++) {
+            const row = sheetValues[i];
             if (!row || row.length === 0) continue; // Skip empty rows
 
-            const [, kodeMk, namaMk, sks, semester, jenisMk, programStudi, kurikulum] = row;
+            const kodeMk = getCellValue(row[2]);
+            const namaMk = getCellValue(row[3]);
+            const sks = getCellValue(row[4]);
+            const semester = getCellValue(row[5]);
+            const jenisMk = getCellValue(row[6]);
+            const programStudi = getCellValue(row[7]);
+            const kurikulum = getCellValue(row[8]);
 
             // Validate required fields
             if (!kodeMk || !namaMk) {
-                errors.push(`Baris ${rowNumber}: Kode MK dan Nama MK harus diisi`);
+                if (kodeMk || namaMk) {
+                    errors.push(`Baris ${i}: Kode MK dan Nama MK harus diisi`);
+                }
                 continue;
             }
 
@@ -268,35 +275,74 @@ export const importMataKuliah = async (req: Request, res: Response) => {
 
                 if (jenisMk) {
                     const jenisMkData = await prisma.jenisMataKuliah.findFirst({
-                        where: { nama: jenisMk as string }
+                        where: { nama: jenisMk }
                     });
                     jenisMkId = jenisMkData?.id;
                 }
 
                 if (programStudi) {
+                    const trimmedProdi = programStudi.trim();
                     const prodiData = await prisma.prodi.findFirst({
-                        where: { nama: programStudi as string }
+                        where: {
+                            OR: [
+                                { nama: { equals: trimmedProdi } },
+                                { kode: { equals: trimmedProdi } },
+                                // Match combined "Jenjang Nama" e.g. "S1 Informatika"
+                                { 
+                                    AND: [
+                                        { jenjang: { equals: trimmedProdi.split(' ')[0] } },
+                                        { nama: { contains: trimmedProdi.split(' ').slice(1).join(' ') } }
+                                    ]
+                                }
+                            ]
+                        }
                     });
                     prodiId = prodiData?.id;
+
+                    if (!prodiId) {
+                        // Advanced fallback: check all prodis manually for "Jenjang Nama"
+                        const allProdis = await prisma.prodi.findMany();
+                        const match = allProdis.find(p => {
+                            const full = `${p.jenjang} ${p.nama}`.toLowerCase();
+                            return full === trimmedProdi.toLowerCase() || p.nama.toLowerCase() === trimmedProdi.toLowerCase();
+                        });
+                        prodiId = match?.id;
+                    }
                 }
 
                 if (kurikulum) {
                     const kurikulumData = await prisma.kurikulum.findFirst({
-                        where: { nama: kurikulum as string }
+                        where: { nama: { equals: kurikulum.trim() } }
                     });
                     kurikulumId = kurikulumData?.id;
+                    if (!kurikulumId) {
+                        // Fallback case-insensitive
+                        const allKurikulum = await prisma.kurikulum.findMany();
+                        const match = allKurikulum.find(k => k.nama.toLowerCase() === kurikulum.toLowerCase().trim());
+                        kurikulumId = match?.id;
+                    }
+                }
+
+                // 4. Find Semester Reference
+                let semesterId;
+                if (semester) {
+                    const semesterData = await prisma.semester.findFirst({
+                        where: { angka: Number(semester) }
+                    });
+                    semesterId = semesterData?.id;
                 }
 
                 // Check if mata kuliah exists
                 const existingMK = await prisma.mataKuliah.findFirst({
-                    where: { kodeMk: kodeMk as string }
+                    where: { kodeMk: kodeMk }
                 });
 
                 const mkData = {
-                    kodeMk: kodeMk as string,
-                    namaMk: namaMk as string,
+                    kodeMk: kodeMk,
+                    namaMk: namaMk,
                     sks: sks ? Number(sks) : undefined,
                     semester: semester ? Number(semester) : undefined,
+                    semesterId: semesterId || null,
                     jenisMataKuliahId: jenisMkId,
                     prodiId,
                     kurikulumId
@@ -305,21 +351,21 @@ export const importMataKuliah = async (req: Request, res: Response) => {
                 if (existingMK) {
                     // Update existing
                     await MataKuliahService.updateMataKuliah(existingMK.id, mkData, userId, userRole);
-                    successes.push({ row: rowNumber, kodeMk, action: 'updated' });
+                    successes.push({ row: i, kodeMk, action: 'updated' });
                 } else {
                     // Create new
                     await MataKuliahService.createMataKuliah(mkData, userId, userRole);
-                    successes.push({ row: rowNumber, kodeMk, action: 'created' });
+                    successes.push({ row: i, kodeMk, action: 'created' });
                 }
 
             } catch (error: any) {
-                errors.push(`Baris ${rowNumber} (${kodeMk}): ${error.message || 'Gagal menyimpan data'}`);
+                errors.push(`Baris ${i} (${kodeMk}): ${error.message || 'Gagal menyimpan data'}`);
             }
         }
 
         res.json({
             message: `Import selesai. ${successes.length} data berhasil diproses.`,
-            success: successes.length,
+            successCount: successes.length,
             errors: errors.length > 0 ? errors : undefined
         });
 
@@ -328,3 +374,50 @@ export const importMataKuliah = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Gagal import data Mata Kuliah' });
     }
 };
+
+// Generate Template Excel for Mata Kuliah
+export const getTemplateMataKuliah = async (req: Request, res: Response) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Mata Kuliah');
+
+        worksheet.columns = [
+            { header: 'No', key: 'no', width: 5 },
+            { header: 'Kode MK', key: 'kodeMk', width: 15 },
+            { header: 'Nama MK', key: 'namaMk', width: 40 },
+            { header: 'SKS', key: 'sks', width: 10 },
+            { header: 'Semester', key: 'semester', width: 10 },
+            { header: 'Jenis MK', key: 'jenisMk', width: 25 },
+            { header: 'Program Studi', key: 'programStudi', width: 30 },
+            { header: 'Kurikulum', key: 'kurikulum', width: 30 }
+        ];
+
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Add dummy row for example
+        worksheet.addRow({
+            no: 1,
+            kodeMk: 'IF-101',
+            namaMk: 'Algoritma dan Pemrograman',
+            sks: 3,
+            semester: 1,
+            jenisMk: 'Mata Kuliah Wajib',
+            programStudi: 'S1 Teknik Informatika',
+            kurikulum: 'Kurikulum 2024'
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Disposition', `attachment; filename="template_mata_kuliah.xlsx"`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+    } catch (error) {
+        console.error('Get Template Mata Kuliah error:', error);
+        res.status(500).json({ error: 'Gagal generate template' });
+    }
+};
+

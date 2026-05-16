@@ -142,6 +142,27 @@ export const StaffList = () => {
         }
     };
 
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch('/api/users/template/staff', { credentials: 'include' });
+            if (!response.ok) throw new Error('Gagal download template');
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `Template_Import_Staff.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+
+            toast.success('Template berhasil diunduh');
+        } catch (error) {
+            toast.error('Gagal download template Staff');
+        }
+    };
+
     const handleImportClick = () => {
         const input = document.createElement('input');
         input.type = 'file';
@@ -432,6 +453,10 @@ export const StaffList = () => {
                         <Button size="sm" variant="outline" onClick={handleExport} disabled={loading} className="h-9">
                             <Download className="h-4 w-4 mr-2" />
                             Export
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={handleDownloadTemplate} disabled={loading} className="h-9">
+                            <Download className="h-4 w-4 mr-2" />
+                            Template
                         </Button>
                         <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing} className="h-9">
                             <Upload className="h-4 w-4 mr-2" />

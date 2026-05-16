@@ -81,6 +81,22 @@ const CPMKDetailPage = () => {
     // Handlers
     const handleSubmitMapping = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Validation: Total weight max 100
+        const newBobot = parseFloat(mappingForm.bobotPersentase) || 0;
+        const currentTotal = cplMappings.reduce((sum, item) => {
+            if (editingMapping && item.id === editingMapping.id) return sum;
+            return sum + Number(item.bobotPersentase);
+        }, 0);
+
+        if (currentTotal + newBobot > 100.01) {
+            const displayTotal = editingMapping 
+                ? (currentTotal + Number(editingMapping.bobotPersentase)) 
+                : currentTotal;
+            toast.error(`Total bobot CPL akan melebihi 100% (saat ini: ${displayTotal.toFixed(2)}%)`);
+            return;
+        }
+
         const success = await saveMapping(mappingForm, editingMapping?.id);
         if (success) {
             setMappingDialogOpen(false);
@@ -187,7 +203,7 @@ const CPMKDetailPage = () => {
             title={`Detail CPMK: ${cpmk.kodeCpmk}`}
             description={`${cpmk.mataKuliah.kodeMk} - ${cpmk.mataKuliah.namaMk}`}
         >
-            <FloatingBackButton path="/dashboard/cpmk">
+            <FloatingBackButton>
                 {/* Main Content */}
                 <div className="space-y-6 min-w-0">
 
@@ -337,13 +353,15 @@ const CPMKDetailPage = () => {
                                 <>
                                     <Dialog open={teknikDialogOpen} onOpenChange={setTeknikDialogOpen}>
                                         <DialogTrigger asChild>
-                                            <Button size="sm" onClick={() => {
-                                                setTeknikForm({ namaTeknik: "", bobotPersentase: "", deskripsi: "", teknikRefId: "" });
-                                                setEditingTeknik(null);
-                                            }}>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Tambah Teknik
-                                            </Button>
+                                            {totalBobotTeknik < 99.99 && (
+                                                <Button size="sm" onClick={() => {
+                                                    setTeknikForm({ namaTeknik: "", bobotPersentase: "", deskripsi: "", teknikRefId: "" });
+                                                    setEditingTeknik(null);
+                                                }}>
+                                                    <Plus className="h-4 w-4 mr-2" />
+                                                    Tambah Teknik
+                                                </Button>
+                                            )}
                                         </DialogTrigger>
                                         <DialogContent>
                                             <DialogHeader>
@@ -392,6 +410,7 @@ const CPMKDetailPage = () => {
                                                         max="100"
                                                         value={teknikForm.bobotPersentase}
                                                         onChange={(e) => setTeknikForm({ ...teknikForm, bobotPersentase: e.target.value })}
+                                                        onFocus={(e) => e.target.select()}
                                                         required
                                                         className={
                                                             (editingTeknik
@@ -564,20 +583,26 @@ const CPMKDetailPage = () => {
                                                             ) : (
                                                                 <span className="text-muted-foreground text-xs italic">Belum ada mapping</span>
                                                             )}
-                                                            {canEdit && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-6 text-xs justify-start px-0 text-blue-600"
-                                                                    onClick={() => {
-                                                                        setCurrentSubCpmkForMapping(sub);
-                                                                        setSubCpmkMappingForm({ teknikPenilaianId: "", bobot: "" });
-                                                                        setIsSubCpmkMappingDialogOpen(true);
-                                                                    }}
-                                                                >
-                                                                    <Plus className="w-3 h-3 mr-1" /> Tambah Mapping
-                                                                </Button>
-                                                            )}
+                                                            {canEdit && (() => {
+                                                                const currentTotal = (sub.asesmenMappings || []).reduce((sum: number, m: any) => sum + Number(m.bobot), 0);
+                                                                const limit = Number(sub.bobot || 0);
+                                                                if (currentTotal >= limit - 0.001) return null;
+
+                                                                return (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-6 text-xs justify-start px-0 text-blue-600"
+                                                                        onClick={() => {
+                                                                            setCurrentSubCpmkForMapping(sub);
+                                                                            setSubCpmkMappingForm({ teknikPenilaianId: "", bobot: "" });
+                                                                            setIsSubCpmkMappingDialogOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        <Plus className="w-3 h-3 mr-1" /> Tambah Mapping
+                                                                    </Button>
+                                                                );
+                                                            })()}
                                                         </div>
                                                     </TableCell>
                                                     {canEdit && (
@@ -644,6 +669,7 @@ const CPMKDetailPage = () => {
                                         step="0.01"
                                         value={mappingForm.bobotPersentase}
                                         onChange={(e) => setMappingForm({ ...mappingForm, bobotPersentase: e.target.value })}
+                                        onFocus={(e) => e.target.select()}
                                         required
                                     />
                                 </div>
@@ -690,6 +716,7 @@ const CPMKDetailPage = () => {
                                         max="100"
                                         value={subCpmkForm.bobot}
                                         onChange={(e) => setSubCpmkForm({ ...subCpmkForm, bobot: e.target.value })}
+                                        onFocus={(e) => e.target.select()}
                                         required
                                     />
                                 </div>
@@ -806,6 +833,7 @@ const CPMKDetailPage = () => {
                                                 type="number"
                                                 value={subCpmkMappingForm.bobot}
                                                 onChange={(e) => setSubCpmkMappingForm({ ...subCpmkMappingForm, bobot: e.target.value })}
+                                                onFocus={(e) => e.target.select()}
                                                 className={!isValid && subCpmkMappingForm.teknikPenilaianId ? "border-red-500 focus-visible:ring-red-500" : ""}
                                                 placeholder={!subCpmkMappingForm.teknikPenilaianId ? "Pilih teknik terlebih dahulu" : "Masukkan bobot"}
                                                 disabled={!subCpmkMappingForm.teknikPenilaianId}

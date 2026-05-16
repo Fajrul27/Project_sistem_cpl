@@ -116,6 +116,27 @@ const CPLPage = () => {
     }
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await fetch('/api/cpl/template/excel', { credentials: 'include' });
+      if (!response.ok) throw new Error('Gagal download template');
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `Template_Import_CPL.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+
+      toast.success('Template berhasil diunduh');
+    } catch (error) {
+      toast.error('Gagal download template CPL');
+    }
+  };
+
   const handleImportClick = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -937,10 +958,16 @@ const CPLPage = () => {
                     Export
                   </Button>
                   {canEdit && (
-                    <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      {importing ? 'Importing...' : 'Import'}
-                    </Button>
+                    <>
+                      <Button size="sm" variant="outline" onClick={handleDownloadTemplate} disabled={importing}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Template
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        {importing ? 'Importing...' : 'Import'}
+                      </Button>
+                    </>
                   )}
                   {canEdit && (
                     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

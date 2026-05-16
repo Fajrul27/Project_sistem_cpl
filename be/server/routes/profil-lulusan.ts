@@ -1,13 +1,17 @@
-
 import { Router } from 'express';
 import { authMiddleware as requireAuth, requireRole } from '../middleware/auth.js';
+import multer from 'multer';
 import {
     getProfilLulusan,
     createProfilLulusan,
     updateProfilLulusan,
-    deleteProfilLulusan
+    deleteProfilLulusan,
+    exportProfilLulusan,
+    importProfilLulusan,
+    downloadTemplateProfilLulusan
 } from '../controllers/profil-lulusan-controller.js';
 
+const upload = multer({ storage: multer.memoryStorage() });
 const router = Router();
 
 // GET /api/profil-lulusan?prodiId=...
@@ -21,5 +25,10 @@ router.put('/:id', requireAuth, requireRole('admin', 'kaprodi'), updateProfilLul
 
 // DELETE /api/profil-lulusan/:id
 router.delete('/:id', requireAuth, requireRole('admin', 'kaprodi'), deleteProfilLulusan);
+
+// Export & Import
+router.get('/export/excel', requireAuth, exportProfilLulusan);
+router.post('/import/excel', requireAuth, requireRole('admin', 'kaprodi'), upload.single('file'), importProfilLulusan);
+router.get('/template/excel', requireAuth, requireRole('admin', 'kaprodi'), downloadTemplateProfilLulusan);
 
 export default router;

@@ -20,12 +20,9 @@ export class MataKuliahService {
         const where: any = { isActive: true };
 
         if (semester) {
-            const semInt = parseInt(semester);
-            // If it parses to a number and doesn't look like a UUID (length check is a simple heuristic, or just !isNaN)
-            // UUIDs usually don't start with a number, but some might. simpler is !isNaN check.
-            // However 'ac54...' parses to NaN.
-            if (!isNaN(semInt)) {
-                where.semester = semInt;
+            // Check if semester is a pure number (1-14)
+            if (/^\d+$/.test(semester)) {
+                where.semester = parseInt(semester);
             } else {
                 where.semesterId = semester;
             }

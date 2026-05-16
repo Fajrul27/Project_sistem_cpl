@@ -19,6 +19,9 @@ import {
 } from '@/lib/api';
 import { CollapsibleGuide } from '@/components/common/CollapsibleGuide';
 import { usePermission } from '@/contexts/PermissionContext';
+import { Download, Upload } from 'lucide-react';
+import { ImportResultDialog } from '@/components/common/ImportResultDialog';
+
 
 
 export default function FakultasPage() {
@@ -50,6 +53,97 @@ export default function FakultasPage() {
     const [isJenjangDialogOpen, setIsJenjangDialogOpen] = useState(false);
     const [editingJenjang, setEditingJenjang] = useState<any>(null);
     const [jenjangForm, setJenjangForm] = useState({ nama: '', keterangan: '' });
+
+    // Import State
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<any>(null);
+
+    // Generic Export Handler
+    const handleExport = async (type: 'fakultas' | 'prodi' | 'jenjang') => {
+        try {
+            const endpoint = `/api/${type}/export/excel`;
+            const response = await fetch(endpoint, { credentials: 'include' });
+            if (!response.ok) throw new Error('Gagal export data');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `data_${type}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success(`Data ${type} berhasil diexport`);
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error('Gagal export data');
+        }
+    };
+
+    // Generic Template Handler
+    const handleDownloadTemplate = async (type: 'fakultas' | 'prodi' | 'jenjang') => {
+        try {
+            const endpoint = `/api/${type}/template/excel`;
+            const response = await fetch(endpoint, { credentials: 'include' });
+            if (!response.ok) throw new Error('Gagal download template');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template_${type}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success('Template berhasil diunduh');
+        } catch (error) {
+            console.error('Template error:', error);
+            toast.error('Gagal download template');
+        }
+    };
+
+    // Generic Import Handler
+    const handleImportClick = (type: 'fakultas' | 'prodi' | 'jenjang') => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.xls';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            setImporting(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(`/api/${type}/import/excel`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+                setImportResult(result);
+                toast.success('Import selesai');
+                
+                // Refresh data
+                if (type === 'fakultas') loadFakultas();
+                if (type === 'prodi') loadProdi();
+                if (type === 'jenjang') loadJenjang();
+            } catch (error: any) {
+                console.error('Import error:', error);
+                toast.error(error.message || 'Gagal import data');
+            } finally {
+                setImporting(false);
+            }
+        };
+        input.click();
+    };
+
 
     // Load Data
     useEffect(() => {
@@ -295,11 +389,23 @@ export default function FakultasPage() {
                                     <CardTitle>Data Fakultas</CardTitle>
                                     <CardDescription>Daftar fakultas yang terdaftar dalam sistem</CardDescription>
                                 </div>
-                                <Button onClick={openCreateFakultas}>
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Tambah Fakultas
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleExport('fakultas')}>
+                                        <Download className="w-4 h-4 mr-2" /> Export
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleDownloadTemplate('fakultas')}>
+                                        <Download className="w-4 h-4 mr-2" /> Template
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleImportClick('fakultas')} disabled={importing}>
+                                        <Upload className="w-4 h-4 mr-2" /> Import
+                                    </Button>
+                                    <Button onClick={openCreateFakultas} size="sm">
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Tambah Fakultas
+                                    </Button>
+                                </div>
                             </CardHeader>
+
                             <CardContent>
                                 <div className="mb-4">
                                     <div className="relative">
@@ -389,11 +495,23 @@ export default function FakultasPage() {
                                     <CardTitle>Data Program Studi</CardTitle>
                                     <CardDescription>Daftar program studi yang terdaftar</CardDescription>
                                 </div>
-                                <Button onClick={openCreateProdi}>
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Tambah Prodi
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleExport('prodi')}>
+                                        <Download className="w-4 h-4 mr-2" /> Export
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleDownloadTemplate('prodi')}>
+                                        <Download className="w-4 h-4 mr-2" /> Template
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleImportClick('prodi')} disabled={importing}>
+                                        <Upload className="w-4 h-4 mr-2" /> Import
+                                    </Button>
+                                    <Button onClick={openCreateProdi} size="sm">
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Tambah Prodi
+                                    </Button>
+                                </div>
                             </CardHeader>
+
                             <CardContent>
                                 <div className="mb-4">
                                     <div className="relative">
@@ -485,11 +603,23 @@ export default function FakultasPage() {
                                     <CardTitle>Data Jenjang Pendidikan</CardTitle>
                                     <CardDescription>Daftar jenjang (Strata) yang tersedia</CardDescription>
                                 </div>
-                                <Button onClick={openCreateJenjang}>
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Tambah Jenjang
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleExport('jenjang')}>
+                                        <Download className="w-4 h-4 mr-2" /> Export
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleDownloadTemplate('jenjang')}>
+                                        <Download className="w-4 h-4 mr-2" /> Template
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleImportClick('jenjang')} disabled={importing}>
+                                        <Upload className="w-4 h-4 mr-2" /> Import
+                                    </Button>
+                                    <Button onClick={openCreateJenjang} size="sm">
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Tambah Jenjang
+                                    </Button>
+                                </div>
                             </CardHeader>
+
                             <CardContent>
                                 <div className="mb-4">
                                     <div className="relative">
@@ -724,6 +854,15 @@ export default function FakultasPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ImportResultDialog
+                open={!!importResult}
+                onOpenChange={(open) => !open && setImportResult(null)}
+                result={importResult}
+                title="Hasil Import Master Data"
+                description="Proses import data fakultas, prodi, atau jenjang telah selesai."
+            />
         </DashboardPage>
+
     );
 }

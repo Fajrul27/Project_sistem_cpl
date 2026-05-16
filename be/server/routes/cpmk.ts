@@ -10,7 +10,8 @@ import {
     updateCpmk,
     deleteCpmk,
     exportCpmk,
-    importCpmk
+    importCpmk,
+    getTemplateCpmk
 } from '../controllers/cpmk-controller.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -39,6 +40,16 @@ router.delete('/:id', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), 
 router.get('/export/excel', authMiddleware, exportCpmk);
 
 // Import CPMK from Excel
-router.post('/import/excel', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), upload.single('file'), importCpmk);
+router.post('/import/excel', 
+    authMiddleware, 
+    requireRole('admin', 'dosen', 'kaprodi'), 
+    upload.single('file'), 
+    (req, res, next) => {
+        console.log('Route /api/cpmk/import/excel reached');
+        next();
+    },
+    importCpmk
+);
+router.get('/template/excel', authMiddleware, requireRole('admin', 'dosen', 'kaprodi'), getTemplateCpmk);
 
 export default router;

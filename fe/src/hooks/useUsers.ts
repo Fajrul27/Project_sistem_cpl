@@ -196,7 +196,9 @@ export function useUsers() {
         try {
             await updateUser(userId, {
                 email: payload.email,
-                fullName: payload.fullName,
+                profile: {
+                    namaLengkap: payload.fullName
+                },
                 role: payload.role,
             });
 

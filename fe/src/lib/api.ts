@@ -223,7 +223,23 @@ export async function createUserWithRole(
 }
 
 // Helper: update user basic info (admin only)
-export async function updateUser(userId: string, payload: { email?: string; fullName?: string; role?: string }) {
+export async function updateUser(userId: string, payload: { 
+  email?: string; 
+  role?: string;
+  isActive?: boolean;
+  profile?: {
+    namaLengkap?: string;
+    nim?: string;
+    nip?: string;
+    nidn?: string;
+    programStudi?: string;
+    semester?: number;
+    fakultasId?: string;
+    prodiId?: string;
+    kelasId?: string;
+    angkatanId?: string;
+  }
+}) {
   return apiRequest(`/users/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),

@@ -8,8 +8,8 @@ export const gradingSchemas = {
         namaTeknik: z.string().min(1),
         bobotPersentase: z.coerce.number().min(0).max(100),
         cpmkId: commonSchema.uuid,
-        teknikRefId: commonSchema.uuid.optional(),
-        deskripsi: z.string().optional()
+        teknikRefId: commonSchema.uuid.nullable().optional(),
+        deskripsi: z.string().nullable().optional()
     }),
 
     // Rubrik

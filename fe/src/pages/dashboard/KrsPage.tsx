@@ -159,7 +159,40 @@ const KrsPage = () => {
         }
     };
 
+    const handleExport = async () => {
+        try {
+            const queryParams = new URLSearchParams();
+            if (filters.prodiId) queryParams.append('prodiId', filters.prodiId);
+            if (filters.semesterId) queryParams.append('semesterId', filters.semesterId);
+            if (filters.tahunAjaranId) queryParams.append('tahunAjaranId', filters.tahunAjaranId);
+            if (filters.kelasId) queryParams.append('kelasId', filters.kelasId);
+            if (filters.q) queryParams.append('q', filters.q);
+
+            const response = await fetch(`/api/krs/export?${queryParams.toString()}`, {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal export data KRS');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `data_krs_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success('Data KRS berhasil diexport');
+        } catch (error) {
+            console.error('Export KRS error:', error);
+            toast.error('Gagal export data KRS');
+        }
+    };
+
     const handleDownloadTemplate = async () => {
+
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Template KRS");
 
@@ -357,10 +390,15 @@ const KrsPage = () => {
                     </div>
 
                     <div className="flex gap-2 w-full md:w-auto">
+                        <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 md:flex-none">
+                            <Download className="h-4 w-4 mr-2" />
+                            Export
+                        </Button>
                         <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="flex-1 md:flex-none">
                             <Download className="h-4 w-4 mr-2" />
                             Template
                         </Button>
+
                         <Button size="sm" onClick={handleOpenAdd} variant="outline" className="flex-1 md:flex-none">
                             Tambah Manual
                         </Button>

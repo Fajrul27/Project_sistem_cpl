@@ -19,6 +19,11 @@ import { useVisiMisi } from "@/hooks/useVisiMisi";
 import { usePermission } from "@/contexts/PermissionContext";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { FilterRequiredState } from "@/components/common/FilterRequiredState";
+import { ImportResultDialog } from "@/components/common/ImportResultDialog";
+import { Download, Upload } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+
 
 export default function VisiMisiPage() {
     const {
@@ -41,9 +46,105 @@ export default function VisiMisiPage() {
         handleSave,
         handleDelete,
         openEdit,
-        openAdd
+        openAdd,
+        fetchVisiMisi
     } = useVisiMisi();
-    const { can } = usePermission(); // Add this line
+    const { can } = usePermission(); 
+
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<any>(null);
+
+    const handleExport = async () => {
+        try {
+            const queryParams = new URLSearchParams();
+            if (selectedProdi) queryParams.append('prodiId', selectedProdi);
+
+            const response = await fetch(`/api/visi-misi/export/excel?${queryParams.toString()}`, {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal export data');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `visi_misi_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success('Data berhasil diexport');
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error('Gagal export data');
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch('/api/visi-misi/template/excel', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal download template');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template_visi_misi.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success('Template berhasil diunduh');
+        } catch (error) {
+            console.error('Template error:', error);
+            toast.error('Gagal download template');
+        }
+    };
+
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.xls';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            setImporting(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                if (selectedProdi) formData.append('prodiId', selectedProdi);
+
+                const response = await fetch('/api/visi-misi/import/excel', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+                setImportResult(result);
+                toast.success('Import selesai');
+                if (selectedProdi) {
+                    fetchVisiMisi(selectedProdi, true);
+                }
+            } catch (error: any) {
+                console.error('Import error:', error);
+                toast.error(error.message || 'Gagal import data');
+            } finally {
+                setImporting(false);
+            }
+        };
+        input.click();
+    };
+
 
     return (
         <DashboardPage
@@ -106,9 +207,25 @@ export default function VisiMisiPage() {
                                     </Select>
                                 </div>
                             </div>
+                            <div className="flex gap-2 mt-4 pt-4 border-t">
+                                <Button variant="outline" size="sm" onClick={handleExport}>
+                                    <Download className="w-4 h-4 mr-2" /> Export
+                                </Button>
+                                {can('create', 'visi_misi') && (
+                                    <>
+                                        <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                                            <Download className="w-4 h-4 mr-2" /> Template
+                                        </Button>
+                                        <Button variant="outline" size="sm" onClick={handleImportClick} disabled={importing}>
+                                            <Upload className="w-4 h-4 mr-2" /> {importing ? 'Importing...' : 'Import'}
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
                         </CardContent>
                     </Card>
                 )}
+
 
                 {/* VISI SECTION */}
                 {!selectedProdi && role === "admin" ? (
@@ -246,7 +363,16 @@ export default function VisiMisiPage() {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+
+                <ImportResultDialog
+                    open={!!importResult}
+                    onOpenChange={(open) => !open && setImportResult(null)}
+                    result={importResult}
+                    title="Hasil Import Visi & Misi"
+                    description="Proses import data visi, misi, dan tujuan telah selesai."
+                />
             </div>
         </DashboardPage>
+
     );
 }

@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, UserPlus } from "lucide-react";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { useDosenPengampu } from "@/hooks/useDosenPengampu";
@@ -14,6 +13,9 @@ import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { usePermission } from "@/contexts/PermissionContext";
 import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import { Pagination } from "@/components/common/Pagination";
+import { ImportResultDialog } from "@/components/common/ImportResultDialog";
+import { Download, Upload, Trash2, UserPlus } from "lucide-react";
+import { toast } from "sonner";
 
 const DosenPengampuPage = () => {
     const { can } = usePermission();
@@ -41,14 +43,109 @@ const DosenPengampuPage = () => {
         handleAddPengampu,
         handleDeletePengampu,
         allPengampuList, // Added from hook
-        pagination // Added pagination
+        pagination, // Added pagination
+        refresh
     } = useDosenPengampu();
 
     // Delete Dialog State
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [idToDelete, setIdToDelete] = useState<string | null>(null);
 
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<any>(null);
+
+    const handleExport = async () => {
+        try {
+            const queryParams = new URLSearchParams();
+            if (selectedFakultas && selectedFakultas !== 'all') queryParams.append('fakultasId', selectedFakultas);
+            if (selectedProdi && selectedProdi !== 'all') queryParams.append('prodiId', selectedProdi);
+            if (selectedSemester && selectedSemester !== 'all') queryParams.append('semester', selectedSemester);
+
+            const response = await fetch(`/api/mata-kuliah-pengampu/export/excel?${queryParams.toString()}`, {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal export data');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dosen_pengampu_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success('Data berhasil diexport');
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error('Gagal export data');
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch('/api/mata-kuliah-pengampu/template/excel', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal download template');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template_dosen_pengampu.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success('Template berhasil diunduh');
+        } catch (error) {
+            console.error('Template error:', error);
+            toast.error('Gagal download template');
+        }
+    };
+
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.xls';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            setImporting(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/mata-kuliah-pengampu/import/excel', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+                setImportResult(result);
+                toast.success('Import selesai');
+                refresh();
+            } catch (error: any) {
+                console.error('Import error:', error);
+                toast.error(error.message || 'Gagal import data');
+            } finally {
+                setImporting(false);
+            }
+        };
+        input.click();
+    };
+
     const initiateDelete = (id: string) => {
+
         setIdToDelete(id);
         setDeleteDialogOpen(true);
     };
@@ -201,7 +298,23 @@ const DosenPengampuPage = () => {
                                         ? `Dosen pengampu untuk ${mataKuliahList.find(m => m.id === selectedMk)?.namaMk}`
                                         : "Pilih mata kuliah terlebih dahulu"}
                                 </CardDescription>
+                                <div className="flex gap-2 mt-2 md:mt-0">
+                                    <Button size="sm" variant="outline" onClick={handleExport}>
+                                        <Download className="w-4 h-4 mr-2" /> Export
+                                    </Button>
+                                    {canManage && (
+                                        <>
+                                            <Button size="sm" variant="outline" onClick={handleDownloadTemplate}>
+                                                <Download className="w-4 h-4 mr-2" /> Template
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={handleImportClick} disabled={importing}>
+                                                <Upload className="w-4 h-4 mr-2" /> {importing ? 'Importing...' : 'Import'}
+                                            </Button>
+                                        </>
+                                    )}
+                                </div>
                             </CardHeader>
+
                             <CardContent>
                                 {!selectedMk ? (
                                     <FilterRequiredState
@@ -311,7 +424,16 @@ const DosenPengampuPage = () => {
                     title="Hapus Pengampu"
                     description="Apakah Anda yakin ingin menghapus dosen pengampu ini dari mata kuliah?"
                 />
+
+                <ImportResultDialog
+                    open={!!importResult}
+                    onOpenChange={(open) => !open && setImportResult(null)}
+                    result={importResult}
+                    title="Hasil Import Dosen Pengampu"
+                    description="Proses import data dosen pengampu telah selesai."
+                />
             </div >
+
         </DashboardPage >
     );
 };

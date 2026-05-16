@@ -260,6 +260,11 @@ export function useDosenPengampu() {
         // Actions
         handleAddPengampu,
         handleDeletePengampu,
+        refresh: () => {
+            fetchMataKuliah();
+            fetchAllAssignments();
+            if (selectedMk) fetchPengampu(selectedMk);
+        },
         pagination: {
             page,
             setPage,

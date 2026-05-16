@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api, fetchFakultasList, fetchProdiList, fetchMataKuliahPengampu } from "@/lib/api";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
@@ -31,37 +32,78 @@ export interface Cpmk {
 // Module-level cache
 const cpmkCache: Record<string, { data: any[], meta: any }> = {};
 
+export const clearCpmkCache = () => {
+    Object.keys(cpmkCache).forEach(k => delete cpmkCache[k]);
+};
+
 export function useCPMK() {
     const { role, userId, profile, loading: roleLoading } = useUserRole();
-    const [page, setPage] = useState(1);
+    const [searchParams, setSearchParams] = useSearchParams();
+    
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const limit = 10;
-
+    
     const [cpmkList, setCpmkList] = useState<Cpmk[]>([]);
     const [mataKuliahList, setMataKuliahList] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [fakultasList, setFakultasList] = useState<any[]>([]);
     const [prodiList, setProdiList] = useState<any[]>([]);
 
-    // Filter Stats
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedFakultas, setSelectedFakultas] = useState<string>("all");
-    const [selectedProdi, setSelectedProdi] = useState<string>("all");
-    const [mataKuliahFilter, setMataKuliahFilter] = useState<string>("all");
+    // Filter Stats (Derived from URL, fallback to LocalStorage)
+    const searchTerm = searchParams.get("q") ?? localStorage.getItem("cpmk_filter_q") ?? "";
+    const selectedFakultas = searchParams.get("fakultasId") ?? localStorage.getItem("cpmk_filter_fakultasId") ?? "all";
+    const selectedProdi = searchParams.get("prodiId") ?? localStorage.getItem("cpmk_filter_prodiId") ?? "all";
+    const mataKuliahFilter = searchParams.get("mkId") ?? localStorage.getItem("cpmk_filter_mkId") ?? "all";
 
-    // Role-based filter initialization
+    // Helper to update search params and localStorage
+    const updateParams = useCallback((newParams: Record<string, string | number | undefined>) => {
+        setSearchParams(prev => {
+            const params = new URLSearchParams(prev);
+            Object.entries(newParams).forEach(([key, value]) => {
+                const storageKey = `cpmk_filter_${key === 'q' ? 'q' : key}`;
+                if (value === undefined || value === 'all' || value === '') {
+                    params.delete(key);
+                    localStorage.removeItem(storageKey);
+                } else {
+                    params.set(key, value.toString());
+                    localStorage.setItem(storageKey, value.toString());
+                }
+            });
+            return params;
+        }, { replace: true });
+    }, [setSearchParams]);
+
+    const page = Number(searchParams.get("page")) || 1;
+    const setPage = (val: number) => updateParams({ page: val === 1 ? undefined : val });
+
+    // Setters that update URL
+    const handleSetSearchTerm = (val: string) => updateParams({ q: val, page: undefined });
+    const handleSetSelectedFakultas = (val: string) => updateParams({ fakultasId: val, prodiId: undefined, mkId: undefined, page: undefined });
+    const handleSetSelectedProdi = (val: string) => updateParams({ prodiId: val, mkId: undefined, page: undefined });
+    const handleSetMataKuliahFilter = (val: string) => updateParams({ mkId: val, page: undefined });
+    
+    const resetFilters = () => {
+        setSearchParams({}, { replace: true });
+        localStorage.removeItem("cpmk_filter_q");
+        localStorage.removeItem("cpmk_filter_fakultasId");
+        localStorage.removeItem("cpmk_filter_prodiId");
+        localStorage.removeItem("cpmk_filter_mkId");
+    };
+
+    // Role-based filter initialization (Only if not already in URL)
     useEffect(() => {
         if (!roleLoading && role !== "admin") {
-            if (profile?.prodiId) {
-                setSelectedProdi(profile.prodiId);
+            if (profile?.prodiId && selectedProdi === 'all') {
+                const updates: any = { prodiId: profile.prodiId };
                 const fId = profile.fakultasId || (profile.prodi as any)?.fakultasId;
-                if (fId) {
-                    setSelectedFakultas(fId);
+                if (fId && selectedFakultas === 'all') {
+                    updates.fakultasId = fId;
                 }
+                updateParams(updates);
             }
         }
-    }, [roleLoading, role, profile]);
+    }, [roleLoading, role, profile, selectedProdi, selectedFakultas, updateParams]);
 
     const fetchInitialData = useCallback(async () => {
         try {
@@ -98,7 +140,7 @@ export function useCPMK() {
         if (role === 'dosen') return;
 
         try {
-            const params: any = {};
+            const params: any = { limit: -1 };
             if (prodiId && prodiId !== 'all') params.prodiId = prodiId;
 
             const result = await api.get('/mata-kuliah', { params });
@@ -208,31 +250,12 @@ export function useCPMK() {
         fetchCpmk();
     }, [fetchCpmk]);
 
-    // Reset page wrappers
-    const handleSetSearchTerm = (val: string) => { setSearchTerm(val); setPage(1); };
-
-    const handleSetSelectedFakultas = (val: string) => {
-        setSelectedFakultas(val);
-        setSelectedProdi("all");
-        setMataKuliahFilter("all");
-        setPage(1);
-    };
-
-    const handleSetSelectedProdi = (val: string) => {
-        setSelectedProdi(val);
-        setMataKuliahFilter("all");
-        setPage(1);
-    };
-
-    const handleSetMataKuliahFilter = (val: string) => { setMataKuliahFilter(val); setPage(1); };
-
-    const resetFilters = () => {
-        setSearchTerm("");
-        setSelectedFakultas("all");
-        setSelectedProdi("all");
-        setMataKuliahFilter("all");
-        setPage(1);
-    };
+    // These are now handled by updateParams logic above
+    // const handleSetSearchTerm = ...
+    // const handleSetSelectedFakultas = ...
+    // const handleSetSelectedProdi = ...
+    // const handleSetMataKuliahFilter = ...
+    // const resetFilters = ...
 
     const createCpmk = async (payload: any) => {
         try {

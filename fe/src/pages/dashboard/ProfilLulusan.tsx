@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePermission } from "@/contexts/PermissionContext";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit, Save, Briefcase, Search, SlidersHorizontal, Eye } from "lucide-react";
+import { Plus, Trash2, Edit, Save, Briefcase, Search, SlidersHorizontal, Eye, Download, Upload } from "lucide-react";
+import { ImportResultDialog } from "@/components/common/ImportResultDialog";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -63,8 +64,105 @@ export default function ProfilLulusanPage() {
         pagination,
         searchTerm,
         setSearchTerm,
-        accessibleProdis
+        accessibleProdis,
+        fetchProfilLulusan
     } = useProfilLulusan();
+
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<{ successCount: number; errors?: string[] } | null>(null);
+
+    const handleExport = async () => {
+        try {
+            const queryParams = new URLSearchParams();
+            if (selectedProdi) queryParams.append('prodiId', selectedProdi);
+
+            const url = `/api/profil-lulusan/export/excel?${queryParams.toString()}`;
+
+            const response = await fetch(url, { credentials: 'include' });
+            if (!response.ok) throw new Error('Gagal export data');
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+            a.download = `profil_lulusan_${timestamp}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+
+            toast.success('Data Profil Lulusan berhasil diexport');
+        } catch (error) {
+            toast.error('Gagal export data Profil Lulusan');
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch('/api/profil-lulusan/template/excel', { credentials: 'include' });
+            if (!response.ok) throw new Error('Gagal download template');
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `Template_Import_ProfilLulusan.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+
+            toast.success('Template berhasil diunduh');
+        } catch (error) {
+            toast.error('Gagal download template Profil Lulusan');
+        }
+    };
+
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.xls';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            setImporting(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                if (selectedProdi) formData.append('prodiId', selectedProdi);
+
+                const response = await fetch(`/api/profil-lulusan/import/excel`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                setImportResult({
+                    successCount: result.success || 0,
+                    errors: result.errors
+                });
+
+                if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+                if (result.errors && result.errors.length > 0) {
+                    toast.warning(`Import selesai: ${result.success || 0} berhasil, ${result.errors.length} gagal.`);
+                } else {
+                    toast.success(result.message || 'Data berhasil diimport');
+                }
+
+                fetchProfilLulusan(selectedProdi, true);
+            } catch (error: any) {
+                toast.error(error.message || 'Gagal import data Profil Lulusan');
+            } finally {
+                setImporting(false);
+            }
+        };
+        input.click();
+    };
 
     // Restore state from navigation
     useEffect(() => {
@@ -359,15 +457,46 @@ export default function ProfilLulusanPage() {
                                 Menampilkan {profilList.length} dari {pagination.totalItems} Profil Lulusan
                             </CardDescription>
                         </div>
-                        {can('create', 'profil_lulusan') && (
-                            <Button onClick={() => {
-                                setEditingItem(null);
-                                setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi, kurikulumId: "", targetKetercapaian: "" });
-                                setIsDialogOpen(true);
-                            }}>
-                                <Plus className="w-4 h-4 mr-2" /> Tambah Profil
-                            </Button>
-                        )}
+                        <div className="flex items-center gap-2">
+                            {canManage && (
+                                <div className="flex items-center gap-2 mr-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleDownloadTemplate}
+                                        title="Download Template Import"
+                                    >
+                                        <Download className="w-4 h-4 mr-2" /> Template
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleExport}
+                                        title="Export ke Excel"
+                                    >
+                                        <Download className="w-4 h-4 mr-2" /> Export
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleImportClick}
+                                        disabled={importing}
+                                        title="Import dari Excel"
+                                    >
+                                        <Upload className="w-4 h-4 mr-2" /> {importing ? "Importing..." : "Import"}
+                                    </Button>
+                                </div>
+                            )}
+                            {can('create', 'profil_lulusan') && (
+                                <Button onClick={() => {
+                                    setEditingItem(null);
+                                    setFormData({ kode: "", nama: "", deskripsi: "", fakultasId: selectedFakultas, prodiId: selectedProdi, kurikulumId: "", targetKetercapaian: "" });
+                                    setIsDialogOpen(true);
+                                }}>
+                                    <Plus className="w-4 h-4 mr-2" /> Tambah Profil
+                                </Button>
+                            )}
+                        </div>
                     </CardHeader>
                     <CardContent>
                         {loading && profilList.length === 0 ? (
@@ -724,6 +853,12 @@ export default function ProfilLulusanPage() {
                     </DialogContent>
                 </Dialog>
             </div>
+            <ImportResultDialog
+                open={!!importResult}
+                onOpenChange={(open) => !open && setImportResult(null)}
+                result={importResult}
+                title="Hasil Import Profil Lulusan"
+            />
             <DeleteConfirmationDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}

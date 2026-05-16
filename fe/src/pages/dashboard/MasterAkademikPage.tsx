@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { DashboardPage } from '@/components/layout/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookCheck, BookOpen, Calendar, Users } from 'lucide-react';
 import { usePermission } from "@/contexts/PermissionContext";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
+import { LoadingScreen } from "@/components/common/LoadingScreen";
 
-import TahunAjaranPage from './TahunAjaranPage';
-import KurikulumPage from './Kurikulum';
-import AngkatanPage from './Angkatan';
+const TahunAjaranPage = lazy(() => import('./TahunAjaranPage'));
+const KurikulumPage = lazy(() => import('./Kurikulum'));
+const AngkatanPage = lazy(() => import('./Angkatan'));
 
 export default function MasterAkademikPage() {
     const [activeTab, setActiveTab] = useState('tahun_ajaran');
@@ -69,34 +70,36 @@ export default function MasterAkademikPage() {
             <div className="space-y-4">
                 {renderGuide()}
 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                    <TabsList>
-                        <TabsTrigger value="tahun_ajaran" className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            Tahun Ajaran
-                        </TabsTrigger>
-                        <TabsTrigger value="kurikulum" className="flex items-center gap-2">
-                            <BookOpen className="w-4 h-4" />
-                            Kurikulum
-                        </TabsTrigger>
-                        <TabsTrigger value="angkatan" className="flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            Angkatan
-                        </TabsTrigger>
-                    </TabsList>
+                <Suspense fallback={<LoadingScreen message="Memuat..." />}>
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                        <TabsList>
+                            <TabsTrigger value="tahun_ajaran" className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4" />
+                                Tahun Ajaran
+                            </TabsTrigger>
+                            <TabsTrigger value="kurikulum" className="flex items-center gap-2">
+                                <BookOpen className="w-4 h-4" />
+                                Kurikulum
+                            </TabsTrigger>
+                            <TabsTrigger value="angkatan" className="flex items-center gap-2">
+                                <Users className="w-4 h-4" />
+                                Angkatan
+                            </TabsTrigger>
+                        </TabsList>
 
-                    <TabsContent value="tahun_ajaran">
-                        <TahunAjaranPage isTabContent={true} />
-                    </TabsContent>
+                        <TabsContent value="tahun_ajaran">
+                            <TahunAjaranPage isTabContent={true} />
+                        </TabsContent>
 
-                    <TabsContent value="kurikulum">
-                        <KurikulumPage isTabContent={true} />
-                    </TabsContent>
+                        <TabsContent value="kurikulum">
+                            <KurikulumPage isTabContent={true} />
+                        </TabsContent>
 
-                    <TabsContent value="angkatan">
-                        <AngkatanPage isTabContent={true} />
-                    </TabsContent>
-                </Tabs>
+                        <TabsContent value="angkatan">
+                            <AngkatanPage isTabContent={true} />
+                        </TabsContent>
+                    </Tabs>
+                </Suspense>
             </div>
         </DashboardPage>
     );

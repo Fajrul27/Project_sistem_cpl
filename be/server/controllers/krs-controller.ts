@@ -81,3 +81,60 @@ export const createKrs = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Gagal menambahkan data KRS' });
     }
 };
+
+export const exportKrs = async (req: Request, res: Response) => {
+    try {
+        const { prodiId, semesterId, tahunAjaranId, kelasId, q } = req.query;
+        // Fetch all without pagination for export
+        const result = await KrsService.getAllKrs({
+            limit: 1000000, 
+            prodiId: prodiId as string,
+            semesterId: semesterId as string,
+            tahunAjaranId: tahunAjaranId as string,
+            kelasId: kelasId as string,
+            q: q as string
+        });
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Data KRS');
+
+        worksheet.columns = [
+            { header: 'NIM', key: 'nim', width: 15 },
+            { header: 'Nama Mahasiswa', key: 'namaMahasiswa', width: 30 },
+            { header: 'Kode MK', key: 'kodeMk', width: 15 },
+            { header: 'Nama Mata Kuliah', key: 'namaMk', width: 30 },
+            { header: 'SKS', key: 'sks', width: 10 },
+            { header: 'Semester', key: 'semester', width: 10 },
+            { header: 'Tahun Ajaran', key: 'tahunAjaran', width: 20 }
+        ];
+
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        result.data.forEach((krs: any) => {
+            worksheet.addRow({
+                nim: krs.mahasiswa.nim,
+                namaMahasiswa: krs.mahasiswa.namaLengkap,
+                kodeMk: krs.mataKuliah.kodeMk,
+                namaMk: krs.mataKuliah.namaMk,
+                sks: krs.mataKuliah.sks,
+                semester: krs.semester.angka,
+                tahunAjaran: krs.tahunAjaran.nama
+            });
+        });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const timestamp = new Date().toISOString().split('T')[0];
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="data_krs_${timestamp}.xlsx"`);
+        res.send(buffer);
+    } catch (error) {
+        console.error('Export KRS error:', error);
+        res.status(500).json({ error: 'Gagal export data KRS' });
+    }
+};
+

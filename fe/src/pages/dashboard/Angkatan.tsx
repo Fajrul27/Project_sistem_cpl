@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Plus, Pencil, Trash2, Search, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Loader2, Download, Upload } from "lucide-react";
+import { ImportResultDialog } from "@/components/common/ImportResultDialog";
+
 import { toast } from "sonner";
 import {
     Table,
@@ -64,6 +66,95 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
     const [selectedAngkatan, setSelectedAngkatan] = useState<Angkatan | null>(null);
+
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<any>(null);
+
+    const handleExport = async () => {
+        try {
+            const response = await fetch('/api/angkatan/export/excel', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal export data');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `data_angkatan_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success('Data berhasil diexport');
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error('Gagal export data');
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch('/api/angkatan/template/excel', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal download template');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template_angkatan.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast.success('Template berhasil diunduh');
+        } catch (error) {
+            console.error('Template error:', error);
+            toast.error('Gagal download template');
+        }
+    };
+
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.xls';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            setImporting(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/angkatan/import/excel', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+                setImportResult(result);
+                toast.success('Import selesai');
+                fetchData();
+            } catch (error: any) {
+                console.error('Import error:', error);
+                toast.error(error.message || 'Gagal import data');
+            } finally {
+                setImporting(false);
+            }
+        };
+        input.click();
+    };
+
 
     const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<AngkatanFormData>({
         defaultValues: {
@@ -183,13 +274,30 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
                                 Total {filteredAngkatan.length} angkatan terdaftar
                             </CardDescription>
                         </div>
-                        {canManage && (
-                            <Button onClick={() => { reset(); setIsAddDialogOpen(true); }}>
-                                <Plus className="mr-2 h-4 w-4" />
-                                Tambah Angkatan
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={handleExport}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Export
                             </Button>
-                        )}
+                            {canManage && (
+                                <>
+                                    <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Template
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={handleImportClick} disabled={importing}>
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        {importing ? "Importing..." : "Import"}
+                                    </Button>
+                                    <Button onClick={() => { reset(); setIsAddDialogOpen(true); }} size="sm">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Tambah Angkatan
+                                    </Button>
+                                </>
+                            )}
+                        </div>
                     </CardHeader>
+
                     <CardContent>
                         <div className="flex items-center justify-between mb-4">
                             <div className="relative flex-1 max-w-sm">
@@ -425,6 +533,15 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <ImportResultDialog
+                open={!!importResult}
+                onOpenChange={(open) => !open && setImportResult(null)}
+                result={importResult}
+                title="Hasil Import Angkatan"
+                description="Proses import data angkatan telah selesai."
+            />
         </div>
+
     );
 }

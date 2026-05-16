@@ -19,6 +19,7 @@ import { supabase, fetchProdiList } from "@/lib/api";
 import SEO from "@/components/common/SEO";
 import { GoogleLogin } from "@react-oauth/google";
 import { Separator } from "@/components/ui/separator";
+import { useUser } from "@/contexts/UserContext";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -47,13 +48,13 @@ const Auth = () => {
 
   const location = useLocation();
 
+  const { role, loading: userLoading } = useUser();
+
   useEffect(() => {
-    // Cek session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user && !location.state?.from) {
-        window.location.href = "/dashboard";
-      }
-    });
+    // Check session via context which is more reliable than raw localStorage
+    if (!userLoading && role && !location.state?.from) {
+      navigate("/dashboard", { replace: true });
+    }
 
     // Event-driven Google GSI detection — @react-oauth/google mengelola loading script
     const markReady = () => setGoogleReady(true);
@@ -117,7 +118,7 @@ const Auth = () => {
 
       if (data.user) {
         toast.success("Login berhasil!");
-        window.location.href = "/dashboard";
+        navigate("/dashboard", { replace: true });
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -140,7 +141,7 @@ const Auth = () => {
 
       if (data?.session) {
         toast.success("Login Google berhasil!");
-        window.location.href = "/dashboard";
+        navigate("/dashboard", { replace: true });
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -216,7 +217,7 @@ const Auth = () => {
 
       if (data && (data as any).session) {
         toast.success("Password berhasil direset. Login otomatis...");
-        window.location.href = "/dashboard";
+        navigate("/dashboard", { replace: true });
       } else {
         toast.success("Password berhasil direset. Silakan login.");
         setAuthView('login');

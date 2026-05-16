@@ -3,6 +3,8 @@ import { CPLService } from '../services/CPLService.js';
 import ExcelJS from 'exceljs';
 import { prisma } from '../lib/prisma.js';
 
+import { getCellValue } from '../utils/excel-utils.js';
+
 // Get all CPL
 export const getAllCpl = async (req: Request, res: Response) => {
     try {
@@ -208,69 +210,172 @@ export const importCpl = async (req: Request, res: Response) => {
 
         const errors: string[] = [];
         const successes: any[] = [];
-        let rowNumber = 1;
 
-        for (const row of worksheet.getSheetValues() as any[]) {
-            rowNumber++;
-            if (rowNumber === 2) continue;
-            if (!row || row.length === 0) continue;
+        const sheetValues = worksheet.getSheetValues() as any[];
+        
+        for (let i = 2; i < sheetValues.length; i++) {
+            const rowData = sheetValues[i];
+            if (!rowData || rowData.length === 0) continue;
+            
+            // rowData is 1-indexed from ExcelJS getSheetValues
+            // Col A: No, Col B: Kode CPL, Col C: Deskripsi, Col D: Kategori, Col E: Prodi, Col F: Kurikulum
+            const kodeCpl = getCellValue(rowData[2]);
+            const deskripsi = getCellValue(rowData[3]);
+            const kategori = getCellValue(rowData[4]);
+            const programStudi = getCellValue(rowData[5]);
+            const kurikulum = getCellValue(rowData[6]);
 
-            const [, kodeCpl, deskripsi, kategori, programStudi] = row;
+            if (!kodeCpl && !deskripsi) continue; // Skip empty rows
 
             if (!kodeCpl || !deskripsi) {
-                errors.push(`Baris ${rowNumber}: Kode CPL dan Deskripsi harus diisi`);
+                errors.push(`Baris ${i}: Kode CPL dan Deskripsi harus diisi`);
                 continue;
             }
 
             try {
-                let kategoriId, prodiId;
+                let kategoriId, prodiId, kurikulumId;
 
+                // 1. Find Kategori
                 if (kategori) {
                     const kategoriData = await prisma.kategoriCpl.findFirst({
-                        where: { nama: kategori as string }
+                        where: { nama: { equals: kategori.trim() } }
                     });
                     kategoriId = kategoriData?.id;
+                    if (!kategoriId) {
+                        // Fallback case-insensitive
+                        const allKategori = await prisma.kategoriCpl.findMany();
+                        const match = allKategori.find(k => k.nama.toLowerCase() === kategori.toLowerCase().trim());
+                        kategoriId = match?.id;
+                    }
                 }
 
+                // 2. Find Prodi
                 if (programStudi) {
+                    const trimmedProdi = programStudi.trim();
                     const prodiData = await prisma.prodi.findFirst({
-                        where: { nama: programStudi as string }
+                        where: {
+                            OR: [
+                                { nama: { equals: trimmedProdi } },
+                                { kode: { equals: trimmedProdi } },
+                                // Match combined "Jenjang Nama" e.g. "S1 Informatika"
+                                { 
+                                    AND: [
+                                        { jenjang: { equals: trimmedProdi.split(' ')[0] } },
+                                        { nama: { contains: trimmedProdi.split(' ').slice(1).join(' ') } }
+                                    ]
+                                }
+                            ]
+                        }
                     });
                     prodiId = prodiData?.id;
+
+                    if (!prodiId) {
+                        // Advanced fallback: check all prodis manually for "Jenjang Nama"
+                        const allProdis = await prisma.prodi.findMany();
+                        const match = allProdis.find(p => {
+                            const full = `${p.jenjang} ${p.nama}`.toLowerCase();
+                            return full === trimmedProdi.toLowerCase() || p.nama.toLowerCase() === trimmedProdi.toLowerCase();
+                        });
+                        prodiId = match?.id;
+                    }
+                }
+
+                // 3. Find Kurikulum
+                if (kurikulum) {
+                    const kurikulumData = await prisma.kurikulum.findFirst({
+                        where: { nama: { contains: kurikulum.trim() } }
+                    });
+                    kurikulumId = kurikulumData?.id;
                 }
 
                 const existingCPL = await prisma.cpl.findFirst({
-                    where: { kodeCpl: kodeCpl as string }
+                    where: { kodeCpl: kodeCpl }
                 });
 
                 const cplData = {
-                    kodeCpl: kodeCpl as string,
-                    deskripsi: deskripsi as string,
-                    kategoriCplId: kategoriId,
-                    prodiId
+                    kodeCpl: kodeCpl,
+                    deskripsi: deskripsi,
+                    kategori: kategori, // Save string for display
+                    kategoriId: kategoriId || null,
+                    prodiId: prodiId || null,
+                    kurikulumId: kurikulumId || null
                 };
 
                 if (existingCPL) {
                     await CPLService.updateCpl(existingCPL.id, cplData, userId, userRole);
-                    successes.push({ row: rowNumber, kodeCpl, action: 'updated' });
+                    successes.push({ row: i, kodeCpl, action: 'updated' });
                 } else {
                     await CPLService.createCpl(cplData, userId, userRole);
-                    successes.push({ row: rowNumber, kodeCpl, action: 'created' });
+                    successes.push({ row: i, kodeCpl, action: 'created' });
                 }
 
             } catch (error: any) {
-                errors.push(`Baris ${rowNumber} (${kodeCpl}): ${error.message || 'Gagal menyimpan data'}`);
+                console.error(`Error at row ${i}:`, error);
+                errors.push(`Baris ${i} (${kodeCpl}): ${error.message || 'Gagal menyimpan data'}`);
             }
         }
 
         res.json({
             message: `Import selesai. ${successes.length} data berhasil diproses.`,
-            success: successes.length,
+            successCount: successes.length,
             errors: errors.length > 0 ? errors : undefined
         });
 
     } catch (error) {
         console.error('Import CPL error:', error);
         res.status(500).json({ error: 'Gagal import data CPL' });
+    }
+};
+
+// Generate Template Excel for CPL
+export const getTemplateCpl = async (req: Request, res: Response) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('CPL');
+
+        worksheet.columns = [
+            { header: 'No', key: 'no', width: 5 },
+            { header: 'Kode CPL', key: 'kodeCpl', width: 15 },
+            { header: 'Deskripsi', key: 'deskripsi', width: 50 },
+            { header: 'Kategori', key: 'kategori', width: 25 },
+            { header: 'Program Studi', key: 'programStudi', width: 30 },
+            { header: 'Kurikulum', key: 'kurikulum', width: 20 }
+        ];
+
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Add dummy data for first row
+        worksheet.addRow({
+            no: 1,
+            kodeCpl: 'CPL-01',
+            deskripsi: 'Mampu menerapkan pemikiran logis, kritis, sistematis, dan inovatif',
+            kategori: 'Sikap',
+            programStudi: 'Teknik Informatika',
+            kurikulum: 'Kurikulum 2024'
+        });
+
+        // Add notes or data validation
+        const noteRow = worksheet.addRow({
+            no: '',
+            kodeCpl: '* Wajib Diisi',
+            deskripsi: '* Wajib Diisi',
+            kategori: '* Opsional (Gunakan nama kategori)',
+            programStudi: '* Wajib Sesuai Master Data',
+            kurikulum: '* Wajib Sesuai Master Data'
+        });
+        noteRow.font = { italic: true, color: { argb: 'FFFF0000' } };
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="Template_Import_CPL.xlsx"');
+        res.send(buffer);
+    } catch (error) {
+        console.error('Error generating template:', error);
+        res.status(500).json({ error: 'Gagal membuat file template' });
     }
 };

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { clearCpmkCache } from "./useCPMK";
 
 export interface Cpmk {
     id: string;
@@ -191,6 +192,7 @@ export function useCPMKDetail(id: string | undefined) {
                 });
                 toast.success("Mapping berhasil ditambahkan");
             }
+            clearCpmkCache();
             await fetchCplMappings();
             return true;
         } catch (error) {
@@ -206,6 +208,7 @@ export function useCPMKDetail(id: string | undefined) {
         try {
             await api.delete(`/cpmk-mapping/${mappingId}`);
             toast.success("Mapping berhasil dihapus");
+            clearCpmkCache();
             await fetchCplMappings();
         } catch (error) {
             console.error('Error deleting mapping:', error);
@@ -247,6 +250,7 @@ export function useCPMKDetail(id: string | undefined) {
                 });
                 toast.success("Teknik penilaian berhasil ditambahkan");
             }
+            clearCpmkCache();
             await fetchTeknikPenilaian();
             return true;
         } catch (error) {
@@ -262,6 +266,7 @@ export function useCPMKDetail(id: string | undefined) {
         try {
             await api.delete(`/teknik-penilaian/${teknikId}`);
             toast.success("Teknik penilaian berhasil dihapus");
+            clearCpmkCache();
             await fetchTeknikPenilaian();
         } catch (error) {
             console.error('Error deleting teknik:', error);

@@ -14,11 +14,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { CollapsibleGuide } from '@/components/common/CollapsibleGuide';
 import { usePermission } from '@/contexts/PermissionContext';
+import { ImportResultDialog } from '@/components/common/ImportResultDialog';
+import { Download, Upload } from 'lucide-react';
+
 
 export default function SkalaNilaiPage() {
     const { can } = usePermission();
     const canManage = can('access', 'kaprodi') || can('access', 'admin');
-    const { skalaNilaiList, loading, createSkalaNilai, updateSkalaNilai, deleteSkalaNilai } = useSkalaNilai();
+    const { skalaNilaiList, loading, createSkalaNilai, updateSkalaNilai, deleteSkalaNilai, fetchSkalaNilai } = useSkalaNilai();
     const { toast } = useToast();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<SkalaNilai | null>(null);
@@ -28,6 +31,95 @@ export default function SkalaNilaiPage() {
         nilaiMax: '',
         isLulus: true
     });
+
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<any>(null);
+
+    const handleExport = async () => {
+        try {
+            const response = await fetch('/api/skala-nilai/export/excel', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal export data');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `skala_nilai_${new Date().toISOString().split('T')[0]}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast({ title: "Data berhasil diexport" });
+        } catch (error) {
+            console.error('Export error:', error);
+            toast({ title: "Gagal export data", variant: "destructive" });
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch('/api/skala-nilai/template/excel', {
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Gagal download template');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template_skala_nilai.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            toast({ title: "Template berhasil diunduh" });
+        } catch (error) {
+            console.error('Template error:', error);
+            toast({ title: "Gagal download template", variant: "destructive" });
+        }
+    };
+
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx,.xls';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            setImporting(true);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/skala-nilai/import/excel', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Gagal import data');
+
+                setImportResult(result);
+                toast({ title: "Import selesai" });
+                fetchSkalaNilai();
+            } catch (error: any) {
+                console.error('Import error:', error);
+                toast({ title: error.message || 'Gagal import data', variant: "destructive" });
+            } finally {
+                setImporting(false);
+            }
+        };
+        input.click();
+    };
+
 
     const handleOpenDialog = (item?: SkalaNilai) => {
         if (item) {
@@ -103,10 +195,26 @@ export default function SkalaNilaiPage() {
                             <CardTitle>Daftar Standar Nilai</CardTitle>
                             <CardDescription>Atur rentang nilai huruf untuk konversi otomatis</CardDescription>
                         </div>
-                        <Button onClick={() => handleOpenDialog()}>
-                            <Plus className="mr-2 h-4 w-4" /> Tambah Skala
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={handleExport}>
+                                <Download className="w-4 h-4 mr-2" /> Export
+                            </Button>
+                            {canManage && (
+                                <>
+                                    <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                                        <Download className="w-4 h-4 mr-2" /> Template
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={handleImportClick} disabled={importing}>
+                                        <Upload className="w-4 h-4 mr-2" /> {importing ? 'Importing...' : 'Import'}
+                                    </Button>
+                                    <Button onClick={() => handleOpenDialog()} size="sm">
+                                        <Plus className="mr-2 h-4 w-4" /> Tambah Skala
+                                    </Button>
+                                </>
+                            )}
+                        </div>
                     </CardHeader>
+
                     <CardContent>
                         <Table>
                             <TableHeader>
@@ -215,6 +323,15 @@ export default function SkalaNilaiPage() {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <ImportResultDialog
+                open={!!importResult}
+                onOpenChange={(open) => !open && setImportResult(null)}
+                result={importResult}
+                title="Hasil Import Skala Nilai"
+                description="Proses import standar penilaian telah selesai."
+            />
         </DashboardPage>
+
     );
 }
