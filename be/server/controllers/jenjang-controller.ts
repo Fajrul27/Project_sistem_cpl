@@ -127,7 +127,7 @@ export const importJenjang = async (req: Request, res: Response) => {
                 
                 if (existing) {
                     await JenjangService.updateJenjang(existing.id, {
-                        keterangan: keterangan ? String(keterangan).trim() : existing.keterangan
+                        keterangan: keterangan ? String(keterangan).trim() : (existing.keterangan ?? undefined)
                     });
                     successes.push({ row: rowNumber, nama, action: 'updated' });
                 } else {
