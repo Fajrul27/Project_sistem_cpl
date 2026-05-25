@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,17 +46,19 @@ const Auth = () => {
   const [timer, setTimer] = useState(0);
   const canResend = timer === 0;
 
-  const location = useLocation();
-
   const { role, loading: userLoading } = useUser();
 
+  // ─── Redirect jika sudah login ───────────────────────────────────────────
+  // Watch perubahan role dari UserContext — redirect saat role ter-set
+  // (terjadi setelah onAuthStateChange callback selesai diproses)
   useEffect(() => {
-    // Check session via context which is more reliable than raw localStorage
-    if (!userLoading && role && !location.state?.from) {
+    if (!userLoading && role) {
       navigate("/dashboard", { replace: true });
     }
+  }, [role, userLoading, navigate]);
 
-    // Event-driven Google GSI detection — @react-oauth/google mengelola loading script
+  // ─── Google GSI Detection ────────────────────────────────────────────────
+  useEffect(() => {
     const markReady = () => setGoogleReady(true);
 
     // Immediate: script sudah cached oleh browser
@@ -118,7 +120,9 @@ const Auth = () => {
 
       if (data.user) {
         toast.success("Login berhasil!");
-        navigate("/dashboard", { replace: true });
+        // ✅ Jangan navigate di sini — biarkan UserContext update role via
+        // onAuthStateChange, lalu useEffect di atas yang trigger navigate.
+        // Ini menghilangkan race condition antara navigate & context update.
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -141,7 +145,7 @@ const Auth = () => {
 
       if (data?.session) {
         toast.success("Login Google berhasil!");
-        navigate("/dashboard", { replace: true });
+        // ✅ Sama — jangan navigate manual, biarkan UserContext & useEffect yang handle
       }
     } catch (error: any) {
       toast.error(error.message);
