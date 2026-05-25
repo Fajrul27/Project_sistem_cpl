@@ -4,10 +4,14 @@ import {
   getDashboardStats,
   getDosenAnalysis,
   getStudentEvaluation,
-  invalidateCache
+  invalidateCache,
+  getDataVersion
 } from '../controllers/dashboard-controller.js';
 
 const router = Router();
+
+// Lightweight version check — frontend uses this to detect stale cache
+router.get('/data-version', authMiddleware, getDataVersion);
 
 // Get dashboard statistics
 router.get('/stats', authMiddleware, requirePermission('view', 'dashboard'), getDashboardStats);

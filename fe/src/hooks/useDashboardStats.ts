@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchDashboardStats, fetchTranskripCPL, fetchDosenAnalysis, fetchStudentEvaluation, api } from "@/lib/api";
 import { toast } from "sonner";
-import { signalDashboardMutation, getLastMutationTime } from "@/lib/dashboardMutationSignal";
 
 // ─── Cache Constants ──────────────────────────────────────────────────────────
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes (match server TTL)
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes max age
 const SESSION_CACHE_KEY_PREFIX = "dashboard_cache_";
+const SERVER_VERSION_KEY = "dashboard_server_version";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function buildFilterKey(role: string, filters: any): string {
@@ -16,17 +16,25 @@ function buildFilterKey(role: string, filters: any): string {
     return `${SESSION_CACHE_KEY_PREFIX}${role}:${sorted}`;
 }
 
+/**
+ * Read cached data.
+ * Returns null if:
+ *   - No cache exists
+ *   - Cache is expired (> TTL)
+ *   - Server version stored in cache doesn't match current known server version
+ */
 function readCache(key: string): any | null {
     try {
         const raw = sessionStorage.getItem(key);
         if (!raw) return null;
-        const entry: { data: any; expiresAt: number; mutationTimeAtWrite: number } = JSON.parse(raw);
+        const entry: { data: any; expiresAt: number; serverVersion: number } = JSON.parse(raw);
         if (Date.now() > entry.expiresAt) {
             sessionStorage.removeItem(key);
             return null;
         }
-        // Stale if a mutation happened AFTER this cache entry was written
-        if (getLastMutationTime() > entry.mutationTimeAtWrite) {
+        // Compare against the last-known server version
+        const knownVersion = getKnownServerVersion();
+        if (knownVersion !== null && entry.serverVersion !== knownVersion) {
             sessionStorage.removeItem(key);
             return null;
         }
@@ -36,19 +44,28 @@ function readCache(key: string): any | null {
     }
 }
 
-function writeCache(key: string, data: any): void {
+function writeCache(key: string, data: any, serverVersion: number): void {
     try {
         sessionStorage.setItem(key, JSON.stringify({
             data,
             expiresAt: Date.now() + CACHE_TTL_MS,
-            mutationTimeAtWrite: getLastMutationTime(),
+            serverVersion,
         }));
     } catch {
         // sessionStorage full or unavailable – silently skip
     }
 }
 
-/** Remove all dashboard cache entries (e.g. after data mutation) */
+function getKnownServerVersion(): number | null {
+    const v = sessionStorage.getItem(SERVER_VERSION_KEY);
+    return v !== null ? parseInt(v, 10) : null;
+}
+
+function setKnownServerVersion(version: number): void {
+    sessionStorage.setItem(SERVER_VERSION_KEY, String(version));
+}
+
+/** Remove all dashboard cache entries */
 export function clearDashboardSessionCache(): void {
     const keys: string[] = [];
     for (let i = 0; i < sessionStorage.length; i++) {
@@ -56,10 +73,22 @@ export function clearDashboardSessionCache(): void {
         if (key?.startsWith(SESSION_CACHE_KEY_PREFIX)) keys.push(key);
     }
     keys.forEach(k => sessionStorage.removeItem(k));
+    sessionStorage.removeItem(SERVER_VERSION_KEY);
 }
 
-/** Re-export for convenience — call this after any successful data mutation */
-export { signalDashboardMutation } from "@/lib/dashboardMutationSignal";
+/**
+ * Fetch current server cache version (very lightweight ~50ms).
+ * Returns null if request fails (offline / not authed) — caller handles gracefully.
+ */
+async function fetchServerVersion(): Promise<number | null> {
+    try {
+        const res = await api.get("/dashboard/data-version");
+        const v = res?.version ?? res?.data?.version;
+        return typeof v === "number" ? v : null;
+    } catch {
+        return null;
+    }
+}
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useDashboardStats(role: string | null, user: any, activeFilters: any = {}) {
@@ -86,8 +115,8 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
     const [dosenAnalysis, setDosenAnalysis] = useState<any[]>([]);
     const [studentEvaluation, setStudentEvaluation] = useState<any[]>([]);
 
-    // Track last fetched filter key so we skip duplicate fetches (e.g. navigate back)
-    const lastFetchedKeyRef = useRef<string | null>(null);
+    // Prevent concurrent fetches for the same key
+    const fetchingKeyRef = useRef<string | null>(null);
 
     // ─── Apply fetched data to state ──────────────────────────────────────────
     const applyAdminData = useCallback((data: any, dosenData?: any[], studentData?: any[]) => {
@@ -175,69 +204,57 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
         }
     }, []);
 
-    // ─── Fetch: Mahasiswa ─────────────────────────────────────────────────────
-    const fetchStudentDashboardData = useCallback(async (forceRefresh = false) => {
-        const targetId = user?.userId || user?.id;
-        if (!targetId) return;
-
-        const cacheKey = buildFilterKey("mahasiswa", { userId: targetId });
-
-        // Serve from cache if available and not forced
-        if (!forceRefresh) {
-            const cached = readCache(cacheKey);
-            if (cached && lastFetchedKeyRef.current === cacheKey) {
-                // Same key, already loaded — skip entirely (e.g. navigate back)
-                setLoading(false);
-                return;
-            }
-            if (cached) {
-                applyStudentData(cached);
-                lastFetchedKeyRef.current = cacheKey;
-                setLoading(false);
-                return;
-            }
-        }
-
-        try {
-            const response = await fetchTranskripCPL(targetId);
-            const data = response.data;
-            if (data) {
-                writeCache(cacheKey, data);
-                applyStudentData(data);
-                lastFetchedKeyRef.current = cacheKey;
-            }
-        } catch (error) {
-            console.error("Error fetching student dashboard:", error);
-            toast.error("Gagal memuat data dashboard mahasiswa");
-        } finally {
-            setLoading(false);
-        }
-    }, [user, applyStudentData]);
-
-    // ─── Fetch: Admin / Dosen / Kaprodi ──────────────────────────────────────
+    // ─── Core fetch logic with server-version check ───────────────────────────
+    /**
+     * 1. Fetch /dashboard/data-version (fast, ~50ms)
+     * 2. Compare with version stored in cache
+     *    - Same version → use cached data instantly
+     *    - Different version (or no cache) → fetch full stats from server
+     * 3. forceRefresh=true bypasses cache entirely
+     */
     const fetchAdminDashboardData = useCallback(async (forceRefresh = false) => {
         const normalizedRole = role?.toLowerCase();
         if (!normalizedRole || normalizedRole === "mahasiswa") return;
 
         const cacheKey = buildFilterKey(normalizedRole, activeFilters);
 
-        // Serve from cache if available and not forced
-        if (!forceRefresh) {
-            const cached = readCache(cacheKey);
-            if (cached && lastFetchedKeyRef.current === cacheKey) {
-                // Same key already loaded — skip (navigate back case)
-                setLoading(false);
-                return;
-            }
-            if (cached) {
-                applyAdminData(cached.stats, cached.dosen, cached.students);
-                lastFetchedKeyRef.current = cacheKey;
-                setLoading(false);
-                return;
-            }
-        }
+        // Prevent concurrent fetches for same key
+        if (fetchingKeyRef.current === cacheKey && !forceRefresh) return;
+        fetchingKeyRef.current = cacheKey;
 
         try {
+            if (!forceRefresh) {
+                // Step 1: Quick version check from server
+                const serverVersion = await fetchServerVersion();
+
+                if (serverVersion !== null) {
+                    // Update the known version
+                    setKnownServerVersion(serverVersion);
+
+                    // Step 2: Check cache (readCache will compare versions internally)
+                    const cached = readCache(cacheKey);
+                    if (cached) {
+                        // Cache is fresh and version matches — use it instantly
+                        applyAdminData(cached.stats, cached.dosen, cached.students);
+                        setLoading(false);
+                        fetchingKeyRef.current = null;
+                        return;
+                    }
+                    // Version mismatch or no cache — fall through to full fetch
+                }
+                // If version fetch failed (offline), try using cache as fallback
+                else {
+                    const cached = readCache(cacheKey);
+                    if (cached) {
+                        applyAdminData(cached.stats, cached.dosen, cached.students);
+                        setLoading(false);
+                        fetchingKeyRef.current = null;
+                        return;
+                    }
+                }
+            }
+
+            // Step 3: Fetch full data from server
             const isManager = normalizedRole === "admin" || normalizedRole === "kaprodi";
 
             let statsRes, dosenRes, studentRes;
@@ -256,9 +273,10 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
             const studentData = studentRes?.data;
 
             if (data) {
-                writeCache(cacheKey, { stats: data, dosen: dosenData, students: studentData });
+                // Fetch version again after full load to write accurate version to cache
+                const newVersion = await fetchServerVersion() ?? getKnownServerVersion() ?? 0;
+                writeCache(cacheKey, { stats: data, dosen: dosenData, students: studentData }, newVersion);
                 applyAdminData(data, dosenData, studentData);
-                lastFetchedKeyRef.current = cacheKey;
             }
         } catch (error: any) {
             if (error.message?.includes("403") || error.message?.toLowerCase().includes("forbidden")) {
@@ -268,22 +286,62 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
             console.error("Error fetching dashboard data:", error);
         } finally {
             setLoading(false);
+            fetchingKeyRef.current = null;
         }
     }, [role, activeFilters, applyAdminData]);
 
-    // ─── Invalidate cache + re-fetch (call after data mutations) ─────────────
-    const invalidateAndRefresh = useCallback(async () => {
-        // Tell server to bump its cache version
-        try {
-            await api.post("/dashboard/invalidate-cache", {}, {});
-        } catch {
-            // Best-effort — server cache will expire on its own TTL
-        }
-        // Clear sessionStorage cache
-        clearDashboardSessionCache();
-        lastFetchedKeyRef.current = null;
+    // ─── Fetch: Mahasiswa ─────────────────────────────────────────────────────
+    const fetchStudentDashboardData = useCallback(async (forceRefresh = false) => {
+        const targetId = user?.userId || user?.id;
+        if (!targetId) return;
 
-        // Re-fetch fresh data
+        const cacheKey = buildFilterKey("mahasiswa", { userId: targetId });
+
+        if (fetchingKeyRef.current === cacheKey && !forceRefresh) return;
+        fetchingKeyRef.current = cacheKey;
+
+        try {
+            if (!forceRefresh) {
+                const serverVersion = await fetchServerVersion();
+                if (serverVersion !== null) {
+                    setKnownServerVersion(serverVersion);
+                    const cached = readCache(cacheKey);
+                    if (cached) {
+                        applyStudentData(cached);
+                        setLoading(false);
+                        fetchingKeyRef.current = null;
+                        return;
+                    }
+                } else {
+                    const cached = readCache(cacheKey);
+                    if (cached) {
+                        applyStudentData(cached);
+                        setLoading(false);
+                        fetchingKeyRef.current = null;
+                        return;
+                    }
+                }
+            }
+
+            const response = await fetchTranskripCPL(targetId);
+            const data = response.data;
+            if (data) {
+                const newVersion = await fetchServerVersion() ?? getKnownServerVersion() ?? 0;
+                writeCache(cacheKey, data, newVersion);
+                applyStudentData(data);
+            }
+        } catch (error) {
+            console.error("Error fetching student dashboard:", error);
+            toast.error("Gagal memuat data dashboard mahasiswa");
+        } finally {
+            setLoading(false);
+            fetchingKeyRef.current = null;
+        }
+    }, [user, applyStudentData]);
+
+    // ─── Invalidate cache + re-fetch ─────────────────────────────────────────
+    const invalidateAndRefresh = useCallback(async () => {
+        clearDashboardSessionCache();
         setLoading(true);
         if (role?.toLowerCase() === "mahasiswa") {
             await fetchStudentDashboardData(true);
