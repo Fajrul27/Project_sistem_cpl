@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { DashboardService } from '../services/DashboardService.js';
+import { invalidateDashboardCache, getCacheStats } from '../lib/dashboardCache.js';
 
 // Get dashboard statistics
 export const getDashboardStats = async (req: Request, res: Response) => {
@@ -57,4 +58,15 @@ export const getStudentEvaluation = async (req: Request, res: Response) => {
         console.error('Get student evaluation error:', error);
         res.status(500).json({ error: 'Gagal mengambil evaluasi mahasiswa' });
     }
+};
+
+/**
+ * POST /dashboard/invalidate-cache
+ * Manually invalidate dashboard cache (admin only).
+ * Also called internally by other controllers after data mutation.
+ */
+export const invalidateCache = (_req: Request, res: Response) => {
+    invalidateDashboardCache();
+    const stats = getCacheStats();
+    res.json({ message: 'Dashboard cache invalidated', ...stats });
 };

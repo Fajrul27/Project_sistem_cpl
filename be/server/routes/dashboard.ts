@@ -3,7 +3,8 @@ import { authMiddleware, requirePermission, requireRole } from '../middleware/au
 import {
   getDashboardStats,
   getDosenAnalysis,
-  getStudentEvaluation
+  getStudentEvaluation,
+  invalidateCache
 } from '../controllers/dashboard-controller.js';
 
 const router = Router();
@@ -16,5 +17,8 @@ router.get('/dosen', authMiddleware, requireRole('admin', 'kaprodi'), getDosenAn
 
 // Get Student Evaluation - for kaprodi/admin only (analytics feature)
 router.get('/students', authMiddleware, requireRole('admin', 'kaprodi'), getStudentEvaluation);
+
+// Invalidate dashboard cache (admin only - called after data mutations)
+router.post('/invalidate-cache', authMiddleware, requireRole('admin', 'kaprodi', 'dosen'), invalidateCache);
 
 export default router;

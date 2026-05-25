@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { NilaiService } from '../services/NilaiService.js';
+import { invalidateDashboardCache } from '../lib/dashboardCache.js';
 
 // Get all nilai teknik by mahasiswa
 export const getNilaiByMahasiswa = async (req: Request, res: Response) => {
@@ -65,6 +66,7 @@ export const createOrUpdateNilai = async (req: Request, res: Response) => {
         const userId = (req as any).userId;
         const nilaiTeknik = await NilaiService.createOrUpdateNilai(req.body, userId);
 
+        invalidateDashboardCache();
         res.status(201).json({
             data: nilaiTeknik,
             message: 'Nilai teknik penilaian berhasil disimpan'
@@ -94,6 +96,7 @@ export const batchInputNilai = async (req: Request, res: Response) => {
 
         const { results, errors } = await NilaiService.batchInputNilai(req.body, userId, userRole);
 
+        invalidateDashboardCache();
         res.status(201).json({
             message: `${results.length} nilai berhasil disimpan`,
             data: results,
@@ -116,6 +119,7 @@ export const updateNilai = async (req: Request, res: Response) => {
 
         const updated = await NilaiService.updateNilai(id, req.body, userId, userRole);
 
+        invalidateDashboardCache();
         res.json({
             data: updated,
             message: 'Nilai berhasil diupdate'
@@ -138,6 +142,7 @@ export const deleteNilai = async (req: Request, res: Response) => {
 
         await NilaiService.deleteNilai(id, userId, userRole);
 
+        invalidateDashboardCache();
         res.json({ message: 'Nilai berhasil dihapus' });
     } catch (error: any) {
         console.error('Delete nilai teknik error:', error);
@@ -193,6 +198,7 @@ export const importNilai = async (req: Request, res: Response) => {
             userId
         );
 
+        invalidateDashboardCache();
         res.json({
             message: `Import berhasil. ${successCount} nilai disimpan.`,
             errors: errors.length > 0 ? errors : undefined

@@ -1,6 +1,7 @@
 
 import { prisma } from '../lib/prisma.js';
 import { getUserProfile } from '../middleware/auth.js';
+import { buildCacheKey, getCache, setCache } from '../lib/dashboardCache.js';
 
 export class DashboardService {
     static async getDashboardStats(params: {
@@ -14,6 +15,18 @@ export class DashboardService {
         fakultasId?: string // filter param
     }) {
         const { userId, userRole, semester, angkatan, kelasId, mataKuliahId, prodiId: filterProdiId, fakultasId } = params;
+
+        // --- CACHE CHECK ---
+        const cacheKey = buildCacheKey(userId, userRole, {
+            semester: semester || '',
+            angkatan: angkatan || '',
+            kelasId: kelasId || '',
+            mataKuliahId: mataKuliahId || '',
+            prodiId: filterProdiId || '',
+            fakultasId: fakultasId || ''
+        });
+        const cached = getCache(cacheKey);
+        if (cached) return cached;
 
         // Define filters
         let userFilter: any = {};
@@ -430,7 +443,7 @@ export class DashboardService {
             }
         }
 
-        return {
+        const result = {
             stats: {
                 users: userCount,
                 cpl: cplCount,
@@ -446,6 +459,11 @@ export class DashboardService {
             alerts,
             insights
         };
+
+        // --- STORE IN CACHE ---
+        setCache(cacheKey, result);
+
+        return result;
     }
 
     static async getDosenAnalysis(params: { prodiId?: string, fakultasId?: string }) {
