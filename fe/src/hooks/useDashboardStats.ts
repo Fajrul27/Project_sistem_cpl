@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchDashboardStats, fetchTranskripCPL, fetchDosenAnalysis, fetchStudentEvaluation, api } from "@/lib/api";
 import { toast } from "sonner";
+import { signalDashboardMutation, getLastMutationTime } from "@/lib/dashboardMutationSignal";
 
 // ─── Cache Constants ──────────────────────────────────────────────────────────
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes (match server TTL)
@@ -19,8 +20,13 @@ function readCache(key: string): any | null {
     try {
         const raw = sessionStorage.getItem(key);
         if (!raw) return null;
-        const entry: { data: any; expiresAt: number } = JSON.parse(raw);
+        const entry: { data: any; expiresAt: number; mutationTimeAtWrite: number } = JSON.parse(raw);
         if (Date.now() > entry.expiresAt) {
+            sessionStorage.removeItem(key);
+            return null;
+        }
+        // Stale if a mutation happened AFTER this cache entry was written
+        if (getLastMutationTime() > entry.mutationTimeAtWrite) {
             sessionStorage.removeItem(key);
             return null;
         }
@@ -35,6 +41,7 @@ function writeCache(key: string, data: any): void {
         sessionStorage.setItem(key, JSON.stringify({
             data,
             expiresAt: Date.now() + CACHE_TTL_MS,
+            mutationTimeAtWrite: getLastMutationTime(),
         }));
     } catch {
         // sessionStorage full or unavailable – silently skip
@@ -50,6 +57,9 @@ export function clearDashboardSessionCache(): void {
     }
     keys.forEach(k => sessionStorage.removeItem(k));
 }
+
+/** Re-export for convenience — call this after any successful data mutation */
+export { signalDashboardMutation } from \"@/lib/dashboardMutationSignal\";
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useDashboardStats(role: string | null, user: any, activeFilters: any = {}) {
