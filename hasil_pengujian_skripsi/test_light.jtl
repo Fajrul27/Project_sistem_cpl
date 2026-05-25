@@ -1,0 +1,41 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1773383277822,533,Login Request,200,OK,Lightweight Test 1-1,text,true,,2610,291,2,2,https://obeunugha.my.id/api/auth/login,528,0,369
+1773383278386,72,Get Me (Lightweight),200,OK,Lightweight Test 1-1,text,true,,1360,740,2,2,https://obeunugha.my.id/api/auth/me,72,0,0
+1773383278238,225,Login Request,200,OK,Lightweight Test 1-2,text,true,,2610,291,1,1,https://obeunugha.my.id/api/auth/login,225,0,69
+1773383278464,38,Get Me (Lightweight),200,OK,Lightweight Test 1-2,text,true,,1353,740,1,1,https://obeunugha.my.id/api/auth/me,38,0,0
+1773383278737,301,Login Request,200,OK,Lightweight Test 1-3,text,true,,2618,291,1,1,https://obeunugha.my.id/api/auth/login,301,0,147
+1773383279039,48,Get Me (Lightweight),200,OK,Lightweight Test 1-3,text,true,,1361,740,1,1,https://obeunugha.my.id/api/auth/me,48,0,0
+1773383279236,207,Login Request,200,OK,Lightweight Test 1-4,text,true,,2616,291,1,1,https://obeunugha.my.id/api/auth/login,207,0,62
+1773383279444,39,Get Me (Lightweight),200,OK,Lightweight Test 1-4,text,true,,1359,740,1,1,https://obeunugha.my.id/api/auth/me,39,0,0
+1773383279736,205,Login Request,200,OK,Lightweight Test 1-5,text,true,,2613,291,1,1,https://obeunugha.my.id/api/auth/login,205,0,65
+1773383279942,45,Get Me (Lightweight),200,OK,Lightweight Test 1-5,text,true,,1364,740,1,1,https://obeunugha.my.id/api/auth/me,45,0,0
+1773383280236,207,Login Request,200,OK,Lightweight Test 1-6,text,true,,2617,291,1,1,https://obeunugha.my.id/api/auth/login,207,0,68
+1773383280445,41,Get Me (Lightweight),200,OK,Lightweight Test 1-6,text,true,,1351,740,1,1,https://obeunugha.my.id/api/auth/me,41,0,0
+1773383280737,218,Login Request,200,OK,Lightweight Test 1-7,text,true,,2620,291,1,1,https://obeunugha.my.id/api/auth/login,218,0,67
+1773383280956,44,Get Me (Lightweight),200,OK,Lightweight Test 1-7,text,true,,1359,740,1,1,https://obeunugha.my.id/api/auth/me,44,0,0
+1773383281235,198,Login Request,200,OK,Lightweight Test 1-8,text,true,,2616,291,1,1,https://obeunugha.my.id/api/auth/login,198,0,61
+1773383281434,42,Get Me (Lightweight),200,OK,Lightweight Test 1-8,text,true,,1352,740,1,1,https://obeunugha.my.id/api/auth/me,42,0,0
+1773383281736,237,Login Request,200,OK,Lightweight Test 1-9,text,true,,2611,291,1,1,https://obeunugha.my.id/api/auth/login,237,0,77
+1773383281974,40,Get Me (Lightweight),200,OK,Lightweight Test 1-9,text,true,,1354,740,1,1,https://obeunugha.my.id/api/auth/me,40,0,0
+1773383282237,194,Login Request,200,OK,Lightweight Test 1-10,text,true,,2612,291,1,1,https://obeunugha.my.id/api/auth/login,194,0,62
+1773383282432,37,Get Me (Lightweight),200,OK,Lightweight Test 1-10,text,true,,1355,740,1,1,https://obeunugha.my.id/api/auth/me,37,0,0
+1773383282736,240,Login Request,200,OK,Lightweight Test 1-11,text,true,,2608,291,1,1,https://obeunugha.my.id/api/auth/login,240,0,82
+1773383282976,73,Get Me (Lightweight),200,OK,Lightweight Test 1-11,text,true,,1355,740,1,1,https://obeunugha.my.id/api/auth/me,73,0,0
+1773383283236,331,Login Request,200,OK,Lightweight Test 1-12,text,true,,2606,291,1,1,https://obeunugha.my.id/api/auth/login,331,0,135
+1773383283568,50,Get Me (Lightweight),200,OK,Lightweight Test 1-12,text,true,,1357,740,1,1,https://obeunugha.my.id/api/auth/me,50,0,0
+1773383283735,225,Login Request,200,OK,Lightweight Test 1-13,text,true,,2619,291,1,1,https://obeunugha.my.id/api/auth/login,225,0,90
+1773383283961,54,Get Me (Lightweight),200,OK,Lightweight Test 1-13,text,true,,1351,740,1,1,https://obeunugha.my.id/api/auth/me,54,0,0
+1773383284236,203,Login Request,200,OK,Lightweight Test 1-14,text,true,,2623,291,1,1,https://obeunugha.my.id/api/auth/login,203,0,68
+1773383284440,39,Get Me (Lightweight),200,OK,Lightweight Test 1-14,text,true,,1359,740,1,1,https://obeunugha.my.id/api/auth/me,39,0,0
+1773383284736,214,Login Request,200,OK,Lightweight Test 1-15,text,true,,2612,291,1,1,https://obeunugha.my.id/api/auth/login,214,0,62
+1773383284951,42,Get Me (Lightweight),200,OK,Lightweight Test 1-15,text,true,,1361,740,1,1,https://obeunugha.my.id/api/auth/me,42,0,0
+1773383285236,201,Login Request,200,OK,Lightweight Test 1-16,text,true,,2618,291,1,1,https://obeunugha.my.id/api/auth/login,201,0,63
+1773383285438,48,Get Me (Lightweight),200,OK,Lightweight Test 1-16,text,true,,1355,740,1,1,https://obeunugha.my.id/api/auth/me,48,0,0
+1773383285736,204,Login Request,200,OK,Lightweight Test 1-17,text,true,,2616,291,1,1,https://obeunugha.my.id/api/auth/login,204,0,61
+1773383285941,41,Get Me (Lightweight),200,OK,Lightweight Test 1-17,text,true,,1351,740,1,1,https://obeunugha.my.id/api/auth/me,41,0,0
+1773383286236,201,Login Request,200,OK,Lightweight Test 1-18,text,true,,2611,291,1,1,https://obeunugha.my.id/api/auth/login,201,0,62
+1773383286438,56,Get Me (Lightweight),200,OK,Lightweight Test 1-18,text,true,,1357,740,1,1,https://obeunugha.my.id/api/auth/me,56,0,0
+1773383286735,242,Login Request,200,OK,Lightweight Test 1-19,text,true,,2613,291,1,1,https://obeunugha.my.id/api/auth/login,242,0,95
+1773383286978,45,Get Me (Lightweight),200,OK,Lightweight Test 1-19,text,true,,1361,740,1,1,https://obeunugha.my.id/api/auth/me,45,0,0
+1773383287236,205,Login Request,200,OK,Lightweight Test 1-20,text,true,,2615,291,1,1,https://obeunugha.my.id/api/auth/login,205,0,64
+1773383287442,42,Get Me (Lightweight),200,OK,Lightweight Test 1-20,text,true,,1355,740,1,1,https://obeunugha.my.id/api/auth/me,42,0,0

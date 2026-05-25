@@ -1,0 +1,201 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1773382242946,319,Login Request,200,OK,Dosen/Admin Users 1-2,text,true,,2138,290,9,9,http://localhost:8082/api/auth/login,314,0,26
+1773382242945,589,Login Request,200,OK,Dosen/Admin Users 1-3,text,true,,2138,290,14,14,http://localhost:8082/api/auth/login,589,0,26
+1773382242946,590,Login Request,200,OK,Dosen/Admin Users 1-1,text,true,,2138,290,14,14,http://localhost:8082/api/auth/login,590,0,26
+1773382243044,589,Login Request,200,OK,Dosen/Admin Users 1-5,text,true,,2138,290,16,16,http://localhost:8082/api/auth/login,589,0,1
+1773382243094,643,Login Request,200,OK,Dosen/Admin Users 1-6,text,true,,2138,290,18,18,http://localhost:8082/api/auth/login,643,0,1
+1773382242995,742,Login Request,200,OK,Dosen/Admin Users 1-4,text,true,,2138,290,18,18,http://localhost:8082/api/auth/login,742,0,0
+1773382243144,595,Login Request,200,OK,Dosen/Admin Users 1-7,text,true,,2138,290,18,18,http://localhost:8082/api/auth/login,595,0,1
+1773382243195,645,Login Request,200,OK,Dosen/Admin Users 1-8,text,true,,2138,290,20,20,http://localhost:8082/api/auth/login,645,0,0
+1773382243245,719,Login Request,200,OK,Dosen/Admin Users 1-9,text,true,,2138,290,23,23,http://localhost:8082/api/auth/login,719,0,1
+1773382243294,966,Login Request,200,OK,Dosen/Admin Users 1-10,text,true,,2138,290,29,29,http://localhost:8082/api/auth/login,966,0,1
+1773382243344,1109,Login Request,200,OK,Dosen/Admin Users 1-11,text,true,,2138,290,33,33,http://localhost:8082/api/auth/login,1109,0,1
+1773382243394,1350,Login Request,200,OK,Dosen/Admin Users 1-12,text,true,,2138,290,38,38,http://localhost:8082/api/auth/login,1350,0,0
+1773382243444,8210,Login Request,200,OK,Dosen/Admin Users 1-13,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,8210,0,0
+1773382243494,8160,Login Request,200,OK,Dosen/Admin Users 1-14,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,8160,0,1
+1773382243543,8189,Login Request,200,OK,Dosen/Admin Users 1-15,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,8189,0,1
+1773382243644,8089,Login Request,200,OK,Dosen/Admin Users 1-17,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,8089,0,1
+1773382243744,7991,Login Request,200,OK,Dosen/Admin Users 1-19,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7991,0,1
+1773382243694,8042,Login Request,200,OK,Dosen/Admin Users 1-18,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,8042,0,1
+1773382243794,7943,Login Request,200,OK,Dosen/Admin Users 1-20,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7943,0,0
+1773382243594,8147,Login Request,200,OK,Dosen/Admin Users 1-16,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,8147,0,1
+1773382243844,7898,Login Request,200,OK,Dosen/Admin Users 1-21,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7898,0,1
+1773382243946,7797,Login Request,200,OK,Dosen/Admin Users 1-23,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7797,0,2
+1773382244147,7597,Login Request,200,OK,Dosen/Admin Users 1-27,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7597,0,1
+1773382244245,7500,Login Request,200,OK,Dosen/Admin Users 1-29,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7500,0,2
+1773382243894,7849,Login Request,200,OK,Dosen/Admin Users 1-22,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7849,0,1
+1773382243999,7741,Login Request,200,OK,Dosen/Admin Users 1-24,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7741,0,1
+1773382244043,7704,Login Request,200,OK,Dosen/Admin Users 1-25,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7704,0,0
+1773382244100,7648,Login Request,200,OK,Dosen/Admin Users 1-26,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7648,0,0
+1773382244196,7552,Login Request,200,OK,Dosen/Admin Users 1-28,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7552,0,1
+1773382244600,7150,Login Request,200,OK,Dosen/Admin Users 1-36,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7150,0,1
+1773382244648,7102,Login Request,200,OK,Dosen/Admin Users 1-37,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7102,0,1
+1773382244308,7443,Login Request,200,OK,Dosen/Admin Users 1-30,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7443,0,0
+1773382244352,7400,Login Request,200,OK,Dosen/Admin Users 1-31,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7400,0,1
+1773382244396,7357,Login Request,200,OK,Dosen/Admin Users 1-32,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7357,0,1
+1773382244448,7306,Login Request,200,OK,Dosen/Admin Users 1-33,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7306,0,1
+1773382244696,7059,Login Request,200,OK,Dosen/Admin Users 1-38,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7059,0,1
+1773382244508,7247,Login Request,200,OK,Dosen/Admin Users 1-34,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7247,0,0
+1773382244548,7208,Login Request,200,OK,Dosen/Admin Users 1-35,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7208,0,1
+1773382244749,7007,Login Request,200,OK,Dosen/Admin Users 1-39,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,7007,0,1
+1773382244901,6857,Login Request,200,OK,Dosen/Admin Users 1-42,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,6857,0,0
+1773382244852,6907,Login Request,200,OK,Dosen/Admin Users 1-41,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,6907,0,0
+1773382244944,6815,Login Request,200,OK,Dosen/Admin Users 1-43,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,6815,0,1
+1773382245151,6609,Login Request,200,OK,Dosen/Admin Users 1-47,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,6609,0,1
+1773382245096,6664,Login Request,200,OK,Dosen/Admin Users 1-46,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,6664,0,1
+1773382244997,6764,Login Request,200,OK,Dosen/Admin Users 1-44,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,6764,0,2
+1773382245243,6518,Login Request,200,OK,Dosen/Admin Users 1-49,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,6518,0,1
+1773382244796,6967,Login Request,200,OK,Dosen/Admin Users 1-40,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,6967,0,1
+1773382245194,6571,Login Request,200,OK,Dosen/Admin Users 1-48,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,6571,0,1
+1773382245048,6713,Login Request,200,OK,Dosen/Admin Users 1-45,text,true,,2138,290,100,100,http://localhost:8082/api/auth/login,6713,0,1
+1773382243290,8774,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-2,text,true,,10025,747,100,100,http://localhost:8082/api/dashboard/stats,8774,0,0
+1773382243536,8529,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-1,text,true,,10025,747,100,100,http://localhost:8082/api/dashboard/stats,8529,0,0
+1773382243635,8431,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-5,text,true,,10025,747,100,100,http://localhost:8082/api/dashboard/stats,8431,0,0
+1773382243739,8328,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-4,text,true,,10025,747,99,99,http://localhost:8082/api/dashboard/stats,8328,0,0
+1773382243741,8328,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-7,text,true,,10025,747,99,99,http://localhost:8082/api/dashboard/stats,8327,0,0
+1773382243739,8332,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-6,text,true,,10025,747,98,98,http://localhost:8082/api/dashboard/stats,8332,0,0
+1773382243841,8231,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-8,text,true,,10025,747,98,98,http://localhost:8082/api/dashboard/stats,8231,0,0
+1773382243965,8115,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-9,text,true,,10025,747,97,97,http://localhost:8082/api/dashboard/stats,8115,0,0
+1773382243536,9327,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-3,text,true,,10025,747,92,92,http://localhost:8082/api/dashboard/stats,9327,0,0
+1773382245294,7865,Login Request,200,OK,Dosen/Admin Users 1-50,text,true,,2138,290,91,91,http://localhost:8082/api/auth/login,7865,0,1
+1773382245347,7812,Login Request,200,OK,Dosen/Admin Users 1-51,text,true,,2138,290,91,91,http://localhost:8082/api/auth/login,7812,0,0
+1773382245644,10039,Login Request,200,OK,Dosen/Admin Users 1-57,text,true,,2138,290,91,91,http://localhost:8082/api/auth/login,10039,0,1
+1773382245399,23184,Login Request,200,OK,Dosen/Admin Users 1-52,text,true,,2138,290,91,91,http://localhost:8082/api/auth/login,23183,0,0
+1773382245443,23140,Login Request,200,OK,Dosen/Admin Users 1-53,text,true,,2138,290,91,91,http://localhost:8082/api/auth/login,23140,0,0
+1773382245494,23090,Login Request,200,OK,Dosen/Admin Users 1-54,text,true,,2138,290,91,91,http://localhost:8082/api/auth/login,23090,0,1
+1773382245603,22981,Login Request,200,OK,Dosen/Admin Users 1-56,text,true,,2138,290,91,91,http://localhost:8082/api/auth/login,22981,0,0
+1773382245547,23038,Login Request,200,OK,Dosen/Admin Users 1-55,text,true,,2138,290,91,91,http://localhost:8082/api/auth/login,23038,0,0
+1773382245694,29091,Login Request,200,OK,Dosen/Admin Users 1-58,text,true,,2138,290,91,91,http://localhost:8082/api/auth/login,29091,0,1
+1773382245744,29043,Login Request,200,OK,Dosen/Admin Users 1-59,text,true,,2138,290,91,91,http://localhost:8082/api/auth/login,29043,0,0
+1773382244261,30538,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-10,text,true,,10025,747,91,91,http://localhost:8082/api/dashboard/stats,30538,0,0
+1773382245793,29268,Login Request,200,OK,Dosen/Admin Users 1-60,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,29268,0,1
+1773382245845,29219,Login Request,200,OK,Dosen/Admin Users 1-61,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,29218,0,0
+1773382245894,29172,Login Request,200,OK,Dosen/Admin Users 1-62,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,29172,0,1
+1773382245943,29125,Login Request,200,OK,Dosen/Admin Users 1-63,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,29125,0,1
+1773382245994,29075,Login Request,200,OK,Dosen/Admin Users 1-64,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,29075,0,1
+1773382246044,29027,Login Request,200,OK,Dosen/Admin Users 1-65,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,29027,0,1
+1773382246094,28978,Login Request,200,OK,Dosen/Admin Users 1-66,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28978,0,1
+1773382246143,28931,Login Request,200,OK,Dosen/Admin Users 1-67,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28931,0,1
+1773382246194,28882,Login Request,200,OK,Dosen/Admin Users 1-68,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28882,0,1
+1773382246244,28834,Login Request,200,OK,Dosen/Admin Users 1-69,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28834,0,1
+1773382246294,28786,Login Request,200,OK,Dosen/Admin Users 1-70,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28786,0,1
+1773382246344,28738,Login Request,200,OK,Dosen/Admin Users 1-71,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28738,0,1
+1773382246395,28688,Login Request,200,OK,Dosen/Admin Users 1-72,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28688,0,0
+1773382246444,28642,Login Request,200,OK,Dosen/Admin Users 1-73,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28642,0,0
+1773382246495,28594,Login Request,200,OK,Dosen/Admin Users 1-74,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28594,0,0
+1773382246544,28546,Login Request,200,OK,Dosen/Admin Users 1-75,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28546,0,1
+1773382246594,28498,Login Request,200,OK,Dosen/Admin Users 1-76,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28498,0,1
+1773382246644,28449,Login Request,200,OK,Dosen/Admin Users 1-77,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28449,0,0
+1773382246694,28401,Login Request,200,OK,Dosen/Admin Users 1-78,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28401,0,1
+1773382246744,28353,Login Request,200,OK,Dosen/Admin Users 1-79,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28353,0,35
+1773382246794,28305,Login Request,200,OK,Dosen/Admin Users 1-80,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28305,0,1
+1773382246843,28258,Login Request,200,OK,Dosen/Admin Users 1-81,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28258,0,1
+1773382246893,28210,Login Request,200,OK,Dosen/Admin Users 1-82,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28210,0,1
+1773382246944,28159,Login Request,200,OK,Dosen/Admin Users 1-83,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28159,0,1
+1773382246993,28112,Login Request,200,OK,Dosen/Admin Users 1-84,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28112,0,0
+1773382247043,28065,Login Request,200,OK,Dosen/Admin Users 1-85,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28065,0,1
+1773382247142,27968,Login Request,200,OK,Dosen/Admin Users 1-87,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27968,0,1
+1773382247193,27917,Login Request,200,OK,Dosen/Admin Users 1-88,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27917,0,1
+1773382247244,27868,Login Request,200,OK,Dosen/Admin Users 1-89,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27868,0,1
+1773382247293,27819,Login Request,200,OK,Dosen/Admin Users 1-90,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27819,0,0
+1773382247094,28016,Login Request,200,OK,Dosen/Admin Users 1-86,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,28016,0,0
+1773382247343,27772,Login Request,200,OK,Dosen/Admin Users 1-91,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27772,0,1
+1773382247394,27726,Login Request,200,OK,Dosen/Admin Users 1-92,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27726,0,1
+1773382247494,27628,Login Request,200,OK,Dosen/Admin Users 1-94,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27628,0,0
+1773382247544,27579,Login Request,200,OK,Dosen/Admin Users 1-95,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27579,0,1
+1773382247593,27532,Login Request,200,OK,Dosen/Admin Users 1-96,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27532,0,1
+1773382247443,27677,Login Request,200,OK,Dosen/Admin Users 1-93,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27677,0,0
+1773382247693,27438,Login Request,200,OK,Dosen/Admin Users 1-98,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27438,0,1
+1773382247644,27490,Login Request,200,OK,Dosen/Admin Users 1-97,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27490,0,1
+1773382247743,27394,Login Request,200,OK,Dosen/Admin Users 1-99,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27394,0,1
+1773382247793,27346,Login Request,200,OK,Dosen/Admin Users 1-100,text,true,,2138,290,90,90,http://localhost:8082/api/auth/login,27346,0,1
+1773382244460,30712,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-11,text,true,,10025,747,90,90,http://localhost:8082/api/dashboard/stats,30712,0,0
+1773382244745,30430,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-12,text,true,,10025,747,90,90,http://localhost:8082/api/dashboard/stats,30430,0,0
+1773382251655,23765,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-13,text,true,,10025,747,88,88,http://localhost:8082/api/dashboard/stats,23764,0,0
+1773382251658,23820,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-14,text,true,,10025,747,87,87,http://localhost:8082/api/dashboard/stats,23820,0,0
+1773382251734,23763,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-17,text,true,,10025,747,86,86,http://localhost:8082/api/dashboard/stats,23763,0,0
+1773382251737,23797,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-18,text,true,,10025,747,85,85,http://localhost:8082/api/dashboard/stats,23797,0,0
+1773382251742,23993,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-21,text,true,,10025,747,84,84,http://localhost:8082/api/dashboard/stats,23993,0,0
+1773382251745,24018,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-27,text,true,,10025,747,83,83,http://localhost:8082/api/dashboard/stats,24018,0,0
+1773382251746,24175,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-29,text,true,,10025,747,82,82,http://localhost:8082/api/dashboard/stats,24175,0,0
+1773382251738,24185,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-20,text,true,,10025,747,82,82,http://localhost:8082/api/dashboard/stats,24185,0,0
+1773382251746,24441,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-22,text,true,,10025,747,80,80,http://localhost:8082/api/dashboard/stats,24441,0,0
+1773382251747,24440,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-24,text,true,,10025,747,80,80,http://localhost:8082/api/dashboard/stats,24440,0,0
+1773382251747,24477,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-25,text,true,,10025,747,78,78,http://localhost:8082/api/dashboard/stats,24477,0,0
+1773382251748,24519,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-28,text,true,,10025,747,77,77,http://localhost:8082/api/dashboard/stats,24519,0,0
+1773382251753,24523,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-31,text,true,,10025,747,77,77,http://localhost:8082/api/dashboard/stats,24522,0,0
+1773382251753,24561,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-32,text,true,,10025,747,75,75,http://localhost:8082/api/dashboard/stats,24561,0,0
+1773382251754,24579,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-33,text,true,,10025,747,74,74,http://localhost:8082/api/dashboard/stats,24579,0,0
+1773382251755,24621,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-38,text,true,,10025,747,73,73,http://localhost:8082/api/dashboard/stats,24621,0,0
+1773382251748,24677,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-26,text,true,,10025,747,72,72,http://localhost:8082/api/dashboard/stats,24677,0,0
+1773382251751,24706,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-30,text,true,,10025,747,71,71,http://localhost:8082/api/dashboard/stats,24705,0,0
+1773382251755,24737,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-34,text,true,,10025,747,70,70,http://localhost:8082/api/dashboard/stats,24737,0,0
+1773382251755,24742,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-36,text,true,,10025,747,69,69,http://localhost:8082/api/dashboard/stats,24742,0,0
+1773382251757,24763,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-35,text,true,,10025,747,68,68,http://localhost:8082/api/dashboard/stats,24763,0,0
+1773382251760,24817,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-47,text,true,,10025,747,67,67,http://localhost:8082/api/dashboard/stats,24817,0,0
+1773382251759,24829,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-41,text,true,,10025,747,66,66,http://localhost:8082/api/dashboard/stats,24829,0,0
+1773382251761,24867,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-44,text,true,,10025,747,65,65,http://localhost:8082/api/dashboard/stats,24867,0,0
+1773382251756,24873,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-37,text,true,,10025,747,65,65,http://localhost:8082/api/dashboard/stats,24873,0,0
+1773382251733,25686,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-15,text,true,,10025,747,63,63,http://localhost:8082/api/dashboard/stats,25686,0,0
+1773382251736,25687,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-19,text,true,,10025,747,63,63,http://localhost:8082/api/dashboard/stats,25687,0,0
+1773382251742,25684,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-16,text,true,,10025,747,63,63,http://localhost:8082/api/dashboard/stats,25684,0,0
+1773382251744,25688,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-23,text,true,,10025,747,62,62,http://localhost:8082/api/dashboard/stats,25688,0,0
+1773382251757,25682,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-39,text,true,,10025,747,60,60,http://localhost:8082/api/dashboard/stats,25682,0,0
+1773382251759,25682,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-42,text,true,,10025,747,60,60,http://localhost:8082/api/dashboard/stats,25682,0,0
+1773382251761,25683,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-46,text,true,,10025,747,60,60,http://localhost:8082/api/dashboard/stats,25683,0,0
+1773382251760,25685,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-43,text,true,,10025,747,60,60,http://localhost:8082/api/dashboard/stats,25685,0,0
+1773382251762,25685,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-49,text,true,,10025,747,60,60,http://localhost:8082/api/dashboard/stats,25685,0,0
+1773382251763,25685,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-40,text,true,,10025,747,60,60,http://localhost:8082/api/dashboard/stats,25685,0,0
+1773382251766,25695,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-48,text,true,,10025,747,59,59,http://localhost:8082/api/dashboard/stats,25694,0,0
+1773382251767,25694,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-45,text,true,,10025,747,59,59,http://localhost:8082/api/dashboard/stats,25694,0,0
+1773382275125,23260,Get Dashboard Stats,500,Internal Server Error,Dosen/Admin Users 1-95,text,false,,345,747,51,51,http://localhost:8082/api/dashboard/stats,23260,0,0
+1773382275125,23262,Get Dashboard Stats,500,Internal Server Error,Dosen/Admin Users 1-94,text,false,,345,747,50,50,http://localhost:8082/api/dashboard/stats,23262,0,0
+1773382275127,23262,Get Dashboard Stats,500,Internal Server Error,Dosen/Admin Users 1-96,text,false,,345,747,49,49,http://localhost:8082/api/dashboard/stats,23262,0,0
+1773382275133,23259,Get Dashboard Stats,500,Internal Server Error,Dosen/Admin Users 1-98,text,false,,345,747,48,48,http://localhost:8082/api/dashboard/stats,23259,0,0
+1773382275136,23257,Get Dashboard Stats,500,Internal Server Error,Dosen/Admin Users 1-97,text,false,,345,747,47,47,http://localhost:8082/api/dashboard/stats,23257,0,0
+1773382275070,24117,Get Dashboard Stats,500,Internal Server Error,Dosen/Admin Users 1-63,text,false,,345,747,46,46,http://localhost:8082/api/dashboard/stats,24116,0,0
+1773382255685,46201,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-57,text,true,,10025,747,45,45,http://localhost:8082/api/dashboard/stats,46201,0,0
+1773382253161,48963,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-50,text,true,,10025,747,44,44,http://localhost:8082/api/dashboard/stats,48959,0,0
+1773382253161,48968,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-51,text,true,,10025,747,43,43,http://localhost:8082/api/dashboard/stats,48968,0,0
+1773382268584,33604,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-52,text,true,,10025,747,42,42,http://localhost:8082/api/dashboard/stats,33603,0,0
+1773382268584,33622,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-53,text,true,,10025,747,41,41,http://localhost:8082/api/dashboard/stats,33622,0,0
+1773382268585,33646,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-56,text,true,,10025,747,40,40,http://localhost:8082/api/dashboard/stats,33646,0,0
+1773382268584,33671,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-54,text,true,,10025,747,39,39,http://localhost:8082/api/dashboard/stats,33671,0,0
+1773382268585,33717,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-55,text,true,,10025,747,38,38,http://localhost:8082/api/dashboard/stats,33717,0,0
+1773382274787,27554,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-58,text,true,,10025,747,37,37,http://localhost:8082/api/dashboard/stats,27553,0,0
+1773382274789,27562,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-59,text,true,,10025,747,36,36,http://localhost:8082/api/dashboard/stats,27562,0,0
+1773382275063,27313,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-60,text,true,,10025,747,35,35,http://localhost:8082/api/dashboard/stats,27312,0,0
+1773382275068,27340,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-62,text,true,,10025,747,34,34,http://localhost:8082/api/dashboard/stats,27340,0,0
+1773382275065,27354,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-61,text,true,,10025,747,33,33,http://localhost:8082/api/dashboard/stats,27354,0,0
+1773382275071,27431,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-64,text,true,,10025,747,32,32,http://localhost:8082/api/dashboard/stats,27431,0,0
+1773382275073,27439,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-65,text,true,,10025,747,31,31,http://localhost:8082/api/dashboard/stats,27438,0,0
+1773382275074,27450,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-66,text,true,,10025,747,30,30,http://localhost:8082/api/dashboard/stats,27450,0,0
+1773382275076,27504,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-67,text,true,,10025,747,29,29,http://localhost:8082/api/dashboard/stats,27504,0,0
+1773382275080,27507,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-69,text,true,,10025,747,28,28,http://localhost:8082/api/dashboard/stats,27507,0,0
+1773382275078,27510,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-68,text,true,,10025,747,28,28,http://localhost:8082/api/dashboard/stats,27510,0,0
+1773382275082,27566,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-70,text,true,,10025,747,26,26,http://localhost:8082/api/dashboard/stats,27566,0,0
+1773382275083,27607,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-71,text,true,,10025,747,25,25,http://localhost:8082/api/dashboard/stats,27606,0,0
+1773382275085,27645,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-72,text,true,,10025,747,24,24,http://localhost:8082/api/dashboard/stats,27645,0,0
+1773382275088,27648,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-73,text,true,,10025,747,24,24,http://localhost:8082/api/dashboard/stats,27648,0,0
+1773382275106,27679,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-83,text,true,,10025,747,23,23,http://localhost:8082/api/dashboard/stats,27679,0,0
+1773382275090,27702,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-74,text,true,,10025,747,22,22,http://localhost:8082/api/dashboard/stats,27702,0,0
+1773382275091,27735,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-75,text,true,,10025,747,20,20,http://localhost:8082/api/dashboard/stats,27735,0,0
+1773382275112,27746,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-87,text,true,,10025,747,19,19,http://localhost:8082/api/dashboard/stats,27746,0,0
+1773382275107,27776,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-84,text,true,,10025,747,18,18,http://localhost:8082/api/dashboard/stats,27776,0,0
+1773382275099,27785,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-79,text,true,,10025,747,18,18,http://localhost:8082/api/dashboard/stats,27785,0,0
+1773382275101,27902,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-80,text,true,,10025,747,16,16,http://localhost:8082/api/dashboard/stats,27901,0,0
+1773382275109,27894,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-85,text,true,,10025,747,16,16,http://localhost:8082/api/dashboard/stats,27894,0,0
+1773382275103,27923,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-81,text,true,,10025,747,14,14,http://localhost:8082/api/dashboard/stats,27923,0,0
+1773382275097,28012,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-78,text,true,,10025,747,13,13,http://localhost:8082/api/dashboard/stats,28012,0,0
+1773382275114,28001,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-90,text,true,,10025,747,12,12,http://localhost:8082/api/dashboard/stats,28001,0,0
+1773382275105,28040,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-82,text,true,,10025,747,11,11,http://localhost:8082/api/dashboard/stats,28040,0,0
+1773382275114,28098,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-89,text,true,,10025,747,10,10,http://localhost:8082/api/dashboard/stats,28097,0,0
+1773382275093,28137,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-76,text,true,,10025,747,9,9,http://localhost:8082/api/dashboard/stats,28136,0,0
+1773382275112,28132,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-88,text,true,,10025,747,8,8,http://localhost:8082/api/dashboard/stats,28132,0,0
+1773382275117,28152,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-91,text,true,,10025,747,7,7,http://localhost:8082/api/dashboard/stats,28152,0,0
+1773382275095,28188,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-77,text,true,,10025,747,6,6,http://localhost:8082/api/dashboard/stats,28188,0,0
+1773382275116,28204,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-86,text,true,,10025,747,5,5,http://localhost:8082/api/dashboard/stats,28203,0,0
+1773382275122,28210,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-92,text,true,,10025,747,4,4,http://localhost:8082/api/dashboard/stats,28210,0,0
+1773382275131,28226,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-93,text,true,,10025,747,3,3,http://localhost:8082/api/dashboard/stats,28226,0,0
+1773382275141,28230,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-100,text,true,,10025,747,2,2,http://localhost:8082/api/dashboard/stats,28230,0,0
+1773382275139,28237,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-99,text,true,,10025,747,1,1,http://localhost:8082/api/dashboard/stats,28237,0,0

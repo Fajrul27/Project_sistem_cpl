@@ -1,0 +1,3 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1773389064706,450,Login Request,200,OK,Lightweight Test 1-1,text,true,,2611,291,1,1,https://obeunugha.my.id/api/auth/login,447,0,295
+1773389065189,43,Get Me (Lightweight),200,OK,Lightweight Test 1-1,text,true,,1357,740,1,1,https://obeunugha.my.id/api/auth/me,43,0,0

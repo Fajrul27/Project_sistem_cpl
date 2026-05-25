@@ -1,0 +1,21 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1773382066346,137,Login Request,200,OK,Dosen/Admin Users 1-1,text,true,,2138,290,1,1,http://localhost:8082/api/auth/login,133,0,19
+1773382066755,609,Login Request,200,OK,Dosen/Admin Users 1-2,text,true,,2138,290,3,3,http://localhost:8082/api/auth/login,609,0,0
+1773382067254,132,Login Request,200,OK,Dosen/Admin Users 1-3,text,true,,2138,290,3,3,http://localhost:8082/api/auth/login,132,0,0
+1773382067753,336,Login Request,200,OK,Dosen/Admin Users 1-4,text,true,,2138,290,4,4,http://localhost:8082/api/auth/login,336,0,1
+1773382066510,1609,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-1,text,true,,10025,747,4,4,http://localhost:8082/api/dashboard/stats,1609,0,0
+1773382068254,114,Login Request,200,OK,Dosen/Admin Users 1-5,text,true,,2138,290,4,4,http://localhost:8082/api/auth/login,114,0,1
+1773382067387,2929,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-3,text,true,,10025,747,8,8,http://localhost:8082/api/dashboard/stats,2929,0,0
+1773382067365,3059,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-2,text,true,,10025,747,7,7,http://localhost:8082/api/dashboard/stats,3059,0,0
+1773382068091,2333,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-4,text,true,,10025,747,7,7,http://localhost:8082/api/dashboard/stats,2333,0,0
+1773382068370,2055,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-5,text,true,,10025,747,7,7,http://localhost:8082/api/dashboard/stats,2055,0,0
+1773382069754,671,Login Request,200,OK,Dosen/Admin Users 1-8,text,true,,2138,290,7,7,http://localhost:8082/api/auth/login,671,0,1
+1773382069254,1270,Login Request,200,OK,Dosen/Admin Users 1-7,text,true,,2138,290,4,4,http://localhost:8082/api/auth/login,1270,0,0
+1773382068753,1774,Login Request,200,OK,Dosen/Admin Users 1-6,text,true,,2138,290,4,4,http://localhost:8082/api/auth/login,1773,0,1
+1773382070254,283,Login Request,200,OK,Dosen/Admin Users 1-9,text,true,,2138,290,4,4,http://localhost:8082/api/auth/login,283,0,1
+1773382070754,160,Login Request,200,OK,Dosen/Admin Users 1-10,text,true,,2138,290,5,5,http://localhost:8082/api/auth/login,159,0,1
+1773382070426,3178,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-8,text,true,,10025,747,5,5,http://localhost:8082/api/dashboard/stats,3178,0,0
+1773382070915,2722,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-10,text,true,,10025,747,4,4,http://localhost:8082/api/dashboard/stats,2722,0,0
+1773382070526,3110,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-7,text,true,,10025,747,4,4,http://localhost:8082/api/dashboard/stats,3110,0,0
+1773382070528,3116,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-6,text,true,,10025,747,2,2,http://localhost:8082/api/dashboard/stats,3116,0,0
+1773382070538,3115,Get Dashboard Stats,200,OK,Dosen/Admin Users 1-9,text,true,,10025,747,1,1,http://localhost:8082/api/dashboard/stats,3115,0,0

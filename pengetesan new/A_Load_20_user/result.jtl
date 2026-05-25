@@ -1,0 +1,544 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1776260117932,694,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-1,text,true,,2537,279,2,2,https://obeunugha.my.id/api/auth/login,689,0,284
+1776260118849,383,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-2,text,true,,2543,279,3,3,https://obeunugha.my.id/api/auth/login,382,0,39
+1776260119848,389,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-3,text,true,,2535,279,4,4,https://obeunugha.my.id/api/auth/login,389,0,35
+1776260120847,398,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-4,text,true,,2549,279,5,5,https://obeunugha.my.id/api/auth/login,397,0,37
+1776260121847,1273,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-5,text,true,,2539,279,7,7,https://obeunugha.my.id/api/auth/login,1272,0,357
+1776260119657,3488,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-1,text,true,,10428,774,7,7,https://obeunugha.my.id/api/dashboard/stats,3486,0,39
+1776260122848,412,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-6,text,true,,2545,279,7,7,https://obeunugha.my.id/api/auth/login,412,0,32
+1776260123848,431,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-7,text,true,,2541,279,8,8,https://obeunugha.my.id/api/auth/login,430,0,33
+1776260124146,410,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-1,text,true,,1289,766,8,8,https://obeunugha.my.id/api/auth/me,410,0,34
+1776260124848,4829,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-8,text,true,,2541,279,13,13,https://obeunugha.my.id/api/auth/login,4829,0,33
+1776260120233,9837,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-2,text,true,,10432,774,14,14,https://obeunugha.my.id/api/dashboard/stats,9835,0,34
+1776260125558,7498,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-1,text,true,,2537,279,17,17,https://obeunugha.my.id/api/auth/login,7497,0,37
+1776260131073,2188,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-2,text,true,,1285,766,17,17,https://obeunugha.my.id/api/auth/me,2187,0,30
+1776260126847,6594,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-10,text,true,,2544,279,17,17,https://obeunugha.my.id/api/auth/login,6594,0,374
+1776260125848,7686,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-9,text,true,,2541,279,17,17,https://obeunugha.my.id/api/auth/login,7685,0,39
+1776260127847,5688,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-11,text,true,,2541,279,17,17,https://obeunugha.my.id/api/auth/login,5688,0,33
+1776260121239,12410,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-3,text,true,,10426,774,17,17,https://obeunugha.my.id/api/dashboard/stats,12408,0,29
+1776260128848,6172,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-12,text,true,,2545,279,19,19,https://obeunugha.my.id/api/auth/login,6171,0,34
+1776260122246,12775,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-4,text,true,,10426,774,19,19,https://obeunugha.my.id/api/dashboard/stats,12774,0,32
+1776260129847,5215,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-13,text,true,,2544,279,19,19,https://obeunugha.my.id/api/auth/login,5215,0,286
+1776260130847,4285,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-14,text,true,,2542,279,19,19,https://obeunugha.my.id/api/auth/login,4285,0,305
+1776260131847,3350,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-15,text,true,,2552,279,19,19,https://obeunugha.my.id/api/auth/login,3350,0,393
+1776260132848,2562,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-16,text,true,,2546,279,19,19,https://obeunugha.my.id/api/auth/login,2562,0,415
+1776260134651,2193,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-3,text,true,,1290,766,20,20,https://obeunugha.my.id/api/auth/me,2193,0,370
+1776260133847,12441,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-17,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,12441,0,358
+1776260136021,12137,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-4,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,12137,0,26
+1776260134262,13896,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-2,text,true,,2543,279,20,20,https://obeunugha.my.id/api/auth/login,13896,0,34
+1776260124121,24037,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-5,text,false,,748,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24037,0,30
+1776260134847,14380,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-18,text,true,,2543,279,20,20,https://obeunugha.my.id/api/auth/login,14380,0,38
+1776260124261,25269,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-6,text,true,,10438,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25268,0,32
+1776260125280,35424,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-7,text,false,,754,774,20,20,https://obeunugha.my.id/api/dashboard/stats,35423,0,28
+1776260134057,26647,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-1,text,false,,752,774,20,20,https://obeunugha.my.id/api/dashboard/stats,26647,0,29
+1776260130678,30026,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-8,text,false,,748,774,20,20,https://obeunugha.my.id/api/dashboard/stats,30026,0,34
+1776260147289,15332,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-17,text,false,,749,774,20,20,https://obeunugha.my.id/api/dashboard/stats,15332,0,0
+1776260137845,24790,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-3,text,false,,970,279,20,20,https://obeunugha.my.id/api/auth/login,24790,0,0
+1776260135848,26861,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-19,text,false,,971,279,20,20,https://obeunugha.my.id/api/auth/login,26861,0,31
+1776260136847,25862,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-20,text,false,,975,279,20,20,https://obeunugha.my.id/api/auth/login,25862,0,29
+1776260149160,13645,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-5,text,true,,1287,766,20,20,https://obeunugha.my.id/api/auth/me,13645,0,32
+1776260150532,12273,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-6,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,12273,0,32
+1776260134536,28860,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-11,text,true,,10426,774,20,20,https://obeunugha.my.id/api/dashboard/stats,28852,0,36
+1776260149160,14314,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-4,text,true,,2537,279,20,20,https://obeunugha.my.id/api/auth/login,14313,0,34
+1776260134443,29042,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-10,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,28931,0,0
+1776260161705,1787,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-8,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,1787,0,330
+1776260134536,29043,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-9,text,true,,10424,774,20,20,https://obeunugha.my.id/api/dashboard/stats,29035,0,30
+1776260136064,27531,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-13,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,27525,0,0
+1776260136021,27637,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-12,text,true,,10430,774,20,20,https://obeunugha.my.id/api/dashboard/stats,27625,0,25
+1776260136199,27495,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-15,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,27492,0,0
+1776260161706,1995,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-7,text,true,,1279,766,20,20,https://obeunugha.my.id/api/auth/me,1995,0,330
+1776260161705,2018,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-1,text,true,,1281,766,20,20,https://obeunugha.my.id/api/auth/me,2017,0,331
+1776260136133,27625,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-14,text,true,,10433,774,20,20,https://obeunugha.my.id/api/dashboard/stats,27483,0,0
+1776260163622,204,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-17,text,true,,1292,766,20,20,https://obeunugha.my.id/api/auth/me,204,0,0
+1776260136411,27428,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-16,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,27270,0,0
+1776260163636,227,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-3,text,false,,745,228,20,20,https://obeunugha.my.id/api/dashboard/stats,227,0,0
+1776260163710,293,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-20,text,false,,742,228,20,20,https://obeunugha.my.id/api/dashboard/stats,293,0,56
+1776260163710,579,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-19,text,false,,747,228,20,20,https://obeunugha.my.id/api/dashboard/stats,579,0,305
+1776260163806,483,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-6,text,true,,2549,279,20,20,https://obeunugha.my.id/api/auth/login,482,0,37
+1776260163806,816,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-5,text,true,,2558,279,20,20,https://obeunugha.my.id/api/auth/login,816,0,279
+1776260164487,218,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-10,text,true,,1284,766,20,20,https://obeunugha.my.id/api/auth/me,218,0,0
+1776260164596,207,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-13,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,207,0,0
+1776260164580,281,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-9,text,true,,1289,766,20,20,https://obeunugha.my.id/api/auth/me,280,0,32
+1776260164695,217,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-15,text,true,,1282,766,20,20,https://obeunugha.my.id/api/auth/me,217,0,0
+1776260164397,632,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-11,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,632,0,319
+1776260164759,304,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-14,text,true,,1292,766,20,20,https://obeunugha.my.id/api/auth/me,304,0,0
+1776260164840,223,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-16,text,true,,1302,766,20,20,https://obeunugha.my.id/api/auth/me,223,0,0
+1776260164702,415,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-7,text,true,,2545,279,20,20,https://obeunugha.my.id/api/auth/login,415,0,44
+1776260164864,314,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-3,text,false,,745,220,20,20,https://obeunugha.my.id/api/auth/me,314,0,0
+1776260164827,387,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-17,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,387,0,0
+1776260164659,573,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-12,text,true,,1286,766,20,20,https://obeunugha.my.id/api/auth/me,573,0,307
+1776260165004,284,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-20,text,false,,744,220,20,20,https://obeunugha.my.id/api/auth/me,284,0,38
+1776260165290,244,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-19,text,false,,743,220,20,20,https://obeunugha.my.id/api/auth/me,244,0,0
+1776260165705,8012,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-10,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,8012,0,0
+1776260164724,8993,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-1,text,true,,2558,279,20,20,https://obeunugha.my.id/api/auth/login,8993,0,652
+1776260165861,7856,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-9,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,7856,0,298
+1776260166178,7539,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-3,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,7539,0,0
+1776260166030,7687,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-11,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,7687,0,0
+1776260166064,7653,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-16,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,7653,0,0
+1776260166289,7429,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-20,text,true,,2535,279,20,20,https://obeunugha.my.id/api/auth/login,7428,0,35
+1776260165913,7804,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-15,text,true,,2540,279,20,20,https://obeunugha.my.id/api/auth/login,7804,0,0
+1776260165804,7913,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-13,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,7913,0,0
+1776260164493,9225,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-8,text,true,,2545,279,20,20,https://obeunugha.my.id/api/auth/login,9224,0,1043
+1776260166535,7183,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-19,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,7183,0,0
+1776260149160,24671,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-2,text,true,,10428,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24666,0,32
+1776260164475,9380,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-4,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,9378,0,267
+1776260166064,7824,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-14,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,7824,0,0
+1776260150229,24022,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-18,text,true,,10424,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24019,0,1035
+1776260165290,8962,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-6,text,true,,10426,774,20,20,https://obeunugha.my.id/api/dashboard/stats,8961,0,80
+1776260166233,8223,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-12,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,8222,0,0
+1776260174856,421,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-4,text,true,,1292,766,20,20,https://obeunugha.my.id/api/auth/me,421,0,0
+1776260174832,9865,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-2,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,9864,0,277
+1776260175253,9444,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-18,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,9443,0,37
+1776260175253,9444,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-6,text,true,,1289,766,20,20,https://obeunugha.my.id/api/auth/me,9443,0,37
+1776260174718,21929,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-16,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,21928,0,0
+1776260174718,21928,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-10,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,21928,0,0
+1776260175457,21192,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-12,text,false,,763,774,20,20,https://obeunugha.my.id/api/dashboard/stats,21192,0,0
+1776260174890,21759,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-14,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,21759,0,0
+1776260174719,21930,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-19,text,false,,757,774,20,20,https://obeunugha.my.id/api/dashboard/stats,21930,0,0
+1776260174719,21930,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-13,text,false,,747,774,20,20,https://obeunugha.my.id/api/dashboard/stats,21930,0,0
+1776260174718,21931,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-3,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,21931,0,0
+1776260176278,21614,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-4,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,21614,0,0
+1776260166118,32166,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-7,text,true,,10437,774,20,20,https://obeunugha.my.id/api/dashboard/stats,32164,0,232
+1776260185697,12715,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-6,text,true,,2538,279,20,20,https://obeunugha.my.id/api/auth/login,12715,0,328
+1776260166215,32209,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-17,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,32199,0,0
+1776260197650,808,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-12,text,true,,1292,766,20,20,https://obeunugha.my.id/api/auth/me,808,0,0
+1776260197650,809,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-19,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,809,0,0
+1776260197650,810,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-3,text,true,,1286,766,20,20,https://obeunugha.my.id/api/auth/me,810,0,274
+1776260185697,12792,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-18,text,true,,2545,279,20,20,https://obeunugha.my.id/api/auth/login,12791,0,44
+1776260185697,12795,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-2,text,true,,2537,279,20,20,https://obeunugha.my.id/api/auth/login,12795,0,108
+1776260174718,23801,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-11,text,true,,10439,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23797,0,0
+1776260197650,879,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-13,text,true,,1279,766,20,20,https://obeunugha.my.id/api/auth/me,879,0,43
+1776260197647,890,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-16,text,true,,1281,766,20,20,https://obeunugha.my.id/api/auth/me,890,0,44
+1776260197647,892,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-10,text,true,,1287,766,20,20,https://obeunugha.my.id/api/auth/me,891,0,43
+1776260174718,23821,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-9,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23820,0,0
+1776260197650,889,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-14,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,888,0,41
+1776260174719,23847,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-20,text,true,,10424,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23846,0,37
+1776260165624,32955,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-5,text,true,,10433,774,20,20,https://obeunugha.my.id/api/dashboard/stats,32788,0,0
+1776260174718,23887,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-15,text,true,,10433,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23717,0,0
+1776260174718,23896,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-1,text,true,,10437,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23785,0,0
+1776260174719,23908,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-8,text,true,,10428,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23907,0,37
+1776260199286,201,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-7,text,true,,1290,766,20,20,https://obeunugha.my.id/api/auth/me,201,0,0
+1776260199520,493,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-11,text,true,,1286,766,20,20,https://obeunugha.my.id/api/auth/me,493,0,0
+1776260199459,771,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-12,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,771,0,0
+1776260199459,771,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-19,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,771,0,0
+1776260199460,770,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-3,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,770,0,0
+1776260199539,693,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-9,text,true,,1284,766,20,20,https://obeunugha.my.id/api/auth/me,693,0,0
+1776260199615,668,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-1,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,668,0,0
+1776260199606,757,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-15,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,757,0,29
+1776260199530,835,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-13,text,true,,2549,279,20,20,https://obeunugha.my.id/api/auth/login,835,0,25
+1776260199628,754,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-8,text,true,,1293,766,20,20,https://obeunugha.my.id/api/auth/me,753,0,24
+1776260199567,885,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-20,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,885,0,257
+1776260199425,1070,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-17,text,true,,1302,766,20,20,https://obeunugha.my.id/api/auth/me,1070,0,249
+1776260199580,1027,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-5,text,true,,1286,766,20,20,https://obeunugha.my.id/api/auth/me,1027,0,0
+1776260199539,1159,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-10,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,1159,0,252
+1776260199537,1182,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-16,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,1182,0,254
+1776260199539,1182,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-14,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,1182,0,265
+1776260200488,5067,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-7,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,5064,0,0
+1776260201232,4632,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-9,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,4630,0,0
+1776260201364,4575,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-15,text,true,,2539,279,20,20,https://obeunugha.my.id/api/auth/login,4575,0,40
+1776260201284,16295,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-1,text,false,,976,279,20,20,https://obeunugha.my.id/api/auth/login,16295,0,0
+1776260201013,16593,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-11,text,false,,972,279,20,20,https://obeunugha.my.id/api/auth/login,16593,0,0
+1776260201699,15908,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-10,text,false,,757,774,20,20,https://obeunugha.my.id/api/dashboard/stats,15908,0,0
+1776260201608,16002,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-5,text,false,,966,279,20,20,https://obeunugha.my.id/api/auth/login,16002,0,0
+1776260201496,16116,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-17,text,false,,972,279,20,20,https://obeunugha.my.id/api/auth/login,16116,0,0
+1776260201453,16161,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-20,text,false,,968,279,20,20,https://obeunugha.my.id/api/auth/login,16161,0,0
+1776260201382,16302,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-8,text,false,,963,279,20,20,https://obeunugha.my.id/api/auth/login,16302,0,43
+1776260218580,210,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-1,text,false,,747,228,20,20,https://obeunugha.my.id/api/dashboard/stats,210,0,0
+1776260218607,198,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-11,text,false,,753,228,20,20,https://obeunugha.my.id/api/dashboard/stats,198,0,0
+1776260218611,197,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-5,text,false,,749,228,20,20,https://obeunugha.my.id/api/dashboard/stats,197,0,0
+1776260218614,198,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-20,text,false,,741,228,20,20,https://obeunugha.my.id/api/dashboard/stats,198,0,0
+1776260218612,231,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-17,text,false,,749,228,20,20,https://obeunugha.my.id/api/dashboard/stats,231,0,0
+1776260218685,284,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-8,text,false,,750,228,20,20,https://obeunugha.my.id/api/dashboard/stats,284,0,32
+1776260219809,185,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-5,text,false,,749,220,20,20,https://obeunugha.my.id/api/auth/me,185,0,0
+1776260219791,203,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-1,text,false,,755,220,20,20,https://obeunugha.my.id/api/auth/me,203,0,0
+1776260219813,183,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-20,text,false,,747,220,20,20,https://obeunugha.my.id/api/auth/me,183,0,0
+1776260219806,192,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-11,text,false,,745,220,20,20,https://obeunugha.my.id/api/auth/me,192,0,0
+1776260219845,225,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-17,text,false,,747,220,20,20,https://obeunugha.my.id/api/auth/me,225,0,0
+1776260219970,259,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-8,text,false,,746,220,20,20,https://obeunugha.my.id/api/auth/me,258,0,29
+1776260206556,15280,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-7,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,15280,0,0
+1776260199413,22424,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-6,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,22424,0,0
+1776260206865,14973,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-9,text,false,,743,774,20,20,https://obeunugha.my.id/api/dashboard/stats,14973,0,0
+1776260198893,22945,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-4,text,false,,749,774,20,20,https://obeunugha.my.id/api/dashboard/stats,22945,0,0
+1776260206940,14898,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-15,text,false,,753,774,20,20,https://obeunugha.my.id/api/dashboard/stats,14898,0,358
+1776260199489,23883,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-18,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23883,0,218
+1776260199493,23940,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-2,text,false,,746,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23940,0,27
+1776260218608,6607,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-10,text,true,,1294,766,20,20,https://obeunugha.my.id/api/auth/me,6607,0,0
+1776260222837,2993,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-6,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,2993,0,0
+1776260222838,2992,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-4,text,true,,1284,766,20,20,https://obeunugha.my.id/api/auth/me,2992,0,0
+1776260222838,2992,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-15,text,true,,1294,766,20,20,https://obeunugha.my.id/api/auth/me,2992,0,0
+1776260222838,2992,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-9,text,true,,1294,766,20,20,https://obeunugha.my.id/api/auth/me,2992,0,0
+1776260222837,3300,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-7,text,true,,1292,766,20,20,https://obeunugha.my.id/api/auth/me,3300,0,0
+1776260220995,5757,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-1,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,5757,0,0
+1776260224374,2380,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-18,text,true,,1282,766,20,20,https://obeunugha.my.id/api/auth/me,2380,0,0
+1776260221075,5679,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-17,text,true,,2538,279,20,20,https://obeunugha.my.id/api/auth/login,5679,0,0
+1776260220999,5755,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-11,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,5755,0,0
+1776260220995,5759,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-5,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,5759,0,0
+1776260224434,2321,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-2,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,2321,0,289
+1776260201231,25527,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-3,text,true,,10427,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25524,0,0
+1776260221229,5542,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-8,text,true,,2543,279,20,20,https://obeunugha.my.id/api/auth/login,5542,0,25
+1776260226216,632,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-10,text,true,,2540,279,20,20,https://obeunugha.my.id/api/auth/login,631,0,0
+1776260201722,25146,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-14,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25142,0,0
+1776260201231,25662,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-19,text,true,,10427,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25661,0,0
+1776260220996,5903,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-20,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,5903,0,0
+1776260201231,25693,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-12,text,true,,10433,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25523,0,0
+1776260201366,25580,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-13,text,true,,10430,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25578,0,58
+1776260201720,25284,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-16,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25146,0,0
+1776260226831,358,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-15,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,357,0,0
+1776260226831,373,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-6,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,373,0,0
+1776260226831,548,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-4,text,true,,2535,279,20,20,https://obeunugha.my.id/api/auth/login,548,0,28
+1776260226831,740,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-9,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,740,0,313
+1776260227138,456,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-7,text,true,,2545,279,20,20,https://obeunugha.my.id/api/auth/login,455,0,40
+1776260227759,268,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-3,text,true,,1296,766,20,20,https://obeunugha.my.id/api/auth/me,268,0,0
+1776260227869,292,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-14,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,292,0,0
+1776260227755,706,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-18,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,279,0,0
+1776260227755,787,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-2,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,787,0,0
+1776260227893,694,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-19,text,true,,1291,766,20,20,https://obeunugha.my.id/api/auth/me,694,0,28
+1776260228005,695,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-16,text,true,,1286,766,20,20,https://obeunugha.my.id/api/auth/me,695,0,0
+1776260227947,11398,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-13,text,true,,1294,766,20,20,https://obeunugha.my.id/api/auth/me,11398,0,270
+1776260227925,11420,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-12,text,true,,1292,766,20,20,https://obeunugha.my.id/api/auth/me,11420,0,266
+1776260228572,23985,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-9,text,false,,759,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23985,0,0
+1776260229588,22972,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-19,text,false,,964,279,20,20,https://obeunugha.my.id/api/auth/login,22972,0,671
+1776260229162,23418,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-14,text,false,,974,279,20,20,https://obeunugha.my.id/api/auth/login,23418,0,0
+1776260229543,23037,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-2,text,false,,755,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23037,0,0
+1776260240346,12238,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-13,text,false,,967,279,20,20,https://obeunugha.my.id/api/auth/login,12238,0,0
+1776260229700,22886,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-16,text,false,,970,279,20,20,https://obeunugha.my.id/api/auth/login,22886,0,0
+1776260240346,12241,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-12,text,false,,967,279,20,20,https://obeunugha.my.id/api/auth/login,12241,0,0
+1776260227755,24836,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-17,text,false,,747,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24836,0,0
+1776260227848,24749,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-10,text,false,,745,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24749,0,0
+1776260228595,24052,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-7,text,false,,744,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24052,0,25
+1776260227755,24906,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-5,text,false,,750,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24905,0,27
+1776260227753,24911,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-1,text,false,,744,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24911,0,29
+1776260229028,23938,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-3,text,false,,970,279,20,20,https://obeunugha.my.id/api/auth/login,23938,0,0
+1776260253560,537,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-19,text,false,,749,228,20,20,https://obeunugha.my.id/api/dashboard/stats,537,0,0
+1776260253584,522,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-13,text,false,,743,228,20,20,https://obeunugha.my.id/api/dashboard/stats,522,0,0
+1776260253580,527,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-14,text,false,,741,228,20,20,https://obeunugha.my.id/api/dashboard/stats,527,0,0
+1776260253587,528,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-16,text,false,,755,228,20,20,https://obeunugha.my.id/api/dashboard/stats,528,0,0
+1776260253588,539,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-12,text,false,,745,228,20,20,https://obeunugha.my.id/api/dashboard/stats,539,0,0
+1776260253967,176,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-3,text,false,,745,228,20,20,https://obeunugha.my.id/api/dashboard/stats,176,0,0
+1776260253560,606,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-9,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,606,0,0
+1776260253592,635,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-17,text,true,,1290,766,20,20,https://obeunugha.my.id/api/auth/me,635,0,0
+1776260253600,655,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-10,text,true,,1290,766,20,20,https://obeunugha.my.id/api/auth/me,655,0,0
+1776260253581,679,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-2,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,679,0,0
+1776260253648,684,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-7,text,true,,1277,766,20,20,https://obeunugha.my.id/api/auth/me,684,0,71
+1776260227900,26437,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-20,text,true,,10433,774,20,20,https://obeunugha.my.id/api/dashboard/stats,26432,0,0
+1776260253661,679,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-5,text,true,,1289,766,20,20,https://obeunugha.my.id/api/auth/me,679,0,60
+1776260227772,26578,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-8,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,26577,0,219
+1776260228190,26201,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-15,text,true,,10429,774,20,20,https://obeunugha.my.id/api/dashboard/stats,26196,0,0
+1776260253665,767,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-1,text,true,,1284,766,20,20,https://obeunugha.my.id/api/auth/me,767,0,496
+1776260229462,25143,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-18,text,true,,10437,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25143,0,0
+1776260255098,433,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-19,text,false,,749,220,20,20,https://obeunugha.my.id/api/auth/me,433,0,0
+1776260255116,441,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-16,text,false,,743,220,20,20,https://obeunugha.my.id/api/auth/me,441,0,0
+1776260255107,458,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-13,text,false,,739,220,20,20,https://obeunugha.my.id/api/auth/me,458,0,0
+1776260255129,439,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-12,text,false,,743,220,20,20,https://obeunugha.my.id/api/auth/me,439,0,0
+1776260255144,424,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-3,text,false,,747,220,20,20,https://obeunugha.my.id/api/auth/me,424,0,0
+1776260255107,465,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-14,text,false,,745,220,20,20,https://obeunugha.my.id/api/auth/me,465,0,0
+1776260255351,609,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-8,text,true,,1284,766,20,20,https://obeunugha.my.id/api/auth/me,609,0,0
+1776260255338,659,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-20,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,659,0,0
+1776260255228,1307,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-17,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,1307,0,0
+1776260255256,1279,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-10,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,1279,0,0
+1776260255391,1497,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-15,text,true,,1300,766,20,20,https://obeunugha.my.id/api/auth/me,1497,0,0
+1776260255606,1431,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-18,text,true,,1294,766,20,20,https://obeunugha.my.id/api/auth/me,1431,0,0
+1776260255432,1653,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-1,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,1652,0,0
+1776260227755,29360,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-11,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,29192,0,696
+1776260255167,2042,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-9,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,2042,0,0
+1776260255263,2106,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-2,text,true,,2540,279,20,20,https://obeunugha.my.id/api/auth/login,2106,0,0
+1776260256532,1252,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-19,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,1252,0,0
+1776260255333,2465,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-7,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,2465,0,504
+1776260256573,1228,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-14,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,1228,0,0
+1776260256568,1234,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-3,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,1234,0,0
+1776260256568,1237,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-12,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,1237,0,0
+1776260256566,1243,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-13,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,1242,0,0
+1776260256558,1259,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-16,text,true,,2540,279,20,20,https://obeunugha.my.id/api/auth/login,1259,0,0
+1776260228205,29624,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-6,text,true,,10437,774,20,20,https://obeunugha.my.id/api/dashboard/stats,29618,0,0
+1776260228380,29481,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-4,text,true,,10426,774,20,20,https://obeunugha.my.id/api/dashboard/stats,29480,0,28
+1776260255341,2543,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-5,text,true,,2537,279,20,20,https://obeunugha.my.id/api/auth/login,2542,0,62
+1776260256960,1031,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-8,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,1031,0,0
+1776260256999,1023,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-20,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,1021,0,0
+1776260257889,383,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-15,text,true,,2540,279,20,20,https://obeunugha.my.id/api/auth/login,383,0,0
+1776260258038,343,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-18,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,343,0,0
+1776260258116,317,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-11,text,true,,1284,766,20,20,https://obeunugha.my.id/api/auth/me,317,0,0
+1776260258829,11238,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-6,text,true,,1298,766,20,20,https://obeunugha.my.id/api/auth/me,11238,0,235
+1776260258862,11252,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-4,text,true,,1287,766,20,20,https://obeunugha.my.id/api/auth/me,11251,0,31
+1776260258818,23969,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-16,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23969,0,0
+1776260258800,24273,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-7,text,false,,755,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24273,0,0
+1776260257536,25873,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-17,text,false,,755,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25873,0,0
+1776260259023,24386,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-20,text,false,,753,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24386,0,0
+1776260257536,25873,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-10,text,false,,747,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25873,0,0
+1776260259272,24137,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-15,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24137,0,0
+1776260259382,24027,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-18,text,false,,753,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24027,0,0
+1776260259433,23976,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-11,text,false,,966,279,20,20,https://obeunugha.my.id/api/auth/login,23976,0,0
+1776260258991,24418,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-8,text,false,,755,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24418,0,0
+1776260258086,25323,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-1,text,false,,753,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25323,0,0
+1776260258785,24625,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-19,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24625,0,0
+1776260271068,12342,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-6,text,false,,971,279,20,20,https://obeunugha.my.id/api/auth/login,12342,0,0
+1776260271115,12338,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-4,text,false,,966,279,20,20,https://obeunugha.my.id/api/auth/login,12338,0,33
+1776260258210,25325,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-9,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25199,0,0
+1776260258806,25306,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-12,text,true,,10445,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25305,0,0
+1776260258810,25335,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-13,text,true,,10429,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25330,0,0
+1776260258371,25792,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-2,text,true,,10429,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25789,0,0
+1776260258803,25469,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-3,text,true,,10436,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25467,0,49
+1776260258884,25425,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-5,text,true,,10426,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25424,0,27
+1776260283789,525,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-16,text,true,,1290,766,20,20,https://obeunugha.my.id/api/auth/me,525,0,283
+1776260258802,25516,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-14,text,true,,10433,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25373,0,0
+1776260284410,152,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-6,text,false,,751,228,20,20,https://obeunugha.my.id/api/dashboard/stats,152,0,0
+1776260284410,162,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-8,text,true,,1290,766,20,20,https://obeunugha.my.id/api/auth/me,162,0,0
+1776260284410,215,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-11,text,false,,741,228,20,20,https://obeunugha.my.id/api/dashboard/stats,215,0,0
+1776260284411,235,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-1,text,true,,1294,766,20,20,https://obeunugha.my.id/api/auth/me,235,0,0
+1776260284410,289,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-20,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,289,0,34
+1776260284410,289,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-17,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,289,0,37
+1776260284410,289,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-10,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,289,0,34
+1776260284410,289,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-18,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,289,0,41
+1776260284536,163,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-9,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,163,0,0
+1776260284454,257,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-4,text,false,,744,228,20,20,https://obeunugha.my.id/api/dashboard/stats,257,0,29
+1776260284073,654,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-7,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,654,0,0
+1776260285113,183,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-12,text,true,,1296,766,20,20,https://obeunugha.my.id/api/auth/me,183,0,0
+1776260284410,898,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-19,text,true,,1286,766,20,20,https://obeunugha.my.id/api/auth/me,898,0,0
+1776260285146,207,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-13,text,true,,1286,766,20,20,https://obeunugha.my.id/api/auth/me,207,0,0
+1776260285164,270,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-2,text,true,,1287,766,20,20,https://obeunugha.my.id/api/auth/me,270,0,36
+1776260285272,256,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-3,text,true,,1287,766,20,20,https://obeunugha.my.id/api/auth/me,256,0,26
+1776260285310,293,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-5,text,true,,1279,766,20,20,https://obeunugha.my.id/api/auth/me,292,0,43
+1776260285318,285,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-14,text,true,,1289,766,20,20,https://obeunugha.my.id/api/auth/me,284,0,38
+1776260285315,330,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-16,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,330,0,0
+1776260285563,151,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-6,text,false,,743,220,20,20,https://obeunugha.my.id/api/auth/me,151,0,0
+1776260285573,245,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-8,text,true,,2552,279,20,20,https://obeunugha.my.id/api/auth/login,245,0,0
+1776260285626,215,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-11,text,false,,741,220,20,20,https://obeunugha.my.id/api/auth/me,215,0,0
+1776260284410,1649,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-15,text,true,,1284,766,20,20,https://obeunugha.my.id/api/auth/me,1649,0,1298
+1776260285646,518,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-1,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,518,0,0
+1776260285700,549,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-9,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,549,0,0
+1776260285728,521,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-7,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,521,0,0
+1776260285711,538,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-4,text,false,,747,220,20,20,https://obeunugha.my.id/api/auth/me,538,0,276
+1776260285699,629,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-17,text,true,,2547,279,20,20,https://obeunugha.my.id/api/auth/login,629,0,35
+1776260285699,838,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-10,text,true,,2545,279,20,20,https://obeunugha.my.id/api/auth/login,838,0,304
+1776260285699,1050,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-18,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,1050,0,467
+1776260286309,516,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-19,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,516,0,0
+1776260286297,557,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-12,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,557,0,0
+1776260286353,501,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-13,text,true,,2552,279,20,20,https://obeunugha.my.id/api/auth/login,501,0,0
+1776260285699,1314,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-20,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,758,0,291
+1776260286435,867,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-2,text,true,,2547,279,20,20,https://obeunugha.my.id/api/auth/login,866,0,31
+1776260286529,775,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-3,text,true,,2551,279,20,20,https://obeunugha.my.id/api/auth/login,775,0,30
+1776260286603,711,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-14,text,true,,2539,279,20,20,https://obeunugha.my.id/api/auth/login,706,0,46
+1776260286603,711,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-5,text,true,,2545,279,20,20,https://obeunugha.my.id/api/auth/login,711,0,46
+1776260286714,697,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-6,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,697,0,0
+1776260286842,595,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-11,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,595,0,0
+1776260287060,678,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-15,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,678,0,0
+1776260287250,716,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-4,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,716,0,0
+1776260288013,22810,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-20,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,22810,0,0
+1776260288315,22556,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-14,text,false,,748,774,20,20,https://obeunugha.my.id/api/dashboard/stats,22556,0,35
+1776260288304,22569,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-3,text,false,,750,774,20,20,https://obeunugha.my.id/api/dashboard/stats,22568,0,47
+1776260288412,23582,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-6,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23582,0,0
+1776260288303,23729,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-2,text,false,,763,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23729,0,271
+1776260288966,23496,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-4,text,false,,753,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23496,0,0
+1776260288315,24351,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-5,text,false,,748,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24351,0,37
+1776260288439,24227,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-11,text,false,,758,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24227,0,29
+1776260286818,26053,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-8,text,false,,757,774,20,20,https://obeunugha.my.id/api/dashboard/stats,26053,0,0
+1776260287165,25706,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-1,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25706,0,0
+1776260311825,1972,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-20,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,1972,0,0
+1776260311871,2004,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-14,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,2004,0,30
+1776260311873,2003,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-3,text,true,,1287,766,20,20,https://obeunugha.my.id/api/auth/me,2003,0,28
+1776260287250,26644,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-9,text,true,,10428,774,20,20,https://obeunugha.my.id/api/dashboard/stats,26636,0,34
+1776260286646,27320,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-16,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,27169,0,0
+1776260312994,1832,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-6,text,true,,1284,766,20,20,https://obeunugha.my.id/api/auth/me,1832,0,0
+1776260313463,1402,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-4,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,1402,0,0
+1776260313033,1842,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-2,text,true,,1286,766,20,20,https://obeunugha.my.id/api/auth/me,1842,0,0
+1776260313667,1233,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-5,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,1233,0,252
+1776260313871,1036,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-1,text,true,,1292,766,20,20,https://obeunugha.my.id/api/auth/me,1036,0,332
+1776260287250,27898,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-7,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,27748,0,0
+1776260287329,27845,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-17,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,27721,0,272
+1776260313667,1535,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-11,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,1535,0,29
+1776260313871,1332,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-8,text,true,,1293,766,20,20,https://obeunugha.my.id/api/auth/me,1332,0,40
+1776260287826,27447,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-19,text,true,,10433,774,20,20,https://obeunugha.my.id/api/dashboard/stats,27282,0,0
+1776260314798,590,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-20,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,590,0,0
+1776260314967,423,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-16,text,true,,1284,766,20,20,https://obeunugha.my.id/api/auth/me,423,0,0
+1776260314894,600,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-9,text,true,,1281,766,20,20,https://obeunugha.my.id/api/auth/me,600,0,256
+1776260287538,28021,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-10,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,27836,0,286
+1776260314880,702,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-14,text,true,,2541,279,20,20,https://obeunugha.my.id/api/auth/login,701,0,29
+1776260287750,28081,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-18,text,true,,10427,774,20,20,https://obeunugha.my.id/api/dashboard/stats,27191,0,0
+1776260314879,1208,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-3,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,1208,0,256
+1776260315827,324,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-6,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,323,0,0
+1776260315865,663,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-4,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,663,0,0
+1776260316175,355,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-17,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,355,0,0
+1776260315908,638,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-1,text,true,,2540,279,20,20,https://obeunugha.my.id/api/auth/login,638,0,0
+1776260315878,834,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-2,text,true,,2554,279,20,20,https://obeunugha.my.id/api/auth/login,834,0,0
+1776260316273,454,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-19,text,true,,1281,766,20,20,https://obeunugha.my.id/api/auth/me,454,0,32
+1776260315901,889,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-5,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,889,0,302
+1776260316149,810,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-7,text,true,,1286,766,20,20,https://obeunugha.my.id/api/auth/me,810,0,300
+1776260316560,493,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-10,text,true,,1290,766,20,20,https://obeunugha.my.id/api/auth/me,493,0,0
+1776260316203,1000,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-11,text,true,,2539,279,20,20,https://obeunugha.my.id/api/auth/login,1000,0,30
+1776260316831,3413,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-18,text,true,,1294,766,20,20,https://obeunugha.my.id/api/auth/me,3413,0,0
+1776260316203,5807,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-8,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,5807,0,285
+1776260316391,5633,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-16,text,true,,2540,279,20,20,https://obeunugha.my.id/api/auth/login,5633,0,0
+1776260317791,16097,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-5,text,false,,757,774,20,20,https://obeunugha.my.id/api/dashboard/stats,16097,0,0
+1776260316495,17403,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-9,text,false,,966,279,20,20,https://obeunugha.my.id/api/auth/login,17403,0,275
+1776260317530,16371,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-17,text,false,,972,279,20,20,https://obeunugha.my.id/api/auth/login,16371,0,0
+1776260318204,15763,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-11,text,false,,750,774,20,20,https://obeunugha.my.id/api/dashboard/stats,15762,0,35
+1776260317960,17644,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-7,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,17644,0,0
+1776260323011,12593,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-8,text,false,,759,774,20,20,https://obeunugha.my.id/api/dashboard/stats,12593,0,0
+1776260287855,47749,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-12,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,47749,0,0
+1776260288739,46865,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-15,text,false,,753,774,20,20,https://obeunugha.my.id/api/dashboard/stats,46865,0,0
+1776260323025,12579,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-16,text,false,,747,774,20,20,https://obeunugha.my.id/api/dashboard/stats,12579,0,0
+1776260321245,14359,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-18,text,false,,969,279,20,20,https://obeunugha.my.id/api/auth/login,14359,0,0
+1776260318054,17550,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-10,text,false,,970,279,20,20,https://obeunugha.my.id/api/auth/login,17550,0,0
+1776260316389,19216,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-20,text,false,,749,774,20,20,https://obeunugha.my.id/api/dashboard/stats,19216,0,0
+1776260287855,47750,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-13,text,false,,751,774,20,20,https://obeunugha.my.id/api/dashboard/stats,47750,0,0
+1776260317727,17921,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-19,text,false,,961,279,20,20,https://obeunugha.my.id/api/auth/login,17920,0,26
+1776260334900,1875,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-9,text,false,,753,228,20,20,https://obeunugha.my.id/api/dashboard/stats,1875,0,0
+1776260334903,1882,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-17,text,false,,749,228,20,20,https://obeunugha.my.id/api/dashboard/stats,1882,0,0
+1776260336607,213,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-18,text,false,,745,228,20,20,https://obeunugha.my.id/api/dashboard/stats,213,0,0
+1776260336606,216,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-10,text,false,,745,228,20,20,https://obeunugha.my.id/api/dashboard/stats,216,0,0
+1776260336606,275,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-15,text,true,,1292,766,20,20,https://obeunugha.my.id/api/auth/me,275,0,0
+1776260334890,2012,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-5,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,2012,0,0
+1776260336606,308,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-16,text,true,,1298,766,20,20,https://obeunugha.my.id/api/auth/me,308,0,0
+1776260336650,270,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-19,text,false,,740,228,20,20,https://obeunugha.my.id/api/dashboard/stats,270,0,24
+1776260336606,315,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-20,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,315,0,0
+1776260336606,318,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-8,text,true,,1294,766,20,20,https://obeunugha.my.id/api/auth/me,318,0,0
+1776260317088,19839,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-3,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,19834,0,0
+1776260317152,19797,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-6,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,19661,0,0
+1776260316582,20409,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-14,text,true,,10438,774,20,20,https://obeunugha.my.id/api/dashboard/stats,20408,0,27
+1776260334969,2024,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-11,text,true,,1287,766,20,20,https://obeunugha.my.id/api/auth/me,2024,0,28
+1776260336606,387,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-12,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,387,0,32
+1776260317528,19601,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-4,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,19429,0,0
+1776260336606,945,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-13,text,true,,1287,766,20,20,https://obeunugha.my.id/api/auth/me,945,0,31
+1776260317547,20004,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-1,text,true,,10437,774,20,20,https://obeunugha.my.id/api/dashboard/stats,19394,0,0
+1776260317712,20042,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-2,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,20042,0,0
+1776260337785,186,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-17,text,false,,749,220,20,20,https://obeunugha.my.id/api/auth/me,186,0,0
+1776260337822,177,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-10,text,false,,747,220,20,20,https://obeunugha.my.id/api/auth/me,177,0,0
+1776260337821,186,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-18,text,false,,745,220,20,20,https://obeunugha.my.id/api/auth/me,186,0,0
+1776260337776,232,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-9,text,false,,747,220,20,20,https://obeunugha.my.id/api/auth/me,232,0,0
+1776260337885,639,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-15,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,639,0,0
+1776260337992,584,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-14,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,583,0,28
+1776260337903,900,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-5,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,900,0,0
+1776260337915,901,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-16,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,901,0,0
+1776260338129,689,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-4,text,true,,1296,766,20,20,https://obeunugha.my.id/api/auth/me,689,0,0
+1776260337949,874,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-6,text,true,,1287,766,20,20,https://obeunugha.my.id/api/auth/me,874,0,267
+1776260337924,905,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-8,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,903,0,0
+1776260337921,909,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-20,text,true,,2550,279,20,20,https://obeunugha.my.id/api/auth/login,909,0,0
+1776260337921,910,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-19,text,false,,749,220,20,20,https://obeunugha.my.id/api/auth/me,910,0,298
+1776260337992,905,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-11,text,true,,2545,279,20,20,https://obeunugha.my.id/api/auth/login,904,0,28
+1776260337993,914,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-12,text,true,,2537,279,20,20,https://obeunugha.my.id/api/auth/login,914,0,36
+1776260338554,369,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-1,text,true,,1294,766,20,20,https://obeunugha.my.id/api/auth/me,369,0,0
+1776260338755,446,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-2,text,true,,1284,766,20,20,https://obeunugha.my.id/api/auth/me,446,0,0
+1776260338551,728,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-13,text,true,,2543,279,20,20,https://obeunugha.my.id/api/auth/login,728,0,25
+1776260337927,1522,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-3,text,true,,1292,766,20,20,https://obeunugha.my.id/api/auth/me,1522,0,0
+1776260338998,614,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-10,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,614,0,0
+1776260339007,607,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-18,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,606,0,0
+1776260338971,645,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-17,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,645,0,0
+1776260339008,813,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-9,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,813,0,0
+1776260336606,3220,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-7,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,3060,0,0
+1776260339576,352,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-14,text,true,,2535,279,20,20,https://obeunugha.my.id/api/auth/login,352,0,25
+1776260339819,323,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-4,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,323,0,0
+1776260339924,11765,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-1,text,false,,973,279,20,20,https://obeunugha.my.id/api/auth/login,11765,0,0
+1776260339830,11860,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-19,text,false,,969,279,20,20,https://obeunugha.my.id/api/auth/login,11860,0,0
+1776260339908,11805,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-12,text,false,,746,774,20,20,https://obeunugha.my.id/api/dashboard/stats,11805,0,28
+1776260340280,11537,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-13,text,false,,738,774,20,20,https://obeunugha.my.id/api/dashboard/stats,11537,0,43
+1776260340826,11009,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-7,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,11009,0,0
+1776260340617,11232,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-17,text,false,,749,774,20,20,https://obeunugha.my.id/api/dashboard/stats,11232,0,0
+1776260352690,629,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-19,text,false,,749,228,20,20,https://obeunugha.my.id/api/dashboard/stats,629,0,0
+1776260352690,629,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-1,text,false,,753,228,20,20,https://obeunugha.my.id/api/dashboard/stats,629,0,0
+1776260354320,228,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-19,text,false,,741,220,20,20,https://obeunugha.my.id/api/auth/me,228,0,0
+1776260354320,244,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-1,text,false,,747,220,20,20,https://obeunugha.my.id/api/auth/me,244,0,0
+1776260339830,24447,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-20,text,false,,755,774,20,20,https://obeunugha.my.id/api/dashboard/stats,24447,0,0
+1776260340449,23828,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-3,text,false,,964,279,20,20,https://obeunugha.my.id/api/auth/login,23828,0,0
+1776260339824,24454,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-6,text,false,,964,279,20,20,https://obeunugha.my.id/api/auth/login,24454,0,2436
+1776260352818,12220,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-13,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,12220,0,26
+1776260352714,12325,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-12,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,12325,0,63
+1776260352849,12293,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-17,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,12293,0,32
+1776260339803,25612,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-5,text,true,,10439,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25484,0,0
+1776260340201,25247,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-2,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,24744,0,0
+1776260339524,26024,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-15,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25763,0,0
+1776260365278,826,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-6,text,false,,747,228,20,20,https://obeunugha.my.id/api/dashboard/stats,826,0,0
+1776260365278,858,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-3,text,false,,745,228,20,20,https://obeunugha.my.id/api/dashboard/stats,858,0,0
+1776260352836,13358,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-7,text,true,,2544,279,20,20,https://obeunugha.my.id/api/auth/login,13358,0,0
+1776260355564,10649,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-1,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,10649,0,0
+1776260365278,1019,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-20,text,true,,1289,766,20,20,https://obeunugha.my.id/api/auth/me,1019,0,30
+1776260339816,26584,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-16,text,true,,10437,774,20,20,https://obeunugha.my.id/api/dashboard/stats,26584,0,0
+1776260339898,26536,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-11,text,true,,10426,774,20,20,https://obeunugha.my.id/api/dashboard/stats,26533,0,33
+1776260339829,26645,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-8,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,26641,0,0
+1776260340613,25978,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-10,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25816,0,0
+1776260366415,306,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-5,text,true,,1290,766,20,20,https://obeunugha.my.id/api/auth/me,306,0,0
+1776260355549,11186,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-19,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,10664,0,0
+1776260366549,535,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-15,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,535,0,40
+1776260366039,1045,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-13,text,true,,2543,279,20,20,https://obeunugha.my.id/api/auth/login,1045,0,43
+1776260366040,1045,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-12,text,true,,2541,279,20,20,https://obeunugha.my.id/api/auth/login,1044,0,36
+1776260340614,26573,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-18,text,true,,10439,774,20,20,https://obeunugha.my.id/api/dashboard/stats,25789,0,0
+1776260367105,179,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-6,text,false,,751,220,20,20,https://obeunugha.my.id/api/auth/me,179,0,0
+1776260367137,196,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-3,text,false,,743,220,20,20,https://obeunugha.my.id/api/auth/me,196,0,0
+1776260367475,1614,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-8,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,1614,0,0
+1776260367401,1746,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-16,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,1746,0,35
+1776260367592,1555,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-10,text,true,,1281,766,20,20,https://obeunugha.my.id/api/auth/me,1555,0,34
+1776260367434,1713,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-11,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,1713,0,28
+1776260367721,2434,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-5,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,2434,0,0
+1776260368285,13721,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-6,text,false,,971,279,20,20,https://obeunugha.my.id/api/auth/login,13721,0,0
+1776260368334,13682,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-3,text,false,,969,279,20,20,https://obeunugha.my.id/api/auth/login,13682,0,0
+1776260368187,13837,3. Profil (/api/auth/me),500,Internal Server Error,Load Test Thread Group 1-18,text,false,,757,766,20,20,https://obeunugha.my.id/api/auth/me,13837,0,239
+1776260368085,14012,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-12,text,false,,746,774,20,20,https://obeunugha.my.id/api/dashboard/stats,14012,0,37
+1776260368084,14018,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-15,text,false,,961,279,20,20,https://obeunugha.my.id/api/auth/login,14018,0,38
+1776260367298,14805,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-20,text,true,,2545,279,20,20,https://obeunugha.my.id/api/auth/login,14805,0,36
+1776260340822,41654,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-9,text,false,,757,774,20,20,https://obeunugha.my.id/api/dashboard/stats,41654,0,0
+1776260340929,41630,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-14,text,true,,10434,774,20,20,https://obeunugha.my.id/api/dashboard/stats,41630,0,28
+1776260383007,166,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-6,text,false,,753,228,20,20,https://obeunugha.my.id/api/dashboard/stats,166,0,0
+1776260370147,13030,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-11,text,true,,2537,279,20,20,https://obeunugha.my.id/api/auth/login,13029,0,42
+1776260370147,13031,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-16,text,true,,2541,279,20,20,https://obeunugha.my.id/api/auth/login,13031,0,42
+1776260370147,13039,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-10,text,true,,2541,279,20,20,https://obeunugha.my.id/api/auth/login,13039,0,42
+1776260367214,16015,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-1,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,16008,0,0
+1776260370089,13178,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-8,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,13178,0,0
+1776260366449,16890,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-2,text,true,,10429,774,20,20,https://obeunugha.my.id/api/dashboard/stats,16890,0,287
+1776260383103,260,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-15,text,false,,738,228,20,20,https://obeunugha.my.id/api/dashboard/stats,259,0,31
+1776260383016,392,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-3,text,false,,747,228,20,20,https://obeunugha.my.id/api/dashboard/stats,392,0,231
+1776260367735,15681,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-19,text,true,,10433,774,20,20,https://obeunugha.my.id/api/dashboard/stats,15681,0,0
+1776260341145,42271,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-4,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,42162,0,0
+1776260368084,15593,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-13,text,true,,10428,774,20,20,https://obeunugha.my.id/api/dashboard/stats,15591,0,38
+1776260383024,654,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-18,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,654,0,0
+1776260367195,16486,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-7,text,true,,10431,774,20,20,https://obeunugha.my.id/api/dashboard/stats,16482,0,0
+1776260366142,17541,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-17,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,16954,0,4086
+1776260383098,672,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-12,text,true,,1287,766,20,20,https://obeunugha.my.id/api/auth/me,671,0,26
+1776260383477,307,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-9,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,307,0,30
+1776260383560,291,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-14,text,true,,1285,766,20,20,https://obeunugha.my.id/api/auth/me,291,0,28
+1776260384173,173,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-6,text,false,,753,220,20,20,https://obeunugha.my.id/api/auth/me,173,0,0
+1776260384364,261,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-15,text,false,,744,220,20,20,https://obeunugha.my.id/api/auth/me,261,0,27
+1776260384408,225,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-3,text,false,,745,220,20,20,https://obeunugha.my.id/api/auth/me,225,0,0
+1776260384340,4160,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-2,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,4160,0,0
+1776260384417,4087,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-19,text,true,,1284,766,20,20,https://obeunugha.my.id/api/auth/me,4087,0,0
+1776260384417,4144,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-4,text,true,,1283,766,20,20,https://obeunugha.my.id/api/auth/me,4144,0,27
+1776260384682,3880,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-7,text,true,,1289,766,20,20,https://obeunugha.my.id/api/auth/me,3880,0,27
+1776260384678,3940,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-13,text,true,,1282,766,20,20,https://obeunugha.my.id/api/auth/me,3940,0,220
+1776260384230,4725,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-1,text,true,,1300,766,20,20,https://obeunugha.my.id/api/auth/me,4725,0,1286
+1776260385633,9815,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-3,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,9815,0,0
+1776260385346,10102,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-6,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,10102,0,0
+1776260385626,9823,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-15,text,true,,2541,279,20,20,https://obeunugha.my.id/api/auth/login,9822,0,28
+1776260371160,28753,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-5,text,true,,10435,774,20,20,https://obeunugha.my.id/api/dashboard/stats,28753,0,0
+1776260384770,15142,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-12,text,true,,2540,279,20,20,https://obeunugha.my.id/api/auth/login,15142,0,274
+1776260384785,15128,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-9,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,15128,0,297
+1776260384852,15091,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-14,text,true,,2547,279,20,20,https://obeunugha.my.id/api/auth/login,15091,0,30
+1776260389955,10490,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-1,text,true,,2542,279,20,20,https://obeunugha.my.id/api/auth/login,10490,0,0
+1776260389500,10945,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-2,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,10945,0,0
+1776260389562,10883,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-7,text,true,,2548,279,20,20,https://obeunugha.my.id/api/auth/login,10883,0,266
+1776260389505,10940,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-19,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,10940,0,0
+1776260389619,10826,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-13,text,true,,2546,279,20,20,https://obeunugha.my.id/api/auth/login,10826,0,0
+1776260389561,10884,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-4,text,true,,2543,279,20,20,https://obeunugha.my.id/api/auth/login,10884,0,31
+1776260383104,17578,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-20,text,true,,10433,774,20,20,https://obeunugha.my.id/api/dashboard/stats,17578,0,273
+1776260401682,6219,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-20,text,true,,1288,766,20,20,https://obeunugha.my.id/api/auth/me,6219,0,0
+1776260400914,7039,3. Profil (/api/auth/me),200,OK,Load Test Thread Group 1-5,text,true,,1281,766,20,20,https://obeunugha.my.id/api/auth/me,7039,0,30
+1776260384177,23795,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-11,text,true,,10426,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23786,0,25
+1776260384186,23793,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-16,text,true,,10426,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23791,0,25
+1776260384268,23724,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-8,text,true,,10430,774,20,20,https://obeunugha.my.id/api/dashboard/stats,23714,0,28
+1776260384678,26359,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-18,text,true,,10427,774,20,20,https://obeunugha.my.id/api/dashboard/stats,26356,0,0
+1776260401447,17089,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-1,text,false,,753,774,20,20,https://obeunugha.my.id/api/dashboard/stats,17089,0,0
+1776260401446,17176,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-4,text,false,,754,774,19,19,https://obeunugha.my.id/api/dashboard/stats,17176,0,49
+1776260401446,17316,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-19,text,false,,757,774,18,18,https://obeunugha.my.id/api/dashboard/stats,17316,0,655
+1776260384186,34707,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-10,text,false,,751,774,17,17,https://obeunugha.my.id/api/dashboard/stats,34707,0,263
+1776260401446,17615,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-7,text,false,,751,774,16,16,https://obeunugha.my.id/api/dashboard/stats,17615,0,0
+1776260384685,35604,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-17,text,false,,753,774,15,15,https://obeunugha.my.id/api/dashboard/stats,35604,0,0
+1776260408901,12822,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-20,text,false,,969,279,14,14,https://obeunugha.my.id/api/auth/login,12822,0,0
+1776260408953,12771,1. Auth (/api/auth/login),500,Internal Server Error,Load Test Thread Group 1-5,text,false,,973,279,14,14,https://obeunugha.my.id/api/auth/login,12771,0,250
+1776260408979,12745,3. Profil (/api/auth/me),500,Internal Server Error,Load Test Thread Group 1-16,text,false,,752,766,14,14,https://obeunugha.my.id/api/auth/me,12745,0,33
+1776260408973,12751,3. Profil (/api/auth/me),500,Internal Server Error,Load Test Thread Group 1-11,text,false,,746,766,14,14,https://obeunugha.my.id/api/auth/me,12751,0,37
+1776260396450,28756,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-6,text,false,,753,774,10,10,https://obeunugha.my.id/api/dashboard/stats,28756,0,0
+1776260408993,16212,3. Profil (/api/auth/me),500,Internal Server Error,Load Test Thread Group 1-8,text,false,,757,766,10,10,https://obeunugha.my.id/api/auth/me,16212,0,228
+1776260412039,13166,3. Profil (/api/auth/me),500,Internal Server Error,Load Test Thread Group 1-18,text,false,,751,766,10,10,https://obeunugha.my.id/api/auth/me,13166,0,0
+1776260396450,28756,2. Dashboard (/api/dashboard/stats),500,Internal Server Error,Load Test Thread Group 1-3,text,false,,753,774,10,10,https://obeunugha.my.id/api/dashboard/stats,28756,0,0
+1776260396450,29167,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-15,text,true,,10433,774,6,6,https://obeunugha.my.id/api/dashboard/stats,29166,0,519
+1776260400914,24743,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-12,text,true,,10433,774,5,5,https://obeunugha.my.id/api/dashboard/stats,24741,0,0
+1776260400914,25110,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-9,text,true,,10439,774,4,4,https://obeunugha.my.id/api/dashboard/stats,24818,0,0
+1776260401446,25704,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-13,text,true,,10431,774,3,3,https://obeunugha.my.id/api/dashboard/stats,25499,0,0
+1776260400944,27030,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-14,text,true,,10429,774,2,2,https://obeunugha.my.id/api/dashboard/stats,27030,0,309
+1776260401446,26729,2. Dashboard (/api/dashboard/stats),200,OK,Load Test Thread Group 1-2,text,true,,10435,774,1,1,https://obeunugha.my.id/api/dashboard/stats,26728,0,0

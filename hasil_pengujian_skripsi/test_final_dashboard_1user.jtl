@@ -1,0 +1,3 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1773389196393,2561,Login Request,200,OK,Deployed Users 1-1,text,true,,2611,291,1,1,https://obeunugha.my.id/api/auth/login,2558,0,2406
+1773389198982,1715,Get Dashboard Stats,200,OK,Deployed Users 1-1,text,true,,10499,748,1,1,https://obeunugha.my.id/api/dashboard/stats,1699,0,0
