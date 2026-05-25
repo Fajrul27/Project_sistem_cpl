@@ -59,7 +59,7 @@ export function clearDashboardSessionCache(): void {
 }
 
 /** Re-export for convenience — call this after any successful data mutation */
-export { signalDashboardMutation } from \"@/lib/dashboardMutationSignal\";
+export { signalDashboardMutation } from "@/lib/dashboardMutationSignal";
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useDashboardStats(role: string | null, user: any, activeFilters: any = {}) {
