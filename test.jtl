@@ -1,7 +1,0 @@
-timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
-1776259322619,1395,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-1,text,true,,2539,279,1,1,https://obeunugha.my.id/api/auth/login,1386,0,370
-1776259325054,303,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-1,text,false,,744,234,1,1,https://obeunugha.my.id/api/dashboard/stats,302,0,70
-1776259326359,1125,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-1,text,false,,753,226,1,1,https://obeunugha.my.id/api/auth/me,1124,0,534
-1776259328485,527,1. Auth (/api/auth/login),200,OK,Load Test Thread Group 1-1,text,true,,2548,279,1,1,https://obeunugha.my.id/api/auth/login,527,0,0
-1776259330014,334,2. Dashboard (/api/dashboard/stats),401,Unauthorized,Load Test Thread Group 1-1,text,false,,745,234,1,1,https://obeunugha.my.id/api/dashboard/stats,334,0,0
-1776259331350,343,3. Profil (/api/auth/me),401,Unauthorized,Load Test Thread Group 1-1,text,false,,745,226,1,1,https://obeunugha.my.id/api/auth/me,342,0,0

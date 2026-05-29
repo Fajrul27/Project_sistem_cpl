@@ -1,38 +1,43 @@
 #!/bin/bash
-# Script untuk menjalankan serangkaian pengujian JMeter dan membuat report HTML untuk masing-masing skenario
-# Pastikan TestTemplate.jmx sudah ada di parent folder
 
-base_folder="pengetesan new"
-mkdir -p "$base_folder"
+# Konfigurasi Pengujian Skripsi
+USERS=(1 10 20 50 100 200 500)
+DURATION=60
+RAMP_UP=5
 
-# Skenario: "Nama_Folder user_count ramp_up"
-scenarios=(
-  "A_Baseline_1_user 1 1"
-  "A_Load_10_user 10 10"
-  "A_Load_20_user 20 20"
-  "A_Load_50_user 50 30"
-  "A_Load_100_user 100 60"
-  "B_Stress_200_user 200 60"
-  "B_Stress_300_user 300 100"
-  "B_Stress_500_user 500 150"
-)
+# Buat direktori hasil jika belum ada
+mkdir -p hasil_pengujian_skripsi/reports
 
-for scenario in "${scenarios[@]}"; do
-  read -r name users ramp_up <<< "$scenario"
-  
-  folder="$base_folder/$name"
-  mkdir -p "$folder"
-  
-  echo "Menjalankan JMeter untuk skenario: $name ($users users) ..."
-  
-  # Jalankan JMeter dalam mode non-GUI dengan parameter
-  # Menghasilkan result.jtl dan folder /report berisi index.html
-  jmeter -n -t "TestTemplate.jmx" \
-    -Jusers=$users -Jramp_up=$ramp_up -Jduration=300 \
-    -l "$folder/result.jtl" \
-    -e -o "$folder/report" > "$folder/jmeter.log" 2>&1
+echo "Memulai Rangkaian Pengujian Skripsi Sistem CPL..."
+echo "Total skenario: ${#USERS[@]} level user x 2 tipe cache = 14 pengujian"
+echo "Durasi tiap pengujian: $DURATION detik"
+echo "------------------------------------------------------"
+
+for u in "${USERS[@]}"; do
+    echo "[$(date +'%H:%M:%S')] =========================================="
+    echo "Menjalankan COLD CACHE - $u Users"
+    echo "========================================================="
     
-  echo "Skenario $name selesai."
+    COLD_JTL="hasil_pengujian_skripsi/test_cold_${u}user.jtl"
+    COLD_REPORT="hasil_pengujian_skripsi/reports/report_cold_${u}user"
+    
+    rm -rf $COLD_JTL $COLD_REPORT
+    
+    jmeter -n -t Dashboard_Cold.jmx -Jusers=$u -Jramp_up=$RAMP_UP -Jduration=$DURATION -l $COLD_JTL -e -o $COLD_REPORT
+    
+    echo ""
+    echo "[$(date +'%H:%M:%S')] =========================================="
+    echo "Menjalankan WARM CACHE - $u Users"
+    echo "========================================================="
+    
+    WARM_JTL="hasil_pengujian_skripsi/test_warm_${u}user.jtl"
+    WARM_REPORT="hasil_pengujian_skripsi/reports/report_warm_${u}user"
+    
+    rm -rf $WARM_JTL $WARM_REPORT
+    
+    jmeter -n -t Dashboard_Warm.jmx -Jusers=$u -Jramp_up=$RAMP_UP -Jduration=$DURATION -l $WARM_JTL -e -o $WARM_REPORT
+    echo ""
 done
 
-echo "Semua pengujian selesai!"
+echo "[$(date +'%H:%M:%S')] Seluruh rangkaian pengujian selesai!"
+echo "Silakan periksa folder 'hasil_pengujian_skripsi/reports' untuk melihat HTML Report dari masing-masing skenario."
