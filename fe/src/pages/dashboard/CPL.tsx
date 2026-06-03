@@ -211,6 +211,21 @@ const CPLPage = () => {
     }
   }, [targets]);
 
+  // Sync targetFilters.tahunAjaran with cplFilters.kurikulumFilter
+  useEffect(() => {
+    if (cplFilters.kurikulumFilter && cplFilters.kurikulumFilter !== 'all') {
+      setTargetFilters(prev => {
+        if (prev.tahunAjaran === cplFilters.kurikulumFilter) return prev;
+        return { ...prev, tahunAjaran: cplFilters.kurikulumFilter };
+      });
+    } else {
+      setTargetFilters(prev => {
+        if (prev.tahunAjaran === "") return prev;
+        return { ...prev, tahunAjaran: "" };
+      });
+    }
+  }, [cplFilters.kurikulumFilter]);
+
   // Fetch targets when filters change and view is 'target'
   useEffect(() => {
     // Note: We use cplFilters.kurikulumFilter instead of targetFilters.tahunAjaran for cleaner logic
@@ -891,7 +906,7 @@ const CPLPage = () => {
                             {isTargetLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                             {isTargetLocked ? "Buka Kunci" : "Kunci Data"}
                           </Button>
-                          <Button onClick={handleSaveTargets} disabled={loadingTargets || !cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan || isTargetLocked}>
+                          <Button onClick={handleSaveTargets} disabled={loadingTargets || !cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan || !targetFilters.tahunAjaran || targetFilters.tahunAjaran === 'all' || isTargetLocked}>
                             <Save className="w-4 h-4 mr-2" />
                             Simpan Target
                           </Button>
@@ -902,9 +917,9 @@ const CPLPage = () => {
                 </CardHeader>
                 <CardContent>
 
-                  {(!cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan) ? (
+                  {(!cplFilters.prodiFilter || cplFilters.prodiFilter === 'all' || !targetFilters.angkatan || !targetFilters.tahunAjaran || targetFilters.tahunAjaran === 'all') ? (
                     <FilterRequiredState
-                      message="Silakan pilih Program Studi dan Angkatan terlebih dahulu pada filter di atas untuk menampilkan target CPL."
+                      message="Silakan pilih Program Studi, Angkatan, dan Kurikulum terlebih dahulu pada filter di atas untuk menampilkan target CPL."
                     />
                   ) : loadingTargets ? (
                     <LoadingScreen fullScreen={false} />

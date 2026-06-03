@@ -32,13 +32,65 @@ export class EvaluasiCPLService {
     static async getTargets(params: TargetParams) {
         const { prodiId, angkatan, tahunAjaran, semester } = params;
 
-        const where: any = { prodiId, angkatan, tahunAjaran };
-        if (semester) where.semester = semester;
+        // Determine if the passed `tahunAjaran` is a kurikulumId or a tahunAjaranId
+        let kurikulumIds: string[] = [];
+        
+        // 1. Check if the passed tahunAjaran is a valid Kurikulum ID
+        const isKurikulum = await prisma.kurikulum.findUnique({
+            where: { id: tahunAjaran }
+        });
 
-        return prisma.targetCPL.findMany({
+        if (isKurikulum) {
+            kurikulumIds = [tahunAjaran];
+        } else {
+            // 2. If it's a TahunAjaran ID (from evaluation), find the kurikulum(s) associated with this prodi's active CPLs
+            const cpls = await prisma.cpl.findMany({
+                where: { prodiId, isActive: true },
+                select: { kurikulumId: true }
+            });
+            kurikulumIds = Array.from(new Set(cpls.map(c => c.kurikulumId).filter((id): id is string => !!id)));
+        }
+
+        const where: any = { 
+            prodiId, 
+            angkatan,
+            tahunAjaran: { in: [...kurikulumIds, tahunAjaran] }
+        };
+
+        if (semester) {
+            where.OR = [
+                { semester: semester },
+                { semester: null }
+            ];
+        }
+
+        const targets = await prisma.targetCPL.findMany({
             where,
             include: { cpl: true }
         });
+
+        if (semester) {
+            // Filter targets to prioritize semester-specific over cohort general targets (semester = null)
+            const targetMap = new Map<string, typeof targets[0]>();
+            
+            // First, populate with general targets (semester === null)
+            targets.forEach(t => {
+                if (t.semester === null) {
+                    targetMap.set(t.cplId, t);
+                }
+            });
+            
+            // Then, overwrite/add semester-specific targets
+            targets.forEach(t => {
+                if (t.semester !== null) {
+                    targetMap.set(t.cplId, t);
+                }
+            });
+            
+            return Array.from(targetMap.values());
+        }
+
+        return targets;
     }
 
     static async upsertTargets(params: UpsertTargetParams) {
@@ -273,7 +325,7 @@ export class EvaluasiCPLService {
             orderBy: { createdAt: 'desc' },
             include: {
                 cpl: true,
-                creator: {
+                users: {
                     include: {
                         profile: true
                     }

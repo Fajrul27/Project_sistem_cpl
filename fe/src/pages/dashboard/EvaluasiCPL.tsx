@@ -42,7 +42,7 @@ const EvaluasiCPLPage = () => {
     const { prodiList } = useProdi();
     const { fakultasList } = useFakultas();
     const { angkatanList } = useAngkatan();
-    const { cplList, setProdiFilter } = useCPL();
+    const { fullCplList, setProdiFilter } = useCPL();
     const { tahunAjaranList, activeTahunAjaran } = useTahunAjaran();
 
     // Dosen Teaching Info
@@ -385,7 +385,7 @@ const EvaluasiCPLPage = () => {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {cplList.map(cpl => (
+                                            {fullCplList.map(cpl => (
                                                 <TableRow key={cpl.id}>
                                                     <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
                                                     <TableCell>{cpl.deskripsi}</TableCell>
