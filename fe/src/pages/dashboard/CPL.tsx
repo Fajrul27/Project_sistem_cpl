@@ -30,6 +30,7 @@ import { useTahunAjaran } from "@/hooks/useTahunAjaran";
 import { ImportResultDialog } from "@/components/common/ImportResultDialog";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { Pagination } from "@/components/common/Pagination";
+import { signalDashboardMutation } from "@/lib/dashboardMutationSignal";
 
 
 type FormData = {
@@ -169,6 +170,7 @@ const CPLPage = () => {
           toast.warning(`Import selesai: ${result.successCount || 0} berhasil, ${result.errors.length} gagal.`);
         } else {
           toast.success(result.message || 'Data berhasil diimport');
+          signalDashboardMutation();
         }
 
         fetchCPL();
@@ -517,6 +519,7 @@ const CPLPage = () => {
       if (success) {
         resetForm();
         setDialogOpen(false);
+        signalDashboardMutation();
       }
     } finally {
       setSubmitting(false);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { signalDashboardMutation } from "@/lib/dashboardMutationSignal";
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -343,6 +344,8 @@ export const useNilaiTeknik = () => {
             } else {
                 toast.success(`Berhasil menyimpan ${result.data?.length || 0} nilai`);
                 setLastUpdated(new Date());
+                // Sinyal ke dashboard bahwa ada data baru
+                signalDashboardMutation();
             }
 
         } catch (error) {
@@ -405,6 +408,9 @@ export const useNilaiTeknik = () => {
             if (result.errors) {
                 result.errors.forEach((err: string) => toast.error(err));
             }
+
+            // Sinyal ke dashboard bahwa ada data baru
+            signalDashboardMutation();
 
             // Refresh data
             await fetchMKData(selectedMK);

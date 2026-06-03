@@ -42,7 +42,42 @@ import skalaNilaiRoutes from './skala-nilai.js';
 import rolesRoutes from './roles.js';
 import krsRoutes from './krs.js';
 
+import { Request, Response, NextFunction } from 'express';
+import { invalidateDashboardCache } from '../lib/dashboardCache.js';
+
 const router = Router();
+
+// ─── Auto-Invalidation Middleware ────────────────────────────────────────────
+// Setiap write operation (POST/PUT/DELETE) ke rute data relevan otomatis
+// mem-bump cache version di server, sehingga frontend dapat mendeteksinya
+// tanpa perlu menambahkan signal manual ke setiap controller.
+const DATA_MUTATION_ROUTES = [
+    '/cpl', '/cpmk', '/cpmk-mapping', '/cpl-mata-kuliah',
+    '/mata-kuliah', '/nilai-teknik', '/nilai-cpl',
+    '/teknik-penilaian', '/sub-cpmk', '/krs',
+    '/evaluasi', '/evaluasi-cpl', '/rubrik',
+    '/angkatan', '/kurikulum', '/users',
+];
+
+function autoInvalidateDashboardCache(req: Request, res: Response, next: NextFunction) {
+    // Only invalidate on write operations
+    if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE') {
+        const path = req.path.replace(/^\//, ''); // strip leading slash
+        const baseRoute = '/' + path.split('/')[0];
+        if (DATA_MUTATION_ROUTES.includes(baseRoute)) {
+            // Invalidate AFTER response is sent (non-blocking)
+            res.on('finish', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    invalidateDashboardCache();
+                }
+            });
+        }
+    }
+    next();
+}
+
+// Apply middleware to all data routes
+router.use(autoInvalidateDashboardCache);
 
 router.use('/auth', authRoutes);
 router.use('/skala-nilai', skalaNilaiRoutes);

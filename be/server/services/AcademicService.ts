@@ -11,6 +11,10 @@ export class AcademicService {
         });
     }
 
+    static async getFakultasByKode(kode: string) {
+        return prisma.fakultas.findUnique({ where: { kode } });
+    }
+
     static async createFakultas(data: { kode: string; nama: string }) {
         // Validate unique kode
         const existing = await prisma.fakultas.findUnique({ where: { kode: data.kode } });
@@ -55,6 +59,10 @@ export class AcademicService {
                 fakultas: true
             }
         });
+    }
+
+    static async getProdiByKode(kode: string) {
+        return prisma.prodi.findFirst({ where: { kode } });
     }
 
     static async createProdi(data: { kode: string; nama: string; jenjang: string; fakultasId: string }) {

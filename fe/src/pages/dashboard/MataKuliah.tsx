@@ -26,6 +26,7 @@ import { CPLMKWeightMatrix } from "./components/CPLMKWeightMatrix";
 
 import { useCPL } from "@/hooks/useCPL";
 import { Pagination } from "@/components/common/Pagination";
+import { signalDashboardMutation } from "@/lib/dashboardMutationSignal";
 
 const MataKuliahPage = () => {
   const navigate = useNavigate();
@@ -215,6 +216,7 @@ const MataKuliahPage = () => {
     if (success) {
       resetForm();
       setDialogOpen(false);
+      signalDashboardMutation();
     }
   };
 
@@ -321,6 +323,7 @@ const MataKuliahPage = () => {
           toast.warning(`Import selesai: ${result.successCount || 0} berhasil, ${result.errors.length} gagal.`);
         } else {
           toast.success(result.message || 'Data berhasil diimport');
+          signalDashboardMutation();
         }
 
         // Refresh data

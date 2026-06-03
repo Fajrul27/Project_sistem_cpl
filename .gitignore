@@ -1,5 +1,6 @@
 # Node modules
 node_modules/
+**/node_modules/
 
 # Environment files
 .env
@@ -7,6 +8,8 @@ node_modules/
 .env.development
 .env.production
 .env.test
+**/.env
+**/.env.*
 
 # Logs
 npm-debug.log*
@@ -15,10 +18,13 @@ yarn-error.log*
 pnpm-debug.log*
 logs/
 *.log
+**/*.log
 
 # Build outputs
 dist/
+**/dist/
 build/
+**/build/
 .next/
 out/
 
@@ -42,17 +48,32 @@ Thumbs.db
 .idea/
 .qodo
 
-# Local backups
+# Local backups and scratchpads
 *.bak
 *.tmp
-git add.txt
-# Lock files (optional, jika sering konflik)
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
 
+# Process IDs
+*.pid
+**/*.pid
+
+# JMeter test files, plans, and reports
+*.jtl
+**/*.jtl
+*.jmx
+**/*.jmx
+hasil_pengujian_skripsi/
+pengetesan\ new/
+
+# Python scripts for JMeter log analysis
+parse_jtl_analysis.py
+parse_results.py
+
+# SQL database dumps (Ignore in root directory only, to preserve database migration scripts)
+/*.sql
 
 # Security Keys
 *.key
+*.pub
+*.pem
 private.key
 public.key
