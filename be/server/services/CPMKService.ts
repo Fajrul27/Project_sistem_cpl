@@ -192,12 +192,22 @@ export class CPMKService {
         if (!existing) throw new Error('CPMK tidak ditemukan');
 
         // Validation: Used in grades?
-        const existingGrades = await prisma.nilaiTeknikPenilaian.count({
+        const existingNilaiTeknik = await prisma.nilaiTeknikPenilaian.count({
             where: { teknikPenilaian: { cpmkId: id } }
         });
 
-        if (existingGrades > 0) {
-            throw new Error(`USED_IN_GRADES:${existingGrades}`);
+        const existingNilaiCpmk = await prisma.nilaiCpmk.count({
+            where: { cpmkId: id }
+        });
+
+        const existingNilaiSubCpmk = await prisma.nilaiSubCpmk.count({
+            where: { subCpmk: { cpmkId: id } }
+        });
+
+        const totalGrades = existingNilaiTeknik + existingNilaiCpmk + existingNilaiSubCpmk;
+
+        if (totalGrades > 0) {
+            throw new Error(`USED_IN_GRADES:${totalGrades}`);
         }
 
         return prisma.cpmk.update({

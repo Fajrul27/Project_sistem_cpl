@@ -296,12 +296,27 @@ export function useCPL() {
             toast.success("CPL berhasil dihapus");
             await fetchCPL();
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting CPL:', error);
-            toast.error("Gagal menghapus CPL");
+            const errorMessage = error.response?.data?.error || error.message || "Gagal menghapus CPL";
+            toast.error(errorMessage);
             return false;
         }
     }, [fetchCPL]);
+
+    const createKategori = useCallback(async (nama: string) => {
+        try {
+            const res = await api.post('/kategori-cpl', { nama });
+            await fetchKategori();
+            toast.success("Kategori berhasil ditambahkan");
+            return res.data;
+        } catch (error: any) {
+            console.error('Error creating kategori:', error);
+            const errorMessage = error.response?.data?.error || error.message || "Gagal menambahkan kategori";
+            toast.error(errorMessage);
+            return null;
+        }
+    }, [fetchKategori]);
 
     // Generic reset
     const resetFilters = useCallback(() => {
@@ -349,6 +364,7 @@ export function useCPL() {
         createCPL,
         updateCPL,
         deleteCPL,
+        createKategori,
 
         // Create derived options based on current CPL list content to filter out irrelevant options
         kategoriOptions: kategoriList,
@@ -384,6 +400,7 @@ export function useCPL() {
         createCPL,
         updateCPL,
         deleteCPL,
+        createKategori,
         filters,
         handleSetSearchTerm,
         handleSetFakultasFilter,

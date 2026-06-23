@@ -34,6 +34,12 @@ export class ReferenceService {
         });
     }
 
+    static async createKategoriCpl(nama: string) {
+        return prisma.kategoriCpl.create({
+            data: { nama }
+        });
+    }
+
     static async getAllLevelTaksonomi() {
         return prisma.levelTaksonomi.findMany({
             orderBy: { kode: 'asc' }

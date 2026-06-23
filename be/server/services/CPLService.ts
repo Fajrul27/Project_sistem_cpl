@@ -342,6 +342,28 @@ export class CPLService {
             }
         }
 
+        // Validation: Used in grades?
+        const existingGrades = await prisma.nilaiCpl.count({
+            where: { cplId: id }
+        });
+
+        // Also check if any mapped CPMK has grades
+        const mappedGrades = await prisma.nilaiCpmk.count({
+            where: {
+                cpmk: {
+                    cplMappings: {
+                        some: { cplId: id }
+                    }
+                }
+            }
+        });
+
+        const totalGrades = existingGrades + mappedGrades;
+
+        if (totalGrades > 0) {
+            throw new Error(`USED_IN_GRADES:${totalGrades}`);
+        }
+
         return prisma.cpl.update({
             where: { id },
             data: { isActive: false }

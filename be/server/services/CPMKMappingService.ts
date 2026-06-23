@@ -192,6 +192,15 @@ export class CPMKMappingService {
 
         if (!existing) throw new Error('MAPPING_NOT_FOUND');
 
+        // Validation: Used in grades?
+        const existingGrades = await prisma.nilaiCpmk.count({
+            where: { cpmkId: existing.cpmkId }
+        });
+
+        if (existingGrades > 0) {
+            throw new Error(`USED_IN_GRADES:${existingGrades}`);
+        }
+
         await prisma.cpmkCplMapping.delete({ where: { id } });
         await this.recalculateCplForBatch(existing.cpmkId, existing.cpmk.mataKuliahId);
     }

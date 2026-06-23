@@ -345,6 +345,10 @@ export async function fetchKelas() {
   return api.get('/references/kelas');
 }
 
+export async function createKategoriCpl(nama: string) {
+  return api.post('/kategori-cpl', { nama });
+}
+
 // Helper: fetch tahun ajaran
 export async function fetchTahunAjaranList() {
   return api.get('/references/tahun-ajaran');

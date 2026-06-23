@@ -296,7 +296,8 @@ export function useCPMK() {
             return true;
         } catch (error: any) {
             console.error('Error deleting CPMK:', error);
-            toast.error(error.message || "Gagal menghapus CPMK");
+            const errorMessage = error.response?.data?.error || error.message || "Gagal menghapus CPMK";
+            toast.error(errorMessage);
             return false;
         }
     };

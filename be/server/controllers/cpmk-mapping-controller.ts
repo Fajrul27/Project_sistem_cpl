@@ -101,6 +101,13 @@ export const deleteMapping = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Delete CPMK-CPL mapping error:', error);
         if (error.message === 'MAPPING_NOT_FOUND') return res.status(404).json({ error: 'Mapping tidak ditemukan' });
+        if (error.message.startsWith('USED_IN_GRADES')) {
+            const count = error.message.split(':')[1];
+            return res.status(403).json({
+                error: 'Mapping tidak dapat dihapus karena CPMK ini sudah digunakan untuk penilaian',
+                detail: `Terdapat ${count} nilai mahasiswa yang terkait dengan CPMK ini`
+            });
+        }
         res.status(500).json({ error: 'Gagal menghapus mapping' });
     }
 };

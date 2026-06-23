@@ -123,6 +123,13 @@ export const deleteCpl = async (req: Request, res: Response) => {
         if (error.message === 'FORBIDDEN') {
             return res.status(403).json({ error: 'Anda hanya dapat menghapus CPL dari program studi Anda' });
         }
+        if (error.message.startsWith('USED_IN_GRADES')) {
+            const count = error.message.split(':')[1];
+            return res.status(403).json({
+                error: 'CPL tidak dapat dihapus karena sudah digunakan untuk penilaian',
+                detail: `Terdapat ${count} nilai mahasiswa yang terkait dengan CPL ini`
+            });
+        }
         res.status(500).json({ error: 'Gagal menghapus CPL' });
     }
 };

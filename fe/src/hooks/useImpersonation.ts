@@ -16,7 +16,7 @@ export const useImpersonation = () => {
     });
     const [loading, setLoading] = useState(false);
 
-    const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = import.meta.env.VITE_API_URL || '/api';
 
     // Check impersonation state on mount
     useEffect(() => {

@@ -65,6 +65,7 @@ const CPLPage = () => {
     createCPL,
     updateCPL,
     deleteCPL,
+    createKategori,
     filters: cplFilters,
     setSearchTerm: setCplSearchTerm,
     setFakultasFilter,
@@ -79,6 +80,8 @@ const CPLPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [newKategoriDialogOpen, setNewKategoriDialogOpen] = useState(false);
+  const [newKategoriName, setNewKategoriName] = useState("");
   const [editingCPL, setEditingCPL] = useState<CPL | null>(null);
 
   // Initialize viewMode from URL to prevent flash
@@ -1031,7 +1034,13 @@ const CPLPage = () => {
                             <RequiredLabel htmlFor="kategori" required>Kategori</RequiredLabel>
                             <Select
                               value={formData.kategoriId}
-                              onValueChange={(val) => setFormData({ ...formData, kategoriId: val })}
+                              onValueChange={(val) => {
+                                if (val === 'add_new') {
+                                  setNewKategoriDialogOpen(true);
+                                } else {
+                                  setFormData({ ...formData, kategoriId: val });
+                                }
+                              }}
                               required
                             >
                               <SelectTrigger>
@@ -1041,6 +1050,10 @@ const CPLPage = () => {
                                 {kategoriList.map((k) => (
                                   <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
                                 ))}
+                                <div className="h-px bg-muted my-1" />
+                                <SelectItem value="add_new" className="text-primary font-medium focus:bg-primary/10">
+                                  + Tambah Kategori Baru
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1210,6 +1223,49 @@ const CPLPage = () => {
           title="Hasil Import CPL"
           description="Proses import data CPL telah selesai dengan rincian berikut."
         />
+
+        <Dialog open={newKategoriDialogOpen} onOpenChange={setNewKategoriDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Tambah Kategori Baru</DialogTitle>
+              <DialogDescription>
+                Masukkan nama kategori CPL baru (contoh: Keterampilan, Pengetahuan, Sikap).
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="namaKategori">Nama Kategori</Label>
+                <Input
+                  id="namaKategori"
+                  placeholder="Masukkan nama kategori"
+                  value={newKategoriName}
+                  onChange={(e) => setNewKategoriName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setNewKategoriDialogOpen(false)}>Batal</Button>
+              <Button
+                onClick={async () => {
+                  if (!newKategoriName.trim()) {
+                    toast.error("Nama kategori tidak boleh kosong");
+                    return;
+                  }
+                  const res = await createKategori(newKategoriName);
+                  if (res) {
+                    setFormData({ ...formData, kategoriId: res.id });
+                    setNewKategoriDialogOpen(false);
+                    setNewKategoriName("");
+                  }
+                }}
+                disabled={!newKategoriName.trim()}
+              >
+                Simpan
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <DeleteConfirmationDialog
           open={deleteDialogOpen}
