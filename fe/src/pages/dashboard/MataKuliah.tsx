@@ -98,7 +98,7 @@ const MataKuliahPage = () => {
     const normalizedRole = role?.toLowerCase();
     if (normalizedRole === 'mahasiswa') return true;
     if (normalizedRole === 'admin') {
-      return filters.fakultasFilter && filters.prodiFilter && filters.semesterFilter;
+      return filters.fakultasFilter && filters.prodiFilter;
     }
     if (normalizedRole === 'dosen') {
       return true;
@@ -545,7 +545,7 @@ const MataKuliahPage = () => {
               <Card>
                 <CardContent className="pt-6">
                   <FilterRequiredState
-                    message={`Silakan pilih ${role === 'admin' ? "Fakultas, Program Studi, dan " : (role !== 'dosen' ? "Program Studi dan " : "")}Semester untuk menampilkan data mata kuliah.`}
+                    message={`Silakan pilih ${role === 'admin' ? "Fakultas dan Program Studi" : (role !== 'dosen' ? "Program Studi" : "")} untuk menampilkan data mata kuliah.`}
                   />
                 </CardContent>
               </Card>
