@@ -63,6 +63,19 @@ export class TahunAjaranService {
             throw new Error("Tidak dapat menghapus Tahun Ajaran yang sedang aktif. Silakan aktifkan tahun ajaran lain terlebih dahulu.");
         }
 
+        const krsCount = await prisma.krs.count({ where: { tahunAjaranId: id } });
+        const nilaiCplCount = await prisma.nilaiCpl.count({ where: { tahunAjaranId: id } });
+        const nilaiCpmkCount = await prisma.nilaiCpmk.count({ where: { tahunAjaranId: id } });
+        const evalCount = await prisma.evaluasiMataKuliah.count({ where: { tahunAjaranId: id } });
+
+        if (krsCount > 0 || nilaiCplCount > 0 || nilaiCpmkCount > 0 || evalCount > 0) {
+            const parts = [];
+            if (krsCount > 0) parts.push(`${krsCount} KRS`);
+            if (nilaiCplCount > 0 || nilaiCpmkCount > 0) parts.push(`${nilaiCplCount + nilaiCpmkCount} Nilai Mahasiswa`);
+            if (evalCount > 0) parts.push(`${evalCount} Evaluasi Mata Kuliah`);
+            throw new Error(`Data Tahun Ajaran tidak bisa dihapus karena masih terhubung dengan ${parts.join(', ')}.`);
+        }
+
         return prisma.tahunAjaran.delete({
             where: { id }
         });

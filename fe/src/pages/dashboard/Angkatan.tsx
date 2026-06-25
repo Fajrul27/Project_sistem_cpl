@@ -226,10 +226,12 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
             await deleteAngkatan(selectedAngkatan.id);
             toast.success("Angkatan berhasil dihapus");
             setIsDeleteDialogOpen(false);
-            setSelectedAngkatan(null);
             fetchData();
         } catch (error: any) {
-            toast.error(error.response?.data?.error || "Gagal menghapus angkatan");
+            console.error("Failed to delete angkatan:", error);
+            setTimeout(() => {
+                toast.error(error.message || "Gagal menghapus angkatan");
+            }, 300);
         }
     };
 
@@ -517,7 +519,13 @@ export default function AngkatanPage({ isTabContent = false }: { isTabContent?: 
             </Dialog>
 
             {/* Dialog Hapus */}
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialog 
+                open={isDeleteDialogOpen} 
+                onOpenChange={(open) => {
+                    setIsDeleteDialogOpen(open);
+                    if (!open) setTimeout(() => setSelectedAngkatan(null), 300);
+                }}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>

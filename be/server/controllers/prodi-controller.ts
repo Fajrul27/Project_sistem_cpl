@@ -51,7 +51,13 @@ export const deleteProdi = async (req: Request, res: Response) => {
         res.json({ message: 'Prodi berhasil dihapus' });
     } catch (error: any) {
         console.error('Delete Prodi error:', error);
-        res.status(500).json({ error: error.message || 'Gagal menghapus Prodi' });
+        if (error?.code === 'P2003' || (error?.message && error.message.includes('P2003'))) {
+            return res.status(400).json({ error: 'Data tidak bisa dihapus karena masih terikat dengan data lain (misalnya Mahasiswa atau Mata Kuliah).' });
+        }
+        if (error instanceof Error) {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: error?.message || 'Gagal menghapus Prodi' });
     }
 };
 

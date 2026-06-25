@@ -30,9 +30,18 @@ export class JenjangService {
     }
 
     static async deleteJenjang(id: string) {
-        // Since we are not strictly enforcing FK on Prodi yet (string column), we might not block this.
-        // But ideally we should check if any Prodi uses this string?
-        // For now, let's just delete. The prodi logic is weak string matching anyway.
+        const jenjang = await prisma.jenjang.findUnique({ where: { id } });
+        if (!jenjang) throw new Error("Jenjang tidak ditemukan");
+
+        // Cek apakah nama jenjang ini sedang digunakan oleh Prodi
+        const prodiCount = await prisma.prodi.count({
+            where: { jenjang: jenjang.nama }
+        });
+
+        if (prodiCount > 0) {
+            throw new Error(`Tidak dapat menghapus jenjang. Masih ada ${prodiCount} Prodi yang menggunakan jenjang ini.`);
+        }
+
         return prisma.jenjang.delete({ where: { id } });
     }
 }

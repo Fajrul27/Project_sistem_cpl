@@ -390,7 +390,6 @@ const MataKuliahPage = () => {
               <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
                 <li>Setiap mata kuliah harus memiliki <strong>Kode MK</strong> unik dan terhubung ke <strong>Kurikulum</strong> tertentu.</li>
                 <li>Untuk import, pastikan kolom <strong>Nama MK, Kode MK, SKS, Semester, Prodi, Kurikulum,</strong> dan <strong>Jenis MK</strong> sesuai dengan data master.</li>
-                <li><strong>Bobot MK:</strong> Gunakan tab ini untuk memetakan kontribusi mata kuliah terhadap Capaian Pembelajaran Lulusan (CPL). Pastikan Anda telah memilih Prodi dan Kurikulum pada filter untuk menampilkan matriks pemetaan.</li>
                 <li>Filter prodi dan kurikulum akan membantu membatasi tampilan data yang relevan agar pemetaan CPL lebih akurat.</li>
               </ul>
             </div>
@@ -404,11 +403,6 @@ const MataKuliahPage = () => {
                 <TabsTrigger value="list" className="flex items-center gap-2">
                   <ListIcon className="w-4 h-4" /> Daftar Mata Kuliah
                 </TabsTrigger>
-                {(can('edit', 'cpl') || role === 'admin' || role === 'kaprodi') && (
-                  <TabsTrigger value="weight-matrix" className="flex items-center gap-2">
-                    <SlidersHorizontal className="w-4 h-4" /> Bobot MK
-                  </TabsTrigger>
-                )}
               </TabsList>
             )}
           </div>
@@ -826,26 +820,7 @@ const MataKuliahPage = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="weight-matrix" className="mt-0">
-            {(!filters.prodiFilter || filters.prodiFilter === 'all' || !filters.kurikulumFilter || filters.kurikulumFilter === 'all') ? (
-              <Card>
-                <CardContent className="pt-6">
-                  <FilterRequiredState
-                    message="Silakan pilih Program Studi dan Kurikulum terlebih dahulu pada filter di atas untuk menampilkan matrix bobot mata kuliah."
-                  />
-                </CardContent>
-              </Card>
-            ) : (
-              <CPLMKWeightMatrix
-                cplList={cplList}
-                mkList={mkList}
-                initialMappings={cplMkMappings}
-                onSave={handleSaveWeights}
-                loading={loading || loadingMappings}
-                readOnly={!can('edit', 'cpl')}
-              />
-            )}
-          </TabsContent>
+
 
         </Tabs >
 

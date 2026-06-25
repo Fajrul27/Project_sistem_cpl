@@ -72,13 +72,33 @@ export const deleteAngkatan = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
+        // Fetch angkatan to get its tahun
+        const angkatan = await prisma.angkatan.findUnique({ where: { id } });
+        if (!angkatan) return res.status(404).json({ error: 'Angkatan tidak ditemukan' });
+
+        // Check for connected records
+        const profileCount = await prisma.profile.count({ where: { angkatanId: id } });
+        const targetCount = await prisma.targetCPL.count({ where: { angkatan: angkatan.tahun.toString() } });
+        const tindakLanjutCount = await prisma.tindakLanjutCPL.count({ where: { angkatan: angkatan.tahun.toString() } });
+        
+        if (profileCount > 0 || targetCount > 0 || tindakLanjutCount > 0) {
+            const parts = [];
+            if (profileCount > 0) parts.push(`${profileCount} Profil Mahasiswa`);
+            if (targetCount > 0) parts.push(`${targetCount} Target CPL`);
+            if (tindakLanjutCount > 0) parts.push(`${tindakLanjutCount} Tindak Lanjut CPL`);
+            return res.status(400).json({ error: `Data Angkatan tidak bisa dihapus karena masih terhubung dengan ${parts.join(', ')}.` });
+        }
+
         await prisma.angkatan.delete({
             where: { id }
         });
 
         res.json({ message: 'Angkatan berhasil dihapus' });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Delete angkatan error:', error);
+        if (error?.code === 'P2003' || (error?.message && error.message.includes('P2003'))) {
+            return res.status(400).json({ error: 'Data tidak bisa dihapus karena masih terikat dengan data lain dalam sistem (contoh: Profil Mahasiswa).' });
+        }
         res.status(500).json({ error: 'Gagal menghapus angkatan' });
     }
 };

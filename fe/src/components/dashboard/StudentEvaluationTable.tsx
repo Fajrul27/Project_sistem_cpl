@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 interface LowCplDetail {
     kodeCpl: string;
@@ -35,7 +35,12 @@ interface StudentEvaluationTableProps {
     }[];
 }
 
+type SortField = 'nama' | 'nim' | 'avgCpl' | 'lowCplCount';
+type SortOrder = 'asc' | 'desc';
+
 export const StudentEvaluationTable = ({ data }: StudentEvaluationTableProps) => {
+    const [sortField, setSortField] = useState<SortField>('lowCplCount');
+    const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
     const [selectedStudent, setSelectedStudent] = useState<{
         nama: string;
         details: LowCplDetail[];
@@ -52,9 +57,48 @@ export const StudentEvaluationTable = ({ data }: StudentEvaluationTableProps) =>
         }
     };
 
-    const totalPages = Math.ceil(data.length / itemsPerPage);
+    const handleSort = (field: SortField) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder(field === 'nama' || field === 'nim' ? 'asc' : 'desc');
+        }
+    };
+
+    const sortedData = [...data].sort((a, b) => {
+        let comparison = 0;
+
+        switch (sortField) {
+            case 'nama':
+                comparison = a.nama.localeCompare(b.nama);
+                break;
+            case 'nim':
+                comparison = a.nim.localeCompare(b.nim);
+                break;
+            case 'avgCpl':
+                comparison = a.avgCpl - b.avgCpl;
+                break;
+            case 'lowCplCount':
+                comparison = a.lowCplCount - b.lowCplCount;
+                break;
+        }
+
+        return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    const totalPages = Math.ceil(sortedData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedData = data.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
+
+    const SortIcon = ({ field }: { field: SortField }) => {
+        if (sortField !== field) {
+            return <ArrowUpDown className="h-4 w-4 ml-1 opacity-30" />;
+        }
+        return sortOrder === 'asc'
+            ? <ArrowUp className="h-4 w-4 ml-1" />
+            : <ArrowDown className="h-4 w-4 ml-1" />;
+    };
 
     return (
         <>
@@ -66,10 +110,42 @@ export const StudentEvaluationTable = ({ data }: StudentEvaluationTableProps) =>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Nama Mahasiswa</TableHead>
-                                <TableHead>NIM</TableHead>
-                                <TableHead className="text-center">Rata-rata CPL</TableHead>
-                                <TableHead className="text-center">CPL Rendah (&lt;55)</TableHead>
+                                <TableHead
+                                    className="cursor-pointer hover:bg-muted/50 select-none"
+                                    onClick={() => handleSort('nama')}
+                                >
+                                    <div className="flex items-center">
+                                        Nama Mahasiswa
+                                        <SortIcon field="nama" />
+                                    </div>
+                                </TableHead>
+                                <TableHead
+                                    className="cursor-pointer hover:bg-muted/50 select-none"
+                                    onClick={() => handleSort('nim')}
+                                >
+                                    <div className="flex items-center">
+                                        NIM
+                                        <SortIcon field="nim" />
+                                    </div>
+                                </TableHead>
+                                <TableHead
+                                    className="text-center cursor-pointer hover:bg-muted/50 select-none"
+                                    onClick={() => handleSort('avgCpl')}
+                                >
+                                    <div className="flex items-center justify-center">
+                                        Rata-rata CPL
+                                        <SortIcon field="avgCpl" />
+                                    </div>
+                                </TableHead>
+                                <TableHead
+                                    className="text-center cursor-pointer hover:bg-muted/50 select-none"
+                                    onClick={() => handleSort('lowCplCount')}
+                                >
+                                    <div className="flex items-center justify-center">
+                                        CPL Rendah (&lt;55)
+                                        <SortIcon field="lowCplCount" />
+                                    </div>
+                                </TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

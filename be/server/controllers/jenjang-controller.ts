@@ -46,7 +46,10 @@ export const deleteJenjang = async (req: Request, res: Response) => {
         res.json({ message: 'Jenjang berhasil dihapus' });
     } catch (error: any) {
         console.error('Delete Jenjang error:', error);
-        res.status(500).json({ error: error.message || 'Gagal menghapus Jenjang' });
+        if (error instanceof Error) {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: error?.message || 'Gagal menghapus Jenjang' });
     }
 };
 

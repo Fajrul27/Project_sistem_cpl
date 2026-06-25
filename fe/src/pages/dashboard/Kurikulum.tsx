@@ -241,11 +241,12 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
             await deleteKurikulum(selectedKurikulum.id);
             toast.success("Kurikulum berhasil dihapus");
             setIsDeleteDialogOpen(false);
-            setSelectedKurikulum(null);
             setIsDataChanged(!isDataChanged);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to delete kurikulum:", error);
-            toast.error("Gagal menghapus kurikulum");
+            setTimeout(() => {
+                toast.error(error.message || "Gagal menghapus kurikulum");
+            }, 300);
         }
     };
 
@@ -570,7 +571,13 @@ export default function KurikulumPage({ isTabContent = false }: { isTabContent?:
             </Dialog>
 
             {/* Delete Alert Dialog */}
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialog 
+                open={isDeleteDialogOpen} 
+                onOpenChange={(open) => {
+                    setIsDeleteDialogOpen(open);
+                    if (!open) setTimeout(() => setSelectedKurikulum(null), 300);
+                }}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
