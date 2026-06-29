@@ -25,7 +25,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { MultiTaxonomySelect } from "@/components/features/MultiTaxonomySelect";
 import { Badge } from "@/components/ui/badge";
-import { useCPMK, Cpmk } from "@/hooks/useCPMK";
+import { useCPMK, Cpmk, clearCpmkCache } from "@/hooks/useCPMK";
 import { LoadingSpinner, LoadingScreen } from "@/components/common/LoadingScreen";
 import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
@@ -76,7 +76,8 @@ const CPMKPage = () => {
             if (filters.selectedProdi !== 'all') queryParams.append('prodiId', filters.selectedProdi);
             if (filters.mataKuliahFilter !== 'all') queryParams.append('mataKuliahId', filters.mataKuliahFilter);
 
-            const url = `/api/cpmk/export/excel?${queryParams.toString()}`;
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
+            const url = `${API_URL}/cpmk/export/excel?${queryParams.toString()}`;
 
             const response = await fetch(url, { credentials: 'include' });
             if (!response.ok) throw new Error('Gagal export data');
@@ -99,7 +100,8 @@ const CPMKPage = () => {
 
     const handleDownloadTemplate = async () => {
         try {
-            const response = await fetch('/api/cpmk/template/excel', { credentials: 'include' });
+            const API_URL = import.meta.env.VITE_API_URL || '/api';
+            const response = await fetch(`${API_URL}/cpmk/template/excel`, { credentials: 'include' });
             if (!response.ok) throw new Error('Gagal download template');
 
             const blob = await response.blob();
@@ -131,7 +133,8 @@ const CPMKPage = () => {
                 const formData = new FormData();
                 formData.append('file', file);
 
-                const response = await fetch(`/api/cpmk/import/excel`, {
+                const API_URL = import.meta.env.VITE_API_URL || '/api';
+                const response = await fetch(`${API_URL}/cpmk/import/excel`, {
                     method: 'POST',
                     credentials: 'include',
                     body: formData
@@ -145,6 +148,7 @@ const CPMKPage = () => {
                     result.errors.slice(0, 3).forEach((err: string) => toast.error(err));
                 }
                 
+                clearCpmkCache();
                 fetchCpmk(true);
             } catch (error: any) {
                 toast.error(error.message || 'Gagal import data CPMK');

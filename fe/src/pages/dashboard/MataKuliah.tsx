@@ -73,7 +73,7 @@ const MataKuliahPage = () => {
 
   const handleDownloadTemplate = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${API_URL}/mata-kuliah/template/excel`, { credentials: 'include' });
       if (!response.ok) throw new Error('Gagal download template');
 
@@ -141,7 +141,7 @@ const MataKuliahPage = () => {
   const fetchMappings = async () => {
     setLoadingMappings(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${API_URL}/cpl-mata-kuliah`, { credentials: 'include' });
       if (!response.ok) throw new Error('Gagal fetch mappings');
       const json = await response.json();
@@ -167,7 +167,7 @@ const MataKuliahPage = () => {
 
   const handleSaveWeights = async (updates: any[]) => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${API_URL}/cpl-mata-kuliah/batch-update-weights`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -266,7 +266,7 @@ const MataKuliahPage = () => {
       if (filters.fakultasFilter !== 'all') queryParams.append('fakultasId', filters.fakultasFilter);
       if (filters.kurikulumFilter !== 'all') queryParams.append('kurikulumId', filters.kurikulumFilter);
 
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
       const url = `${API_URL}/mata-kuliah/export/excel?${queryParams.toString()}`;
 
       const response = await fetch(url, { credentials: 'include' });
@@ -303,7 +303,7 @@ const MataKuliahPage = () => {
         const formData = new FormData();
         formData.append('file', file);
 
-        const API_URL = import.meta.env.VITE_API_URL;
+        const API_URL = import.meta.env.VITE_API_URL || '/api';
         const response = await fetch(`${API_URL}/mata-kuliah/import/excel`, {
           method: 'POST',
           credentials: 'include',

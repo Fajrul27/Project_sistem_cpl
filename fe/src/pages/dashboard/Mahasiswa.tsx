@@ -56,7 +56,7 @@ const MahasiswaPage = () => {
       if (filters.semesterFilter !== 'all') queryParams.append('semester', filters.semesterFilter);
       if (filters.kelasFilter !== 'all') queryParams.append('kelas', filters.kelasFilter);
 
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
       const url = `${API_URL}/users/export/mahasiswa?${queryParams.toString()}`;
 
       const response = await fetch(url, { credentials: 'include' });
@@ -80,7 +80,7 @@ const MahasiswaPage = () => {
 
   const handleDownloadTemplate = async () => {
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${API_URL}/users/template/mahasiswa`, { credentials: 'include' });
       if (!response.ok) throw new Error('Gagal download template');
 
@@ -113,7 +113,7 @@ const MahasiswaPage = () => {
         const formData = new FormData();
         formData.append('file', file);
 
-        const API_URL = import.meta.env.VITE_API_URL;
+        const API_URL = import.meta.env.VITE_API_URL || '/api';
         const response = await fetch(`${API_URL}/users/import/mahasiswa`, {
           method: 'POST',
           credentials: 'include',
