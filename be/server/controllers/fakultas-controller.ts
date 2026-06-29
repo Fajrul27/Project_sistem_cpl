@@ -50,7 +50,13 @@ export const deleteFakultas = async (req: Request, res: Response) => {
         res.json({ message: 'Fakultas berhasil dihapus' });
     } catch (error: any) {
         console.error('Delete Fakultas error:', error);
-        res.status(500).json({ error: error.message || 'Gagal menghapus Fakultas' });
+        if (error?.code === 'P2003' || (error?.message && error.message.includes('P2003'))) {
+            return res.status(400).json({ error: 'Data tidak bisa dihapus karena masih terikat dengan data lain (misalnya Prodi).' });
+        }
+        if (error instanceof Error) {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: error?.message || 'Gagal menghapus Fakultas' });
     }
 };
 

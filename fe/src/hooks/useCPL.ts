@@ -267,7 +267,6 @@ export function useCPL() {
     const createCPL = useCallback(async (payload: any) => {
         try {
             await api.post('/cpl', payload);
-            toast.success("CPL berhasil ditambahkan");
             await fetchCPL();
             return true;
         } catch (error) {
@@ -280,7 +279,6 @@ export function useCPL() {
     const updateCPL = useCallback(async (id: string, payload: any) => {
         try {
             await api.put(`/cpl/${id}`, payload);
-            toast.success("CPL berhasil diperbarui");
             await fetchCPL();
             return true;
         } catch (error) {

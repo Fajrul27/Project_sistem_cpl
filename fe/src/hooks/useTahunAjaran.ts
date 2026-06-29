@@ -64,8 +64,10 @@ export function useTahunAjaran() {
             return true;
         } catch (error: any) {
             console.error(error);
-            const message = error.response?.data?.error || "Gagal menghapus tahun ajaran";
-            toast.error(message);
+            const message = error.message || "Gagal menghapus tahun ajaran";
+            setTimeout(() => {
+                toast.error(message);
+            }, 300);
             return false;
         }
     };

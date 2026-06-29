@@ -72,6 +72,21 @@ export class ReferenceService {
     }
 
     static async deleteKurikulum(id: string) {
+        // Check for connected records
+        const mkCount = await prisma.mataKuliah.count({ where: { kurikulumId: id } });
+        const angkatanCount = await prisma.angkatan.count({ where: { kurikulumId: id } });
+        const cplCount = await prisma.cpl.count({ where: { kurikulumId: id } });
+        const profilLulusanCount = await prisma.profilLulusan.count({ where: { kurikulumId: id } });
+        
+        if (mkCount > 0 || angkatanCount > 0 || cplCount > 0 || profilLulusanCount > 0) {
+            const parts = [];
+            if (mkCount > 0) parts.push(`${mkCount} Mata Kuliah`);
+            if (angkatanCount > 0) parts.push(`${angkatanCount} Angkatan`);
+            if (cplCount > 0) parts.push(`${cplCount} CPL`);
+            if (profilLulusanCount > 0) parts.push(`${profilLulusanCount} Profil Lulusan`);
+            throw new Error(`Data Kurikulum tidak bisa dihapus karena masih terhubung dengan ${parts.join(', ')}.`);
+        }
+
         return prisma.kurikulum.delete({
             where: { id }
         });

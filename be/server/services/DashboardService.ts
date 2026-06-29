@@ -797,8 +797,7 @@ export class DashboardService {
                         nim: true
                     }
                 }
-            },
-            take: 100
+            }
         });
 
         const studentIds = students.map(s => s.id);

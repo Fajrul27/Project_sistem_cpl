@@ -54,8 +54,14 @@ export const deleteKurikulum = async (req: Request, res: Response) => {
         const { id } = req.params;
         await ReferenceService.deleteKurikulum(id);
         res.json({ message: 'Kurikulum berhasil dihapus' });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Delete kurikulum error:', error);
+        if (error?.code === 'P2003' || (error?.message && error.message.includes('P2003'))) {
+            return res.status(400).json({ error: 'Data tidak bisa dihapus karena masih terikat dengan data lain dalam sistem.' });
+        }
+        if (error?.message && error.message.includes('terhubung dengan')) {
+            return res.status(400).json({ error: error.message });
+        }
         res.status(500).json({ error: 'Gagal menghapus kurikulum' });
     }
 };

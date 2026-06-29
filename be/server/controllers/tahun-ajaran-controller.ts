@@ -59,9 +59,15 @@ export class TahunAjaranController {
             const { id } = req.params;
             await TahunAjaranService.delete(id);
             res.json({ message: "Tahun Ajaran deleted successfully" });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error deleting tahun ajaran:", error);
-            // Handle Prisma foreign key constraint errors specifically if possible
+            if (error?.code === 'P2003' || (error?.message && error.message.includes('P2003'))) {
+                return res.status(400).json({ error: "Data tidak bisa dihapus karena masih terikat dengan data lain (contoh: Nilai Mahasiswa, KRS)." });
+            }
+            // Fallback for manual thrown errors from service
+            if (error instanceof Error) {
+                return res.status(400).json({ error: error.message });
+            }
             res.status(500).json({ error: "Gagal menghapus. Data mungkin sedang digunakan." });
         }
     }

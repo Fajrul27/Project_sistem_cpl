@@ -261,7 +261,6 @@ export function useCPMK() {
         try {
             await api.post('/cpmk', payload);
             toast.success("CPMK berhasil ditambahkan");
-            toast.success("CPMK berhasil ditambahkan");
             Object.keys(cpmkCache).forEach(k => delete cpmkCache[k]);
             await fetchCpmk(true);
             return true;
@@ -275,7 +274,6 @@ export function useCPMK() {
     const updateCpmk = async (id: string, payload: any) => {
         try {
             await api.put(`/cpmk/${id}`, payload);
-            toast.success("CPMK berhasil diupdate");
             toast.success("CPMK berhasil diupdate");
             Object.keys(cpmkCache).forEach(k => delete cpmkCache[k]);
             await fetchCpmk(true);

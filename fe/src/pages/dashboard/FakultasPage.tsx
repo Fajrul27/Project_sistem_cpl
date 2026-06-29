@@ -221,7 +221,9 @@ export default function FakultasPage() {
             toast.success('Fakultas berhasil dihapus');
             loadFakultas();
         } catch (error: any) {
-            toast.error(error.message || 'Gagal menghapus fakultas');
+            setTimeout(() => {
+                toast.error(error.message || 'Gagal menghapus fakultas');
+            }, 300);
         }
     };
 
@@ -267,7 +269,9 @@ export default function FakultasPage() {
             toast.success('Prodi berhasil dihapus');
             loadProdi();
         } catch (error: any) {
-            toast.error(error.message || 'Gagal menghapus prodi');
+            setTimeout(() => {
+                toast.error(error.message || 'Gagal menghapus prodi');
+            }, 300);
         }
     };
 
@@ -318,7 +322,9 @@ export default function FakultasPage() {
             toast.success('Jenjang berhasil dihapus');
             loadJenjang();
         } catch (error: any) {
-            toast.error(error.message || 'Gagal menghapus jenjang');
+            setTimeout(() => {
+                toast.error(error.message || 'Gagal menghapus jenjang');
+            }, 300);
         }
     };
 
