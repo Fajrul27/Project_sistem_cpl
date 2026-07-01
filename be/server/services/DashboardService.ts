@@ -1,7 +1,7 @@
 
 import { prisma } from '../lib/prisma.js';
 import { getUserProfile } from '../middleware/auth.js';
-import { buildCacheKey, getCache, setCache } from '../lib/dashboardCache.js';
+import { buildCacheKey, getCache, setCache, getOrSetCache } from '../lib/dashboardCache.js';
 
 export class DashboardService {
     static async getDashboardStats(params: {
@@ -25,8 +25,8 @@ export class DashboardService {
             prodiId: filterProdiId || '',
             fakultasId: fakultasId || ''
         });
-        const cached = getCache(cacheKey);
-        if (cached) return cached;
+
+        return getOrSetCache(cacheKey, async () => {
 
         // Define filters
         let userFilter: any = {};
@@ -460,15 +460,15 @@ export class DashboardService {
             insights
         };
 
-        // --- STORE IN CACHE ---
-        setCache(cacheKey, result);
-
         return result;
+        });
     }
 
     static async getDosenAnalysis(params: { prodiId?: string, fakultasId?: string }) {
         const { prodiId, fakultasId } = params;
-        const where: any = { role: { role: { name: 'dosen' } } };
+        const cacheKey = `dosen-analysis:${prodiId || 'all'}:${fakultasId || 'all'}`;
+        return getOrSetCache(cacheKey, async () => {
+            const where: any = { role: { role: { name: 'dosen' } } };
 
         if (prodiId && prodiId !== 'all') {
             where.profile = { prodiId: prodiId };
@@ -767,11 +767,14 @@ export class DashboardService {
                 progressInput: progressInput // Should be correct now
             };
         });
+        });
     }
 
     static async getStudentEvaluation(params: { prodiId?: string, angkatan?: string, semester?: string, fakultasId?: string }) {
         const { prodiId, angkatan, semester, fakultasId } = params;
-        const where: any = { role: { role: { name: 'mahasiswa' } } };
+        const cacheKey = `student-evaluation:${prodiId || 'all'}:${angkatan || 'all'}:${semester || 'all'}:${fakultasId || 'all'}`;
+        return getOrSetCache(cacheKey, async () => {
+            const where: any = { role: { role: { name: 'mahasiswa' } } };
         const profileWhere: any = {};
 
         if (prodiId && prodiId !== 'all') profileWhere.prodiId = prodiId;
@@ -857,5 +860,6 @@ export class DashboardService {
         });
 
         return filteredEvaluation;
+        });
     }
 }

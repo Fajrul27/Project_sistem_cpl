@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { context } from './context.js';
+import { invalidateDashboardCache } from './dashboardCache.js';
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -22,9 +23,17 @@ export const prisma = prismaClient.$extends({
 
         const userId = context.getStore()?.userId;
         const skipAuditLog = context.getStore()?.skipAuditLog;
+        const isMutation = ['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany', 'upsert'].includes(operation);
+
+        // If skipAuditLog is set but it's a mutation, we still need to invalidate dashboard cache!
+        if (skipAuditLog && isMutation && model !== 'Session') {
+          const result = await query(args);
+          try { invalidateDashboardCache(); } catch (e) {}
+          return result;
+        }
 
         // Only log modification operations if skipAuditLog is not set
-        if (!skipAuditLog && ['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany', 'upsert'].includes(operation)) {
+        if (!skipAuditLog && isMutation) {
           try {
             let oldData = null;
             let recordId = null;
@@ -47,6 +56,11 @@ export const prisma = prismaClient.$extends({
 
             // Execute the operation
             const result = await query(args);
+
+            // Auto-invalidate dashboard cache on core data mutations (Event-Driven Cache Invalidation)
+            if (model !== 'Session') {
+              try { invalidateDashboardCache(); } catch (e) {}
+            }
 
             // For create, result is the new data
             let newData = null;
