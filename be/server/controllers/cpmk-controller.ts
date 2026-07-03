@@ -174,10 +174,13 @@ export const exportCpmk = async (req: Request, res: Response) => {
         const worksheet = workbook.addWorksheet('CPMK');
 
         worksheet.columns = [
+            { header: 'No', key: 'no', width: 5 },
             { header: 'Kode CPMK', key: 'kodeCpmk', width: 15 },
             { header: 'Deskripsi', key: 'deskripsi', width: 50 },
             { header: 'Mata Kuliah', key: 'mataKuliah', width: 30 },
-            { header: 'Level Taksonomi', key: 'levelTaksonomi', width: 20 }
+            { header: 'Level Taksonomi', key: 'levelTaksonomi', width: 20 },
+            { header: 'Mapping CPL', key: 'mappingCpl', width: 40 },
+            { header: 'Teknik Penilaian', key: 'teknikPenilaian', width: 40 }
         ];
 
         worksheet.getRow(1).font = { bold: true };
@@ -187,12 +190,23 @@ export const exportCpmk = async (req: Request, res: Response) => {
             fgColor: { argb: 'FFE0E0E0' }
         };
 
-        cpmkList.forEach((cpmk: any) => {
+        cpmkList.forEach((cpmk: any, index: number) => {
+            const mappingStr = (cpmk.cplMappings || [])
+                .map((m: any) => `${m.cpl?.kodeCpl || 'Unknown'}:${Number(m.bobotPersentase)}`)
+                .join(', ');
+                
+            const teknikStr = (cpmk.teknikPenilaian || [])
+                .map((t: any) => `${t.namaTeknik}:${Number(t.bobotPersentase)}`)
+                .join(', ');
+
             worksheet.addRow({
+                no: index + 1,
                 kodeCpmk: cpmk.kodeCpmk,
                 deskripsi: cpmk.deskripsi,
                 mataKuliah: cpmk.mataKuliah?.namaMk || '',
-                levelTaksonomi: cpmk.levelTaksonomi?.nama || ''
+                levelTaksonomi: cpmk.levelTaksonomiRef?.kode || cpmk.levelTaksonomi || '',
+                mappingCpl: mappingStr,
+                teknikPenilaian: teknikStr
             });
         });
 
@@ -253,11 +267,13 @@ export const importCpmk = async (req: Request, res: Response) => {
             if (!rowValues || rowValues.length < 2) continue;
 
             // SheetJS index is 0-based
-            // Based on template: 0: No, 1: Kode, 2: Deskripsi, 3: MK Name, 4: Level
+            // Based on template: 0: No, 1: Kode, 2: Deskripsi, 3: MK Name, 4: Level, 5: Mapping CPL, 6: Teknik Penilaian
             const kodeCpmk = getCellValue(rowValues[1]);
             const deskripsi = getCellValue(rowValues[2]);
             const mataKuliah = getCellValue(rowValues[3]);
             const levelTaksonomi = getCellValue(rowValues[4]);
+            const mappingCplStr = getCellValue(rowValues[5]);
+            const teknikStr = getCellValue(rowValues[6]);
 
             if (!kodeCpmk || !mataKuliah) {
                 if (kodeCpmk || mataKuliah) {
@@ -323,12 +339,83 @@ export const importCpmk = async (req: Request, res: Response) => {
                     levelTaksonomiId
                 };
 
+                // PRE-VALIDATE MAPPING CPL
+                const parsedMappings: any[] = [];
+                if (mappingCplStr) {
+                    const mappings = (mappingCplStr as string).split(',').map(s => s.trim()).filter(Boolean);
+                    let totalBobotCpl = 0;
+                    for (const m of mappings) {
+                        const parts = m.split(':');
+                        if (parts.length !== 2) throw new Error(`Format Mapping CPL salah pada "${m}". Gunakan format KodeCPL:Bobot (dipisahkan koma)`);
+                        
+                        let searchKode = parts[0].trim().toUpperCase();
+                        if (searchKode.match(/^CPL-\d$/)) {
+                            searchKode = searchKode.replace(/^CPL-(\d)$/, 'CPL-0$1');
+                        }
+
+                        const cpl = await prisma.cpl.findFirst({ where: { kodeCpl: searchKode, isActive: true } });
+                        if (!cpl) throw new Error(`CPL tidak ditemukan: ${searchKode}`);
+                        
+                        const bobot = Number(parts[1].trim());
+                        if (isNaN(bobot)) throw new Error(`Bobot tidak valid untuk CPL: ${searchKode}. Pastikan hanya angka.`);
+                        
+                        totalBobotCpl += bobot;
+                        parsedMappings.push({ cplId: cpl.id, bobotPersentase: bobot });
+                    }
+                    if (Math.round(totalBobotCpl) !== 100) {
+                        throw new Error(`Total bobot Mapping CPL harus 100%. Saat ini: ${totalBobotCpl}%`);
+                    }
+                }
+
+                // PRE-VALIDATE TEKNIK PENILAIAN
+                const parsedTekniks: any[] = [];
+                if (teknikStr) {
+                    const tekniks = (teknikStr as string).split(',').map(s => s.trim()).filter(Boolean);
+                    let totalBobotTeknik = 0;
+                    for (const t of tekniks) {
+                        const parts = t.split(':');
+                        if (parts.length !== 2) throw new Error(`Format Teknik Penilaian salah pada "${t}". Gunakan format NamaTeknik:Bobot (dipisahkan koma)`);
+                        
+                        const namaTeknik = parts[0].trim();
+                        const bobot = Number(parts[1].trim());
+                        if (isNaN(bobot)) throw new Error(`Bobot tidak valid untuk teknik: ${namaTeknik}. Pastikan hanya angka.`);
+                        
+                        totalBobotTeknik += bobot;
+                        parsedTekniks.push({ namaTeknik, bobotPersentase: bobot });
+                    }
+                    if (Math.round(totalBobotTeknik) !== 100) {
+                        throw new Error(`Total bobot Teknik Penilaian harus 100%. Saat ini: ${totalBobotTeknik}%`);
+                    }
+                }
+
+                // ALL VALIDATIONS PASSED. NOW EXECUTE DB CHANGES.
+                let savedCpmk;
                 if (existingCPMK) {
-                    await CPMKService.updateCpmk(existingCPMK.id, cpmkData, userId, userRole);
+                    savedCpmk = await CPMKService.updateCpmk(existingCPMK.id, cpmkData, userId, userRole);
                     successes.push({ row: i + 1, kodeCpmk, action: 'updated' });
                 } else {
-                    await CPMKService.createCpmk(cpmkData, userId, userRole);
+                    savedCpmk = await CPMKService.createCpmk(cpmkData, userId, userRole);
                     successes.push({ row: i + 1, kodeCpmk, action: 'created' });
+                }
+
+                // Execute Mappings
+                if (parsedMappings.length > 0) {
+                    await prisma.cpmkCplMapping.deleteMany({ where: { cpmkId: savedCpmk.id } });
+                    for (const m of parsedMappings) {
+                        await prisma.cpmkCplMapping.create({
+                            data: { cpmkId: savedCpmk.id, cplId: m.cplId, bobotPersentase: m.bobotPersentase }
+                        });
+                    }
+                }
+
+                // Execute Tekniks
+                if (parsedTekniks.length > 0) {
+                    await prisma.teknikPenilaian.deleteMany({ where: { cpmkId: savedCpmk.id } });
+                    for (const t of parsedTekniks) {
+                        await prisma.teknikPenilaian.create({
+                            data: { cpmkId: savedCpmk.id, namaTeknik: t.namaTeknik, bobotPersentase: t.bobotPersentase }
+                        });
+                    }
                 }
 
             } catch (error: any) {
@@ -337,9 +424,14 @@ export const importCpmk = async (req: Request, res: Response) => {
             }
         }
 
+        const createdCount = successes.filter(s => s.action === 'created').length;
+        const updatedCount = successes.filter(s => s.action === 'updated').length;
+
         res.json({
-            message: `Import selesai. ${successes.length} data berhasil diproses.`,
+            message: `Import selesai. ${createdCount} data baru ditambahkan, ${updatedCount} data diperbarui.`,
             successCount: successes.length,
+            createdCount,
+            updatedCount,
             errors: errors.length > 0 ? errors : undefined
         });
 
@@ -364,7 +456,9 @@ export const getTemplateCpmk = async (req: Request, res: Response) => {
             { header: 'Kode CPMK', key: 'kodeCpmk', width: 15 },
             { header: 'Deskripsi', key: 'deskripsi', width: 50 },
             { header: 'Mata Kuliah', key: 'mataKuliah', width: 30 },
-            { header: 'Level Taksonomi', key: 'levelTaksonomi', width: 25 }
+            { header: 'Level Taksonomi', key: 'levelTaksonomi', width: 25 },
+            { header: 'Mapping CPL', key: 'mappingCpl', width: 40 },
+            { header: 'Teknik Penilaian', key: 'teknikPenilaian', width: 40 }
         ];
 
         worksheet.getRow(1).font = { bold: true };
@@ -379,7 +473,9 @@ export const getTemplateCpmk = async (req: Request, res: Response) => {
             kodeCpmk: 'CPMK-1',
             deskripsi: 'Mahasiswa mampu memahami konsep dasar pemrograman',
             mataKuliah: 'Algoritma dan Pemrograman',
-            levelTaksonomi: 'C2'
+            levelTaksonomi: 'C2',
+            mappingCpl: 'CPL-01:50, CPL-02:50',
+            teknikPenilaian: 'Tugas:30, UTS:30, UAS:40'
         });
 
         const noteRow = worksheet.addRow({
@@ -387,7 +483,9 @@ export const getTemplateCpmk = async (req: Request, res: Response) => {
             kodeCpmk: '* Wajib Diisi',
             deskripsi: '* Wajib Diisi',
             mataKuliah: '* Wajib Sesuai Master Mata Kuliah',
-            levelTaksonomi: '* Opsional (Kode Level)'
+            levelTaksonomi: '* Opsional (Kode Level)',
+            mappingCpl: '* Opsional (Format CPL:Bobot)',
+            teknikPenilaian: '* Opsional (Format Teknik:Bobot)'
         });
         noteRow.font = { italic: true, color: { argb: 'FFFF0000' } };
 

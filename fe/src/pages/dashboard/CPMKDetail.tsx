@@ -18,6 +18,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useCPMKDetail, CplMapping, TeknikPenilaian } from "@/hooks/useCPMKDetail";
 import { FloatingBackButton } from "@/components/common/FloatingBackButton";
+import { CreatableCombobox } from "@/components/ui/creatable-combobox";
 
 const CPMKDetailPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -54,6 +55,7 @@ const CPMKDetailPage = () => {
     const [teknikDialogOpen, setTeknikDialogOpen] = useState(false);
     const [editingTeknik, setEditingTeknik] = useState<TeknikPenilaian | null>(null);
     const [teknikForm, setTeknikForm] = useState({ namaTeknik: "", bobotPersentase: "", deskripsi: "", teknikRefId: "" });
+    const [selectedKategori, setSelectedKategori] = useState<string>("");
 
     const [isSubCpmkDialogOpen, setIsSubCpmkDialogOpen] = useState(false);
     const [currentSubCpmk, setCurrentSubCpmk] = useState<any>(null);
@@ -130,6 +132,7 @@ const CPMKDetailPage = () => {
         if (success) {
             setTeknikDialogOpen(false);
             setTeknikForm({ namaTeknik: "", bobotPersentase: "", deskripsi: "", teknikRefId: "" });
+            setSelectedKategori("");
             setEditingTeknik(null);
             setShowUpdateConfirmation(false);
             setPendingTeknikUpdate(null);
@@ -356,6 +359,7 @@ const CPMKDetailPage = () => {
                                             {totalBobotTeknik < 99.99 && (
                                                 <Button size="sm" onClick={() => {
                                                     setTeknikForm({ namaTeknik: "", bobotPersentase: "", deskripsi: "", teknikRefId: "" });
+                                                    setSelectedKategori("");
                                                     setEditingTeknik(null);
                                                 }}>
                                                     <Plus className="h-4 w-4 mr-2" />
@@ -372,34 +376,46 @@ const CPMKDetailPage = () => {
                                             </DialogHeader>
                                             <form onSubmit={handleSubmitTeknik} className="space-y-4">
                                                 <div className="space-y-2">
-                                                    <Label>Referensi Teknik (Opsional)</Label>
+                                                    <Label>Kategori Teknik (Opsional)</Label>
                                                     <Select
-                                                        value={teknikForm.teknikRefId}
+                                                        value={selectedKategori}
                                                         onValueChange={(val) => {
-                                                            const ref = teknikRefs.find(r => r.id === val);
-                                                            setTeknikForm({
-                                                                ...teknikForm,
-                                                                teknikRefId: val,
-                                                                namaTeknik: ref ? ref.nama : teknikForm.namaTeknik,
-                                                                deskripsi: ref ? (ref.deskripsi || "") : teknikForm.deskripsi
-                                                            });
+                                                            setSelectedKategori(val);
+                                                            if (val !== selectedKategori) {
+                                                                setTeknikForm({
+                                                                    ...teknikForm,
+                                                                    teknikRefId: "",
+                                                                    namaTeknik: "",
+                                                                    deskripsi: `Kategori: ${val}`
+                                                                });
+                                                            }
                                                         }}
                                                     >
-                                                        <SelectTrigger><SelectValue placeholder="Pilih Jenis Teknik" /></SelectTrigger>
+                                                        <SelectTrigger><SelectValue placeholder="Pilih Kategori Teknik" /></SelectTrigger>
                                                         <SelectContent>
-                                                            {teknikRefs.map(r => (
-                                                                <SelectItem key={r.id} value={r.id}>{r.nama}</SelectItem>
+                                                            {Array.from(new Set(teknikRefs.map(r => r.deskripsi?.replace('Kategori: ', '')).filter(Boolean))).map(kategori => (
+                                                                <SelectItem key={kategori as string} value={kategori as string}>{kategori as string}</SelectItem>
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <RequiredLabel required>Nama Teknik</RequiredLabel>
-                                                    <Input
+                                                    <CreatableCombobox
                                                         value={teknikForm.namaTeknik}
-                                                        onChange={(e) => setTeknikForm({ ...teknikForm, namaTeknik: e.target.value })}
-                                                        placeholder="Contoh: UTS, Tugas Besar"
-                                                        required
+                                                        onValueChange={(val) => {
+                                                            const match = teknikRefs.find(r => r.nama === val && (!selectedKategori || r.deskripsi === `Kategori: ${selectedKategori}`));
+                                                            setTeknikForm({ 
+                                                                ...teknikForm, 
+                                                                namaTeknik: val,
+                                                                teknikRefId: match ? match.id : ""
+                                                            });
+                                                        }}
+                                                        options={teknikRefs
+                                                            .filter(r => !selectedKategori || r.deskripsi === `Kategori: ${selectedKategori}`)
+                                                            .map(r => ({ value: r.nama, label: r.nama }))
+                                                        }
+                                                        placeholder="Pilih atau ketik teknik..."
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
@@ -501,6 +517,8 @@ const CPMKDetailPage = () => {
                                                             <div className="flex justify-end gap-2">
                                                                 <Button size="sm" variant="outline" onClick={() => {
                                                                     setEditingTeknik(t);
+                                                                    const tRef = teknikRefs.find(r => r.id === t.teknikRefId);
+                                                                    setSelectedKategori(tRef?.deskripsi?.replace('Kategori: ', '') || "");
                                                                     setTeknikForm({
                                                                         namaTeknik: t.namaTeknik,
                                                                         bobotPersentase: t.bobotPersentase.toString(),

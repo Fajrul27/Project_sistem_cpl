@@ -73,7 +73,7 @@ export class CPMKService {
                     levelTaksonomiRef: true,
                     creator: { select: { id: true, email: true, profile: { select: { namaLengkap: true } } } }
                 },
-                orderBy: { createdAt: 'desc' },
+                orderBy: { updatedAt: 'desc' },
                 skip: limit > 0 ? skip : undefined,
                 take: limit > 0 ? limit : undefined,
             }),

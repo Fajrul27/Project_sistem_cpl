@@ -1,0 +1,47 @@
+[
+  [
+    "No",
+    "Kode CPMK",
+    "Deskripsi",
+    "Mata Kuliah",
+    "Level Taksonomi",
+    "Mapping CPL",
+    "Teknik Penilaian"
+  ],
+  [
+    1,
+    "CPMK-224",
+    "Mengevaluasi adaptasi penggunaan teknologi di masyarakat",
+    "Komputer dan Masyarakat",
+    "",
+    "CPL-10:100",
+    ""
+  ],
+  [
+    2,
+    "CPMK-223",
+    "Mengenali berbagai penerapan ilmu informatika dalam berbagai bidang kehidupan",
+    "Komputer dan Masyarakat",
+    "",
+    "CPL-10:100",
+    ""
+  ],
+  [
+    3,
+    "CPMK-222",
+    "Memahami etika profesi ilmu informatika",
+    "Komputer dan Masyarakat",
+    "",
+    "CPL-10:100",
+    ""
+  ],
+  [
+    4,
+    "CPMK-221",
+    "Menganalisa teks bahasa arab berdasarkan kaidah tata bahasa",
+    "Bahasa Arab",
+    "",
+    "CPL-09:50 , CPL-11:50",
+    ""
+  ]
+]
