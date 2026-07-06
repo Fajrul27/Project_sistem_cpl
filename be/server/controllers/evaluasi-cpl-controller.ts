@@ -7,8 +7,8 @@ export const getTargets = async (req: Request, res: Response) => {
         const { prodiId, angkatan, tahunAjaran, tahunAjaranId, semester } = req.query;
         const ta = (tahunAjaran || tahunAjaranId) as string;
 
-        if (!prodiId || !angkatan || !ta) {
-            return res.status(400).json({ error: 'Missing required params: prodiId, angkatan, tahunAjaran' });
+        if (!prodiId || !angkatan) {
+            return res.status(400).json({ error: 'Missing required params: prodiId, angkatan' });
         }
 
         const targets = await EvaluasiCPLService.getTargets({
@@ -56,8 +56,8 @@ export const getEvaluation = async (req: Request, res: Response) => {
         const { prodiId, angkatan, tahunAjaran, tahunAjaranId, semester } = req.query;
         const ta = (tahunAjaran || tahunAjaranId) as string;
 
-        if (!prodiId || !angkatan || !ta) {
-            return res.status(400).json({ error: 'Missing required params: prodiId, angkatan, tahunAjaran' });
+        if (!prodiId || !angkatan) {
+            return res.status(400).json({ error: 'Missing required params: prodiId, angkatan' });
         }
 
         const result = await EvaluasiCPLService.getEvaluation({

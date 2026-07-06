@@ -90,8 +90,8 @@ export function useAnalisis() {
     }, []);
 
     const fetchAnalysisData = useCallback(async () => {
-        // Enforce all filters are selected
-        if (!semester || !fakultasFilter || !prodiFilter || semester === 'all' || fakultasFilter === 'all' || prodiFilter === 'all') {
+        // Enforce all required filters are selected (semester can be 'all')
+        if (!semester || !fakultasFilter || !prodiFilter || fakultasFilter === 'all' || prodiFilter === 'all') {
             setCplData([]);
             setRadarData([]);
             setDistributionData([]);
@@ -129,8 +129,8 @@ export function useAnalisis() {
 
     // Determine effective semester list
     const semesterList = (role === 'dosen' && taughtSemesters.length > 0)
-        ? taughtSemesters.map(s => ({ id: s.toString(), nama: `Semester ${s}` }))
-        : [1, 2, 3, 4, 5, 6, 7, 8].map(s => ({ id: s.toString(), nama: `Semester ${s}` }));
+        ? [{ id: 'all', nama: 'Semua Semester' }, ...taughtSemesters.map(s => ({ id: s.toString(), nama: `Semester ${s}` }))]
+        : [{ id: 'all', nama: 'Semua Semester' }, ...[1, 2, 3, 4, 5, 6, 7, 8].map(s => ({ id: s.toString(), nama: `Semester ${s}` }))];
 
     // Derived list for Prodi based on Fakultas and Jenjang selection
     const filteredProdiList = prodiList.filter(p => {

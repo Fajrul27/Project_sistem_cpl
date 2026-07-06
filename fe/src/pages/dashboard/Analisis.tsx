@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ReferenceLine } from "recharts";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useAnalisis } from "@/hooks/useAnalisis";
 import { SlidersHorizontal, RotateCcw, Info } from "lucide-react";
@@ -43,7 +43,7 @@ const AnalisisiPage = () => {
 
 
 
-  const isFilterComplete = semester && fakultasFilter && jenjangFilter && prodiFilter && semester !== 'all' && fakultasFilter !== 'all' && jenjangFilter !== 'all' && prodiFilter !== 'all';
+  const isFilterComplete = semester && fakultasFilter && jenjangFilter && prodiFilter && fakultasFilter !== 'all' && jenjangFilter !== 'all' && prodiFilter !== 'all';
 
   // Standard colors for distribution chart: Reversed to match Top (Green) -> Bottom (Red)
   const chartColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#22c55e'];
@@ -84,9 +84,9 @@ const AnalisisiPage = () => {
             <div className="space-y-3">
               <p>Halaman ini menyajikan statistik performa akademik secara agregat untuk membantu evaluasi kurikulum dan kualitas pembelajaran.</p>
               <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
-                <li><strong>Rata-rata CPL:</strong> Melihat performa rata-rata mahasiswa pada setiap poin Capaian Pembelajaran Lulusan.</li>
-                <li><strong>Distribusi Nilai:</strong> Sebaran perolehan grade (A-E) untuk seluruh evaluasi yang telah dilakukan.</li>
-                <li><strong>Radar Chart:</strong> Visualisasi kekuatan dan kelemahan kompetensi secara holistik dalam satu tampilan.</li>
+                <li><strong>Rata-rata CPL:</strong> Menampilkan rata-rata nilai mahasiswa pada tiap CPL. Batang grafik akan <strong>berwarna merah</strong> jika nilainya di bawah target yang ditetapkan.</li>
+                <li><strong>Distribusi Mutu CPL:</strong> Menampilkan sebaran grade (A-E). Angka yang muncul adalah <strong>Jumlah Evaluasi Capaian</strong> (Total CPL yang diujikan), <em>bukan</em> jumlah kepala mahasiswa.</li>
+                <li><strong>Radar Chart:</strong> Visualisasi jaring laba-laba untuk melihat kekuatan dan kelemahan kompetensi angkatan secara menyeluruh dalam satu pandangan.</li>
               </ul>
             </div>
           </CollapsibleGuide>
@@ -195,8 +195,14 @@ const AnalisisiPage = () => {
                   <CardDescription>Pencapaian rata-rata setiap CPL</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={cplData}>
+                  {(() => {
+                    const activeCplData = cplData.filter(c => Number(c.nilai) > 0);
+                    const hiddenCplCount = cplData.length - activeCplData.length;
+
+                    return (
+                      <>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={activeCplData}>
                       <defs>
                         <linearGradient id="colorCplAnalisis" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
@@ -246,17 +252,113 @@ const AnalisisiPage = () => {
                         }}
                       />
                       <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                      <ReferenceLine y={75} stroke="#ef4444" strokeDasharray="3 3" />
                       <Bar
                         dataKey="nilai"
-                        fill="url(#colorCplAnalisis)"
                         name="Rata-rata Nilai"
                         radius={[6, 6, 0, 0]}
                         animationDuration={2000}
                         animationEasing="ease-out"
                         barSize={40}
-                      />
+                      >
+                        {activeCplData.map((entry, index) => (
+                            <Cell 
+                                key={`cell-${index}`} 
+                                fill={(Number(entry.nilai) || 0) >= 75 ? "url(#colorCplAnalisis)" : "#ef4444"} 
+                            />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
+                  
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                          <div className="w-5 border-t-2 border-dashed" style={{ borderColor: '#ef4444' }}></div>
+                          <span>Target Ketercapaian (75)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm" style={{ background: "hsl(var(--primary))" }}></div>
+                          <span>Tercapai</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm bg-red-500"></div>
+                          <span>Belum Tercapai</span>
+                      </div>
+                  </div>
+
+                  {hiddenCplCount > 0 && (
+                      <div className="mt-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/30 rounded-md text-xs text-blue-800 dark:text-blue-300 flex items-start gap-2">
+                          <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                          <p>
+                              Terdapat <strong>{hiddenCplCount} CPL</strong> yang disembunyikan dari grafik karena belum memiliki data nilai pada kriteria filter yang Anda pilih.
+                          </p>
+                      </div>
+                  )}
+                </>
+              );
+            })()}
+                </CardContent>
+              </Card>
+
+              {/* Distribusi Nilai */}
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle>Distribusi Mutu CPL</CardTitle>
+                  <CardDescription>Sebaran perolehan nilai/grade mahasiswa di seluruh CPL</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {totalData > 0 ? (
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+                      <div className="w-full md:w-1/2 h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={distributionData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={renderCustomizedLabel}
+                              outerRadius={120}
+                              innerRadius={60}
+                              fill="#8884d8"
+                              dataKey="count"
+                              animationDuration={1500}
+                            >
+                              {distributionData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(value: number) => [value, 'Jumlah Evaluasi CPL']}
+                              labelFormatter={(label) => `Range Nilai: ${label}`}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="w-full md:w-1/3 flex flex-col gap-3">
+                        {distributionData.map((entry, index) => (
+                          <div key={entry.name} className="flex items-center justify-between p-2 rounded-md border bg-muted/20">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-4 h-4 rounded-full"
+                                style={{ backgroundColor: chartColors[index % chartColors.length] }}
+                              />
+                              <span className="text-sm font-medium">{getLabel(entry.name)}</span>
+                            </div>
+                            <span className="font-bold text-lg">{entry.count}</span>
+                          </div>
+                        ))}
+                        <div className="flex items-center justify-between p-2 mt-2 rounded-md bg-primary/10 border border-primary/20">
+                          <span className="text-sm font-bold text-primary">Total Evaluasi</span>
+                          <span className="font-black text-lg text-primary">{totalData}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
+                      <p className="text-muted-foreground">Belum ada data distribusi nilai</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

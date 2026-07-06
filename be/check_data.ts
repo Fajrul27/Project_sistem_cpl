@@ -1,77 +1,22 @@
 import { PrismaClient } from '@prisma/client';
-
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log("Fetching exact calculation data for Bab 4...");
-    
-    const nilaiCpmk = await prisma.nilaiCpmk.findMany({
-        include: {
-            cpmk: true,
-            mahasiswa: true,
-            mataKuliah: true
-        }
-    });
-
-    console.log("\n--- Nilai CPMK ---");
-    for (const n of nilaiCpmk) {
-        console.log(`Mahasiswa: ${n.mahasiswa.namaLengkap}, MK: ${n.mataKuliah.namaMk}, CPMK: ${n.cpmk.kodeCpmk}, Nilai Akhir: ${n.nilaiAkhir}`);
+  const counts = await prisma.nilaiCpl.groupBy({
+    by: ['tahunAjaranId'],
+    _count: {
+      _all: true
     }
+  });
 
-    const nilaiCpl = await prisma.nilaiCpl.findMany({
-        include: {
-            cpl: true,
-            mahasiswa: true,
-            mataKuliah: true
-        }
-    });
+  const taDetails = await prisma.tahunAjaran.findMany({
+    where: { id: { in: counts.map(c => c.tahunAjaranId) } }
+  });
 
-    console.log("\n--- Nilai CPL ---");
-    for (const n of nilaiCpl) {
-        console.log(`Mahasiswa: ${n.mahasiswa.namaLengkap}, MK: ${n.mataKuliah.namaMk}, CPL: ${n.cpl.kodeCpl}, Nilai: ${n.nilai}`);
-    }
+  const map = new Map(taDetails.map(t => [t.id, t.nama]));
 
-    const teknikPenilaian = await prisma.teknikPenilaian.findMany({
-        include: {
-            cpmk: true,
-            nilaiTeknik: true
-        }
-    });
-
-    console.log("\n--- Komponen Penilaian (Algoritma Pemrograman I) ---");
-    for (const t of teknikPenilaian) {
-        if (t.cpmk.mataKuliahId === nilaiCpmk[0]?.mataKuliahId) {
-             console.log(`CPMK: ${t.cpmk.kodeCpmk}, Teknik: ${t.namaTeknik}, Bobot: ${t.bobotPersentase}%`);
-             for (const nt of t.nilaiTeknik) {
-                 console.log(`  -> Nilai Mahasiswa: ${nt.nilai}`);
-             }
-        }
-    }
-
-    const pemetaan = await prisma.cpmkCplMapping.findMany({
-        include: {
-            cpmk: true,
-            cpl: true
-        },
-        where: {
-            cpmk: {
-                mataKuliahId: nilaiCpmk[0]?.mataKuliahId
-            }
-        }
-    });
-
-    console.log("\n--- Pemetaan CPMK ke CPL (Algoritma Pemrograman I) ---");
-    for (const p of pemetaan) {
-        console.log(`CPMK: ${p.cpmk.kodeCpmk} -> CPL: ${p.cpl.kodeCpl}, Bobot Persentase: ${p.bobotPersentase}%`);
-    }
+  counts.forEach(c => {
+    console.log(`Tahun Ajaran: ${map.get(c.tahunAjaranId)} (ID: ${c.tahunAjaranId}) -> Total Nilai: ${c._count._all}`);
+  });
 }
-
-main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
-  .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
+main().catch(console.error).finally(() => prisma.$disconnect());

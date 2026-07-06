@@ -45,8 +45,10 @@ export function useEvaluasiCPL() {
     const fetchTargets = useCallback(async (params: { prodiId: string; angkatan: string; tahunAjaran: string; semester?: string }) => {
         setLoading(true);
         try {
-            const apiParams = { ...params, tahunAjaranId: params.tahunAjaran };
-            delete (apiParams as any).tahunAjaran;
+            const apiParams: any = { ...params, tahunAjaranId: params.tahunAjaran };
+            if (apiParams.tahunAjaran === 'all') delete apiParams.tahunAjaran;
+            if (apiParams.tahunAjaranId === 'all') delete apiParams.tahunAjaranId;
+            if (apiParams.semester === 'all') delete apiParams.semester;
             const response = await api.get('/evaluasi-cpl/targets', { params: apiParams });
             setTargets(response.data || []);
         } catch (error: any) {
@@ -60,8 +62,10 @@ export function useEvaluasiCPL() {
     const saveTargets = useCallback(async (payload: { prodiId: string; angkatan: string; tahunAjaran: string; semester?: string; targets: { cplId: string; target: number }[] }) => {
         setLoading(true);
         try {
-            const apiPayload = { ...payload, tahunAjaranId: payload.tahunAjaran };
-            delete (apiPayload as any).tahunAjaran;
+            const apiPayload: any = { ...payload, tahunAjaranId: payload.tahunAjaran };
+            if (apiPayload.tahunAjaran === 'all') delete apiPayload.tahunAjaran;
+            if (apiPayload.tahunAjaranId === 'all') delete apiPayload.tahunAjaranId;
+            if (apiPayload.semester === 'all') delete apiPayload.semester;
             await api.post('/evaluasi-cpl/targets', apiPayload);
             toast.success("Target CPL berhasil disimpan");
             return true;
@@ -77,8 +81,10 @@ export function useEvaluasiCPL() {
     const fetchEvaluation = useCallback(async (params: { prodiId: string; angkatan: string; tahunAjaran: string; semester?: string }) => {
         setLoading(true);
         try {
-            const apiParams = { ...params, tahunAjaranId: params.tahunAjaran };
-            delete (apiParams as any).tahunAjaran;
+            const apiParams: any = { ...params, tahunAjaranId: params.tahunAjaran };
+            if (apiParams.tahunAjaran === 'all') delete apiParams.tahunAjaran;
+            if (apiParams.tahunAjaranId === 'all') delete apiParams.tahunAjaranId;
+            if (apiParams.semester === 'all') delete apiParams.semester;
             const response = await api.get('/evaluasi-cpl/evaluation', { params: apiParams });
             setEvaluation(response.evaluation || []);
             setSummary(response.summary || { totalCpl: 0, tercapai: 0, tidakTercapai: 0 });
@@ -93,8 +99,10 @@ export function useEvaluasiCPL() {
     const saveTindakLanjut = useCallback(async (payload: any) => {
         setLoading(true);
         try {
-            const apiPayload = { ...payload, tahunAjaranId: payload.tahunAjaran };
-            delete (apiPayload as any).tahunAjaran;
+            const apiPayload: any = { ...payload, tahunAjaranId: payload.tahunAjaran };
+            if (apiPayload.tahunAjaran === 'all') delete apiPayload.tahunAjaran;
+            if (apiPayload.tahunAjaranId === 'all') delete apiPayload.tahunAjaranId;
+            if (apiPayload.semester === 'all') delete apiPayload.semester;
             await api.post('/evaluasi-cpl/tindak-lanjut', apiPayload);
             toast.success("Tindak lanjut berhasil disimpan");
             return true;

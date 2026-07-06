@@ -166,7 +166,7 @@ const EvaluasiCPLPage = () => {
         }
     };
 
-    const canLoad = filters.prodiId && filters.angkatan && filters.tahunAjaran;
+    const canLoad = filters.prodiId && filters.angkatan && (filters.tahunAjaran || filters.tahunAjaran === "all");
 
     // Prepare Chart Data
     const chartData = evaluation.map(item => ({
@@ -184,9 +184,10 @@ const EvaluasiCPLPage = () => {
                         <div className="space-y-3">
                             <p>Halaman evaluasi digunakan untuk memantau ketercapaian kompetensi lulusan (CPL) pada level angkatan/prodi secara kolektif.</p>
                             <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
-                                <li><strong>Grafik Radar:</strong> Visualisasi rata-rata nilai setiap CPL dibandingkan dengan target yang ditetapkan.</li>
-                                <li><strong>Target Ketercapaian:</strong> Gunakan tab <em>Set Target CPL</em> untuk menentukan ambang batas kelulusan per angkatan.</li>
-                                <li><strong>Tindak Lanjut:</strong> Klik tombol edit pada kolom 'Tindak Lanjut' untuk mencatat rencana perbaikan bagi CPL yang belum mencapai target.</li>
+                                <li><strong>Mode Evaluasi OBE:</strong> Filter <em>"Semua Tahun Ajaran"</em> digunakan untuk evaluasi kelulusan akhir (Sumatif). Filter <em>"Tahun Ajaran Spesifik"</em> digunakan untuk evaluasi perbaikan kurikulum rutin tiap semester (Formatif/CQI).</li>
+                                <li><strong>Analisis Akar Masalah:</strong> Klik baris CPL yang berwarna merah (Gagal) pada tabel di bawah untuk melihat rincian/breakdown mata kuliah mana yang menjadi penyebab CPL tersebut tidak tercapai.</li>
+                                <li><strong>Target Ketercapaian:</strong> Gunakan tab <em>Lihat Target</em> untuk mengatur target persentase mahasiswa yang harus lulus di setiap poin CPL.</li>
+                                <li><strong>Rencana Tindak Lanjut:</strong> Wajib diisi untuk CPL yang belum mencapai target, sebagai bukti berjalannya <em>Continuous Quality Improvement (CQI)</em> yang diminta oleh asesor akreditasi.</li>
                             </ul>
                         </div>
                     </CollapsibleGuide>
@@ -304,6 +305,7 @@ const EvaluasiCPLPage = () => {
                                                     <SelectValue placeholder="Pilih Tahun Ajaran" />
                                                 </SelectTrigger>
                                                 <SelectContent>
+                                                    <SelectItem value="all">Semua Tahun Ajaran (Kumulatif)</SelectItem>
                                                     {tahunAjaranList.map(ta => (
                                                         <SelectItem key={ta.id} value={ta.id}>{ta.nama}</SelectItem>
                                                     ))}
@@ -460,8 +462,8 @@ const EvaluasiCPLPage = () => {
                                                         <PolarGrid />
                                                         <PolarAngleAxis dataKey="subject" />
                                                         <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                                                        <Radar name="Target" dataKey="Target" stroke="#8884d8" fill="#8884d8" fillOpacity={0.1} />
-                                                        <Radar name="Actual" dataKey="Actual" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
+                                                        <Radar name="Target" dataKey="Target" stroke="#ef4444" strokeWidth={2} fill="#ef4444" fillOpacity={0.1} />
+                                                        <Radar name="Actual" dataKey="Actual" stroke="#2563eb" strokeWidth={2} fill="#3b82f6" fillOpacity={0.5} />
                                                         <Legend />
                                                         <Tooltip />
                                                     </RadarChart>

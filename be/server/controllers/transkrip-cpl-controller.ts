@@ -7,7 +7,7 @@ export const getAnalysis = async (req: Request, res: Response) => {
     try {
         const { semester, fakultasId, prodiId, angkatan } = req.query;
         const result = await TranskripService.getAnalysis({
-            semester: semester ? Number(semester) : undefined,
+            semester: semester && semester !== 'all' ? Number(semester) : undefined,
             fakultasId: String(fakultasId || ''),
             prodiId: String(prodiId || ''),
             angkatan: String(angkatan || '')

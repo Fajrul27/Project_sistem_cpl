@@ -35,27 +35,41 @@ export class EvaluasiCPLService {
         // Determine if the passed `tahunAjaran` is a kurikulumId or a tahunAjaranId
         let kurikulumIds: string[] = [];
         
-        // 1. Check if the passed tahunAjaran is a valid Kurikulum ID
-        const isKurikulum = await prisma.kurikulum.findUnique({
-            where: { id: tahunAjaran }
-        });
-
-        if (isKurikulum) {
-            kurikulumIds = [tahunAjaran];
-        } else {
-            // 2. If it's a TahunAjaran ID (from evaluation), find the kurikulum(s) associated with this prodi's active CPLs
-            const cpls = await prisma.cpl.findMany({
-                where: { prodiId, isActive: true },
-                select: { kurikulumId: true }
+        if (tahunAjaran) {
+            // 1. Check if the passed tahunAjaran is a valid Kurikulum ID
+            const isKurikulum = await prisma.kurikulum.findUnique({
+                where: { id: tahunAjaran }
             });
-            kurikulumIds = Array.from(new Set(cpls.map(c => c.kurikulumId).filter((id): id is string => !!id)));
+
+            if (isKurikulum) {
+                kurikulumIds = [tahunAjaran];
+            } else {
+                // 2. If it's a TahunAjaran ID (from evaluation), find the kurikulum(s) associated with this prodi's active CPLs
+                const cpls = await prisma.cpl.findMany({
+                    where: { prodiId, isActive: true },
+                    select: { kurikulumId: true }
+                });
+                kurikulumIds = Array.from(new Set(cpls.map(c => c.kurikulumId).filter((id): id is string => !!id)));
+            }
+        } else {
+             // Fallback if no tahunAjaran provided: just get all kurikulum for active CPLs
+             const cpls = await prisma.cpl.findMany({
+                 where: { prodiId, isActive: true },
+                 select: { kurikulumId: true }
+             });
+             kurikulumIds = Array.from(new Set(cpls.map(c => c.kurikulumId).filter((id): id is string => !!id)));
         }
 
         const where: any = { 
             prodiId, 
-            angkatan,
-            tahunAjaran: { in: [...kurikulumIds, tahunAjaran] }
+            angkatan
         };
+        
+        if (tahunAjaran) {
+            where.tahunAjaran = { in: [...kurikulumIds, tahunAjaran] };
+        } else {
+            where.tahunAjaran = { in: [...kurikulumIds] };
+        }
 
         if (semester) {
             where.OR = [
