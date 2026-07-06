@@ -43,7 +43,7 @@ export class TranskripService {
         const bestScoreMap = new Map<string, typeof rawData[0]>();
 
         for (const r of rawData) {
-            const key = `${r.mahasiswaId}-${r.mataKuliahId}-${r.cplId}`;
+            const key = `${r.mahasiswaId}|${r.mataKuliahId}|${r.cplId}`;
             const currentVal = Number(r.nilai);
             if (!bestScoreMap.has(key) || currentVal > Number(bestScoreMap.get(key)!.nilai)) {
                 bestScoreMap.set(key, r);
@@ -64,22 +64,22 @@ export class TranskripService {
 
         const weightMap = new Map<string, number>();
         for (const w of weightMappings) {
-            weightMap.set(`${w.cplId}-${w.mataKuliahId}`, Number(w.bobotKontribusi));
+            weightMap.set(`${w.cplId}|${w.mataKuliahId}`, Number(w.bobotKontribusi));
         }
 
         // Step 3: Calculate Student-CPL Score (Weighted Average)
-        const studentCplMap = new Map<string, { totalWeightedScore: number; totalWeight: number }>();
+        const studentCplMap = new Map<string, { totalWeightedScore: number; totalWeight: number; cplId: string }>();
 
         for (const record of bestScoreMap.values()) {
-            const studentCplKey = `${record.mahasiswaId}-${record.cplId}`;
-            const weightKey = `${record.cplId}-${record.mataKuliahId}`;
+            const studentCplKey = `${record.mahasiswaId}|${record.cplId}`;
+            const weightKey = `${record.cplId}|${record.mataKuliahId}`;
 
             const bobot = weightMap.get(weightKey) ?? 1.0;
             const sks = record.mataKuliah?.sks || 0;
             const nilai = Number(record.nilai);
 
             if (!studentCplMap.has(studentCplKey)) {
-                studentCplMap.set(studentCplKey, { totalWeightedScore: 0, totalWeight: 0 });
+                studentCplMap.set(studentCplKey, { totalWeightedScore: 0, totalWeight: 0, cplId: record.cplId });
             }
 
             const entry = studentCplMap.get(studentCplKey)!;
@@ -91,7 +91,7 @@ export class TranskripService {
         const cplScoresList = new Map<string, number[]>();
 
         for (const [key, data] of studentCplMap.entries()) {
-            const cplId = key.split('-')[1];
+            const cplId = data.cplId;
             const finalScore = data.totalWeight > 0 ? data.totalWeightedScore / data.totalWeight : 0;
 
             if (!cplScoresList.has(cplId)) cplScoresList.set(cplId, []);
@@ -294,6 +294,67 @@ export class TranskripService {
         });
 
 
+        // FETCH TARGETS
+        const angkatan = mahasiswa.angkatanRef?.tahun?.toString();
+        const kurikulumId = mahasiswa.angkatanRef?.kurikulumId;
+        const cplTargetsMap = new Map<string, number>();
+
+        if (mahasiswa.prodiId && angkatan) {
+            let kurikulumIds = kurikulumId ? [kurikulumId] : [];
+            if (kurikulumIds.length === 0) {
+                 kurikulumIds = Array.from(new Set(allCpls.map(c => c.kurikulumId).filter((id): id is string => !!id)));
+            }
+
+            const targets = await prisma.targetCPL.findMany({
+                where: {
+                    prodiId: mahasiswa.prodiId,
+                    angkatan,
+                    tahunAjaran: { in: kurikulumIds }
+                }
+            });
+            targets.forEach(t => cplTargetsMap.set(t.cplId, t.target));
+        }
+
+        // FETCH ALL MAPPED COURSES VIA CPMK (ROADMAP)
+        const cpmkMappingsRaw = await prisma.cpmkCplMapping.findMany({
+            where: {
+                cplId: { in: allCpls.map(c => c.id) },
+                ...(mahasiswa.angkatanRef?.kurikulumId ? {
+                    cpmk: {
+                        mataKuliah: {
+                            kurikulumId: mahasiswa.angkatanRef.kurikulumId
+                        }
+                    }
+                } : {})
+            },
+            include: {
+                cpmk: {
+                    include: { mataKuliah: true }
+                }
+            }
+        });
+
+        const mappedCoursesMap = new Map<string, any[]>();
+        cpmkMappingsRaw.forEach(mapping => {
+            const mk = mapping.cpmk.mataKuliah;
+            if (!mk) return;
+            
+            if (!mappedCoursesMap.has(mapping.cplId)) {
+                mappedCoursesMap.set(mapping.cplId, []);
+            }
+            
+            const courses = mappedCoursesMap.get(mapping.cplId)!;
+            // Avoid duplicate courses if multiple CPMKs map to the same CPL
+            if (!courses.find(c => c.mataKuliahId === mk.id)) {
+                courses.push({
+                    cplId: mapping.cplId,
+                    mataKuliahId: mk.id,
+                    mataKuliah: mk,
+                    bobotKontribusi: 1.0
+                });
+            }
+        });
+
         for (const cpl of allCpls) {
             const nilaiList = cplMap.get(cpl.id) || [];
             let totalWeightedScore = 0;
@@ -319,7 +380,8 @@ export class TranskripService {
 
             // DYNAMIC GRADE CALCULATION
             const gradeInfo = TranskripService.getGradeFromScale(avgScore, skalaNilaiList);
-            const status = gradeInfo.isLulus ? 'tercapai' : 'belum_tercapai';
+            const targetScore = cplTargetsMap.get(cpl.id) ?? 75; // Target CPL setting fallback to 75
+            const status = avgScore >= targetScore ? 'tercapai' : 'belum_tercapai';
 
             const latest = nilaiList.sort((a, b) => {
                 const taA = a.tahunAjaranRef?.nama || '';
@@ -328,21 +390,52 @@ export class TranskripService {
                 return a.semester - b.semester;
             })[nilaiList.length - 1];
 
-            transkrip.push({
-                cplId: cpl.id,
-                cpl: { ...cpl, kategori: cpl.kategoriRef?.nama || cpl.kategori },
-                mataKuliahList: nilaiList.map(n => {
-                    const key = `${cpl.id}-${n.mataKuliahId}`;
-                    return {
+            const mappedCourses = mappedCoursesMap.get(cpl.id) || [];
+            
+            // Build roadmap matrix (merging grades and mapped courses)
+            const mergedMap = new Map<string, any>();
+            
+            // 1. Add all mapped courses
+            mappedCourses.forEach(mc => {
+                mergedMap.set(mc.mataKuliahId, {
+                    id: mc.mataKuliah.id,
+                    kodeMk: mc.mataKuliah.kodeMk,
+                    namaMk: mc.mataKuliah.namaMk,
+                    nilai: null,
+                    sks: mc.mataKuliah.sks,
+                    semester: mc.mataKuliah.semester,
+                    bobot: Number(mc.bobotKontribusi)
+                });
+            });
+
+            // 2. Merge with actual grades
+            nilaiList.forEach(n => {
+                const key = `${cpl.id}-${n.mataKuliahId}`;
+                const bobot = weightMap.get(key) ?? 1.0;
+                
+                if (mergedMap.has(n.mataKuliahId)) {
+                    mergedMap.get(n.mataKuliahId)!.nilai = Number(n.nilai);
+                    mergedMap.get(n.mataKuliahId)!.bobot = bobot;
+                } else {
+                    mergedMap.set(n.mataKuliahId, {
                         id: n.mataKuliah.id,
                         kodeMk: n.mataKuliah.kodeMk,
                         namaMk: n.mataKuliah.namaMk,
                         nilai: Number(n.nilai),
                         sks: n.mataKuliah.sks,
                         semester: n.mataKuliah.semester,
-                        bobot: weightMap.get(key) ?? 1 // Default to 1 to match calculation logic
-                    };
-                }),
+                        bobot: bobot
+                    });
+                }
+            });
+
+            // Sort by semester
+            const finalMataKuliahList = Array.from(mergedMap.values()).sort((a, b) => (a.semester || 0) - (b.semester || 0));
+
+            transkrip.push({
+                cplId: cpl.id,
+                cpl: { ...cpl, kategori: cpl.kategoriRef?.nama || cpl.kategori },
+                mataKuliahList: finalMataKuliahList,
                 // Include technical assessments that contributed to this CPL
                 penilaianTeknik: relatedTeknik.map(nt => ({
                     id: nt.id,
@@ -359,8 +452,20 @@ export class TranskripService {
                 huruf: gradeInfo.huruf, // ADDED
                 status,
                 semesterTercapai: latest?.semester || 0,
-                tahunAjaran: latest?.tahunAjaranRef?.nama || '-'
+                tahunAjaran: latest?.tahunAjaranRef?.nama || '-',
+                target: targetScore
             });
+        }
+
+        const passingGrades = skalaNilaiList.filter(s => s.isLulus);
+        const batasLulusCpmk = passingGrades.length > 0 ? Math.min(...passingGrades.map(s => s.nilaiMin)) : 70;
+        let batasLulus = batasLulusCpmk;
+        
+        // Use Target CPL as batasLulus if available
+        if (cplTargetsMap.size > 0) {
+            batasLulus = Math.min(...Array.from(cplTargetsMap.values()));
+        } else {
+            batasLulus = 75; // Default CPL Target
         }
 
         const stats = {
@@ -369,7 +474,9 @@ export class TranskripService {
             totalMataKuliah: effectiveMkCount,
             tercapai: transkrip.filter(t => t.status === 'tercapai' && t.mataKuliahList.length > 0).length,
             belumTercapai: transkrip.filter(t => (t.status === 'belum_tercapai' || t.mataKuliahList.length === 0)).length,
-            avgScore: Number((transkrip.reduce((s, t) => s + t.nilaiAkhir, 0) / (transkrip.length || 1)).toFixed(2))
+            avgScore: Number((transkrip.reduce((s, t) => s + t.nilaiAkhir, 0) / (transkrip.length || 1)).toFixed(2)),
+            batasLulus,
+            batasLulusCpmk
         };
         (stats as any).persentaseTercapai = stats.totalCurriculumCpl > 0 ? Number(((stats.tercapai / stats.totalCurriculumCpl) * 100).toFixed(2)) : 0;
 

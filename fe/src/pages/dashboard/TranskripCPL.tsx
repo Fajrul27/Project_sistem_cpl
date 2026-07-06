@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback, Fragment } from "react";
 import { createPortal } from "react-dom";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import SEO from "@/components/common/SEO";
 
-import { Printer, FileText, Check, ChevronsUpDown, Briefcase, Eye, Filter, Info, ChevronDown, BookOpen, SlidersHorizontal, Search, RotateCcw, Settings2, Settings } from "lucide-react";
+import { Printer, FileText, Check, ChevronsUpDown, Briefcase, Eye, Filter, Info, ChevronDown, ChevronRight, TrendingUp, BookOpen, SlidersHorizontal, Search, RotateCcw, Settings2, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 import { Progress } from "@/components/ui/progress";
@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranskripCPL } from "@/hooks/useTranskripCPL";
 
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine, Cell } from 'recharts';
 import { api } from "@/lib/api";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -57,6 +57,8 @@ const TranskripCPLPage = () => {
         avgScore,
         completedCPL,
         totalCurriculumCpl,
+        batasLulus,
+        batasLulusCpmk,
 
         isMahasiswa,
         isDosen,
@@ -78,7 +80,20 @@ const TranskripCPLPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState("cpl");
     const [openCombobox, setOpenCombobox] = useState(false);
+    const [cplChartType, setCplChartType] = useState<'radar' | 'bar'>('bar');
+    const [cpmkChartType, setCpmkChartType] = useState<'radar' | 'bar'>('bar');
 
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+    const toggleRow = (cplId: string) => {
+        const newExpanded = new Set(expandedRows);
+        if (newExpanded.has(cplId)) {
+            newExpanded.delete(cplId);
+        } else {
+            newExpanded.add(cplId);
+        }
+        setExpandedRows(newExpanded);
+    };
 
 
 
@@ -462,40 +477,94 @@ const TranskripCPLPage = () => {
                                         </CardContent>
                                     </Card>
                                     <Card className="md:col-span-4">
-                                        <CardHeader>
-                                            <CardTitle className="text-sm font-medium">Peta Radar CPL</CardTitle>
-                                            <CardDescription>Visualisasi sebaran capaian lulusan</CardDescription>
+                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                            <div>
+                                                <CardTitle className="text-sm font-medium">Visualisasi CPL</CardTitle>
+                                                <CardDescription>Sebaran capaian lulusan</CardDescription>
+                                            </div>
+                                            <div className="flex items-center bg-muted/50 p-1 rounded-lg border border-border/50">
+                                                <Button 
+                                                    variant={cplChartType === 'radar' ? 'default' : 'ghost'} 
+                                                    size="sm" 
+                                                    onClick={() => setCplChartType('radar')}
+                                                    className={`h-7 px-3 text-xs rounded-md ${cplChartType === 'radar' ? 'shadow-sm' : ''}`}
+                                                >Radar</Button>
+                                                <Button 
+                                                    variant={cplChartType === 'bar' ? 'default' : 'ghost'} 
+                                                    size="sm" 
+                                                    onClick={() => setCplChartType('bar')}
+                                                    className={`h-7 px-3 text-xs rounded-md ${cplChartType === 'bar' ? 'shadow-sm' : ''}`}
+                                                >Batang</Button>
+                                            </div>
                                         </CardHeader>
                                         <CardContent>
                                             <div className="h-[350px] w-full py-4">
                                                 {validTranskripList.length > 0 ? (
-                                                    <ResponsiveContainer width="100%" height="100%">
-                                                        <RadarChart cx="50%" cy="50%" outerRadius="75%" style={{ overflow: 'visible' }} margin={{ top: 30, right: 40, bottom: 10, left: 40 }} data={validTranskripList.map(i => ({ subject: i.cpl.kodeCpl, A: Number(i.nilaiAkhir) || 0, fullMark: 100 }))}>
-                                                            <PolarGrid stroke="#cbd5e1" />
-                                                            <PolarAngleAxis
-                                                                dataKey="subject"
-                                                                tick={({ payload, x, y, cx, cy, ...rest }: any) => (
-                                                                    <text
-                                                                        {...rest}
-                                                                        x={x + (x - cx) * 0.15}
-                                                                        y={y + (y - cy) * 0.15}
-                                                                        fontSize={10}
-                                                                        fontWeight={600}
-                                                                        textAnchor="middle"
-                                                                        fill="currentColor"
-                                                                    >
-                                                                        {payload.value}
-                                                                    </text>
-                                                                )}
-                                                            />
-                                                            <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 8 }} />
-                                                            <Radar name="Capaian" dataKey="A" stroke="#2563eb" strokeWidth={3} fill="#3b82f6" fillOpacity={0.5} dot={{ r: 3, fill: '#2563eb', stroke: '#fff', strokeWidth: 1.5 }} />
-                                                            <Tooltip
-                                                                contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                                itemStyle={{ color: '#2563eb', fontWeight: 600 }}
-                                                            />
-                                                        </RadarChart>
-                                                    </ResponsiveContainer>
+                                                    <>
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            {cplChartType === 'radar' ? (
+                                                                <RadarChart cx="50%" cy="50%" outerRadius="75%" style={{ overflow: 'visible' }} margin={{ top: 30, right: 40, bottom: 10, left: 40 }} data={validTranskripList.map(i => ({ subject: i.cpl.kodeCpl, A: Number(i.nilaiAkhir) || 0, fullMark: 100 }))}>
+                                                                    <PolarGrid stroke="#cbd5e1" />
+                                                                    <PolarAngleAxis
+                                                                        dataKey="subject"
+                                                                        tick={({ payload, x, y, cx, cy, ...rest }: any) => (
+                                                                            <text
+                                                                                {...rest}
+                                                                                x={x + (x - cx) * 0.15}
+                                                                                y={y + (y - cy) * 0.15}
+                                                                                fontSize={10}
+                                                                                fontWeight={600}
+                                                                                textAnchor="middle"
+                                                                                fill="currentColor"
+                                                                            >
+                                                                                {payload.value}
+                                                                            </text>
+                                                                        )}
+                                                                    />
+                                                                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 8 }} />
+                                                                    <Radar name="Capaian" dataKey="A" stroke="#2563eb" strokeWidth={3} fill="#3b82f6" fillOpacity={0.5} dot={{ r: 3, fill: '#2563eb', stroke: '#fff', strokeWidth: 1.5 }} />
+                                                                    <Tooltip
+                                                                        contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                        itemStyle={{ color: '#2563eb', fontWeight: 600 }}
+                                                                    />
+                                                                </RadarChart>
+                                                            ) : (
+                                                                <BarChart data={validTranskripList.map(i => ({ subject: i.cpl.kodeCpl, A: Number(i.nilaiAkhir) || 0 }))} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                                                    <XAxis dataKey="subject" tick={{ fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                                                                    <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                                                                    <Tooltip
+                                                                        cursor={{ fill: 'transparent' }}
+                                                                        contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                        itemStyle={{ color: '#2563eb', fontWeight: 600 }}
+                                                                        labelStyle={{ color: '#0f172a', fontWeight: 600, marginBottom: '4px' }}
+                                                                    />
+                                                                    <Bar dataKey="A" name="Capaian" radius={[4, 4, 0, 0]} barSize={40}>
+                                                                        {validTranskripList.map((entry, index) => (
+                                                                            <Cell key={`cell-${index}`} fill={(Number(entry.nilaiAkhir) || 0) >= batasLulus ? "#3b82f6" : "#ef4444"} />
+                                                                        ))}
+                                                                    </Bar>
+                                                                    <ReferenceLine y={batasLulus} stroke="#ef4444" strokeDasharray="3 3" />
+                                                                </BarChart>
+                                                            )}
+                                                        </ResponsiveContainer>
+                                                        {cplChartType === 'bar' && (
+                                                            <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-5 border-t-2 border-dashed border-red-500"></div>
+                                                                    <span>Ambang Batas Ketercapaian ({batasLulus})</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
+                                                                    <span>Tercapai</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                                                                    <span>Belum Tercapai</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 ) : (
                                                     <div className="flex h-full items-center justify-center text-muted-foreground">
                                                         Data tidak tersedia untuk visualisasi
@@ -602,26 +671,82 @@ const TranskripCPLPage = () => {
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
+                                                            <TableHead className="w-[50px]"></TableHead>
                                                             <TableHead>Kode CPL</TableHead>
                                                             <TableHead>Deskripsi</TableHead>
                                                             <TableHead>Kategori</TableHead>
                                                             <TableHead className="text-right">Nilai</TableHead>
-                                                            <TableHead className="text-center">Huruf</TableHead>
                                                             <TableHead className="text-center">Status</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
                                                         {validTranskripList.map((item, index) => (
-                                                            <TableRow key={index}>
-                                                                <TableCell className="font-medium">{item.cpl.kodeCpl}</TableCell>
-                                                                <TableCell className="max-w-md">{item.cpl.deskripsi}</TableCell>
-                                                                <TableCell><Badge variant="outline">{item.cpl.kategori}</Badge></TableCell>
-                                                                <TableCell className="text-right font-medium">{item.nilaiAkhir.toFixed(2)}</TableCell>
-                                                                <TableCell className="text-center font-bold">{item.huruf || '-'}</TableCell>
-                                                                <TableCell className="text-center">
-                                                                    {item.status === 'tercapai' ? <Badge className="bg-green-500">Tercapai</Badge> : <Badge variant="destructive">Belum Tercapai</Badge>}
-                                                                </TableCell>
-                                                            </TableRow>
+                                                            <Fragment key={item.cpl.kodeCpl}>
+                                                                <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => toggleRow(item.cpl.kodeCpl)}>
+                                                                    <TableCell>
+                                                                        {expandedRows.has(item.cpl.kodeCpl) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                                                    </TableCell>
+                                                                    <TableCell className="font-medium">{item.cpl.kodeCpl}</TableCell>
+                                                                    <TableCell className="max-w-md">{item.cpl.deskripsi}</TableCell>
+                                                                    <TableCell><Badge variant="outline">{item.cpl.kategori}</Badge></TableCell>
+                                                                    <TableCell className="text-right font-medium">{item.nilaiAkhir.toFixed(2)}</TableCell>
+                                                                    <TableCell className="text-center">
+                                                                        {item.status === 'tercapai' ? <Badge className="bg-green-500">Tercapai</Badge> : <Badge variant="destructive">Belum Tercapai</Badge>}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                                {expandedRows.has(item.cpl.kodeCpl) && (
+                                                                    <TableRow className="bg-muted/30">
+                                                                        <TableCell colSpan={6} className="p-4">
+                                                                            <div className="pl-12">
+                                                                                <h4 className="text-sm font-semibold mb-2 flex items-center">
+                                                                                    <TrendingUp className="w-4 h-4 mr-2" />
+                                                                                    Kontribusi Mata Kuliah
+                                                                                </h4>
+                                                                                <div className="border rounded-md bg-background">
+                                                                                    <Table>
+                                                                                        <TableHeader>
+                                                                                            <TableRow>
+                                                                                                <TableHead>Kode MK</TableHead>
+                                                                                                <TableHead>Nama Mata Kuliah</TableHead>
+                                                                                                <TableHead className="text-center">SKS</TableHead>
+                                                                                                <TableHead className="text-right">Nilai</TableHead>
+                                                                                                <TableHead className="text-center">Aksi</TableHead>
+                                                                                            </TableRow>
+                                                                                        </TableHeader>
+                                                                                        <TableBody>
+                                                                                            {item.mataKuliahList && item.mataKuliahList.length > 0 ? (
+                                                                                                item.mataKuliahList.map((mk, idx) => (
+                                                                                                    <TableRow key={idx}>
+                                                                                                        <TableCell>{mk.kodeMk}</TableCell>
+                                                                                                        <TableCell>{mk.namaMk}</TableCell>
+                                                                                                        <TableCell className="text-center">{mk.sks}</TableCell>
+                                                                                                        <TableCell className="text-right font-medium">
+                                                                                                            {mk.nilai != null && mk.nilai !== undefined ? Number(mk.nilai).toFixed(2) : '-'}
+                                                                                                        </TableCell>
+                                                                                                        <TableCell className="text-center">
+                                                                                                            <Link to={`/dashboard/nilai-teknik?semester=${mk.semester || ''}&mk=${mk.id}&search=${selectedStudent?.profile?.nim || ''}`}>
+                                                                                                                <Button variant="outline" size="sm" className="h-7 text-xs">
+                                                                                                                    <Eye className="w-3 h-3 mr-1" /> Cek Penilaian
+                                                                                                                </Button>
+                                                                                                            </Link>
+                                                                                                        </TableCell>
+                                                                                                    </TableRow>
+                                                                                                ))
+                                                                                            ) : (
+                                                                                                <TableRow>
+                                                                                                    <TableCell colSpan={5} className="text-center text-muted-foreground py-4">
+                                                                                                        Belum ada data nilai mata kuliah
+                                                                                                    </TableCell>
+                                                                                                </TableRow>
+                                                                                            )}
+                                                                                        </TableBody>
+                                                                                    </Table>
+                                                                                </div>
+                                                                            </div>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                )}
+                                                            </Fragment>
                                                         ))}
                                                     </TableBody>
                                                 </Table>
@@ -648,11 +773,11 @@ const TranskripCPLPage = () => {
                                             </SelectContent>
                                         </Select>
 
-                                        {semester !== (selectedStudent?.profile?.semester?.toString() || "all") && (
+                                        {semester !== "all" && (
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => setSemester(selectedStudent?.profile?.semester?.toString() || "all")}
+                                                onClick={() => setSemester("all")}
                                                 className="h-9 text-sm font-medium"
                                             >
                                                 Reset Filter
@@ -721,14 +846,30 @@ const TranskripCPLPage = () => {
                                         </CardContent>
                                     </Card>
                                     <Card className="md:col-span-4">
-                                        <CardHeader>
-                                            <div className="flex items-center justify-between">
-                                                <CardTitle className="text-sm font-medium">Peta Radar Mata Kuliah</CardTitle>
-                                                <Badge variant="outline" className="text-[9px] font-normal opacity-70">
-                                                    {semester === 'all' ? 'Kumulatif' : `Smt ${semester} `}
-                                                </Badge>
+                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    <CardTitle className="text-sm font-medium">Visualisasi Mata Kuliah</CardTitle>
+                                                    <Badge variant="outline" className="text-[9px] font-normal opacity-70">
+                                                        {semester === 'all' ? 'Kumulatif' : `Smt ${semester}`}
+                                                    </Badge>
+                                                </div>
+                                                <CardDescription>Sebaran rata-rata nilai per Mata Kuliah</CardDescription>
                                             </div>
-                                            <CardDescription>Sebaran rata-rata nilai per Mata Kuliah</CardDescription>
+                                            <div className="flex items-center bg-muted/50 p-1 rounded-lg border border-border/50">
+                                                <Button 
+                                                    variant={cpmkChartType === 'radar' ? 'default' : 'ghost'} 
+                                                    size="sm" 
+                                                    onClick={() => setCpmkChartType('radar')}
+                                                    className={`h-7 px-3 text-xs rounded-md ${cpmkChartType === 'radar' ? 'shadow-sm' : ''}`}
+                                                >Radar</Button>
+                                                <Button 
+                                                    variant={cpmkChartType === 'bar' ? 'default' : 'ghost'} 
+                                                    size="sm" 
+                                                    onClick={() => setCpmkChartType('bar')}
+                                                    className={`h-7 px-3 text-xs rounded-md ${cpmkChartType === 'bar' ? 'shadow-sm' : ''}`}
+                                                >Batang</Button>
+                                            </div>
                                         </CardHeader>
                                         <CardContent>
                                             <div className="h-[350px] w-full py-4">
@@ -738,7 +879,7 @@ const TranskripCPLPage = () => {
                                                         const key = item.mataKuliah.kodeMk;
                                                         if (!makulMap.has(key)) {
                                                             makulMap.set(key, {
-                                                                subject: key,
+                                                                subject: item.mataKuliah.namaMk,
                                                                 totalNilai: 0,
                                                                 count: 0
                                                             });
@@ -757,42 +898,96 @@ const TranskripCPLPage = () => {
                                                         .sort((a, b) => b.A - a.A);
 
                                                     return (
-                                                        <ResponsiveContainer width="100%" height="100%">
-                                                            <RadarChart cx="50%" cy="50%" outerRadius="75%" style={{ overflow: 'visible' }} margin={{ top: 30, right: 40, bottom: 10, left: 40 }} data={radarData}>
-                                                                <PolarGrid stroke="#cbd5e1" />
-                                                                <PolarAngleAxis
-                                                                    dataKey="subject"
-                                                                    tick={({ payload, x, y, cx, cy, ...rest }: any) => (
-                                                                        <text
-                                                                            {...rest}
-                                                                            x={x + (x - cx) * 0.15}
-                                                                            y={y + (y - cy) * 0.15}
-                                                                            fontSize={10}
-                                                                            fontWeight={600}
-                                                                            textAnchor="middle"
-                                                                            fill="currentColor"
-                                                                        >
-                                                                            {payload.value}
-                                                                        </text>
-                                                                    )}
-                                                                />
-                                                                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 8 }} />
-                                                                <Radar
-                                                                    name="Rata-rata Nilai"
-                                                                    dataKey="A"
-                                                                    stroke="#2563eb"
-                                                                    strokeWidth={3}
-                                                                    fill="#3b82f6"
-                                                                    fillOpacity={0.4}
-                                                                    dot={{ r: 3, fill: '#2563eb', stroke: '#fff', strokeWidth: 1.5 }}
-                                                                    activeDot={{ r: 5 }}
-                                                                />
-                                                                <Tooltip
-                                                                    contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                                    itemStyle={{ color: '#2563eb', fontWeight: 600 }}
-                                                                />
-                                                            </RadarChart>
-                                                        </ResponsiveContainer>
+                                                        <>
+                                                            <ResponsiveContainer width="100%" height="100%">
+                                                                {cpmkChartType === 'radar' ? (
+                                                                    <RadarChart cx="50%" cy="50%" outerRadius="75%" style={{ overflow: 'visible' }} margin={{ top: 30, right: 40, bottom: 10, left: 40 }} data={radarData}>
+                                                                        <PolarGrid stroke="#cbd5e1" />
+                                                                        <PolarAngleAxis
+                                                                            dataKey="subject"
+                                                                            tick={({ payload, x, y, cx, cy, ...rest }: any) => (
+                                                                                <text
+                                                                                    {...rest}
+                                                                                    x={x + (x - cx) * 0.15}
+                                                                                    y={y + (y - cy) * 0.15}
+                                                                                    fontSize={10}
+                                                                                    fontWeight={600}
+                                                                                    textAnchor="middle"
+                                                                                    fill="currentColor"
+                                                                                >
+                                                                                    {payload.value}
+                                                                                </text>
+                                                                            )}
+                                                                        />
+                                                                        <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: 'currentColor', fontSize: 8 }} />
+                                                                        <Radar
+                                                                            name="Rata-rata Nilai"
+                                                                            dataKey="A"
+                                                                            stroke="#2563eb"
+                                                                            strokeWidth={3}
+                                                                            fill="#3b82f6"
+                                                                            fillOpacity={0.4}
+                                                                            dot={{ r: 3, fill: '#2563eb', stroke: '#fff', strokeWidth: 1.5 }}
+                                                                            activeDot={{ r: 5 }}
+                                                                        />
+                                                                        <Tooltip
+                                                                            contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                            itemStyle={{ color: '#2563eb', fontWeight: 600 }}
+                                                                        />
+                                                                    </RadarChart>
+                                                                ) : (
+                                                                    <BarChart data={radarData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                                                        <XAxis 
+                                                                            dataKey="subject" 
+                                                                            axisLine={false} 
+                                                                            tickLine={false}
+                                                                            height={70}
+                                                                            interval={0}
+                                                                            tick={({ x, y, payload }: any) => {
+                                                                                const text = payload.value.length > 20 ? payload.value.substring(0, 20) + '...' : payload.value;
+                                                                                return (
+                                                                                    <g transform={`translate(${x},${y})`}>
+                                                                                        <text x={0} y={0} dy={12} textAnchor="end" fill="currentColor" opacity={0.6} transform="rotate(-35)" fontSize={10} fontWeight={600}>
+                                                                                            {text}
+                                                                                        </text>
+                                                                                    </g>
+                                                                                );
+                                                                            }}
+                                                                        />
+                                                                        <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                                                                        <Tooltip
+                                                                            cursor={{ fill: 'transparent' }}
+                                                                            contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                            itemStyle={{ color: '#2563eb', fontWeight: 600 }}
+                                                                            labelStyle={{ color: '#0f172a', fontWeight: 600, marginBottom: '4px' }}
+                                                                        />
+                                                                        <Bar dataKey="A" name="Rata-rata Nilai" radius={[4, 4, 0, 0]} barSize={40}>
+                                                                            {radarData.map((entry, index) => (
+                                                                                <Cell key={`cell-${index}`} fill={entry.A >= batasLulusCpmk ? "#3b82f6" : "#ef4444"} />
+                                                                            ))}
+                                                                        </Bar>
+                                                                        <ReferenceLine y={batasLulusCpmk} stroke="#ef4444" strokeDasharray="3 3" />
+                                                                    </BarChart>
+                                                                )}
+                                                            </ResponsiveContainer>
+                                                            {cpmkChartType === 'bar' && (
+                                                                <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-5 border-t-2 border-dashed border-red-500"></div>
+                                                                        <span>Ambang Batas Ketercapaian ({batasLulusCpmk})</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
+                                                                        <span>Tercapai</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                                                                        <span>Belum Tercapai</span>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </>
                                                     );
                                                 })() : (
 
@@ -852,8 +1047,8 @@ const TranskripCPLPage = () => {
                                                                             {item.courseNumber}
                                                                         </TableCell>
                                                                         <TableCell rowSpan={item.rowSpan} className="align-top border-r pt-4">
-                                                                            <div className="font-medium text-slate-900">{item.mataKuliah.kodeMk}</div>
-                                                                            <div className="font-medium mt-1">{item.mataKuliah.namaMk}</div>
+                                                                            <div className="text-xs font-semibold text-muted-foreground mb-0.5">{item.mataKuliah.kodeMk}</div>
+                                                                            <div className="font-medium">{item.mataKuliah.namaMk}</div>
                                                                         </TableCell>
                                                                     </>
                                                                 )}

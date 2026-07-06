@@ -143,6 +143,7 @@ export class NilaiService {
 
         const results = [];
         const errors = [];
+        const cpmkToRecalculate = new Map<string, any>();
 
         for (const entry of entries) {
             try {
@@ -210,11 +211,30 @@ export class NilaiService {
                 }
 
                 results.push(nilaiTeknik);
-                await calculateNilaiCpmk(mahasiswaId, teknikPenilaian.cpmkId, mataKuliahId, parseInt(semester), tahunAjaranId);
+                
+                const key = `${mahasiswaId}_${teknikPenilaian.cpmkId}_${mataKuliahId}_${semester}_${tahunAjaranId}`;
+                if (!cpmkToRecalculate.has(key)) {
+                    cpmkToRecalculate.set(key, {
+                        mahasiswaId,
+                        cpmkId: teknikPenilaian.cpmkId,
+                        mataKuliahId,
+                        semester: parseInt(semester),
+                        tahunAjaranId
+                    });
+                }
 
             } catch (err: any) {
                 errors.push({ entry, error: err.message || 'Unknown error' });
             }
+        }
+
+        const recalculationTasks = Array.from(cpmkToRecalculate.values());
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < recalculationTasks.length; i += BATCH_SIZE) {
+            const batch = recalculationTasks.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map((task) =>
+                calculateNilaiCpmk(task.mahasiswaId, task.cpmkId, task.mataKuliahId, task.semester, task.tahunAjaranId)
+            ));
         }
 
         return { results, errors };
@@ -455,11 +475,26 @@ export class NilaiService {
             if (hasUpdates) processedStudentIds.add(mahasiswa.userId);
         }
 
-        // Trigger updates
+        // Trigger updates in batches to prevent slow down
+        const recalculationTasks: any[] = [];
         for (const cpmk of cpmkList) {
             for (const mId of processedStudentIds) {
-                await calculateNilaiCpmk(mId, cpmk.id, mataKuliahId, semester, tahunAjaranId);
+                recalculationTasks.push({
+                    mahasiswaId: mId,
+                    cpmkId: cpmk.id,
+                    mataKuliahId,
+                    semester,
+                    tahunAjaranId
+                });
             }
+        }
+
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < recalculationTasks.length; i += BATCH_SIZE) {
+            const batch = recalculationTasks.slice(i, i + BATCH_SIZE);
+            await Promise.all(batch.map((task) =>
+                calculateNilaiCpmk(task.mahasiswaId, task.cpmkId, task.mataKuliahId, task.semester, task.tahunAjaranId)
+            ));
         }
 
         return { successCount, errors };

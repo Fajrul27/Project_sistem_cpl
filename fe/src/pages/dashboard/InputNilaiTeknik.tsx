@@ -8,6 +8,9 @@ import { Save, FileText, Upload, CheckCircle2, XCircle, Settings, Gavel } from "
 import { LoadingSpinner } from "@/components/common/LoadingScreen";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
+import { FloatingBackButton } from "@/components/common/FloatingBackButton";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RubrikDialog } from "@/components/features/RubrikDialog";
 import { RubrikGradingDialog } from "@/components/features/RubrikGradingDialog";
@@ -78,8 +81,11 @@ const InputNilaiTeknikPage = () => {
 
     const [openMK, setOpenMK] = useState(false);
 
+    const [searchParams] = useSearchParams();
+    const hasSearchParam = searchParams.get("search") || searchParams.get("semester");
+
     // Pagination & Search State
-    const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
@@ -122,7 +128,8 @@ const InputNilaiTeknikPage = () => {
 
     return (
         <DashboardPage title="Penilaian" description="Evaluasi capaian pembelajaran melalui asesmen mata kuliah">
-            <div className="space-y-6">
+            <FloatingBackButton hideBackButton={!hasSearchParam}>
+            <div className="space-y-6 relative">
                 {canManage && (
                     <CollapsibleGuide title="Panduan Input Nilai & Rubrik">
                         <div className="space-y-3">
@@ -441,6 +448,7 @@ const InputNilaiTeknikPage = () => {
                     />
                 )
             }
+            </FloatingBackButton>
         </DashboardPage >
     );
 };

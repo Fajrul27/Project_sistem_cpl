@@ -146,7 +146,8 @@ export const exportMahasiswa = async (req: Request, res: Response) => {
             { header: 'Nama Lengkap', key: 'namaLengkap', width: 35 },
             { header: 'Semester', key: 'semester', width: 10 },
             { header: 'Program Studi', key: 'programStudi', width: 30 },
-            { header: 'Kelas', key: 'kelas', width: 15 }
+            { header: 'Kelas', key: 'kelas', width: 15 },
+            { header: 'Angkatan', key: 'angkatan', width: 15 }
         ];
 
         worksheet.getRow(1).font = { bold: true };
@@ -163,7 +164,8 @@ export const exportMahasiswa = async (req: Request, res: Response) => {
                 namaLengkap: mhs.profile?.namaLengkap || '',
                 semester: mhs.profile?.semester || '',
                 programStudi: mhs.profile?.prodi?.nama || '',
-                kelas: mhs.profile?.kelasRef?.nama || ''
+                kelas: mhs.profile?.kelasRef?.nama || '',
+                angkatan: mhs.profile?.angkatanRef?.tahun || ''
             });
         });
 
@@ -196,31 +198,53 @@ export const importMahasiswa = async (req: Request, res: Response) => {
 
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(file.buffer as any);
-        const worksheet = workbook.getWorksheet('Mahasiswa');
+        const worksheet = workbook.worksheets[0];
 
         if (!worksheet) {
-            return res.status(400).json({ error: 'Sheet "Mahasiswa" tidak ditemukan dalam file Excel' });
+            return res.status(400).json({ error: 'Tidak ada sheet yang ditemukan dalam file Excel' });
         }
 
         const errors: string[] = [];
         const successes: any[] = [];
-        let rowNumber = 1;
 
-        for (const row of worksheet.getSheetValues() as any[]) {
-            rowNumber++;
-            if (rowNumber === 2) continue;
-            if (!row || row.length === 0) continue;
+        for (const worksheet of workbook.worksheets) {
+            let rowNumber = 1;
+            let isFirstRow = true;
 
-            const email = getCellValue(row[2]);
-            const nim = getCellValue(row[3]);
-            const namaLengkap = getCellValue(row[4]);
-            const semester = getCellValue(row[5]);
-            const programStudi = getCellValue(row[6]);
-            const kelas = getCellValue(row[7]);
+            let emailIdx = 2, nimIdx = 3, namaIdx = 4, semesterIdx = 5, prodiIdx = 6, kelasIdx = 7, angkatanIdx = 8;
+
+            for (const row of worksheet.getSheetValues() as any[]) {
+                rowNumber++;
+                if (!row || row.length === 0) continue;
+
+            if (isFirstRow) {
+                isFirstRow = false;
+                // Try to parse headers dynamically
+                let hasHeader = false;
+                for (let i = 1; i < row.length; i++) {
+                    const val = String(getCellValue(row[i])).toLowerCase().trim();
+                    if (val.includes('email') || val.includes('e-mail')) { emailIdx = i; hasHeader = true; }
+                    else if (val.includes('nim') || val.includes('nomor induk')) { nimIdx = i; hasHeader = true; }
+                    else if (val.includes('nama')) { namaIdx = i; hasHeader = true; }
+                    else if (val.includes('semester')) { semesterIdx = i; hasHeader = true; }
+                    else if (val.includes('program studi') || val === 'prodi') { prodiIdx = i; hasHeader = true; }
+                    else if (val === 'kelas') { kelasIdx = i; hasHeader = true; }
+                    else if (val.includes('angkatan')) { angkatanIdx = i; hasHeader = true; }
+                }
+                if (hasHeader) continue; // Skip header row
+            }
+
+            const email = getCellValue(row[emailIdx]);
+            const nim = getCellValue(row[nimIdx]);
+            const namaLengkap = getCellValue(row[namaIdx]);
+            const semester = getCellValue(row[semesterIdx]);
+            const programStudi = getCellValue(row[prodiIdx]);
+            const kelas = getCellValue(row[kelasIdx]);
+            const angkatan = getCellValue(row[angkatanIdx]);
 
             if (!email || !nim || !namaLengkap) {
                 if (email || nim || namaLengkap) {
-                    errors.push(`Baris ${rowNumber}: Email, NIM, dan Nama Lengkap harus diisi`);
+                    errors.push(`Baris ${rowNumber}: Email, NIM, dan Nama harus diisi (Terbaca -> Email: "${email}", NIM: "${nim}", Nama: "${namaLengkap}")`);
                 }
                 continue;
             }
@@ -242,6 +266,22 @@ export const importMahasiswa = async (req: Request, res: Response) => {
                     kelasId = kelasData?.id;
                 }
 
+                let angkatanId;
+                if (angkatan) {
+                    const angkatanNum = Number(angkatan);
+                    if (!isNaN(angkatanNum)) {
+                        let angkatanData = await prisma.angkatan.findUnique({
+                            where: { tahun: angkatanNum }
+                        });
+                        if (!angkatanData) {
+                            angkatanData = await prisma.angkatan.create({
+                                data: { tahun: angkatanNum, isActive: true }
+                            });
+                        }
+                        angkatanId = angkatanData.id;
+                    }
+                }
+
                 const existingUser = await prisma.user.findUnique({
                     where: { email: email as string }
                 });
@@ -257,7 +297,8 @@ export const importMahasiswa = async (req: Request, res: Response) => {
                                     namaLengkap: namaLengkap as string,
                                     semester: semester ? Number(semester) : undefined,
                                     prodiId,
-                                    kelasId
+                                    kelasId,
+                                    angkatanId
                                 }
                             }
                         }
@@ -283,7 +324,8 @@ export const importMahasiswa = async (req: Request, res: Response) => {
                                     namaLengkap: namaLengkap as string,
                                     semester: semester ? Number(semester) : undefined,
                                     prodiId,
-                                    kelasId
+                                    kelasId,
+                                    angkatanId
                                 }
                             }
                         }
@@ -291,10 +333,11 @@ export const importMahasiswa = async (req: Request, res: Response) => {
                     successes.push({ row: rowNumber, email, action: 'created' });
                 }
 
-            } catch (error: any) {
-                errors.push(`Baris ${rowNumber} (${email}): ${error.message || 'Gagal menyimpan data'}`);
+} catch (error: any) {
+                errors.push(`Sheet ${worksheet.name} Baris ${rowNumber} (${email}): ${error.message || 'Gagal menyimpan data'}`);
             }
         }
+        } // end of worksheet loop
 
         res.json({
             message: `Import selesai. ${successes.length} data berhasil diproses.`,
@@ -303,9 +346,9 @@ export const importMahasiswa = async (req: Request, res: Response) => {
             note: 'Password default untuk mahasiswa baru: password123'
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Import Mahasiswa error:', error);
-        res.status(500).json({ error: 'Gagal import data Mahasiswa' });
+        res.status(500).json({ error: 'Gagal import data Mahasiswa: ' + (error.message || String(error)) });
     }
 };
 
@@ -323,7 +366,8 @@ export const getTemplateMahasiswa = async (req: Request, res: Response) => {
             { header: 'Nama Lengkap', key: 'namaLengkap', width: 40 },
             { header: 'Semester', key: 'semester', width: 10 },
             { header: 'Program Studi', key: 'programStudi', width: 30 },
-            { header: 'Kelas', key: 'kelas', width: 15 }
+            { header: 'Kelas', key: 'kelas', width: 15 },
+            { header: 'Angkatan', key: 'angkatan', width: 15 }
         ];
 
         worksheet.getRow(1).font = { bold: true };
@@ -341,7 +385,8 @@ export const getTemplateMahasiswa = async (req: Request, res: Response) => {
             namaLengkap: 'Budi Santoso',
             semester: 1,
             programStudi: 'S1 Teknik Informatika',
-            kelas: 'TI-A'
+            kelas: 'TI-A',
+            angkatan: 2023
         });
 
         const buffer = await workbook.xlsx.writeBuffer();
@@ -414,31 +459,51 @@ export const importStaff = async (req: Request, res: Response) => {
 
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(file.buffer as any);
-        const worksheet = workbook.getWorksheet('Staff');
+        const worksheet = workbook.worksheets[0];
 
         if (!worksheet) {
-            return res.status(400).json({ error: 'Sheet "Staff" tidak ditemukan dalam file Excel' });
+            return res.status(400).json({ error: 'Tidak ada sheet yang ditemukan dalam file Excel' });
         }
 
         const errors: string[] = [];
         const successes: any[] = [];
-        let rowNumber = 1;
 
-        for (const row of worksheet.getSheetValues() as any[]) {
-            rowNumber++;
-            if (rowNumber === 2) continue;
-            if (!row || row.length === 0) continue;
+        for (const worksheet of workbook.worksheets) {
+            let rowNumber = 1;
+            let isFirstRow = true;
 
-            const email = getCellValue(row[2]);
-            const nip = getCellValue(row[3]);
-            const namaLengkap = getCellValue(row[4]);
-            const role = getCellValue(row[5]);
-            const programStudi = getCellValue(row[6]);
-            const fakultas = getCellValue(row[7]);
+            let emailIdx = 2, nipIdx = 3, namaIdx = 4, roleIdx = 5, prodiIdx = 6, fakultasIdx = 7;
+
+            for (const row of worksheet.getSheetValues() as any[]) {
+                rowNumber++;
+                if (!row || row.length === 0) continue;
+
+            if (isFirstRow) {
+                isFirstRow = false;
+                // Try to parse headers dynamically
+                let hasHeader = false;
+                for (let i = 1; i < row.length; i++) {
+                    const val = String(getCellValue(row[i])).toLowerCase().trim();
+                    if (val.includes('email') || val.includes('e-mail')) { emailIdx = i; hasHeader = true; }
+                    else if (val.includes('nip') || val.includes('nidn')) { nipIdx = i; hasHeader = true; }
+                    else if (val.includes('nama')) { namaIdx = i; hasHeader = true; }
+                    else if (val.includes('role')) { roleIdx = i; hasHeader = true; }
+                    else if (val.includes('program studi') || val === 'prodi') { prodiIdx = i; hasHeader = true; }
+                    else if (val.includes('fakultas')) { fakultasIdx = i; hasHeader = true; }
+                }
+                if (hasHeader) continue; // Skip header row
+            }
+
+            const email = getCellValue(row[emailIdx]);
+            const nip = getCellValue(row[nipIdx]);
+            const namaLengkap = getCellValue(row[namaIdx]);
+            const role = getCellValue(row[roleIdx]);
+            const programStudi = getCellValue(row[prodiIdx]);
+            const fakultas = getCellValue(row[fakultasIdx]);
 
             if (!email || !namaLengkap || !role) {
                 if (email || namaLengkap || role) {
-                    errors.push(`Baris ${rowNumber}: Email, Nama Lengkap, dan Role harus diisi`);
+                    errors.push(`Baris ${rowNumber}: Email, Nama Lengkap, dan Role harus diisi (Terbaca -> Email: "${email}", Nama: "${namaLengkap}", Role: "${role}")`);
                 }
                 continue;
             }
@@ -518,10 +583,11 @@ export const importStaff = async (req: Request, res: Response) => {
                     successes.push({ row: rowNumber, email, action: 'created' });
                 }
 
-            } catch (error: any) {
-                errors.push(`Baris ${rowNumber} (${email}): ${error.message || 'Gagal menyimpan data'}`);
+} catch (error: any) {
+                errors.push(`Sheet ${worksheet.name} Baris ${rowNumber} (${email}): ${error.message || 'Gagal menyimpan data'}`);
             }
         }
+        } // end of worksheet loop
 
         res.json({
             message: `Import selesai. ${successes.length} data berhasil diproses.`,
@@ -530,8 +596,8 @@ export const importStaff = async (req: Request, res: Response) => {
             note: 'Password default untuk staff baru: password123'
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Import Staff error:', error);
-        res.status(500).json({ error: 'Gagal import data Staff' });
+        res.status(500).json({ error: 'Gagal import data Staff: ' + (error.message || String(error)) });
     }
 };

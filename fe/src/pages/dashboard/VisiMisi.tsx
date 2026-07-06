@@ -20,6 +20,7 @@ import { usePermission } from "@/contexts/PermissionContext";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import { ImportResultDialog } from "@/components/common/ImportResultDialog";
+import { DeleteConfirmationDialog } from "@/components/common/DeleteConfirmationDialog";
 import { Download, Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -53,6 +54,21 @@ export default function VisiMisiPage() {
 
     const [importing, setImporting] = useState(false);
     const [importResult, setImportResult] = useState<any>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+    const handleDeleteClick = (id: string) => {
+        setItemToDelete(id);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (itemToDelete) {
+            await handleDelete(itemToDelete);
+            setDeleteDialogOpen(false);
+            setItemToDelete(null);
+        }
+    };
 
     const handleExport = async () => {
         try {
@@ -308,7 +324,7 @@ export default function VisiMisiPage() {
                                                             </Button>
                                                         )}
                                                         {can('delete', 'visi_misi') && (
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteClick(item.id)}>
                                                                 <Trash2 className="w-4 h-4" />
                                                             </Button>
                                                         )}
@@ -370,6 +386,14 @@ export default function VisiMisiPage() {
                     result={importResult}
                     title="Hasil Import Visi & Misi"
                     description="Proses import data visi, misi, dan tujuan telah selesai."
+                />
+
+                <DeleteConfirmationDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                    onConfirm={confirmDelete}
+                    title="Hapus Visi/Misi"
+                    description="Apakah Anda yakin ingin menghapus data ini? Data yang dihapus tidak dapat dikembalikan."
                 />
             </div>
         </DashboardPage>

@@ -18,6 +18,7 @@ import { useImpersonation } from "@/hooks/useImpersonation";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, LogOut } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import SEO from "@/components/common/SEO";
 
 import { useUser } from "@/contexts/UserContext";
 
@@ -179,5 +180,10 @@ export function DashboardPage({ title, description, actions, children }: Dashboa
     };
   }, [title, description, actions, setMeta, resetMeta]);
 
-  return <>{children}</>;
+  return (
+    <>
+      <SEO title={title} description={description} />
+      {children}
+    </>
+  );
 }

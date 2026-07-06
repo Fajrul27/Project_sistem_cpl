@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { signalDashboardMutation } from "@/lib/dashboardMutationSignal";
@@ -47,16 +48,19 @@ export const useNilaiTeknik = () => {
     const [kelasList, setKelasList] = useState<any[]>([]);
     const [availableSemesters, setAvailableSemesters] = useState<number[]>([]);
 
-    const [selectedMK, setSelectedMK] = useState<string>("");
+    const [searchParams] = useSearchParams();
+    
+    const [semester, setSemester] = useState<string>(searchParams.get("semester") || "");
+    const [selectedMK, setSelectedMK] = useState<string>(searchParams.get("mk") || "");
     const [selectedKelas, setSelectedKelas] = useState<string>("");
-    const [semester, setSemester] = useState<string>("");
     const [tahunAjaran, setTahunAjaran] = useState<string>("");
 
-    const [grades, setGrades] = useState<Record<string, number>>({}); // key: studentId_teknikId
+    const [grades, setGrades] = useState<Record<string, number | string>>({}); // key: studentId_teknikId
     const [gradesMetadata, setGradesMetadata] = useState<Record<string, { updatedAt: string }>>({});
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [isDirty, setIsDirty] = useState(false);
 
     // Rubrik Dialog State (CPMK Level)
     const [rubrikDialogOpen, setRubrikDialogOpen] = useState(false);
@@ -81,9 +85,6 @@ export const useNilaiTeknik = () => {
     useEffect(() => {
         if (semester) {
             fetchMataKuliahList(semester);
-            setSelectedMK("");
-            setSelectedKelas("");
-            setKelasList([]);
         }
     }, [semester]);
 
@@ -92,9 +93,6 @@ export const useNilaiTeknik = () => {
         if (selectedMK) {
             fetchKelasForMK(selectedMK);
             fetchMKData(selectedMK);
-        } else {
-            setKelasList([]);
-            setSelectedKelas("");
         }
     }, [selectedMK]);
 
@@ -121,11 +119,10 @@ export const useNilaiTeknik = () => {
             if (!mk) return;
 
             // 2. Fetch students matching MK's semester and prodi
-            // We can use the existing /users endpoint with filters
             const params: any = {
                 role: 'mahasiswa',
-                limit: -1,
-                semester: mk.semester
+                limit: -1
+                // Removed strict semester filter so students from any semester can be graded
             };
 
             if (mk.prodiId) {
@@ -239,6 +236,7 @@ export const useNilaiTeknik = () => {
                 setGrades(existingGrades);
                 setGradesMetadata(existingMetadata);
                 setLastUpdated(maxDate);
+                setIsDirty(false);
             } catch (err) {
             }
 
@@ -251,7 +249,6 @@ export const useNilaiTeknik = () => {
     };
 
     const handleGradeChange = (studentId: string, teknikId: string, value: string) => {
-        const numValue = parseFloat(value);
         if (value === '') {
             const newGrades = { ...grades };
             delete newGrades[`${studentId}_${teknikId}`];
@@ -259,12 +256,14 @@ export const useNilaiTeknik = () => {
             return;
         }
 
+        const numValue = parseFloat(value.replace(',', '.'));
         if (isNaN(numValue) || numValue < 0 || numValue > 100) return;
 
         setGrades(prev => ({
             ...prev,
-            [`${studentId}_${teknikId}`]: numValue
+            [`${studentId}_${teknikId}`]: value
         }));
+        setIsDirty(true);
     };
 
     const handleOpenGrading = (student: Student, cpmk: CPMK, teknik: TeknikPenilaian) => {
@@ -294,6 +293,7 @@ export const useNilaiTeknik = () => {
             ...prev,
             [key]: rubrikData
         }));
+        setIsDirty(true);
     };
 
     const handleSave = async () => {
@@ -308,7 +308,7 @@ export const useNilaiTeknik = () => {
                     mahasiswaId,
                     teknikPenilaianId,
                     mataKuliahId: selectedMK,
-                    nilai: value,
+                    nilai: typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value,
                     semester: parseInt(semester),
                     tahunAjaranId: tahunAjaran,
                     rubrikData: rubrikGrades[key] // Include rubric data if available
@@ -344,6 +344,7 @@ export const useNilaiTeknik = () => {
             } else {
                 toast.success(`Berhasil menyimpan ${result.data?.length || 0} nilai`);
                 setLastUpdated(new Date());
+                setIsDirty(false);
                 // Sinyal ke dashboard bahwa ada data baru
                 signalDashboardMutation();
             }
@@ -453,6 +454,8 @@ export const useNilaiTeknik = () => {
         gradingDialogOpen,
         setGradingDialogOpen,
         gradingData,
+        isDirty,
+        setIsDirty,
 
         // Actions
         handleGradeChange,

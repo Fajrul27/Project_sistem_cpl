@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PermissionProvider } from "./contexts/PermissionContext";
 import { UserProvider } from "./contexts/UserContext";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Route, createRoutesFromElements, Navigate } from "react-router-dom";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 
 // Auth is the first page, we can keep it static or lazy. Let's lazy load it too for consistency.
@@ -50,6 +50,222 @@ import { RequireRole } from "@/components/common/RequireRole";
 
 const queryClient = new QueryClient();
 
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/dashboard" element={<DashboardLayout />}>
+        <Route index element={
+          <RequireRole roles={["admin", "dosen", "kaprodi", "mahasiswa"]} resource="dashboard">
+            <Dashboard />
+          </RequireRole>
+        } />
+        <Route path="debug-access" element={<DebugAccess />} />
+        <Route
+          path="cpl"
+          element={
+            <RequireRole roles={["admin", "dosen", "kaprodi", "mahasiswa"]} resource="cpl">
+              <CPLPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="cpl/:id"
+          element={
+            <RequireRole roles={["admin", "dosen", "kaprodi", "mahasiswa"]} resource="cpl">
+              <CPLDetailPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="mata-kuliah"
+          element={
+            <RequireRole roles={["admin", "kaprodi", "dosen"]} resource="mata_kuliah">
+              <MataKuliahPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="krs"
+          element={
+            <RequireRole roles={["admin", "kaprodi"]} resource="tahun_ajaran">
+              <KrsPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="master-akademik"
+          element={
+            <RequireRole roles={["admin", "kaprodi"]} resource="tahun_ajaran">
+              <MasterAkademikPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="dosen-pengampu"
+          element={
+            <RequireRole roles={["admin"]} resource="dosen_pengampu">
+              <DosenPengampuPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="mahasiswa"
+          element={
+            <RequireRole roles={["admin", "dosen", "kaprodi"]} resource="mahasiswa">
+              <MahasiswaPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="users"
+          element={
+            <RequireRole roles={["admin"]} resource="users">
+              <UsersPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="nilai-teknik"
+          element={
+            <RequireRole roles={["admin", "kaprodi", "dosen"]} resource="nilai_teknik">
+              <InputNilaiTeknikPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="cpmk"
+          element={
+            <RequireRole roles={["admin", "dosen", "kaprodi"]} resource="cpmk">
+              <CPMKPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="cpmk/:id"
+          element={
+            <RequireRole roles={["admin", "dosen", "kaprodi"]} resource="cpmk">
+              <CPMKDetailPage />
+            </RequireRole>
+          }
+        />
+        <Route path="transkrip-cpl" element={
+          <RequireRole roles={["admin", "dosen", "kaprodi", "mahasiswa"]} resource="transkrip_cpl">
+            <TranskripCPLPage />
+          </RequireRole>
+        } />
+        <Route path="transkrip-cpl/:mahasiswaId" element={
+          <RequireRole roles={["admin", "dosen", "kaprodi", "mahasiswa"]} resource="transkrip_cpl">
+            <TranskripCPLPage />
+          </RequireRole>
+        } />
+        <Route path="analisis" element={
+          <RequireRole roles={["admin", "dosen", "kaprodi"]} resource="analisis_cpl">
+            <AnalisisiPage />
+          </RequireRole>
+        } />
+        <Route path="visi-misi" element={
+          <RequireRole roles={['admin', 'dosen', 'kaprodi', 'mahasiswa']} resource="visi_misi">
+            <VisiMisiPage />
+          </RequireRole>
+        } />
+        <Route path="profil-lulusan" element={
+          <RequireRole roles={['admin', 'dosen', 'kaprodi', 'mahasiswa']} resource="profil_lulusan">
+            <ProfilLulusanPage />
+          </RequireRole>
+        } />
+        <Route path="rubrik/:cpmkId" element={
+          <RequireRole roles={["admin", "kaprodi", "dosen"]} resource="cpmk">
+            <RubrikManager />
+          </RequireRole>
+        } />
+        <Route
+          path="kaprodi-data"
+          element={
+            <RequireRole roles={["admin"]} resource="kaprodi_data">
+              <KaprodiDataSettings />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="instansi"
+          element={
+            <RequireRole roles={["admin"]} resource="settings">
+              <InstansiSettings />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="role-access"
+          element={
+            <RequireRole roles={["admin"]} resource="role_access">
+              <RoleAccessPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="default-role-access"
+          element={
+            <RequireRole roles={["admin"]} resource="role_access">
+              <DefaultRoleAccessPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="role-management"
+          element={
+            <RequireRole roles={["admin"]} resource="role_metadata">
+              <RoleManagementPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="fakultas"
+          element={
+            <RequireRole roles={["admin"]} resource="fakultas">
+              <FakultasPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="skala-nilai"
+          element={
+            <RequireRole roles={["admin", "kaprodi"]} resource="fakultas">
+              <SkalaNilaiPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="activity-log"
+          element={
+            <RequireRole roles={["admin", "dekan"]} resource="audit_log">
+              <ActivityLogPage />
+            </RequireRole>
+          }
+        />
+        <Route path="evaluasi-cpl" element={
+          <RequireRole roles={['admin', 'kaprodi', 'dosen']} resource="evaluasi_cpl">
+            <EvaluasiCPLPage />
+          </RequireRole>
+        } />
+        <Route path="profile" element={<ProfilePage />} />
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Route>
+  ),
+  {
+    future: {
+      v7_startTransition: true,
+      v7_relativeSplatPath: true,
+      v7_fetcherPersist: true,
+      v7_normalizeFormMethod: true,
+      v7_partialHydration: true,
+      v7_skipActionErrorRevalidation: true,
+    }
+  }
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -57,219 +273,9 @@ const App = () => (
       <Sonner />
       <UserProvider>
         <PermissionProvider>
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <Suspense fallback={<LoadingScreen message="Memuat halaman..." />}>
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/dashboard" element={<DashboardLayout />}>
-                  <Route index element={
-                    <RequireRole roles={["admin", "dosen", "kaprodi", "mahasiswa"]} resource="dashboard">
-                      <Dashboard />
-                    </RequireRole>
-                  } />
-                  <Route path="debug-access" element={<DebugAccess />} />
-                  <Route
-                    path="cpl"
-                    element={
-                      <RequireRole roles={["admin", "dosen", "kaprodi", "mahasiswa"]} resource="cpl">
-                        <CPLPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="cpl/:id"
-                    element={
-                      <RequireRole roles={["admin", "dosen", "kaprodi", "mahasiswa"]} resource="cpl">
-                        <CPLDetailPage />
-                      </RequireRole>
-                    }
-                  />
-
-                  <Route
-                    path="mata-kuliah"
-                    element={
-                      <RequireRole roles={["admin", "kaprodi", "dosen"]} resource="mata_kuliah">
-                        <MataKuliahPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="krs"
-                    element={
-                      <RequireRole roles={["admin", "kaprodi"]} resource="tahun_ajaran">
-                        <KrsPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="master-akademik"
-                    element={
-                      <RequireRole roles={["admin", "kaprodi"]} resource="tahun_ajaran">
-                        <MasterAkademikPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="dosen-pengampu"
-                    element={
-                      <RequireRole roles={["admin"]} resource="dosen_pengampu">
-                        <DosenPengampuPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="mahasiswa"
-                    element={
-                      <RequireRole roles={["admin", "dosen", "kaprodi"]} resource="mahasiswa">
-                        <MahasiswaPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="users"
-                    element={
-                      <RequireRole roles={["admin"]} resource="users">
-                        <UsersPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="nilai-teknik"
-                    element={
-                      <RequireRole roles={["admin", "kaprodi", "dosen"]} resource="nilai_teknik">
-                        <InputNilaiTeknikPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="cpmk"
-                    element={
-                      <RequireRole roles={["admin", "dosen", "kaprodi"]} resource="cpmk">
-                        <CPMKPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="cpmk/:id"
-                    element={
-                      <RequireRole roles={["admin", "dosen", "kaprodi"]} resource="cpmk">
-                        <CPMKDetailPage />
-                      </RequireRole>
-                    }
-                  />
-
-                  <Route path="transkrip-cpl" element={
-                    <RequireRole roles={["admin", "dosen", "kaprodi", "mahasiswa"]} resource="transkrip_cpl">
-                      <TranskripCPLPage />
-                    </RequireRole>
-                  } />
-                  <Route path="transkrip-cpl/:mahasiswaId" element={
-                    <RequireRole roles={["admin", "dosen", "kaprodi", "mahasiswa"]} resource="transkrip_cpl">
-                      <TranskripCPLPage />
-                    </RequireRole>
-                  } />
-                  <Route path="analisis" element={
-                    <RequireRole roles={["admin", "dosen", "kaprodi"]} resource="analisis_cpl">
-                      <AnalisisiPage />
-                    </RequireRole>
-                  } />
-
-                  {/* New OBE Routes */}
-                  <Route path="visi-misi" element={
-                    <RequireRole roles={['admin', 'dosen', 'kaprodi', 'mahasiswa']} resource="visi_misi">
-                      <VisiMisiPage />
-                    </RequireRole>
-                  } />
-                  <Route path="profil-lulusan" element={
-                    <RequireRole roles={['admin', 'dosen', 'kaprodi', 'mahasiswa']} resource="profil_lulusan">
-                      <ProfilLulusanPage />
-                    </RequireRole>
-                  } />
-                  <Route path="rubrik/:cpmkId" element={
-                    <RequireRole roles={["admin", "kaprodi", "dosen"]} resource="cpmk">
-                      <RubrikManager />
-                    </RequireRole>
-                  } />
-
-
-                  <Route
-                    path="kaprodi-data"
-                    element={
-                      <RequireRole roles={["admin"]} resource="kaprodi_data">
-                        <KaprodiDataSettings />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="instansi"
-                    element={
-                      <RequireRole roles={["admin"]} resource="settings">
-                        <InstansiSettings />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="role-access"
-                    element={
-                      <RequireRole roles={["admin"]} resource="role_access">
-                        <RoleAccessPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="default-role-access"
-                    element={
-                      <RequireRole roles={["admin"]} resource="role_access">
-                        <DefaultRoleAccessPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="role-management"
-                    element={
-                      <RequireRole roles={["admin"]} resource="role_metadata">
-                        <RoleManagementPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="fakultas"
-                    element={
-                      <RequireRole roles={["admin"]} resource="fakultas">
-                        <FakultasPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="skala-nilai"
-                    element={
-                      <RequireRole roles={["admin", "kaprodi"]} resource="fakultas">
-                        <SkalaNilaiPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route
-                    path="activity-log"
-                    element={
-                      <RequireRole roles={["admin", "dekan"]} resource="audit_log">
-                        <ActivityLogPage />
-                      </RequireRole>
-                    }
-                  />
-                  <Route path="evaluasi-cpl" element={
-                    <RequireRole roles={['admin', 'kaprodi', 'dosen']} resource="evaluasi_cpl">
-                      <EvaluasiCPLPage />
-                    </RequireRole>
-                  } />
-                  <Route path="profile" element={<ProfilePage />} />
-
-                </Route>
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
+          <Suspense fallback={<LoadingScreen message="Memuat halaman..." />}>
+            <RouterProvider router={router} future={{ v7_startTransition: true }} />
+          </Suspense>
         </PermissionProvider>
       </UserProvider>
     </TooltipProvider>

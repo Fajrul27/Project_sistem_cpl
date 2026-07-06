@@ -194,10 +194,8 @@ export function useVisiMisi() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Yakin ingin menghapus?")) return;
         try {
             await api.delete(`/visi-misi/${id}`);
-            toast.success("Berhasil dihapus");
             toast.success("Berhasil dihapus");
             // Invalidate cache
             if (selectedProdi) delete visiMisiCache[selectedProdi];

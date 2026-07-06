@@ -15,8 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { CollapsibleGuide } from '@/components/common/CollapsibleGuide';
 import { usePermission } from '@/contexts/PermissionContext';
 import { ImportResultDialog } from '@/components/common/ImportResultDialog';
+import { DeleteConfirmationDialog } from '@/components/common/DeleteConfirmationDialog';
 import { Download, Upload } from 'lucide-react';
-
 
 export default function SkalaNilaiPage() {
     const { can } = usePermission();
@@ -24,6 +24,8 @@ export default function SkalaNilaiPage() {
     const { skalaNilaiList, loading, createSkalaNilai, updateSkalaNilai, deleteSkalaNilai, fetchSkalaNilai } = useSkalaNilai();
     const { toast } = useToast();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
     const [editingItem, setEditingItem] = useState<SkalaNilai | null>(null);
     const [formData, setFormData] = useState({
         huruf: '',
@@ -161,12 +163,19 @@ export default function SkalaNilaiPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm('Apakah Anda yakin ingin menghapus skala nilai ini?')) {
-            const res = await deleteSkalaNilai(id);
+    const handleDeleteClick = (id: string) => {
+        setItemToDelete(id);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (itemToDelete) {
+            const res = await deleteSkalaNilai(itemToDelete);
             if (res.success) {
                 toast({ title: "Berhasil dihapus" });
             }
+            setDeleteDialogOpen(false);
+            setItemToDelete(null);
         }
     };
 
@@ -255,7 +264,7 @@ export default function SkalaNilaiPage() {
                                                     <Pencil className="h-4 w-4" />
                                                 </Button>
                                                 {!item.isSystem && (
-                                                    <Button variant="ghost" size="icon" className="text-red-500" onClick={() => handleDelete(item.id)}>
+                                                    <Button variant="ghost" size="icon" className="text-red-500" onClick={() => handleDeleteClick(item.id)}>
                                                         <Trash className="h-4 w-4" />
                                                     </Button>
                                                 )}
@@ -330,6 +339,14 @@ export default function SkalaNilaiPage() {
                 result={importResult}
                 title="Hasil Import Skala Nilai"
                 description="Proses import standar penilaian telah selesai."
+            />
+
+            <DeleteConfirmationDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                onConfirm={confirmDelete}
+                title="Hapus Skala Nilai"
+                description="Apakah Anda yakin ingin menghapus skala nilai ini? Konversi grade untuk nilai dalam rentang ini mungkin akan terdampak."
             />
         </DashboardPage>
 

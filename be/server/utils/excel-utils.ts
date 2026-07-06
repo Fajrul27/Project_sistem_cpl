@@ -14,6 +14,11 @@ export const getCellValue = (value: any): string => {
         return String(value.result).trim();
     }
     
+    // Handle hyperlink objects
+    if (typeof value === 'object' && value.text !== undefined) {
+        return String(value.text).trim();
+    }
+    
     // Handle other objects (unlikely for plain text)
     if (typeof value === 'object' && !Array.isArray(value)) {
         return '';

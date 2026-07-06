@@ -219,11 +219,11 @@ export function useDosenPengampu() {
     };
 
     const handleDeletePengampu = async (id: string) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus pengampu ini?")) return;
         try {
             await api.delete(`/mata-kuliah-pengampu/${id}`);
             toast.success("Pengampu berhasil dihapus");
             fetchPengampu(selectedMk);
+            fetchAllAssignments();
         } catch (error) {
             console.error("Error deleting pengampu:", error);
             toast.error("Gagal menghapus pengampu");

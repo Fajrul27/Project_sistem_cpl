@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useNavigationType } from "react-router-dom";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDosenTeachingInfo } from "@/hooks/useDosenTeachingInfo";
@@ -18,6 +19,9 @@ export interface TranskripItem {
         id: string;
         kodeMk: string;
         namaMk: string;
+        sks?: number;
+        nilai?: number;
+        semester?: number;
     }[];
     mahasiswa?: User['profile'];
     mataKuliah?: {
@@ -96,16 +100,22 @@ export function useTranskripCPL() {
     const [transkripCpmkList, setTranskripCpmkList] = useState<TranskripCpmkItem[]>([]);
     const [profilLulusanList, setProfilLulusanList] = useState<ProfilLulusanItem[]>([]);
     const [mahasiswaList, setMahasiswaList] = useState<Mahasiswa[]>([]);
-    const [selectedMahasiswa, setSelectedMahasiswa] = useState<string>("");
+    
+    const navType = useNavigationType();
+    const isPop = navType === "POP";
+
+    const [selectedMahasiswa, setSelectedMahasiswa] = useState<string>(() => isPop ? (sessionStorage.getItem("transkrip_selectedMahasiswa") || "") : "");
     const [currentStudent, setCurrentStudent] = useState<Mahasiswa | null>(null);
     const [loading, setLoading] = useState(true);
     const [kaprodiData, setKaprodiData] = useState<KaprodiData | null>(null);
     const [totalCurriculumCpl, setTotalCurriculumCpl] = useState<number>(0);
+    const [batasLulus, setBatasLulus] = useState<number>(75); // CPL Target
+    const [batasLulusCpmk, setBatasLulusCpmk] = useState<number>(70); // CPMK / Skala Nilai Target
 
     // Dosen Teaching Info
     const { taughtSemesters } = useDosenTeachingInfo();
 
-    const [semester, setSemester] = useState<string>("all");
+    const [semester, setSemester] = useState<string>(() => isPop ? (sessionStorage.getItem("transkrip_semester") || "all") : "all");
     const [tahunAjaranList, setTahunAjaranList] = useState<any[]>([]);
 
     // Track the last requested parameters to avoid race conditions
@@ -114,15 +124,24 @@ export function useTranskripCPL() {
     // Filter Filters
     const [fakultasList, setFakultasList] = useState<any[]>([]);
     const [prodiList, setProdiList] = useState<any[]>([]);
-    const [selectedFakultas, setSelectedFakultas] = useState<string>("");
-    const [selectedProdi, setSelectedProdi] = useState<string>("");
-    const [selectedSemester, setSelectedSemester] = useState<string>("");
+    const [selectedFakultas, setSelectedFakultas] = useState<string>(() => isPop ? (sessionStorage.getItem("transkrip_selectedFakultas") || "") : "");
+    const [selectedProdi, setSelectedProdi] = useState<string>(() => isPop ? (sessionStorage.getItem("transkrip_selectedProdi") || "") : "");
+    const [selectedSemester, setSelectedSemester] = useState<string>(() => isPop ? (sessionStorage.getItem("transkrip_selectedSemester") || "") : "");
 
     // Search state
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
 
     const [searchLoading, setSearchLoading] = useState(false);
+
+    // Save state to sessionStorage
+    useEffect(() => {
+        sessionStorage.setItem("transkrip_selectedMahasiswa", selectedMahasiswa);
+        sessionStorage.setItem("transkrip_semester", semester);
+        sessionStorage.setItem("transkrip_selectedFakultas", selectedFakultas);
+        sessionStorage.setItem("transkrip_selectedProdi", selectedProdi);
+        sessionStorage.setItem("transkrip_selectedSemester", selectedSemester);
+    }, [selectedMahasiswa, semester, selectedFakultas, selectedProdi, selectedSemester]);
 
     const [settings, setSettings] = useState({
         univName: "UNIVERSITAS NAHDLATUL ULAMA AL GHAZALI CILACAP",
@@ -298,16 +317,15 @@ export function useTranskripCPL() {
     // Watch for student selection changes
     useEffect(() => {
         if (selectedMahasiswa) {
-            // Find student profile to get current semester (even if admin)
-            const mhsProfile = mahasiswaList.find(m => m.id === selectedMahasiswa);
-            const currentSem = (isMahasiswa ? profile?.semester : mhsProfile?.profile?.semester)?.toString() || "all";
+            // Default to "all" semesters (Kumulatif) instead of the student's current active semester
+            const currentSem = "all";
 
             setSemester(currentSem);
             fetchAllData(selectedMahasiswa, currentSem);
         } else {
             setLoading(false);
         }
-    }, [selectedMahasiswa, isMahasiswa, profile?.id, profile?.semester]); // Using profile?.id and semester to be safer
+    }, [selectedMahasiswa, isMahasiswa, profile?.id]);
 
     // Watch for manual semester filter changes
     useEffect(() => {
@@ -331,6 +349,12 @@ export function useTranskripCPL() {
             const result = await api.get(`/transkrip-cpl/${mhsId}`, { params });
             setTranskripList(result.data?.transkrip || []);
             setTotalCurriculumCpl(result.data?.summary?.totalCurriculumCpl || 0);
+            if (result.data?.summary?.batasLulus !== undefined) {
+                setBatasLulus(result.data.summary.batasLulus);
+            }
+            if (result.data?.summary?.batasLulusCpmk !== undefined) {
+                setBatasLulusCpmk(result.data.summary.batasLulusCpmk);
+            }
             return result.data?.mahasiswa;
         } catch (error) {
             console.error("Error fetching transkrip:", error);
@@ -463,6 +487,8 @@ export function useTranskripCPL() {
         avgScore,
         completedCPL,
         totalCurriculumCpl,
+        batasLulus,
+        batasLulusCpmk,
 
         // Roles
         isMahasiswa,

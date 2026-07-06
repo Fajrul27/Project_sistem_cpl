@@ -14,16 +14,16 @@ const API_URL = '/api';
 // }
 
 export function clearToken() {
-  // localStorage.removeItem('token');
-  localStorage.removeItem('user');
+  // sessionStorage.removeItem('token');
+  sessionStorage.removeItem('user');
 }
 
 export function setUser(user: any) {
-  localStorage.setItem('user', JSON.stringify(user));
+  sessionStorage.setItem('user', JSON.stringify(user));
 }
 
 export function getUser() {
-  const user = localStorage.getItem('user');
+  const user = sessionStorage.getItem('user');
   return user ? JSON.parse(user) : null;
 }
 
