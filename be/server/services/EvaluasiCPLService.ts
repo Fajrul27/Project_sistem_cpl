@@ -205,7 +205,7 @@ export class EvaluasiCPLService {
             for (const r of rawScores) {
                 const key = `${r.mahasiswaId}|${r.mataKuliahId}|${r.cplId}`;
                 const currentVal = Number(r.nilai);
-                if (!bestScoreMap.has(key) || currentVal > Number(bestScoreMap.get(key).nilai)) {
+                if (!bestScoreMap.has(key) || currentVal > Number(bestScoreMap.get(key)!.nilai)) {
                     bestScoreMap.set(key, r);
                 }
             }
