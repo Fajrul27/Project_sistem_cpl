@@ -9,7 +9,7 @@ import { LoadingSpinner } from "@/components/common/LoadingScreen";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { FloatingBackButton } from "@/components/common/FloatingBackButton";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useBlocker } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { RubrikDialog } from "@/components/features/RubrikDialog";
@@ -38,6 +38,16 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useState } from "react";
 
 const InputNilaiTeknikPage = () => {
@@ -76,6 +86,8 @@ const InputNilaiTeknikPage = () => {
         handleSave,
         downloadTemplate,
         importExcel,
+        isDirty,
+        setIsDirty,
 
     } = useNilaiTeknik();
 
@@ -88,6 +100,67 @@ const InputNilaiTeknikPage = () => {
     const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
+
+    // Unsaved Changes Alert State
+    const [pendingAction, setPendingAction] = useState<{ onConfirm: () => void, onCancel?: () => void } | null>(null);
+
+    // Unsaved Changes Protection (Tab Close / Refresh)
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty]);
+
+    // Unsaved Changes Protection (React Router Navigation)
+    const blocker = useBlocker(
+        ({ currentLocation, nextLocation }) =>
+            isDirty && currentLocation.pathname !== nextLocation.pathname
+    );
+
+    useEffect(() => {
+        if (blocker.state === "blocked") {
+            setPendingAction({
+                onConfirm: () => blocker.proceed?.(),
+                onCancel: () => blocker.reset?.()
+            });
+        }
+    }, [blocker]);
+
+    // Helper for filter changes
+    const confirmAction = (action: () => void) => {
+        if (isDirty) {
+            setPendingAction({ 
+                onConfirm: () => {
+                    setIsDirty(false);
+                    action();
+                } 
+            });
+        } else {
+            action();
+        }
+    };
+
+    // Handlers to intercept filter changes when dirty
+    const handleSemesterChange = (newSemester: string) => {
+        confirmAction(() => setSemester(newSemester));
+    };
+
+    const handleMKChange = (newMKId: string) => {
+        confirmAction(() => {
+            setSelectedMK(newMKId);
+            setOpenMK(false);
+        });
+    };
+
+    const handleKelasChange = (newKelasId: string) => {
+        confirmAction(() => setSelectedKelas(newKelasId));
+    };
 
     // Filter & Pagination Logic
     const filteredStudents = students.filter(student => {
@@ -129,329 +202,399 @@ const InputNilaiTeknikPage = () => {
     return (
         <DashboardPage title="Penilaian" description="Evaluasi capaian pembelajaran melalui asesmen mata kuliah">
             <FloatingBackButton hideBackButton={!hasSearchParam}>
-            <div className="space-y-6 relative">
-                {canManage && (
-                    <CollapsibleGuide title="Panduan Input Nilai & Rubrik">
-                        <div className="space-y-3">
-                            <p>Sistem ini menggunakan teknik penilaian berbasis CPMK untuk memastikan evaluasi yang objektif dan terukur.</p>
-                            <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
-                                <li><strong>Rubrik Penilaian:</strong> Gunakan tombol <Settings className="w-3 h-3 inline" /> untuk mengatur kriteria penilaian pada setiap CPMK sebelum menginput nilai.</li>
-                                <li><strong>Input Massal:</strong> Anda dapat mengunduh template Excel, mengisinya secara offline, dan mengunggahnya kembali ke sistem.</li>
-                                <li><strong>Grading Otomatis:</strong> Nilai akhir akan dihitung secara otomatis berdasarkan bobot teknik penilaian yang telah ditentukan di rencana asesmen.</li>
-                            </ul>
-                        </div>
-                    </CollapsibleGuide>
-                )}
+                <div className="space-y-6 relative">
+                    {canManage && (
+                        <CollapsibleGuide title="Panduan Input Nilai & Rubrik">
+                            <div className="space-y-3">
+                                <p>Sistem ini menggunakan teknik penilaian berbasis CPMK untuk memastikan evaluasi yang objektif dan terukur.</p>
+                                <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
+                                    <li><strong>Rubrik Penilaian:</strong> Gunakan tombol <Settings className="w-3 h-3 inline" /> untuk mengatur kriteria penilaian pada setiap CPMK sebelum menginput nilai.</li>
+                                    <li><strong>Input Massal:</strong> Anda dapat mengunduh template Excel, mengisinya secara offline, dan mengunggahnya kembali ke sistem.</li>
+                                    <li><strong>Grading Otomatis:</strong> Nilai akhir akan dihitung secara otomatis berdasarkan bobot teknik penilaian yang telah ditentukan di rencana asesmen.</li>
+                                </ul>
+                            </div>
+                        </CollapsibleGuide>
+                    )}
 
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Filter Data</CardTitle>
-                        <CardDescription>Pilih Mata Kuliah dan Periode Akademik</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                            <Label>Semester</Label>
-                            <Select value={semester} onValueChange={setSemester}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih Semester" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availableSemesters.length > 0 ? (
-                                        availableSemesters.map(s => (
-                                            <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
-                                        ))
-                                    ) : (
-                                        [1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                                            <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Mata Kuliah</Label>
-                            <Popover open={openMK} onOpenChange={setOpenMK}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={openMK}
-                                        className="w-full justify-between font-normal"
-                                    >
-                                        {selectedMK
-                                            ? mkList.find((mk) => mk.id === selectedMK)?.kodeMk + " - " + mkList.find((mk) => mk.id === selectedMK)?.namaMk
-                                            : "Pilih Mata Kuliah..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Cari mata kuliah..." />
-                                        <CommandList>
-                                            <CommandEmpty>Mata kuliah tidak ditemukan.</CommandEmpty>
-                                            <CommandGroup>
-                                                {mkList.map((mk) => (
-                                                    <CommandItem
-                                                        key={mk.id}
-                                                        value={`${mk.kodeMk} ${mk.namaMk}`}
-                                                        onSelect={() => {
-                                                            setSelectedMK(mk.id === selectedMK ? "" : mk.id);
-                                                            setOpenMK(false);
-                                                        }}
-                                                    >
-                                                        <Check
-                                                            className={cn(
-                                                                "mr-2 h-4 w-4",
-                                                                selectedMK === mk.id ? "opacity-100" : "opacity-0"
-                                                            )}
-                                                        />
-                                                        {mk.kodeMk} - {mk.namaMk}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Kelas</Label>
-                            <Select value={selectedKelas} onValueChange={setSelectedKelas}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih Kelas" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {kelasList.map(k => (
-                                        <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-
-                    </CardContent>
-                </Card>
-
-
-                {selectedMK && selectedKelas ? (
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle>Form Input Nilai</CardTitle>
-                                <CardDescription>Masukkan nilai untuk setiap mahasiswa per teknik penilaian</CardDescription>
-                                {lastUpdated && (
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Terakhir disimpan: {lastUpdated.toLocaleString('id-ID')}
-                                    </p>
-                                )}
-                            </div>
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={downloadTemplate} disabled={loading || !selectedMK}>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    Download Template
-                                </Button>
-                                <div className="relative">
-                                    <input
-                                        type="file"
-                                        accept=".xlsx, .xls"
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                                        onChange={handleImportExcel}
-                                        disabled={loading || !selectedMK}
-                                    />
-                                    <Button variant="outline" disabled={loading || !selectedMK}>
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        Import Excel
-                                    </Button>
-                                </div>
-                                <Button onClick={handleSave} disabled={saving}>
-                                    {saving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-                                    Simpan Nilai
-                                </Button>
-                            </div>
+                        <CardHeader>
+                            <CardTitle>Filter Data</CardTitle>
+                            <CardDescription>Pilih Mata Kuliah dan Periode Akademik</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            {loading ? (
-                                <div className="flex justify-center py-8">
-                                    <LoadingSpinner size="lg" />
-                                </div>
-                            ) : cpmkList.length === 0 ? (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    Belum ada CPMK atau Teknik Penilaian untuk mata kuliah ini.
-                                </div>
-                            ) : students.length === 0 ? (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    Tidak ada mahasiswa di kelas ini.
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="relative w-full max-w-sm">
-                                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                placeholder="Cari mahasiswa (Nama / NIM)..."
-                                                value={searchTerm}
-                                                onChange={(e) => setSearchTerm(e.target.value)}
-                                                className="pl-9"
-                                            />
-                                        </div>
-                                        <div className="text-sm text-muted-foreground">
-                                            Total: {filteredStudents.length} Mahasiswa
-                                        </div>
-                                    </div>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label>Semester</Label>
+                                <Select value={semester} onValueChange={handleSemesterChange}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Pilih Semester" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableSemesters.length > 0 ? (
+                                            availableSemesters.map(s => (
+                                                <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                            ))
+                                        ) : (
+                                            [1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                                                <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>
+                                            ))
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                                    <div className="overflow-x-auto">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead rowSpan={2} className="w-[200px]">Mahasiswa</TableHead>
-                                                    {cpmkList.map(cpmk => (
-                                                        <TableHead
-                                                            key={cpmk.id}
-                                                            colSpan={cpmk.teknikPenilaian.length}
-                                                            className="text-center border-l border-r bg-muted/50"
+                            <div className="space-y-2">
+                                <Label>Mata Kuliah</Label>
+                                <Popover open={openMK} onOpenChange={setOpenMK}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={openMK}
+                                            className="w-full justify-between font-normal"
+                                        >
+                                            {selectedMK
+                                                ? mkList.find((mk) => mk.id === selectedMK)?.kodeMk + " - " + mkList.find((mk) => mk.id === selectedMK)?.namaMk
+                                                : "Pilih Mata Kuliah..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Cari mata kuliah..." />
+                                            <CommandList>
+                                                <CommandEmpty>Mata kuliah tidak ditemukan.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {mkList.map((mk) => (
+                                                        <CommandItem
+                                                            key={mk.id}
+                                                            value={`${mk.kodeMk} ${mk.namaMk}`}
+                                                            onSelect={() => {
+                                                                setSelectedMK(mk.id === selectedMK ? "" : mk.id);
+                                                                setOpenMK(false);
+                                                            }}
                                                         >
-                                                            <div className="flex flex-col items-center gap-2 py-2">
-                                                                <span className="font-semibold">{cpmk.kodeCpmk}</span>
-
-                                                                {/* Rubrik Button - CPMK Level */}
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    className="h-7 text-[10px] px-2 border-primary/40 hover:bg-primary/10"
-                                                                    onClick={() => {
-                                                                        setSelectedCpmkForRubrik(cpmk);
-                                                                        setRubrikDialogOpen(true);
-                                                                    }}
-                                                                >
-                                                                    <Settings className="h-3 w-3 mr-1" />
-                                                                    Rubrik
-                                                                </Button>
-
-
-                                                            </div>
-                                                        </TableHead>
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    selectedMK === mk.id ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {mk.kodeMk} - {mk.namaMk}
+                                                        </CommandItem>
                                                     ))}
-                                                </TableRow>
-                                                <TableRow>
-                                                    {cpmkList.map(cpmk =>
-                                                        cpmk.teknikPenilaian.length > 0 ? (
-                                                            cpmk.teknikPenilaian.map(teknik => (
-                                                                <TableHead key={teknik.id} className="text-center min-w-[100px] border-l border-r text-xs">
-                                                                    <div className="flex flex-col items-center gap-0.5 py-1">
-                                                                        <div className="font-medium">{teknik.namaTeknik}</div>
-                                                                        <div className="text-[10px] text-muted-foreground">({teknik.bobotPersentase}%)</div>
-                                                                    </div>
-                                                                </TableHead>
-                                                            ))
-                                                        ) : (
-                                                            <TableHead key={`empty-${cpmk.id}`} className="text-center text-xs italic text-muted-foreground">
-                                                                No Teknik
-                                                            </TableHead>
-                                                        )
-                                                    )}
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {paginatedStudents.length === 0 ? (
-                                                    <TableRow>
-                                                        <TableCell colSpan={1 + cpmkList.reduce((acc, c) => acc + (c.teknikPenilaian.length || 1), 0)} className="text-center py-8 text-muted-foreground">
-                                                            Tidak ada mahasiswa yang cocok dengan pencarian.
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ) : (
-                                                    paginatedStudents.map(student => (
-                                                        <TableRow key={student.id}>
-                                                            <TableCell className="font-medium">
-                                                                <div className="text-sm">{student.profile?.namaLengkap || student.email}</div>
-                                                                <div className="text-xs text-muted-foreground">{student.profile?.nim}</div>
-                                                            </TableCell>
-                                                            {cpmkList.map(cpmk =>
-                                                                cpmk.teknikPenilaian.length > 0 ? (
-                                                                    cpmk.teknikPenilaian.map(teknik => (
-                                                                        <TableCell key={`${student.id}-${teknik.id}`} className="border-l border-r p-2">
-                                                                            <Input
-                                                                                type="number"
-                                                                                min="0"
-                                                                                max="100"
-                                                                                className="h-8 text-center"
-                                                                                placeholder="0"
-                                                                                value={grades[`${student.id}_${teknik.id}`] ?? ""}
-                                                                                onChange={e => handleGradeChange(student.id, teknik.id, e.target.value)}
-                                                                            />
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="h-8 w-8 ml-1 text-muted-foreground hover:text-primary"
-                                                                                title="Nilai dengan Rubrik"
-                                                                                onClick={() => handleOpenGrading(student, cpmk, teknik)}
-                                                                            >
-                                                                                <Gavel className="h-4 w-4" />
-                                                                            </Button>
-                                                                        </TableCell>
-                                                                    ))
-                                                                ) : (
-                                                                    <TableCell key={`empty-cell-${cpmk.id}`} className="bg-muted/20" />
-                                                                )
-                                                            )}
-                                                        </TableRow>
-                                                    ))
-                                                )}
-                                            </TableBody>
-                                        </Table>
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Kelas</Label>
+                                <Select value={selectedKelas} onValueChange={handleKelasChange}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Pilih Kelas" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {kelasList.map(k => (
+                                            <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+
+                        </CardContent>
+                    </Card>
+
+
+                    {selectedMK && selectedKelas ? (
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle>Form Input Nilai</CardTitle>
+                                    <CardDescription>Masukkan nilai untuk setiap mahasiswa per teknik penilaian</CardDescription>
+                                    {lastUpdated && (
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                            Terakhir disimpan: {lastUpdated.toLocaleString('id-ID')}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" onClick={downloadTemplate} disabled={loading || !selectedMK}>
+                                        <FileText className="mr-2 h-4 w-4" />
+                                        Download Template
+                                    </Button>
+                                    <div className="relative">
+                                        <input
+                                            type="file"
+                                            accept=".xlsx, .xls"
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                            onChange={handleImportExcel}
+                                            disabled={loading || !selectedMK}
+                                        />
+                                        <Button variant="outline" disabled={loading || !selectedMK}>
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Import Excel
+                                        </Button>
                                     </div>
+                                    <Button onClick={handleSave} disabled={saving}>
+                                        {saving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="mr-2 h-4 w-4" />}
+                                        Simpan Nilai
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                {loading ? (
+                                    <div className="flex justify-center py-8">
+                                        <LoadingSpinner size="lg" />
+                                    </div>
+                                ) : cpmkList.length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        Belum ada CPMK atau Teknik Penilaian untuk mata kuliah ini.
+                                    </div>
+                                ) : students.length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        Tidak ada mahasiswa di kelas ini.
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="relative w-full max-w-sm">
+                                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    placeholder="Cari mahasiswa (Nama / NIM)..."
+                                                    value={searchTerm}
+                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                    className="pl-9"
+                                                />
+                                            </div>
+                                            <div className="text-sm text-muted-foreground">
+                                                Total: {filteredStudents.length} Mahasiswa
+                                            </div>
+                                        </div>
 
-                                    <Pagination
-                                        currentPage={currentPage}
-                                        totalPages={totalPages}
-                                        onPageChange={setCurrentPage}
-                                    />
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <Card>
-                        <CardContent className="pt-6">
-                            <FilterRequiredState
-                                message="Silakan pilih Semester, Mata Kuliah, dan Kelas pada menu filter di atas untuk mulai menginput nilai."
-                            />
-                        </CardContent>
-                    </Card>
-                )}
-            </div>
+                                        <div className="overflow-x-auto">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead rowSpan={2} className="w-[200px]">Mahasiswa</TableHead>
+                                                        {cpmkList.map(cpmk => (
+                                                            <TableHead
+                                                                key={cpmk.id}
+                                                                colSpan={cpmk.teknikPenilaian.length || 1}
+                                                                className="text-center border-l border-r bg-muted/50"
+                                                            >
+                                                                <div className="flex flex-col items-center gap-2 py-2">
+                                                                    <span className="font-semibold">{cpmk.kodeCpmk}</span>
 
-            {/* Rubrik Dialog - CPMK Level */}
-            {
-                selectedCpmkForRubrik && (
-                    <RubrikDialog
-                        open={rubrikDialogOpen}
-                        onOpenChange={setRubrikDialogOpen}
-                        cpmkId={selectedCpmkForRubrik.id}
-                        cpmkInfo={selectedCpmkForRubrik}
-                    />
-                )
-            }
+                                                                    {/* Rubrik Button - CPMK Level */}
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className="h-7 text-[10px] px-2 border-primary/40 hover:bg-primary/10"
+                                                                        onClick={() => {
+                                                                            setSelectedCpmkForRubrik(cpmk);
+                                                                            setRubrikDialogOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        <Settings className="h-3 w-3 mr-1" />
+                                                                        Rubrik
+                                                                    </Button>
 
-            {/* Rubrik Grading Dialog */}
-            {
-                gradingData && (
-                    <RubrikGradingDialog
-                        open={gradingDialogOpen}
-                        onOpenChange={setGradingDialogOpen}
-                        cpmkId={gradingData.cpmkId}
-                        mahasiswaName={gradingData.studentName}
-                        teknikName={gradingData.teknikName}
-                        onSave={handleSaveGrading}
-                    />
-                )
-            }
+
+                                                                </div>
+                                                            </TableHead>
+                                                        ))}
+                                                        {cpmkList.length > 0 && (
+                                                            <TableHead rowSpan={2} className="text-center min-w-[100px] border-l border-r bg-muted/50 font-bold align-middle">
+                                                                Nilai Akhir
+                                                            </TableHead>
+                                                        )}
+                                                    </TableRow>
+                                                    <TableRow>
+                                                        {cpmkList.map(cpmk =>
+                                                            cpmk.teknikPenilaian.length > 0 ? (
+                                                                cpmk.teknikPenilaian.map(teknik => (
+                                                                    <TableHead key={teknik.id} className="text-center min-w-[100px] border-l border-r text-xs">
+                                                                        <div className="flex flex-col items-center gap-0.5 py-1">
+                                                                            <div className="font-medium">{teknik.namaTeknik}</div>
+                                                                            <div className="text-[10px] text-muted-foreground">({teknik.bobotPersentase}%)</div>
+                                                                        </div>
+                                                                    </TableHead>
+                                                                ))
+                                                            ) : (
+                                                                <TableHead key={`empty-${cpmk.id}`} className="text-center text-xs italic text-muted-foreground">
+                                                                    No Teknik
+                                                                </TableHead>
+                                                            )
+                                                        )}
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {paginatedStudents.length === 0 ? (
+                                                        <TableRow>
+                                                            <TableCell colSpan={1 + cpmkList.reduce((acc, c) => acc + (c.teknikPenilaian.length || 1), 0) + (cpmkList.length > 0 ? 1 : 0)} className="text-center py-8 text-muted-foreground">
+                                                                Tidak ada mahasiswa yang cocok dengan pencarian.
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ) : (
+                                                        paginatedStudents.map(student => {
+                                                            let finalTotal = 0;
+                                                            let hasGrades = false;
+
+                                                            if (cpmkList.length > 0) {
+                                                                let validCpmkCount = 0;
+                                                                cpmkList.forEach(cpmk => {
+                                                                    let cpmkScore = 0;
+                                                                    let cpmkHasGrades = false;
+                                                                    cpmk.teknikPenilaian.forEach(teknik => {
+                                                                        const val = grades[`${student.id}_${teknik.id}`];
+                                                                        if (val !== undefined && val !== "") {
+                                                                            cpmkHasGrades = true;
+                                                                            hasGrades = true;
+                                                                            cpmkScore += parseFloat(String(val).replace(',', '.')) * (teknik.bobotPersentase / 100);
+                                                                        }
+                                                                    });
+                                                                    if (cpmkHasGrades) {
+                                                                        finalTotal += cpmkScore;
+                                                                        validCpmkCount++;
+                                                                    }
+                                                                });
+                                                                if (validCpmkCount > 0) {
+                                                                    finalTotal = finalTotal / validCpmkCount;
+                                                                }
+                                                            }
+
+                                                            return (
+                                                                <TableRow key={student.id}>
+                                                                    <TableCell className="font-medium">
+                                                                        <div className="text-sm">{student.profile?.namaLengkap || student.email}</div>
+                                                                        <div className="text-xs text-muted-foreground">{student.profile?.nim}</div>
+                                                                    </TableCell>
+                                                                    {cpmkList.map(cpmk =>
+                                                                        cpmk.teknikPenilaian.length > 0 ? (
+                                                                            cpmk.teknikPenilaian.map(teknik => (
+                                                                                <TableCell key={`${student.id}-${teknik.id}`} className="border-l border-r p-2">
+                                                                                    <Input
+                                                                                        type="number"
+                                                                                        min="0"
+                                                                                        max="100"
+                                                                                        className="h-8 text-center"
+                                                                                        placeholder="0"
+                                                                                        value={grades[`${student.id}_${teknik.id}`] ?? ""}
+                                                                                        onChange={e => handleGradeChange(student.id, teknik.id, e.target.value)}
+                                                                                    />
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="icon"
+                                                                                        className="h-8 w-8 ml-1 text-muted-foreground hover:text-primary"
+                                                                                        title="Nilai dengan Rubrik"
+                                                                                        onClick={() => handleOpenGrading(student, cpmk, teknik)}
+                                                                                    >
+                                                                                        <Gavel className="h-4 w-4" />
+                                                                                    </Button>
+                                                                                </TableCell>
+                                                                            ))
+                                                                        ) : (
+                                                                            <TableCell key={`empty-cell-${cpmk.id}`} className="bg-muted/20" />
+                                                                        )
+                                                                    )}
+                                                                    {cpmkList.length > 0 && (
+                                                                        <TableCell className="border-l border-r p-2 text-center bg-primary/5 font-bold text-primary">
+                                                                            {hasGrades ? finalTotal.toFixed(2) : "-"}
+                                                                        </TableCell>
+                                                                    )}
+                                                                </TableRow>
+                                                            );
+                                                        })
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            onPageChange={setCurrentPage}
+                                        />
+                                    </>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <Card>
+                            <CardContent className="pt-6">
+                                <FilterRequiredState
+                                    message="Silakan pilih Semester, Mata Kuliah, dan Kelas pada menu filter di atas untuk mulai menginput nilai."
+                                />
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+
+                {/* Rubrik Dialog - CPMK Level */}
+                {
+                    selectedCpmkForRubrik && (
+                        <RubrikDialog
+                            open={rubrikDialogOpen}
+                            onOpenChange={setRubrikDialogOpen}
+                            cpmkId={selectedCpmkForRubrik.id}
+                            cpmkInfo={selectedCpmkForRubrik}
+                        />
+                    )
+                }
+
+                {/* Rubrik Grading Dialog */}
+                {
+                    gradingData && (
+                        <RubrikGradingDialog
+                            open={gradingDialogOpen}
+                            onOpenChange={setGradingDialogOpen}
+                            cpmkId={gradingData.cpmkId}
+                            mahasiswaName={gradingData.studentName}
+                            teknikName={gradingData.teknikName}
+                            onSave={handleSaveGrading}
+                        />
+                    )
+                }
+
+                {/* Unsaved Changes Modern Alert */}
+                <AlertDialog open={pendingAction !== null} onOpenChange={(open) => {
+                    if (!open) {
+                        pendingAction?.onCancel?.();
+                        setPendingAction(null);
+                    }
+                }}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Perubahan Belum Disimpan</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Anda memiliki input nilai yang belum disimpan. Jika Anda melanjutkan, semua perubahan nilai yang belum disimpan akan hilang secara permanen.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => {
+                                pendingAction?.onCancel?.();
+                                setPendingAction(null);
+                            }}>Batal</AlertDialogCancel>
+                            <AlertDialogAction 
+                                onClick={() => {
+                                    pendingAction?.onConfirm?.();
+                                    setPendingAction(null);
+                                }}
+                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                            >
+                                Ya, Lanjutkan
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
             </FloatingBackButton>
         </DashboardPage >
     );
 };
 
 export default InputNilaiTeknikPage;
-

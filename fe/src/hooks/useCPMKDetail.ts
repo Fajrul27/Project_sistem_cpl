@@ -210,9 +210,16 @@ export function useCPMKDetail(id: string | undefined) {
             toast.success("Mapping berhasil dihapus");
             clearCpmkCache();
             await fetchCplMappings();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting mapping:', error);
-            toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan');
+            const errMessage = error.response?.data?.error || (error instanceof Error ? error.message : 'Terjadi kesalahan');
+            const errDetail = error.response?.data?.detail;
+            
+            if (errDetail) {
+                toast.error(errMessage, { description: errDetail });
+            } else {
+                toast.error(errMessage);
+            }
         }
     };
 
@@ -268,9 +275,16 @@ export function useCPMKDetail(id: string | undefined) {
             toast.success("Teknik penilaian berhasil dihapus");
             clearCpmkCache();
             await fetchTeknikPenilaian();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting teknik:', error);
-            toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan');
+            const errMessage = error.response?.data?.error || (error instanceof Error ? error.message : 'Terjadi kesalahan');
+            const errDetail = error.response?.data?.detail;
+            
+            if (errDetail) {
+                toast.error(errMessage, { description: errDetail });
+            } else {
+                toast.error(errMessage);
+            }
         }
     };
 

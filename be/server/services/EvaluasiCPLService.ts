@@ -193,17 +193,41 @@ export class EvaluasiCPLService {
             if (semester) whereNilai.semester = semester;
 
 
+            
             // Fetch ALL scores to calculate detailed metrics in memory
-            // (More flexible than groupBy for calculating % Pass per student)
-            const allScores = await prisma.nilaiCpl.findMany({
+            const rawScores = await prisma.nilaiCpl.findMany({
                 where: whereNilai,
                 include: { mataKuliah: true }
             });
 
+            // 1. Deduplicate: Get BEST score if student retakes a class
+            const bestScoreMap = new Map<string, typeof rawScores[0]>();
+            for (const r of rawScores) {
+                const key = `${r.mahasiswaId}|${r.mataKuliahId}|${r.cplId}`;
+                const currentVal = Number(r.nilai);
+                if (!bestScoreMap.has(key) || currentVal > Number(bestScoreMap.get(key).nilai)) {
+                    bestScoreMap.set(key, r);
+                }
+            }
+            const allScores = Array.from(bestScoreMap.values());
+
+            // 2. Fetch Weights (Bobot)
+            const allCplIds = [...new Set(allScores.map(s => s.cplId))];
+            const allMkIds = [...new Set(allScores.map(s => s.mataKuliahId))];
+            const weightMappings = await prisma.cplMataKuliah.findMany({
+                where: {
+                    cplId: { in: allCplIds },
+                    mataKuliahId: { in: allMkIds }
+                },
+                select: { cplId: true, mataKuliahId: true, bobotKontribusi: true }
+            });
+            const weightMap = new Map<string, number>();
+            weightMappings.forEach(w => weightMap.set(`${w.cplId}|${w.mataKuliahId}`, Number(w.bobotKontribusi)));
 
             // Get all CPLs for this prodi
             const allCpls = await prisma.cpl.findMany({
                 where: { prodiId, isActive: true },
+                orderBy: { kodeCpl: 'asc' },
                 include: {
                     tindakLanjutCPL: {
                         where: { prodiId, angkatan, tahunAjaran, semester: semester || null },
@@ -213,27 +237,51 @@ export class EvaluasiCPLService {
                 }
             });
 
+            // Fetch all mapped courses for roadmap
+            const cpmkMappingsRaw = await prisma.cpmkCplMapping.findMany({
+                where: { cplId: { in: allCpls.map(c => c.id) } },
+                include: { cpmk: { include: { mataKuliah: true } } }
+            });
+
+            const mappedCoursesMap = new Map<string, any[]>();
+            cpmkMappingsRaw.forEach(mapping => {
+                const mk = mapping.cpmk.mataKuliah;
+                if (!mk) return;
+                if (!mappedCoursesMap.has(mapping.cplId)) mappedCoursesMap.set(mapping.cplId, []);
+                const courses = mappedCoursesMap.get(mapping.cplId)!;
+                if (!courses.find(c => c.mataKuliahId === mk.id)) {
+                    courses.push({ cplId: mapping.cplId, mataKuliahId: mk.id, mataKuliah: mk });
+                }
+            });
+
             const evaluation = allCpls.map(cpl => {
                 const cplScores = allScores.filter(s => s.cplId === cpl.id);
                 const target = targetMap.get(cpl.id) ?? 75.0;
 
-                // 1. Calculate Actual Score (Average of all scores for this CPL)
-                // Note: This averages all "course-cpl" entries. 
-                // Alternatively, we could average per student first, then average the students.
-                // Let's average per student first to be fairer (student as unit of analysis).
-
-                const studentScoresMap = new Map<string, number[]>();
+                // 1. Calculate Actual Score (Weighted average per student)
+                const studentScoresMap = new Map<string, { totalScore: number; totalWeight: number }>();
+                
                 cplScores.forEach(s => {
-                    if (!studentScoresMap.has(s.mahasiswaId)) studentScoresMap.set(s.mahasiswaId, []);
-                    studentScoresMap.get(s.mahasiswaId)?.push(Number(s.nilai));
+                    const weightKey = `${s.cplId}|${s.mataKuliahId}`;
+                    const bobot = weightMap.get(weightKey) ?? 1.0;
+                    const sks = s.mataKuliah?.sks || 0;
+                    const nilai = Number(s.nilai);
+
+                    if (!studentScoresMap.has(s.mahasiswaId)) {
+                        studentScoresMap.set(s.mahasiswaId, { totalScore: 0, totalWeight: 0 });
+                    }
+                    
+                    const entry = studentScoresMap.get(s.mahasiswaId)!;
+                    entry.totalScore += nilai * bobot * sks;
+                    entry.totalWeight += bobot * sks;
                 });
 
                 let totalStudentAvg = 0;
                 let passCount = 0;
                 let studentCountForCpl = 0;
 
-                studentScoresMap.forEach((scores) => {
-                    const studentAvg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                studentScoresMap.forEach((data) => {
+                    const studentAvg = data.totalWeight > 0 ? data.totalScore / data.totalWeight : 0;
                     totalStudentAvg += studentAvg;
                     if (studentAvg >= target) passCount++;
                     studentCountForCpl++;
@@ -243,29 +291,43 @@ export class EvaluasiCPLService {
                 const passPercentage = studentCountForCpl > 0 ? (passCount / studentCountForCpl) * 100 : 0;
                 const status = actual >= target ? 'Tercapai' : 'Tidak Tercapai';
 
-                // 2. Course Breakdown
-                const courseMap = new Map<string, { kode: string, name: string, total: number, count: number }>();
+                // 2. Course Breakdown (Calculate weighted average per course for all students)
+                const courseMap = new Map<string, { kode: string, name: string, totalScore: number, count: number }>();
+                
+                const mappedCourses = mappedCoursesMap.get(cpl.id) || [];
+                mappedCourses.forEach(mc => {
+                    courseMap.set(mc.mataKuliahId, {
+                        kode: mc.mataKuliah.kodeMk,
+                        name: mc.mataKuliah.namaMk,
+                        totalScore: 0,
+                        count: 0
+                    });
+                });
+
                 cplScores.forEach(s => {
                     const mkId = s.mataKuliahId;
                     if (!courseMap.has(mkId)) {
                         courseMap.set(mkId, {
-                            kode: s.mataKuliah.kodeMk,
-                            name: s.mataKuliah.namaMk,
-                            total: 0,
+                            kode: s.mataKuliah?.kodeMk || '',
+                            name: s.mataKuliah?.namaMk || '',
+                            totalScore: 0,
                             count: 0
                         });
                     }
-                    const entry = courseMap.get(mkId)!;
-                    entry.total += Number(s.nilai);
-                    entry.count++;
+                    const cInfo = courseMap.get(mkId)!;
+                    cInfo.totalScore += Number(s.nilai);
+                    cInfo.count++;
                 });
 
                 const courseBreakdown = Array.from(courseMap.values()).map(c => ({
                     kodeMk: c.kode,
                     namaMk: c.name,
-                    averageScore: Number((c.total / c.count).toFixed(2))
-                })).sort((a, b) => a.averageScore - b.averageScore); // Sort by lowest score first (to highlight issues)
-
+                    averageScore: c.count > 0 ? Number((c.totalScore / c.count).toFixed(2)) : 0
+                })).sort((a, b) => {
+                    if (a.averageScore === 0 && b.averageScore > 0) return 1;
+                    if (b.averageScore === 0 && a.averageScore > 0) return -1;
+                    return a.averageScore - b.averageScore;
+                });
                 return {
                     cplId: cpl.id,
                     kodeCpl: cpl.kodeCpl,

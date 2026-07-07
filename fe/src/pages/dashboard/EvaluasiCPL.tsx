@@ -647,7 +647,11 @@ const EvaluasiCPLPage = () => {
                                                                                                     <TableCell>{mk.kodeMk}</TableCell>
                                                                                                     <TableCell>{mk.namaMk}</TableCell>
                                                                                                     <TableCell className="text-right font-medium">
-                                                                                                        {mk.averageScore}
+                                                                                                        {mk.averageScore === 0 ? (
+                                                                                                            <span className="text-muted-foreground italic font-normal text-xs">Belum dinilai</span>
+                                                                                                        ) : (
+                                                                                                            mk.averageScore
+                                                                                                        )}
                                                                                                     </TableCell>
                                                                                                 </TableRow>
                                                                                             ))

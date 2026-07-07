@@ -84,6 +84,13 @@ export const deleteTeknikPenilaian = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Delete teknik penilaian error:', error);
         if (error.message === 'NOT_FOUND') return res.status(404).json({ error: 'Teknik penilaian tidak ditemukan' });
+        if (error.message.startsWith('USED_IN_GRADES')) {
+            const count = error.message.split(':')[1];
+            return res.status(403).json({
+                error: 'Teknik penilaian tidak dapat dihapus karena sudah memiliki data nilai mahasiswa',
+                detail: `Terdapat ${count} nilai mahasiswa yang menggunakan teknik ini`
+            });
+        }
         res.status(500).json({ error: 'Gagal menghapus teknik penilaian' });
     }
 };

@@ -847,7 +847,8 @@ export class DashboardService {
             };
         });
 
-        // Filter: Only show students with average CPL below 55 (at-risk students)
+        // Filter: Only show students with average CPL below 55 (at-risk students). 
+        // We ignore students with avgCpl === 0 because they usually just haven't received any grades yet (e.g. new students).
         const filteredEvaluation = evaluation.filter(e => e.avgCpl > 0 && e.avgCpl < 55);
 
         // Sort by most issues (lowCplCount desc), then by lowest average (avgCpl asc)

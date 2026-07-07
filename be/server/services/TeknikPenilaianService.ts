@@ -144,6 +144,15 @@ export class TeknikPenilaianService {
         });
         if (!existing) throw new Error('NOT_FOUND');
 
+        // Validation: Used in grades?
+        const existingGrades = await prisma.nilaiTeknikPenilaian.count({
+            where: { teknikPenilaianId: id }
+        });
+
+        if (existingGrades > 0) {
+            throw new Error(`USED_IN_GRADES:${existingGrades}`);
+        }
+
         await prisma.teknikPenilaian.delete({ where: { id } });
         await this.recalculateCpmkForBatch(existing.cpmkId, existing.cpmk.mataKuliahId);
     }

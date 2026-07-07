@@ -49,7 +49,7 @@ export const useNilaiTeknik = () => {
     const [availableSemesters, setAvailableSemesters] = useState<number[]>([]);
 
     const [searchParams] = useSearchParams();
-    
+
     const [semester, setSemester] = useState<string>(searchParams.get("semester") || "");
     const [selectedMK, setSelectedMK] = useState<string>(searchParams.get("mk") || "");
     const [selectedKelas, setSelectedKelas] = useState<string>("");
@@ -84,6 +84,7 @@ export const useNilaiTeknik = () => {
     // When semester changes, fetch MKs for that semester
     useEffect(() => {
         if (semester) {
+            setSelectedMK("");
             fetchMataKuliahList(semester);
         }
     }, [semester]);
@@ -93,6 +94,10 @@ export const useNilaiTeknik = () => {
         if (selectedMK) {
             fetchKelasForMK(selectedMK);
             fetchMKData(selectedMK);
+        } else {
+            setSelectedKelas("");
+            setKelasList([]);
+            setStudents([]);
         }
     }, [selectedMK]);
 
