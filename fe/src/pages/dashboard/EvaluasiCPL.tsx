@@ -29,7 +29,6 @@ import { TindakLanjutHistoryTable } from "./components/TindakLanjutHistoryTable"
 import { fetchAllUsers } from "@/lib/api";
 import { CreatableCombobox } from "@/components/ui/creatable-combobox";
 
-
 const EvaluasiCPLPage = () => {
     const navigate = useNavigate();
     const { role, profile, loading: roleLoading } = useUserRole();
@@ -75,6 +74,7 @@ const EvaluasiCPLPage = () => {
         akarMasalah: "",
         rencanaPerbaikan: "",
         penanggungJawab: "",
+        picId: "",
         targetSemester: ""
     });
 
@@ -177,6 +177,13 @@ const EvaluasiCPLPage = () => {
 
         if (success) {
             setSelectedCpl(null);
+            setTindakLanjutForm({
+                akarMasalah: "",
+                rencanaPerbaikan: "",
+                penanggungJawab: "",
+                picId: "",
+                targetSemester: ""
+            });
             fetchEvaluation(filters); // Refresh
         }
     };

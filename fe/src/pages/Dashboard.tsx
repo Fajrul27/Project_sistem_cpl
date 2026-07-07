@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, BookOpen, Users, BarChart3, TrendingUp, ChevronDown, Star, History, Trophy } from "lucide-react";
+import { GraduationCap, BookOpen, Users, BarChart3, TrendingUp, ChevronDown, Star, History, Trophy, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 import {
@@ -26,6 +26,9 @@ import { DosenAnalysisTable } from "@/components/dashboard/DosenAnalysisTable";
 import { StudentEvaluationTable } from "@/components/dashboard/StudentEvaluationTable";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import SEO from "@/components/common/SEO";
+import { api } from "@/lib/api";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -45,6 +48,18 @@ const Dashboard = () => {
 
   // Sort State
   const [cplSortMode, setCplSortMode] = useState<'default' | 'asc' | 'desc'>('default');
+
+  const [tugasPerbaikan, setTugasPerbaikan] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (role === 'dosen') {
+      api.get('/evaluasi-cpl/tindak-lanjut/pic').then(res => {
+        if (res.data?.data) {
+            setTugasPerbaikan(res.data.data);
+        }
+      }).catch(console.error);
+    }
+  }, [role]);
 
   const {
     loading,
@@ -211,6 +226,50 @@ const Dashboard = () => {
           </Card>
         ))}
       </div>
+
+      {role === 'dosen' && tugasPerbaikan.length > 0 && (
+        <div className="grid gap-4 animate-in fade-in duration-800">
+          <Card className="border-red-200 shadow-sm">
+            <CardHeader className="bg-red-50/50 pb-4 border-b border-red-100">
+              <CardTitle className="text-red-700 flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                Tugas Perbaikan CPL (Closing the Loop)
+              </CardTitle>
+              <CardDescription className="text-red-600/80">
+                Anda ditugaskan sebagai PIC untuk menindaklanjuti kegagalan capaian CPL berikut pada semester target.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-slate-50/50">
+                  <TableRow>
+                    <TableHead>Kode CPL</TableHead>
+                    <TableHead>Target Semester</TableHead>
+                    <TableHead>Akar Masalah</TableHead>
+                    <TableHead>Rencana Perbaikan</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tugasPerbaikan.map((item: any) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.cpl?.kodeCpl}</TableCell>
+                      <TableCell>{item.targetSemester}</TableCell>
+                      <TableCell className="max-w-[200px] truncate" title={item.akarMasalah}>{item.akarMasalah}</TableCell>
+                      <TableCell className="max-w-[250px] truncate" title={item.rencanaPerbaikan}>{item.rencanaPerbaikan}</TableCell>
+                      <TableCell>
+                        <Badge variant={item.status === 'open' ? 'destructive' : 'default'}>
+                          {item.status === 'open' ? 'Menunggu Perbaikan' : 'Selesai'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {
         isStaff && (
