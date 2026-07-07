@@ -96,6 +96,7 @@ ANALISIS_HASIL_PENGUJIAN_SKRIPSI.md
 
 # SQL database dumps (Ignore in root directory only, to preserve database migration scripts)
 /*.sql
+!sistem_cpl*.sql
 be/master_data.sql
 
 # Security Keys
