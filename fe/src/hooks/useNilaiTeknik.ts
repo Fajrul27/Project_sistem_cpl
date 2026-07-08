@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -77,6 +77,8 @@ export const useNilaiTeknik = () => {
     } | null>(null);
     const [rubrikGrades, setRubrikGrades] = useState<Record<string, any[]>>({}); // key: studentId_teknikId -> rubrikData array
 
+    const isInitialMount = useRef(true);
+
     useEffect(() => {
         fetchAvailableSemesters();
     }, []);
@@ -84,7 +86,11 @@ export const useNilaiTeknik = () => {
     // When semester changes, fetch MKs for that semester
     useEffect(() => {
         if (semester) {
-            setSelectedMK("");
+            if (isInitialMount.current) {
+                isInitialMount.current = false;
+            } else {
+                setSelectedMK("");
+            }
             fetchMataKuliahList(semester);
         }
     }, [semester]);
@@ -150,8 +156,25 @@ export const useNilaiTeknik = () => {
             const classes = Array.from(uniqueKelasMap.values()).sort((a: any, b: any) => a.nama.localeCompare(b.nama));
             setKelasList(classes);
 
-            // Auto-select first class if available
-            if (classes.length > 0) {
+            // Auto-select class: if there's a search query parameter (e.g. NIM), find the class of that student.
+            // Otherwise, select the first class.
+            const searchParam = searchParams.get("search") || "";
+            let targetClassId = "";
+            if (searchParam) {
+                const searchLower = searchParam.toLowerCase();
+                const matchedStudent = students.find((s: any) => {
+                    const nim = s.profile?.nim?.toLowerCase() || "";
+                    const nama = s.profile?.namaLengkap?.toLowerCase() || "";
+                    return nim.includes(searchLower) || nama.includes(searchLower);
+                });
+                if (matchedStudent && matchedStudent.profile?.kelasRef) {
+                    targetClassId = matchedStudent.profile.kelasRef.id;
+                }
+            }
+
+            if (targetClassId && classes.some(c => c.id === targetClassId)) {
+                setSelectedKelas(targetClassId);
+            } else if (classes.length > 0) {
                 setSelectedKelas(classes[0].id);
             } else {
                 setSelectedKelas("");
