@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useDebounce } from "@/hooks/useDebounce";
 import { LoadingScreen, LoadingSpinner } from "@/components/common/LoadingScreen";
@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../../components/ui/select";
-import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, List as ListIcon, Table as TableIcon, ArrowLeft, Save, Target, RotateCcw, Download, Upload, Lock, Unlock } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, List as ListIcon, Table as TableIcon, ArrowLeft, Save, Target, RotateCcw, Download, Upload, Lock, Unlock, ChevronDown, ChevronRight, BookOpen, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePermission } from "@/contexts/PermissionContext";
@@ -31,6 +31,7 @@ import { ImportResultDialog } from "@/components/common/ImportResultDialog";
 import { CollapsibleGuide } from "@/components/common/CollapsibleGuide";
 import { Pagination } from "@/components/common/Pagination";
 import { signalDashboardMutation } from "@/lib/dashboardMutationSignal";
+import { api } from "@/lib/api";
 
 
 type FormData = {
@@ -83,6 +84,37 @@ const CPLPage = () => {
   const [newKategoriDialogOpen, setNewKategoriDialogOpen] = useState(false);
   const [newKategoriName, setNewKategoriName] = useState("");
   const [editingCPL, setEditingCPL] = useState<CPL | null>(null);
+
+  // Accordion State
+  const [expandedCPLs, setExpandedCPLs] = useState<Set<string>>(new Set());
+  const [cplDetails, setCplDetails] = useState<Record<string, any>>({});
+  const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
+
+  const toggleRow = async (cplId: string) => {
+    const newExpanded = new Set(expandedCPLs);
+    if (newExpanded.has(cplId)) {
+      newExpanded.delete(cplId);
+      setExpandedCPLs(newExpanded);
+    } else {
+      newExpanded.add(cplId);
+      setExpandedCPLs(newExpanded);
+
+      if (!cplDetails[cplId] && !loadingDetails[cplId]) {
+        setLoadingDetails(prev => ({ ...prev, [cplId]: true }));
+        try {
+          const res = await api.get(`/cpl/${cplId}`);
+          console.log("CPL Details fetched:", res);
+          // Some api wrappers return { data: cpl }, some just cpl. 
+          const cplData = res.data || res;
+          setCplDetails(prev => ({ ...prev, [cplId]: cplData }));
+        } catch (error) {
+          console.error("Failed to fetch CPL details", error);
+        } finally {
+          setLoadingDetails(prev => ({ ...prev, [cplId]: false }));
+        }
+      }
+    }
+  };
 
   // Initialize viewMode from URL to prevent flash
   const [searchParams, setSearchParams] = useSearchParams();
@@ -274,6 +306,7 @@ const CPLPage = () => {
     profilList,
     loading: loadingProfil,
     updateProfil,
+    fetchProfilLulusan,
     setSelectedProdi: setProfilProdi,
     searchTerm: profilSearchTerm,
     setSearchTerm: setProfilSearchTerm,
@@ -758,6 +791,26 @@ const CPLPage = () => {
                     Reset Filter
                   </Button>
                 )}
+                <div className="flex items-center space-x-2 border-l pl-2 ml-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">Tampilkan</span>
+                  <Select
+                    value={pagination.limit?.toString() || "10"}
+                    onValueChange={(val) => {
+                      pagination.setLimit(Number(val));
+                      pagination.setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-[110px] h-9 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 baris</SelectItem>
+                      <SelectItem value="50">50 baris</SelectItem>
+                      <SelectItem value="100">100 baris</SelectItem>
+                      <SelectItem value="-1">View All</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </>
             )}
           </div>
@@ -1127,6 +1180,7 @@ const CPLPage = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-[50px]"></TableHead>
                         <TableHead className="w-[50px]">No</TableHead>
                         <TableHead>Kode CPL</TableHead>
                         <TableHead>Deskripsi</TableHead>
@@ -1138,37 +1192,115 @@ const CPLPage = () => {
                     </TableHeader>
                     <TableBody className={loading ? "opacity-50 pointer-events-none transition-opacity duration-200" : "transition-opacity duration-200"}>
                       {cplList.map((cpl, index) => (
-                        <TableRow key={cpl.id}>
-                          <TableCell>
-                            {(pagination.page - 1) * pagination.limit + index + 1}
-                          </TableCell>
-                          <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
-                          <TableCell className="max-w-md">{cpl.deskripsi}</TableCell>
-                          <TableCell>{cpl.kategoriRef?.nama || cpl.kategori}</TableCell>
-                          <TableCell>{cpl.kurikulum?.nama || '-'}</TableCell>
-                          <TableCell>{cpl.prodi?.nama || '-'}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button size="sm" variant="ghost" onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}>
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              {canEdit && (
-                                <>
-                                  <Button size="sm" variant="outline" onClick={() => handleEdit(cpl)}>
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={(e) => handleDeleteClick(cpl.id, e)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                        <Fragment key={cpl.id}>
+                          <TableRow className={`cursor-pointer hover:bg-muted/50 transition-colors ${expandedCPLs.has(cpl.id) ? 'bg-muted/20' : ''}`} onClick={() => toggleRow(cpl.id)}>
+                            <TableCell>
+                              {expandedCPLs.has(cpl.id) ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                            </TableCell>
+                            <TableCell>
+                              {(pagination.page - 1) * pagination.limit + index + 1}
+                            </TableCell>
+                            <TableCell className="font-medium">{cpl.kodeCpl}</TableCell>
+                            <TableCell className="max-w-md">{cpl.deskripsi}</TableCell>
+                            <TableCell>{cpl.kategoriRef?.nama || cpl.kategori}</TableCell>
+                            <TableCell>{cpl.kurikulum?.nama || '-'}</TableCell>
+                            <TableCell>{cpl.prodi?.nama || '-'}</TableCell>
+                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex justify-end gap-2">
+                                <Button size="sm" variant="ghost" onClick={() => navigate(`/dashboard/cpl/${cpl.id}`)}>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                {canEdit && (
+                                  <>
+                                    <Button size="sm" variant="outline" onClick={() => handleEdit(cpl)}>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={(e) => handleDeleteClick(cpl.id, e)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          {expandedCPLs.has(cpl.id) && (
+                            <TableRow className="bg-muted/10 hover:bg-muted/10">
+                              <TableCell colSpan={8} className="p-0">
+                                <div className="p-4 pl-14 animate-in fade-in slide-in-from-top-2 duration-200">
+                                  <h4 className="text-sm font-semibold mb-3 flex items-center text-primary">
+                                    <LinkIcon className="w-4 h-4 mr-2" />
+                                    Pemetaan Mata Kuliah & CPMK
+                                  </h4>
+
+                                  {loadingDetails[cpl.id] ? (
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                                      <LoadingSpinner size="sm" />
+                                      Memuat pemetaan...
+                                    </div>
+                                  ) : cplDetails[cpl.id]?.cpmkMappings?.length > 0 ? (
+                                    <div className="border rounded-md bg-background overflow-hidden shadow-sm">
+                                      <Table>
+                                        <TableHeader className="bg-muted/50">
+                                          <TableRow>
+                                            <TableHead className="w-[100px]">Kode MK</TableHead>
+                                            <TableHead>Nama Mata Kuliah</TableHead>
+                                            <TableHead className="w-[80px] text-center">SKS</TableHead>
+                                            <TableHead>Semester</TableHead>
+                                            <TableHead>CPMK Terhubung</TableHead>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                          {[...cplDetails[cpl.id].cpmkMappings]
+                                            .sort((a: any, b: any) => {
+                                              const mkA = a.cpmk?.mataKuliah;
+                                              const mkB = b.cpmk?.mataKuliah;
+                                              if (!mkA || !mkB) return 0;
+                                              if (mkA.semester !== mkB.semester) return (mkA.semester || 0) - (mkB.semester || 0);
+                                              if (mkA.kodeMk !== mkB.kodeMk) return (mkA.kodeMk || '').localeCompare(mkB.kodeMk || '');
+                                              return (a.cpmk?.kodeCpmk || '').localeCompare(b.cpmk?.kodeCpmk || '');
+                                            })
+                                            .map((mapping: any, idx: number) => {
+                                              const mk = mapping.cpmk?.mataKuliah;
+                                              if (!mk) return null;
+                                              return (
+                                                <TableRow key={`${mapping.cpmkId}-${idx}`}>
+                                                <TableCell className="font-medium text-xs">
+                                                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md">
+                                                    {mk.kodeMk}
+                                                  </span>
+                                                </TableCell>
+                                                <TableCell className="text-sm">{mk.namaMk}</TableCell>
+                                                <TableCell className="text-center text-sm">{mk.sks}</TableCell>
+                                                <TableCell className="text-sm">Smt {mk.semester}</TableCell>
+                                                <TableCell>
+                                                  <div className="flex flex-col gap-1">
+                                                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{mapping.cpmk?.kodeCpmk}</span>
+                                                    <span className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2" title={mapping.cpmk?.deskripsi}>
+                                                      {mapping.cpmk?.deskripsi}
+                                                    </span>
+                                                  </div>
+                                                </TableCell>
+                                              </TableRow>
+                                            );
+                                          })}
+                                        </TableBody>
+                                      </Table>
+                                    </div>
+                                  ) : (
+                                    <div className="text-sm text-muted-foreground py-4 flex items-center justify-center border border-dashed rounded-md bg-background">
+                                      <BookOpen className="w-4 h-4 mr-2 opacity-50" />
+                                      Belum ada pemetaan CPMK/MK untuk CPL ini.
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </Fragment>
                       ))}
                     </TableBody>
                   </Table>
@@ -1203,9 +1335,11 @@ const CPLPage = () => {
                     profilList={profilList}
                     cplList={fullCplList}
                     onUpdate={async (id, cplIds) => {
-                      const success = await updateProfil(id, { cplIds });
+                      // Pass true to skipFetch to prevent race condition during batch save
+                      const success = await updateProfil(id, { cplIds }, true);
                       return success;
                     }}
+                    onRefresh={() => fetchProfilLulusan(profilList[0]?.prodiId || '', true)}
                     loading={loadingProfil}
                     readOnly={!canEdit}
                   />

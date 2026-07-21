@@ -113,7 +113,7 @@ export class ProfilLulusanService {
                     deskripsi: validated.deskripsi,
                     targetKetercapaian: validated.targetKetercapaian,
                     prodiId: validated.prodiId,
-                    kurikulumId: validated.kurikulumId || null,
+                    kurikulumId: validated.kurikulumId !== undefined ? (validated.kurikulumId || null) : undefined,
                     isActive: validated.isActive
                 }
             });

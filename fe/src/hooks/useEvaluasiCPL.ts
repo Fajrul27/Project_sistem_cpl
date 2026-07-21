@@ -99,8 +99,10 @@ export function useEvaluasiCPL() {
     const saveTindakLanjut = useCallback(async (payload: any) => {
         setLoading(true);
         try {
-            const apiPayload: any = { ...payload, tahunAjaranId: payload.tahunAjaran };
-            if (apiPayload.tahunAjaran === 'all') delete apiPayload.tahunAjaran;
+            const apiPayload: any = { ...payload };
+            if (apiPayload.tahunAjaran === 'all' || !apiPayload.tahunAjaran) {
+                apiPayload.tahunAjaran = 'Semua Tahun Ajaran';
+            }
             if (apiPayload.tahunAjaranId === 'all') delete apiPayload.tahunAjaranId;
             if (apiPayload.semester === 'all') delete apiPayload.semester;
             await api.post('/evaluasi-cpl/tindak-lanjut', apiPayload);

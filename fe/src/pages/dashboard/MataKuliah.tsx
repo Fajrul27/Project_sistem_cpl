@@ -528,6 +528,26 @@ const MataKuliahPage = () => {
             >
               Reset Filter
             </Button>
+            <div className="flex items-center space-x-2 border-l pl-2 ml-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:inline">Tampilkan</span>
+              <Select 
+                  value={pagination.limit?.toString() || "10"} 
+                  onValueChange={(val) => {
+                      if (pagination.setLimit) pagination.setLimit(Number(val));
+                      pagination.setPage(1);
+                  }}
+              >
+                  <SelectTrigger className="w-[100px] h-9 text-sm">
+                      <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="10">10 baris</SelectItem>
+                      <SelectItem value="50">50 baris</SelectItem>
+                      <SelectItem value="100">100 baris</SelectItem>
+                      <SelectItem value="-1">View All</SelectItem>
+                  </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <TabsContent value="list" className="mt-0 space-y-6">

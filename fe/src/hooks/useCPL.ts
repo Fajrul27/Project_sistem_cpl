@@ -24,7 +24,7 @@ export function useCPL() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     // Filter Stats
     const [searchTerm, setSearchTerm] = useState("");
@@ -193,7 +193,7 @@ export function useCPL() {
         } finally {
             setLoading(false);
         }
-    }, [page, searchTerm, prodiFilter, kategoriFilter, kurikulumFilter]);
+    }, [page, limit, searchTerm, prodiFilter, kategoriFilter, kurikulumFilter]);
 
     // New function to fetch all CPLs for matrix/target views
     const fetchFullCPL = useCallback(async () => {
@@ -230,7 +230,7 @@ export function useCPL() {
     useEffect(() => {
         fetchCPL();
         fetchFullCPL(); // Also fetch full list for background views (matrix/target)
-    }, [page, searchTerm, prodiFilter, kategoriFilter, kurikulumFilter, fetchCPL, fetchFullCPL]);
+    }, [page, limit, searchTerm, prodiFilter, kategoriFilter, kurikulumFilter, fetchCPL, fetchFullCPL]);
 
     // Fetch prodi when fakultas filter changes
     useEffect(() => {
@@ -339,8 +339,9 @@ export function useCPL() {
         setPage,
         totalPages,
         totalItems,
-        limit
-    }), [page, totalPages, totalItems]);
+        limit,
+        setLimit
+    }), [page, totalPages, totalItems, limit]);
 
     return useMemo(() => ({
         // Data

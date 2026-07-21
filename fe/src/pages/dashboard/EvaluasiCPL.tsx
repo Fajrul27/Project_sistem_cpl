@@ -26,6 +26,8 @@ import { usePermission } from "@/contexts/PermissionContext";
 import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import { useUserRole } from "@/hooks/useUserRole";
 import { TindakLanjutHistoryTable } from "./components/TindakLanjutHistoryTable";
+import { fetchAllUsers } from "@/lib/api";
+import { CreatableCombobox } from "@/components/ui/creatable-combobox";
 
 
 const EvaluasiCPLPage = () => {
@@ -68,6 +70,7 @@ const EvaluasiCPLPage = () => {
 
     // Local state for tindak lanjut dialog
     const [selectedCpl, setSelectedCpl] = useState<EvaluationItem | null>(null);
+    const [dosenList, setDosenList] = useState<any[]>([]);
     const [tindakLanjutForm, setTindakLanjutForm] = useState({
         akarMasalah: "",
         rencanaPerbaikan: "",
@@ -88,6 +91,18 @@ const EvaluasiCPLPage = () => {
         }
         setExpandedRows(newExpanded);
     };
+
+    useEffect(() => {
+        const loadDosen = async () => {
+            try {
+                const res = await fetchAllUsers({ role: 'dosen', limit: 1000 });
+                if (res.data) setDosenList(res.data);
+            } catch (error) {
+                console.error("Failed to load dosen for PIC", error);
+            }
+        };
+        loadDosen();
+    }, []);
 
     useEffect(() => {
         if (filters.prodiId) {
@@ -530,18 +545,30 @@ const EvaluasiCPLPage = () => {
                                                                                     variant={item.tindakLanjut ? "outline" : "default"}
                                                                                     size="sm"
                                                                                     className={item.tindakLanjut?.status !== 'open' ? "opacity-50" : ""}
-                                                                                    onClick={() => setSelectedCpl(item)}
+                                                                                    disabled={!item.tindakLanjut && !canManage}
+                                                                                    onClick={() => {
+                                                                                        setSelectedCpl(item);
+                                                                                        if (!item.tindakLanjut) {
+                                                                                            setTindakLanjutForm({
+                                                                                                akarMasalah: "",
+                                                                                                rencanaPerbaikan: "",
+                                                                                                penanggungJawab: "",
+                                                                                                targetSemester: ""
+                                                                                            });
+                                                                                        }
+                                                                                    }}
                                                                                 >
-                                                                                    {item.tindakLanjut ? "Lihat Tindak Lanjut" : "Tindak Lanjut"}
+                                                                                    {item.tindakLanjut ? "Lihat Tindak Lanjut" : (!canManage ? "Menunggu Evaluasi Kaprodi" : "Tindak Lanjut")}
                                                                                 </Button>
                                                                             </DialogTrigger>
-                                                                            <DialogContent className="max-w-lg">
-                                                                                <DialogHeader>
-                                                                                    <DialogTitle>Tindak Lanjut OBE - {item.kodeCpl}</DialogTitle>
-                                                                                    <DialogDescription>
-                                                                                        Lengkapi formulir tindak lanjut untuk CPL yang tidak tercapai (Closing the Loop).
-                                                                                    </DialogDescription>
-                                                                                </DialogHeader>
+                                                                            {(item.tindakLanjut || canManage) && (
+                                                                                <DialogContent className="max-w-lg">
+                                                                                    <DialogHeader>
+                                                                                        <DialogTitle>Tindak Lanjut OBE - {item.kodeCpl}</DialogTitle>
+                                                                                        <DialogDescription>
+                                                                                            {item.tindakLanjut ? "Rincian tindak lanjut untuk CPL yang tidak tercapai." : "Lengkapi formulir tindak lanjut untuk CPL yang tidak tercapai (Closing the Loop)."}
+                                                                                        </DialogDescription>
+                                                                                    </DialogHeader>
 
                                                                                 {item.tindakLanjut ? (
                                                                                     <div className="space-y-4 py-4">
@@ -593,10 +620,16 @@ const EvaluasiCPLPage = () => {
                                                                                         <div className="grid grid-cols-2 gap-4">
                                                                                             <div className="space-y-2">
                                                                                                 <Label>Penanggung Jawab (PIC)</Label>
-                                                                                                <Input
-                                                                                                    placeholder="Nama Dosen / Tim"
+                                                                                                <CreatableCombobox
                                                                                                     value={tindakLanjutForm.penanggungJawab}
-                                                                                                    onChange={e => setTindakLanjutForm({ ...tindakLanjutForm, penanggungJawab: e.target.value })}
+                                                                                                    onValueChange={(val) => setTindakLanjutForm({ ...tindakLanjutForm, penanggungJawab: val })}
+                                                                                                    options={dosenList.map(dosen => ({
+                                                                                                        value: dosen.profile?.namaLengkap || dosen.email,
+                                                                                                        label: dosen.profile?.namaLengkap || dosen.email
+                                                                                                    }))}
+                                                                                                    placeholder="Pilih atau ketik nama Dosen / Tim..."
+                                                                                                    searchPlaceholder="Cari atau tambah PIC..."
+                                                                                                    emptyMessage="Ketik nama untuk menambahkan."
                                                                                                 />
                                                                                             </div>
                                                                                             <div className="space-y-2">
@@ -618,7 +651,8 @@ const EvaluasiCPLPage = () => {
                                                                                         </Button>
                                                                                     )}
                                                                                 </DialogFooter>
-                                                                            </DialogContent>
+                                                                                </DialogContent>
+                                                                            )}
                                                                         </Dialog>
                                                                     )}
                                                                 </TableCell>
