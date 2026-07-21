@@ -560,6 +560,7 @@ const EvaluasiCPLPage = () => {
                                                                                                 akarMasalah: "",
                                                                                                 rencanaPerbaikan: "",
                                                                                                 penanggungJawab: "",
+                                                                                                picId: "",
                                                                                                 targetSemester: ""
                                                                                             });
                                                                                         }
