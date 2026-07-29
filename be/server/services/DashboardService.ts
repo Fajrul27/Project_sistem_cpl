@@ -647,7 +647,7 @@ export class DashboardService {
 
 
         // Construct Result
-        return dosenList.map((dosen) => {
+        const result = dosenList.map((dosen) => {
             const pengampu = dosen.profile?.mataKuliahPengampu || [];
 
             let totalAvgScore = 0;

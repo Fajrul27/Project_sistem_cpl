@@ -103,6 +103,11 @@ const startServer = async () => {
       console.log(`🌐 Host: 0.0.0.0 (IPv4 Only)`);
     });
 
+    // Configure extended timeouts to handle heavy queues without dropping HTTP connections
+    server.keepAliveTimeout = 120000; // 120 detik
+    server.headersTimeout = 125000;   // 125 detik (must be > keepAliveTimeout)
+    server.requestTimeout = 300000;   // 300 detik (5 menit)
+
     // Handle graceful shutdown
     const shutdown = () => {
       console.log('Signal received: closing HTTP server');
