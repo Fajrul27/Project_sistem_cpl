@@ -468,6 +468,10 @@ export class DashboardService {
 
     static async getDosenAnalysis(params: { prodiId?: string, fakultasId?: string }) {
         const { prodiId, fakultasId } = params;
+        const cacheKey = buildCacheKey('global', 'dosen_analysis', { prodiId: prodiId || '', fakultasId: fakultasId || '' });
+        const cached = getCache(cacheKey);
+        if (cached) return cached;
+
         const where: any = { role: { role: { name: 'dosen' } } };
 
         if (prodiId && prodiId !== 'all') {
@@ -643,7 +647,7 @@ export class DashboardService {
 
 
         // Construct Result
-        return dosenList.map((dosen) => {
+        const result = dosenList.map((dosen) => {
             const pengampu = dosen.profile?.mataKuliahPengampu || [];
 
             let totalAvgScore = 0;
@@ -767,10 +771,17 @@ export class DashboardService {
                 progressInput: progressInput // Should be correct now
             };
         });
+
+        setCache(cacheKey, result);
+        return result;
     }
 
     static async getStudentEvaluation(params: { prodiId?: string, angkatan?: string, semester?: string, fakultasId?: string }) {
         const { prodiId, angkatan, semester, fakultasId } = params;
+        const cacheKey = buildCacheKey('global', 'student_eval', { prodiId: prodiId || '', angkatan: angkatan || '', semester: semester || '', fakultasId: fakultasId || '' });
+        const cached = getCache(cacheKey);
+        if (cached) return cached;
+
         const where: any = { role: { role: { name: 'mahasiswa' } } };
         const profileWhere: any = {};
 
@@ -857,6 +868,7 @@ export class DashboardService {
             return a.avgCpl - b.avgCpl;
         });
 
+        setCache(cacheKey, filteredEvaluation);
         return filteredEvaluation;
     }
 }

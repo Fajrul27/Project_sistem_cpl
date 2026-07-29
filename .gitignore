@@ -92,6 +92,11 @@ be/*.xlsx
 generate_jmx.js
 run_all_tests.sh
 helper_cache.js
+config_pengujian_jmeter/
+parse_data_pengujian/
+config_pengujian_tanpa_thinktime/
+parse_data_tanpa_thinktime/
+hasil_pengujian_nothinktime/
 ANALISIS_HASIL_PENGUJIAN_SKRIPSI.md
 
 # SQL database dumps (Ignore in root directory only, to preserve database migration scripts)
