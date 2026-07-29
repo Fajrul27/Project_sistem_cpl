@@ -8,14 +8,7 @@ const globalForPrisma = globalThis as unknown as {
 const prismaClient =
   globalForPrisma.prisma ||
   new PrismaClient({
-    // In production: disable verbose logging (saves I/O overhead) and limit connection pool
-    // connection_limit=2 forces Prisma's Rust Tokio runtime to use fewer threads,
-    // matching behavior of low-core machines (e.g., Core 2 Duo) for fair testing
-    datasources: {
-      db: {
-        url: (process.env.DATABASE_URL || '') + (process.env.DATABASE_URL?.includes('?') ? '&' : '?') + 'connection_limit=2&pool_timeout=10'
-      }
-    },
+    // Disable verbose logging in production to reduce unnecessary I/O overhead
     log: process.env.NODE_ENV === 'production'
       ? ['warn', 'error']
       : ['query', 'info', 'warn', 'error']
