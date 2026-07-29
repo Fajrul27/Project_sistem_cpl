@@ -66,7 +66,8 @@ Catatan.md
 **/*.jtl
 *.jmx
 **/*.jmx
-hasil_pengujian_skripsi/
+hasil_pengujian*/
+hasil_pengujian_skripsi*/
 pengetesan*/
 
 # Python scripts and log analysis
