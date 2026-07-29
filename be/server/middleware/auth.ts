@@ -80,8 +80,12 @@ export const requirePermission = (action: string, resource: string) => {
       const userId = (req as any).userId;
       const userRole = (req as any).userRole;
 
-
       if (!userId) return res.status(403).json({ error: 'Forbidden - No user' });
+
+      // Admin bypass directly from JWT token (prevents MariaDB query on every request)
+      if (userRole === 'admin') {
+        return next();
+      }
 
       // Fetch user's roleId from database
       const userRoleRecord = await prisma.userRole.findUnique({
@@ -95,11 +99,6 @@ export const requirePermission = (action: string, resource: string) => {
 
       const roleId = userRoleRecord.roleId;
       const roleName = userRoleRecord.role.name;
-
-      // Admin override
-      if (roleName === 'admin') {
-        return next();
-      }
 
       const permission = await prisma.rolePermission.findFirst({
         where: {
