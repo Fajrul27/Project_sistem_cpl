@@ -647,7 +647,7 @@ export class DashboardService {
 
 
         // Construct Result
-        const result = dosenList.map((dosen) => {
+        return dosenList.map((dosen) => {
             const pengampu = dosen.profile?.mataKuliahPengampu || [];
 
             let totalAvgScore = 0;
@@ -781,7 +781,6 @@ export class DashboardService {
         const cacheKey = buildCacheKey('global', 'student_eval', { prodiId: prodiId || '', angkatan: angkatan || '', semester: semester || '', fakultasId: fakultasId || '' });
         const cached = getCache(cacheKey);
         if (cached) return cached;
-
         const where: any = { role: { role: { name: 'mahasiswa' } } };
         const profileWhere: any = {};
 

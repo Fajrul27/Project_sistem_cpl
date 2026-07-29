@@ -8,10 +8,7 @@ const globalForPrisma = globalThis as unknown as {
 const prismaClient =
   globalForPrisma.prisma ||
   new PrismaClient({
-    // Disable verbose logging in production to reduce unnecessary I/O overhead
-    log: process.env.NODE_ENV === 'production'
-      ? ['warn', 'error']
-      : ['query', 'info', 'warn', 'error']
+    log: ['query', 'info', 'warn', 'error']
   });
 
 export const prisma = prismaClient.$extends({

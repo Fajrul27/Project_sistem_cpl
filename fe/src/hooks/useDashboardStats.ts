@@ -3,7 +3,7 @@ import { fetchDashboardStats, fetchTranskripCPL, fetchDosenAnalysis, fetchStuden
 import { toast } from "sonner";
 
 // ─── Cache Constants ──────────────────────────────────────────────────────────
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes max age
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours (1 day)
 const SESSION_CACHE_KEY_PREFIX = "dashboard_cache_";
 const SERVER_VERSION_KEY = "dashboard_server_version";
 

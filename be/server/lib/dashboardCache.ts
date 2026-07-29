@@ -15,7 +15,7 @@ interface CacheEntry {
     version: number;
 }
 
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours (1 day)
 
 // Global version counter – when bumped, all entries are considered stale
 let globalVersion = 0;

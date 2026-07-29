@@ -41,18 +41,16 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
-// Debug: Log requests in development only (disabled in load testing to prevent I/O blocking)
-if (process.env.NODE_ENV === 'development') {
-  app.use((req, res, next) => {
-    const start = Date.now();
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    res.on('finish', () => {
-      const duration = Date.now() - start;
-      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
-    });
-    next();
+// Debug: Log all requests
+app.use((req, res, next) => {
+  const start = Date.now();
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
   });
-}
+  next();
+});
 
 // Health check
 app.get('/health', async (req, res) => {

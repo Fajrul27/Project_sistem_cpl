@@ -35,7 +35,6 @@ services:
       JWT_PUBLIC_KEY_PATH: /app/public.key
       PORT: 8002
       CORS_ORIGIN: http://localhost:8001
-      NODE_ENV: production
     depends_on:
       db:
         condition: service_healthy
