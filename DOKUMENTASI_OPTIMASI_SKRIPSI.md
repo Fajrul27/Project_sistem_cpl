@@ -9,12 +9,13 @@ Berdasarkan hasil pengujian awal pada **Server Kampus (Intel Xeon 24 Core, RAM 1
 
 1. **Single-Threaded Limitations:** Aplikasi Node.js secara *default* hanya dieksekusi dalam 1 proses *single-threaded*, sehingga hanya memanfaatkan **1 core CPU fisik (penggunaan CPU global ~5,4%)**, sementara **23 core CPU Xeon lainnya menganggur (*idle*)**.
 2. **Ketiadaan Shared Cache antar Proses:** *In-memory cache* pada aplikasi *single-threaded* tidak tersinkronisasi apabila aplikasi dijalankan secara multi-proses.
-3. **I/O Overhead pada Prisma ORM:** Pencatatan *query log* Prisma ke `stdout` pada setiap *request* memicu lonjakan penggunaan I/O CPU saat beban puncak.
-4. **Koneksi Prematur Drop (HTTP Timeout):** Nilai *socket timeout* bawaan Express.js dan Nginx yang terlalu pendek menyebabkan *request* dalam antrean panjang diputus secara sepihak (Error HTTP 504 / ECONNRESET).
+3. **Bottleneck Spesifik Endpoint Student (`/api/dashboard/students`):** Endpoint ini memiliki latensi tertinggi karena mengeksekusi pencarian *query* sekuensial berulang pada ribuan data mahasiswa, agregasi nilai CPL, dan pemetaan kode CPL.
+4. **I/O Overhead pada Prisma ORM:** Pencatatan *query log* Prisma ke `stdout` pada setiap *request* memicu lonjakan penggunaan I/O CPU saat beban puncak.
+5. **Koneksi Prematur Drop (HTTP Timeout):** Nilai *socket timeout* bawaan Express.js dan Nginx yang terlalu pendek menyebabkan *request* dalam antrean panjang diputus secara sepihak (Error HTTP 504 / ECONNRESET).
 
 ---
 
-## II. Perubahan Kode & Arsitektur Perangkat Lunak (Sesudah Optimasi)
+## II. Rincian Perubahan Kode & Arsitektur Perangkat Lunak (Sesudah Optimasi)
 
 ### 1. Penerapan PM2 Cluster Mode (Multi-Core Processing)
 * **File Dibuat:** `ecosystem.config.cjs` & `be/ecosystem.config.cjs`
@@ -30,9 +31,9 @@ module.exports = {
     max_memory_restart: '1G',
     env: {
       NODE_ENV: 'production',
-      PORT: 5000,
-      REDIS_HOST: '127.0.0.1',
-      REDIS_PORT: '6379'
+      PORT: process.env.PORT || 5000,
+      REDIS_HOST: process.env.REDIS_HOST || '127.0.0.1',
+      REDIS_PORT: process.env.REDIS_PORT || '6379'
     }
   }]
 };
@@ -65,7 +66,48 @@ export async function getCacheAsync(key: string): Promise<any | null> {
 
 ---
 
-### 3. Optimasi Prisma Connection Pool & Log Levels
+### 3. Optimasi Khusus Endpoint Student (`/api/dashboard/students`)
+* **File Diperbarui:** `be/server/services/DashboardService.ts`
+* **Deskripsi Akademis:** 
+  * Mengganti eksekusi sekuensial menjadi **Paralelisasi Database Query (`Promise.all`)** antara agregasi nilai CPL (`nilaiCpl.groupBy`) dan pemetaan daftar CPL (`cpl.findMany`).
+  * Menggunakan **Async Direct Redis Cache (`getCacheAsync` / `setCacheAsync`)** sehingga setelah *cache warming*, respon disajikan dalam waktu **~1-2 ms** dari Redis.
+
+```typescript
+// Optimasi Endpoint Student dengan Promise.all & Redis Async Cache
+const cached = await getCacheAsync(cacheKey);
+if (cached) return cached;
+
+const [allScores, cplList] = await Promise.all([
+    prisma.nilaiCpl.groupBy({
+        by: ['mahasiswaId', 'cplId'],
+        where: { mahasiswaId: { in: studentIds } },
+        _avg: { nilai: true }
+    }),
+    prisma.cpl.findMany({ select: { id: true, kodeCpl: true } })
+]);
+```
+
+---
+
+### 4. Konfigurasi All-in-One Docker Stack (Tanpa Perintah Manual)
+* **File Dibuat/Diperbarui:** `docker-compose.yml` & `be/Dockerfile`
+* **Deskripsi Akademis:** Seluruh komponen sistem (MariaDB 10.11, Redis 7 Alpine, Node.js PM2 Cluster 24 Worker, Nginx Proxy, dan PhpMyAdmin) diintegrasikan ke dalam Docker Compose stack sehingga dapat dinyalakan secara otomatis dalam satu perintah tanpa perlu menjalankan PM2 secara manual.
+
+```yaml
+# Backend Service dalam Docker Compose (Auto PM2 Cluster)
+be:
+  build: ./be
+  container_name: sistem_cpl_be
+  environment:
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    DATABASE_URL: "mysql://root:root@db:3306/sistem_cpl?connection_limit=30&pool_timeout=60"
+  command: sh -c "npx prisma generate && pm2-runtime start ecosystem.config.cjs"
+```
+
+---
+
+### 5. Optimasi Prisma Connection Pool & Log Levels
 * **File Diperbarui:** `be/server/lib/prisma.ts`
 * **Deskripsi Akademis:** Menatadisiplin tingkatan *logging* Prisma ORM. Pencatatan `query` di-nonaktifkan pada mode produksi agar tidak membebani antrean I/O CPU saat 24 *worker* mengeksekusi ribuan *query* secara simultan.
 
@@ -77,7 +119,7 @@ const prismaClient = globalForPrisma.prisma || new PrismaClient({
 
 ---
 
-### 4. Tuning Server Socket & Extended Timeouts
+### 6. Tuning Server Socket & Extended Timeouts
 * **File Diperbarui:** `be/server/index.ts`
 * **Deskripsi Akademis:** Mengonfigurasi parameter *Socket HTTP* pada Node.js agar mampu menahan antrean *request* volume tinggi tanpa memutuskan koneksi secara mendadak.
 
@@ -89,13 +131,13 @@ server.requestTimeout   = 300000; // 300 detik (5 menit toleransi antrean)
 
 ---
 
-### 5. Tuning Nginx Reverse Proxy Upstream & Keepalive
+### 7. Tuning Nginx Reverse Proxy Upstream & Keepalive
 * **File Diperbarui:** `nginx.conf`
 * **Deskripsi Akademis:** Mengonfigurasi Nginx sebagai *Reverse Proxy* berperforma tinggi dengan fitur *Upstream Keepalive* (64 koneksi terbuka berkelanjutan), kompresi *GZIP*, serta toleransi *Read Timeout* hingga 300 detik.
 
 ```nginx
 upstream backend_cluster {
-    server 127.0.0.1:5000;
+    server be:5000;
     keepalive 64;
 }
 
@@ -115,26 +157,20 @@ server {
 
 ## III. Panduan Eksekusi & Verifikasi Pengujian Performa
 
-Untuk membandingkan performa **Sebelum (Single-Threaded)** vs **Sesudah (PM2 Cluster + Redis)** pada Server Kampus:
+Untuk membandingkan performa **Sebelum (Single-Threaded)** vs **Sesudah (PM2 Cluster + Redis + All-in-One Docker)**:
 
-1. **Kompilasi Backend TypeScript:**
+1. **Jalankan Seluruh Stack via Docker Compose:**
    ```bash
-   cd be
-   npm run build
+   docker compose up -d --build
    ```
 
-2. **Jalankan Backend dalam PM2 Cluster Mode:**
+2. **Verifikasi Status 24 Worker Process PM2:**
    ```bash
-   npm run pm2:start
-   ```
-
-3. **Verifikasi Status 24 Worker Process:**
-   ```bash
-   npx pm2 list
+   docker compose exec be pm2 list
    ```
    *(Pastikan status seluruh 24 worker bernilai `online` dengan `exec_mode: cluster`)*
 
-4. **Jalankan Skrip Pengujian Beban JMeter:**
+3. **Jalankan Skrip Pengujian Beban JMeter:**
    ```bash
    ./run_all_tests.sh
    ```
@@ -143,10 +179,11 @@ Untuk membandingkan performa **Sebelum (Single-Threaded)** vs **Sesudah (PM2 Clu
 
 ## IV. Ringkasan Hipotesis Hasil Pengujian Sesudah Optimasi
 
-| Parameter Metrik | Sebelum Optimasi (Single Process) | Sesudah Optimasi (PM2 Cluster 24 Core + Redis) | Dampak Akademis / Penjelasan |
+| Parameter Metrik | Sebelum Optimasi (Single Process) | Sesudah Optimasi (PM2 Cluster 24 Core + Redis + Docker Stack) | Dampak Akademis / Penjelasan |
 | :--- | :---: | :---: | :--- |
 | **CPU Global Server** | 5,4% (Hanya 1 Core Aktif) | **80% – 98%** (24 Core Aktif Paralel) | Membuktikan efektivitas pemanfaatan perangkat keras fisik Xeon 24 Core secara penuh. |
 | **Throughput (Peak)** | 23,66 req/s | **> 150 – 300+ req/s** | Peningkatan *throughput* hingga >10x lipat akibat distribusi paralel *load balancer*. |
 | **Avg Response Time (500 Users)** | 10.577 ms (10,5 detik) | **< 300 – 800 ms** | Penurunan drastis latensi karena kalkulasi berat terlayani langsung dari Redis cache. |
+| **Response Time Student Endpoint** | 10.714 ms (Terburuk) | **< 200 ms** | Hasil optimasi `Promise.all` dan *Direct Async Redis Cache*. |
 | **Error Rate** | 0,00% (dengan latency 10,5s) | **0,00% (dengan latency sangat cepat)** | Layanan tetap stabil 100% tanpa ada pemutusan koneksi (*zero error*). |
 
