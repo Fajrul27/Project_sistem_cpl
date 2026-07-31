@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CPLService } from '../services/CPLService.js';
 import ExcelJS from 'exceljs';
 import { prisma } from '../lib/prisma.js';
+import { invalidateDashboardCache } from '../lib/dashboardCache.js';
 
 import { getCellValue } from '../utils/excel-utils.js';
 
@@ -23,6 +24,7 @@ export const getAllCpl = async (req: Request, res: Response) => {
             kurikulumId: (req.query.kurikulumId as string)
         });
 
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
         res.json(result);
     } catch (error) {
         console.error('Get CPL error:', error);
@@ -35,6 +37,7 @@ export const getCplById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const cpl = await CPLService.getCplById(id);
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
         res.json({ data: cpl });
     } catch (error: any) {
         console.error('Get CPL by ID error:', error);
@@ -50,6 +53,7 @@ export const getCplStats = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const stats = await CPLService.getCplStats(id);
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
         res.json(stats);
     } catch (error) {
         console.error('Get CPL Stats error:', error);
@@ -64,6 +68,8 @@ export const createCpl = async (req: Request, res: Response) => {
         const userRole = (req as any).userRole;
 
         const cpl = await CPLService.createCpl(req.body, userId, userRole);
+
+        invalidateDashboardCache();
 
         res.status(201).json({
             data: cpl,
@@ -95,6 +101,8 @@ export const updateCpl = async (req: Request, res: Response) => {
     try {
         const cpl = await CPLService.updateCpl(id, req.body, userId, userRole);
 
+        invalidateDashboardCache();
+
         res.json({
             data: cpl,
             message: 'CPL berhasil diupdate'
@@ -123,6 +131,8 @@ export const deleteCpl = async (req: Request, res: Response) => {
         const userRole = (req as any).userRole;
 
         await CPLService.deleteCpl(id, userId, userRole);
+
+        invalidateDashboardCache();
 
         res.json({ message: 'CPL berhasil dihapus' });
     } catch (error: any) {

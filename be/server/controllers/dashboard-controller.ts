@@ -9,6 +9,7 @@ import { invalidateDashboardCache, getCacheStats, getGlobalVersionAsync } from '
  */
 export const getDataVersion = async (_req: Request, res: Response) => {
     const version = await getGlobalVersionAsync();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.json({ version });
 };
 
@@ -30,6 +31,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             fakultasId: fakultasId as string
         });
 
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
         res.json({ data: result });
     } catch (error) {
         console.error('Get stats error:', error);
