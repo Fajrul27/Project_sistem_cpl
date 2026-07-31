@@ -109,6 +109,18 @@ const startServer = async () => {
     server.headersTimeout = 125000;   // 125 detik (must be > keepAliveTimeout)
     server.requestTimeout = 300000;   // 300 detik (5 menit)
 
+    // Database connection & master table cache warmup in background
+    setTimeout(async () => {
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+        await prisma.fakultas.findMany({ take: 5 }).catch(() => {});
+        await prisma.prodi.findMany({ take: 5 }).catch(() => {});
+        await prisma.kurikulum.findMany({ take: 5 }).catch(() => {});
+      } catch (err) {
+        // Non-blocking warmup
+      }
+    }, 100);
+
     // Handle graceful shutdown
     const shutdown = () => {
       console.log('Signal received: closing HTTP server');

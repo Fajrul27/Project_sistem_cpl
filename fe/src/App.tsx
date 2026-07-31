@@ -48,7 +48,35 @@ const InstansiSettings = lazy(() => import("./pages/dashboard/InstansiSettings")
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RequireRole } from "@/components/common/RequireRole";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 menit data dianggap segar untuk navigasi cepat
+      gcTime: 15 * 60 * 1000,    // 15 menit tersimpan di memori browser
+      refetchOnWindowFocus: false, // Mencegah reload berulang saat berpindah tab browser
+    },
+  },
+});
+
+// Background prefetching untuk modul utama saat browser idle
+if (typeof window !== "undefined") {
+  const prefetchRoutes = () => {
+    import("./pages/Dashboard");
+    import("./pages/dashboard/CPL");
+    import("./pages/dashboard/MataKuliah");
+    import("./pages/dashboard/Mahasiswa");
+    import("./pages/dashboard/InputNilaiTeknik");
+    import("./pages/dashboard/CPMK");
+    import("./pages/dashboard/TranskripCPL");
+    import("./pages/dashboard/Analisis");
+  };
+
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(prefetchRoutes, { timeout: 3000 });
+  } else {
+    setTimeout(prefetchRoutes, 2000);
+  }
+}
 
 const router = createBrowserRouter(
   createRoutesFromElements(
