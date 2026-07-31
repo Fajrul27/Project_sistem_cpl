@@ -106,6 +106,12 @@ campus_parsed_data.md
 parse_sql.js
 git add.txt
 
+# File MD skripsi & internal
+ANALISIS*.md
+DOKUMENTASI_OPTIMASI_SKRIPSI.md
+"ANALISIS DAN EVALUASI.md"
+implementation_plan.md
+
 # SQL database dumps (semua file SQL di root diabaikan)
 /*.sql
 be/master_data.sql
