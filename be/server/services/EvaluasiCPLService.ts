@@ -385,8 +385,24 @@ export class EvaluasiCPLService {
                 akarMasalah: payload.akarMasalah,
                 rencanaPerbaikan: payload.rencanaPerbaikan,
                 penanggungJawab: payload.penanggungJawab,
+                picId: payload.picId,
                 targetSemester: payload.targetSemester,
                 createdBy: payload.createdBy
+            }
+        });
+    }
+
+    static async getTindakLanjutByPic(picId: string) {
+        return (prisma.tindakLanjutCPL as any).findMany({
+            where: { picId },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                cpl: true,
+                users: {
+                    include: {
+                        profile: true
+                    }
+                }
             }
         });
     }

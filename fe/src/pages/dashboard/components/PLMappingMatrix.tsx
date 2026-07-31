@@ -21,6 +21,7 @@ interface PLMappingMatrixProps {
   profilList: ProfilLulusan[];
   cplList: CPL[];
   onUpdate: (profilId: string, cplIds: string[]) => Promise<boolean>;
+  onRefresh?: () => void;
   loading?: boolean;
 }
 
@@ -30,6 +31,7 @@ export const PLMappingMatrix = ({
   profilList,
   cplList,
   onUpdate,
+  onRefresh,
   loading = false,
   readOnly = false
 }: PLMappingMatrixProps & { readOnly?: boolean }) => {
@@ -73,14 +75,17 @@ export const PLMappingMatrix = ({
     if (readOnly) return;
     setSaving(true);
     try {
-      const promises = Array.from(hasChanges).map(profilId => {
+      const changedIds = Array.from(hasChanges);
+      for (const profilId of changedIds) {
         const cplIds = Array.from(mappings[profilId] || []);
-        return onUpdate(profilId, cplIds);
-      });
+        await onUpdate(profilId, cplIds);
+      }
 
-      await Promise.all(promises);
       setHasChanges(new Set());
       toast.success("Perubahan berhasil disimpan");
+      if (onRefresh) {
+        onRefresh();
+      }
     } catch (error) {
       console.error("Error saving batch:", error);
       toast.error("Gagal menyimpan beberapa perubahan");

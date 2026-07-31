@@ -160,6 +160,7 @@ export class CPLService {
             where: { id },
             include: {
                 mataKuliah: { include: { mataKuliah: true } },
+                cpmkMappings: { include: { cpmk: { include: { mataKuliah: true } } } },
                 kategoriRef: true,
                 prodi: true
             }
@@ -175,7 +176,13 @@ export class CPLService {
             include: { mataKuliah: true, tahunAjaranRef: true }
         });
 
-        if (nilaiList.length === 0) {
+        // Fetch all mapped MKs for this CPL via CPMK mappings
+        const cpmkMappings = await prisma.cpmkCplMapping.findMany({
+            where: { cplId: id },
+            include: { cpmk: { include: { mataKuliah: true } } }
+        });
+
+        if (nilaiList.length === 0 && cpmkMappings.length === 0) {
             return {
                 avgNilai: 0,
                 totalMahasiswa: 0,
@@ -255,9 +262,23 @@ export class CPLService {
 
         // MK Ranking
         const mkMap = new Map();
+        
+        // Initialize with all unique MKs mapped via CPMK (even if no grades yet)
+        cpmkMappings.forEach(mapping => {
+            const mk = mapping.cpmk?.mataKuliah;
+            if (mk) {
+                const mkName = mk.namaMk;
+                const mkKode = mk.kodeMk;
+                if (!mkMap.has(mkName)) {
+                    mkMap.set(mkName, { sum: 0, count: 0, name: mkName, kode: mkKode });
+                }
+            }
+        });
+
         nilaiList.forEach(n => {
             const mkName = n.mataKuliah.namaMk;
-            if (!mkMap.has(mkName)) mkMap.set(mkName, { sum: 0, count: 0, name: mkName });
+            const mkKode = n.mataKuliah.kodeMk;
+            if (!mkMap.has(mkName)) mkMap.set(mkName, { sum: 0, count: 0, name: mkName, kode: mkKode });
             const entry = mkMap.get(mkName);
             entry.sum += Number(n.nilai);
             entry.count += 1;
@@ -266,15 +287,16 @@ export class CPLService {
         const mkData = Array.from(mkMap.values())
             .map((entry: any) => ({
                 name: entry.name,
-                nilai: Number((entry.sum / entry.count).toFixed(2))
+                kode: entry.kode,
+                nilai: entry.count > 0 ? Number((entry.sum / entry.count).toFixed(2)) : 0
             }))
             .sort((a, b) => b.nilai - a.nilai)
-            .slice(0, 10);
+            
 
         return {
-            avgNilai: Number(avgNilai.toFixed(2)),
+            avgNilai: Number(avgNilai.toFixed(2)) || 0,
             totalMahasiswa: uniqueMahasiswa.size,
-            totalMK: uniqueMK.size,
+            totalMK: mkMap.size,
             trend,
             semesterData,
             distribution: ranges.map(r => ({ range: r.range, count: r.count })),

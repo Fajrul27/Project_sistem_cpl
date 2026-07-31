@@ -42,7 +42,7 @@ export function useCPMK() {
     
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
     
     const [cpmkList, setCpmkList] = useState<Cpmk[]>([]);
     const [mataKuliahList, setMataKuliahList] = useState<any[]>([]);
@@ -337,7 +337,8 @@ export function useCPMK() {
             setPage,
             totalPages,
             totalItems,
-            limit
+            limit,
+            setLimit
         }
     };
 }

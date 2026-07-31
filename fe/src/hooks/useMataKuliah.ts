@@ -74,7 +74,7 @@ export const useMataKuliah = () => {
 
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     // Master Data State
     const [prodiList, setProdiList] = useState<any[]>([]);
@@ -201,7 +201,7 @@ export const useMataKuliah = () => {
 
     useEffect(() => {
         fetchMataKuliah();
-    }, [page, searchTerm, semesterFilter, fakultasFilter, prodiFilter, kurikulumFilter]);
+    }, [page, limit, searchTerm, semesterFilter, fakultasFilter, prodiFilter, kurikulumFilter]);
 
     useEffect(() => {
         fetchMasterData();
@@ -394,7 +394,8 @@ export const useMataKuliah = () => {
             setPage,
             totalPages,
             totalItems,
-            limit
+            limit,
+            setLimit
         }
     };
 };

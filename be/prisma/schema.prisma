@@ -38,6 +38,7 @@ model User {
   profile            Profile?
   sessions           Session[]
   tindak_lanjut_cpl  TindakLanjutCPL[]
+  tindak_lanjut_pic  TindakLanjutCPL[] @relation("TindakLanjutPIC")
   role               UserRole?
 
   @@index([email])
@@ -862,7 +863,8 @@ model TindakLanjutCPL {
   cplId            String   @map("cpl_id")
   akarMasalah      String   @map("akar_masalah") @db.Text
   rencanaPerbaikan String   @map("rencana_perbaikan") @db.Text
-  penanggungJawab  String   @map("penanggung_jawab")
+  penanggungJawab  String?  @map("penanggung_jawab")
+  picId            String?  @map("pic_id")
   targetSemester   String   @map("target_semester")
   status           String   @default("open")
   createdAt        DateTime @default(now()) @map("created_at")
@@ -870,6 +872,7 @@ model TindakLanjutCPL {
   createdBy        String   @map("created_by")
   cpl              Cpl      @relation(fields: [cplId], references: [id], onDelete: Cascade)
   users            User     @relation(fields: [createdBy], references: [id])
+  picUser          User?    @relation("TindakLanjutPIC", fields: [picId], references: [id])
 
   @@index([prodiId, angkatan, tahunAjaran, cplId])
   @@index([cplId], map: "tindak_lanjut_cpl_cpl_id_fkey")

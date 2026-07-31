@@ -77,7 +77,7 @@ export const StudentList = () => {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [limit] = useState(10);
+    const [limit, setLimit] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
 
     const [fakultasList, setFakultasList] = useState<FakultasOption[]>([]);
@@ -324,7 +324,7 @@ export const StudentList = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, searchTerm, facultyFilter, programFilter, semesterFilter, kelasFilter]);
+    }, [page, limit, searchTerm, facultyFilter, programFilter, semesterFilter, kelasFilter]);
 
     // Trigger load on filter change
     useEffect(() => {
@@ -574,6 +574,27 @@ export const StudentList = () => {
                             </PopoverContent>
                         </Popover>
 
+                        <div className="flex items-center space-x-2 border-l pl-2 ml-1">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap hidden sm:inline">Tampilkan</span>
+                            <Select 
+                                value={limit.toString()} 
+                                onValueChange={(val) => {
+                                    setLimit(Number(val));
+                                    setPage(1);
+                                }}
+                            >
+                                <SelectTrigger className="w-[100px] h-9 text-sm">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="10">10 baris</SelectItem>
+                                    <SelectItem value="50">50 baris</SelectItem>
+                                    <SelectItem value="100">100 baris</SelectItem>
+                                    <SelectItem value="-1">View All</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
                         <Button size="sm" onClick={() => setShowCreate(true)} className="h-9">
                             <Plus className="h-4 w-4 mr-2" />
                             Tambah
@@ -701,11 +722,13 @@ export const StudentList = () => {
                             </div>
                         </DialogContent>
                     </Dialog>
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={setPage}
-                    />
+                    {totalPages > 1 && (
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={setPage}
+                        />
+                    )}
                 </CardContent>
             </Card>
             <DeleteConfirmationDialog

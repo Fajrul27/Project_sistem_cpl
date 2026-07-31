@@ -2,12 +2,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useCPLDetail } from "@/hooks/useCPLDetailHook";
 import { FloatingBackButton } from "@/components/common/FloatingBackButton";
+import { MindmapVisualization } from "./components/MindmapVisualization";
 
 const CPLDetailPage = () => {
   const {
@@ -233,74 +235,93 @@ const CPLDetailPage = () => {
             </Card>
           </div>
 
-          {/* MK Performance */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Pencapaian per Mata Kuliah</CardTitle>
-              <CardDescription>Top 10 mata kuliah dengan kontribusi nilai tertinggi terhadap CPL ini</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {stats?.mkData && stats.mkData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={stats.mkData} layout="vertical" margin={{ left: 20 }}>
-                    <defs>
-                      <linearGradient id="colorMKCPL" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" horizontal={false} />
-                    <XAxis
-                      type="number"
-                      domain={[0, 100]}
-                      className="text-xs font-medium"
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      dataKey="name"
-                      type="category"
-                      width={180}
-                      className="text-xs font-medium"
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="bg-popover border border-border p-3 rounded-lg shadow-lg">
-                              <p className="text-sm font-semibold mb-1">{label}</p>
-                              <p className="text-sm text-primary">
-                                Rata-rata: <span className="font-bold">{payload[0].value}</span>
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Kontribusi nilai rata-rata dari mata kuliah ini
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar
-                      dataKey="nilai"
-                      fill="url(#colorMKCPL)"
-                      name="Rata-rata Nilai"
-                      radius={[0, 6, 6, 0]}
-                      barSize={20}
-                      animationDuration={2000}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                  <p className="text-muted-foreground">Belum ada data</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Combined MK Visualization and Performance wrapped in Tabs */}
+          <Tabs defaultValue="mindmap" className="w-full mt-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+              <div>
+                <h3 className="text-xl font-semibold text-primary">Relasi & Pencapaian Mata Kuliah</h3>
+                <p className="text-sm text-muted-foreground mt-1">Lihat relasi atau analitik pencapaian per mata kuliah pendukung</p>
+              </div>
+              <TabsList className="grid w-full sm:w-[400px] grid-cols-2">
+                <TabsTrigger value="mindmap">Peta Relasi</TabsTrigger>
+                <TabsTrigger value="barchart">Grafik Bar</TabsTrigger>
+              </TabsList>
+            </div>
+            
+            <TabsContent value="mindmap" className="mt-0 outline-none">
+              <MindmapVisualization cpl={cpl} mkData={stats?.mkData || []} />
+            </TabsContent>
+            
+            <TabsContent value="barchart" className="mt-0 outline-none">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pencapaian per Mata Kuliah</CardTitle>
+                  <CardDescription>Daftar seluruh mata kuliah pendukung CPL beserta kontribusi nilai rata-ratanya</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {stats?.mkData && stats.mkData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={Math.max(400, stats.mkData.length * 40)}>
+                      <BarChart data={stats.mkData} layout="vertical" margin={{ left: 20 }}>
+                        <defs>
+                          <linearGradient id="colorMKCPL" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" horizontal={false} />
+                        <XAxis
+                          type="number"
+                          domain={[0, 100]}
+                          className="text-xs font-medium"
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          dataKey="name"
+                          type="category"
+                          width={220}
+                          className="text-xs font-medium"
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          cursor={{ fill: 'hsl(var(--muted)/0.2)' }}
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="bg-popover border border-border p-3 rounded-lg shadow-lg">
+                                  <p className="text-sm font-semibold mb-1">{label}</p>
+                                  <p className="text-sm text-primary">
+                                    Rata-rata: <span className="font-bold">{payload[0].value}</span>
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Kontribusi nilai rata-rata dari mata kuliah ini
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar
+                          dataKey="nilai"
+                          fill="url(#colorMKCPL)"
+                          name="Rata-rata Nilai"
+                          radius={[0, 6, 6, 0]}
+                          barSize={24}
+                          animationDuration={2000}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
+                      <p className="text-muted-foreground">Belum ada pemetaan mata kuliah</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </FloatingBackButton>
     </DashboardPage>

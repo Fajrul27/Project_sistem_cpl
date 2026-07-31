@@ -427,6 +427,26 @@ export default function ProfilLulusanPage() {
                         >
                             Reset Filter
                         </Button>
+                        <div className="flex items-center space-x-2 border-l pl-2 ml-2">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">Tampilkan</span>
+                            <Select 
+                                value={pagination.limit?.toString() || "10"} 
+                                onValueChange={(val) => {
+                                    pagination.setLimit(Number(val));
+                                    pagination.setPage(1);
+                                }}
+                            >
+                                <SelectTrigger className="w-[110px] h-9 text-sm">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="10">10 baris</SelectItem>
+                                    <SelectItem value="50">50 baris</SelectItem>
+                                    <SelectItem value="100">100 baris</SelectItem>
+                                    <SelectItem value="-1">View All</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 )}
 
@@ -646,11 +666,13 @@ export default function ProfilLulusanPage() {
                             </div>
                         )}
 
-                        <Pagination
-                            currentPage={pagination.page}
-                            totalPages={pagination.totalPages}
-                            onPageChange={pagination.setPage}
-                        />
+                        {pagination.totalPages > 1 && (
+                            <Pagination
+                                currentPage={pagination.page}
+                                totalPages={pagination.totalPages}
+                                onPageChange={pagination.setPage}
+                            />
+                        )}
                     </CardContent>
                 </Card>
 

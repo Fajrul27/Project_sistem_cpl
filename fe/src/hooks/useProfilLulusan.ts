@@ -40,7 +40,7 @@ export const useProfilLulusan = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
     const [searchTerm, setSearchTerm] = useState("");
 
     const [profilList, setProfilList] = useState<ProfilLulusan[]>([]);
@@ -237,7 +237,7 @@ export const useProfilLulusan = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, searchTerm, searchBy]);
+    }, [page, limit, searchTerm, searchBy]);
 
     const fetchProfilLulusanAnalysis = useCallback(async (mahasiswaId: string) => {
         setLoading(true);
@@ -326,13 +326,16 @@ export const useProfilLulusan = () => {
         }
     };
 
-    const updateProfil = async (id: string, data: any) => {
+    const updateProfil = async (id: string, data: any, skipFetch = false) => {
         try {
             await api.put(`/profil-lulusan/${id}`, data);
             toast.success("Berhasil diperbarui");
             const cacheKeyPrefix = `${selectedProdi}-`;
             Object.keys(profilCache).forEach(k => { if (k.startsWith(cacheKeyPrefix)) delete profilCache[k]; });
-            await fetchProfilLulusan(selectedProdi, true);
+            
+            if (!skipFetch) {
+                await fetchProfilLulusan(selectedProdi, true);
+            }
             return true;
         } catch (error: any) {
             console.error("Error updating profil:", error);
@@ -377,7 +380,8 @@ export const useProfilLulusan = () => {
             setPage,
             totalPages,
             totalItems,
-            limit
+            limit,
+            setLimit
         },
         searchTerm,
         setSearchTerm: handleSetSearchTerm,

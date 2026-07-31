@@ -115,6 +115,17 @@ export const getTindakLanjutHistory = async (req: Request, res: Response) => {
     }
 };
 
+export const getTindakLanjutByPic = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).userId;
+        const result = await EvaluasiCPLService.getTindakLanjutByPic(userId);
+        res.json({ data: result });
+    } catch (error) {
+        console.error('Error fetching tindak lanjut for pic:', error);
+        res.status(500).json({ error: 'Gagal mengambil data tindak lanjut untuk PIC' });
+    }
+};
+
 export const updateTindakLanjutStatus = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;

@@ -73,7 +73,7 @@ export const StaffList = () => {
     const [roleOptions, setRoleOptions] = useState(STATIC_ROLE_OPTIONS);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [limit] = useState(10);
+    const [limit, setLimit] = useState(10);
     const [totalItems, setTotalItems] = useState(0);
 
     const [fakultasList, setFakultasList] = useState<FakultasOption[]>([]);
@@ -462,7 +462,7 @@ export const StaffList = () => {
                             <Upload className="h-4 w-4 mr-2" />
                             {importing ? 'Importing...' : 'Import'}
                         </Button>
-                        <div className="w-[200px]">
+                        <div className="w-[110px]">
                             <Select value={roleFilter} onValueChange={(val) => { setRoleFilter(val); setPage(1); }}>
                                 <SelectTrigger className="h-9">
                                     <SelectValue placeholder="Pilih Role" />
@@ -479,7 +479,7 @@ export const StaffList = () => {
                             </Select>
                         </div>
 
-                        <div className="relative min-w-[150px]">
+                        <div className="relative w-[120px] lg:w-[150px]">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Cari..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9 h-9 text-sm" />
                         </div>
@@ -513,6 +513,27 @@ export const StaffList = () => {
                                 </div>
                             </PopoverContent>
                         </Popover>
+
+                        <div className="flex items-center space-x-2 border-l pl-2 ml-1">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap hidden xl:inline">Tampilkan</span>
+                            <Select 
+                                value={limit.toString()} 
+                                onValueChange={(val) => {
+                                    setLimit(Number(val));
+                                    setPage(1);
+                                }}
+                            >
+                                <SelectTrigger className="w-[90px] h-9 text-sm">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="10">10 baris</SelectItem>
+                                    <SelectItem value="50">50 baris</SelectItem>
+                                    <SelectItem value="100">100 baris</SelectItem>
+                                    <SelectItem value="-1">View All</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
 
                         <Button size="sm" onClick={() => setShowCreate(true)} className="h-9">
                             <Plus className="h-4 w-4 mr-2" />
@@ -591,11 +612,13 @@ export const StaffList = () => {
                             </Table>
                         </div>
                     )}
-                    <Pagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={setPage}
-                    />
+                    {totalPages > 1 && (
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={setPage}
+                        />
+                    )}
                 </CardContent>
             </Card>
 
