@@ -10,8 +10,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 5000,
-        REDIS_HOST: '127.0.0.1',
-        REDIS_PORT: '6379'
+        REDIS_HOST: process.env.REDIS_HOST || 'redis',
+        REDIS_PORT: process.env.REDIS_PORT || '6379'
       }
     }
   ]
