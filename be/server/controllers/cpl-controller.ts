@@ -86,11 +86,13 @@ export const createCpl = async (req: Request, res: Response) => {
 
 // Update CPL
 export const updateCpl = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
-        const userId = (req as any).userId;
-        const userRole = (req as any).userRole;
+    const { id } = req.params;
+    const userId = (req as any).userId;
+    const userRole = (req as any).userRole;
 
+    console.log(`[updateCpl Attempt] ID: ${id} | UserId: ${userId} | UserRole: ${userRole} | Body:`, req.body);
+
+    try {
         const cpl = await CPLService.updateCpl(id, req.body, userId, userRole);
 
         res.json({
@@ -98,7 +100,7 @@ export const updateCpl = async (req: Request, res: Response) => {
             message: 'CPL berhasil diupdate'
         });
     } catch (error: any) {
-        console.error('Update CPL error:', error);
+        console.error(`[updateCpl Failed] ID: ${id} | Error:`, error);
         if (error.name === 'ZodError') {
             return res.status(400).json({ error: error.issues[0].message });
         }

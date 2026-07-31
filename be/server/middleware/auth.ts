@@ -67,8 +67,11 @@ export const requireRole = (...roles: string[]) => {
     const currentRole = rawRole?.toLowerCase();
     const normalizedRoles = roles.map(r => r.toLowerCase());
 
+    console.log(`[requireRole Check] Path: ${req.method} ${req.originalUrl} | UserRole: "${rawRole}" (normalized: "${currentRole}") | Allowed: [${normalizedRoles.join(', ')}]`);
+
     if (!currentRole || (!normalizedRoles.includes(currentRole) && currentRole !== 'admin')) {
-      return res.status(403).json({ error: 'Forbidden - Insufficient role' });
+      console.warn(`[requireRole REJECTED 403] User role "${rawRole}" not allowed for ${req.method} ${req.originalUrl}`);
+      return res.status(403).json({ error: `Forbidden - Insufficient role (${rawRole || 'None'})` });
     }
 
     next();
