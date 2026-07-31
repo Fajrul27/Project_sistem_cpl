@@ -74,10 +74,13 @@ export const createCpl = async (req: Request, res: Response) => {
         if (error.name === 'ZodError') {
             return res.status(400).json({ error: error.issues[0].message });
         }
+        if (error.code === 'P2002') {
+            return res.status(400).json({ error: 'Kode CPL sudah digunakan dalam sistem/prodi' });
+        }
         if (error.message === 'Profil Kaprodi tidak memiliki Program Studi') {
             return res.status(403).json({ error: error.message });
         }
-        res.status(500).json({ error: 'Gagal membuat CPL' });
+        res.status(500).json({ error: error.message || 'Gagal membuat CPL' });
     }
 };
 
@@ -99,11 +102,14 @@ export const updateCpl = async (req: Request, res: Response) => {
         if (error.name === 'ZodError') {
             return res.status(400).json({ error: error.issues[0].message });
         }
+        if (error.code === 'P2002') {
+            return res.status(400).json({ error: 'Kode CPL sudah digunakan dalam sistem/prodi' });
+        }
         if (error.message === 'CPL tidak ditemukan') return res.status(404).json({ error: error.message });
         if (error.message === 'FORBIDDEN') {
             return res.status(403).json({ error: 'Anda hanya dapat mengubah CPL dari program studi Anda' });
         }
-        res.status(500).json({ error: 'Gagal mengupdate CPL' });
+        res.status(500).json({ error: error.message || 'Gagal mengupdate CPL' });
     }
 };
 
