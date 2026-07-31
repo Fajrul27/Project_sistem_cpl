@@ -67,6 +67,7 @@ Catatan.md
 *.jmx
 **/*.jmx
 hasil_pengujian_skripsi/
+hasil_pengujian_skripsi*/
 pengetesan*/
 
 # Python scripts and log analysis
@@ -99,10 +100,16 @@ parse_data_tanpa_thinktime/
 hasil_pengujian_nothinktime/
 ANALISIS_HASIL_PENGUJIAN_SKRIPSI.md
 
-# SQL database dumps (Ignore in root directory only, to preserve database migration scripts)
+# Loose data & analysis files
+parsed_data.md
+campus_parsed_data.md
+parse_sql.js
+git add.txt
+
+# SQL database dumps (semua file SQL di root diabaikan)
 /*.sql
-!sistem_cpl*.sql
 be/master_data.sql
+sistem_cpl*.sql
 
 # Security Keys
 *.key
