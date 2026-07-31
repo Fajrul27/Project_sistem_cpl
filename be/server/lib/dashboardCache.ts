@@ -127,14 +127,14 @@ export async function invalidateDashboardCacheAsync(): Promise<void> {
     globalVersion++;
     inMemoryStore.clear();
 
-    if (getIsRedisConnected()) {
+    if (getIsRedisConnected() && redis) {
         try {
+            await redis.flushdb();
+        } catch (err) {
             const keys = await redis.keys('cpl_cache:*');
             if (keys.length > 0) {
                 await redis.del(...keys);
             }
-        } catch (err) {
-            // Ignore Redis flush errors
         }
     }
 }
@@ -144,9 +144,11 @@ export function invalidateDashboardCache(): void {
     inMemoryStore.clear();
 
     if (getIsRedisConnected() && redis) {
-        redis.keys('cpl_cache:*').then((keys: string[]) => {
-            if (keys.length > 0) redis.del(...keys);
-        }).catch(() => {});
+        redis.flushdb().catch(() => {
+            redis.keys('cpl_cache:*').then((keys: string[]) => {
+                if (keys.length > 0) redis.del(...keys);
+            }).catch(() => {});
+        });
     }
 }
 
