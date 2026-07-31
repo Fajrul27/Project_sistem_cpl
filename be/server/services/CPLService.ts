@@ -338,13 +338,20 @@ export class CPLService {
 
         if (userRole === 'kaprodi') {
             const profile = await prisma.profile.findUnique({ where: { userId } });
-            if (existing.createdBy !== userId && existing.prodiId !== profile?.prodiId) {
+            const kaprodiProdiId = profile?.prodiId;
+            // Hanya blokir jika CPL sudah memiliki prodi lain yang berbeda dari prodi Kaprodi
+            if (existing.prodiId && kaprodiProdiId && existing.prodiId !== kaprodiProdiId) {
                 throw new Error('FORBIDDEN');
             }
         }
 
         const updateData: any = { kodeCpl, deskripsi, kategori, kategoriId, kurikulumId: validated.kurikulumId || null };
-        if (userRole === 'admin') updateData.prodiId = prodiId;
+        if (userRole === 'admin') {
+            updateData.prodiId = prodiId;
+        } else if (userRole === 'kaprodi' && !existing.prodiId) {
+            const profile = await prisma.profile.findUnique({ where: { userId } });
+            if (profile?.prodiId) updateData.prodiId = profile.prodiId;
+        }
 
         return prisma.cpl.update({
             where: { id },
@@ -359,7 +366,8 @@ export class CPLService {
 
         if (userRole === 'kaprodi') {
             const profile = await prisma.profile.findUnique({ where: { userId } });
-            if (existing.createdBy !== userId && existing.prodiId !== profile?.prodiId) {
+            const kaprodiProdiId = profile?.prodiId;
+            if (existing.prodiId && kaprodiProdiId && existing.prodiId !== kaprodiProdiId) {
                 throw new Error('FORBIDDEN');
             }
         }
