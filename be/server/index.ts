@@ -97,11 +97,17 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 const startServer = async () => {
   try {
     const server = app.listen(Number(PORT), '0.0.0.0', () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      const instanceId = process.env.NODE_APP_INSTANCE ?? 'Single-Threaded';
+      console.log(`🚀 Server running on http://localhost:${PORT} (PID: ${process.pid}, PM2 Worker: ${instanceId})`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 Database: MySQL + Prisma`);
       console.log(`🌐 Host: 0.0.0.0 (IPv4 Only)`);
     });
+
+    // Configure extended timeouts to handle heavy queues without dropping HTTP connections
+    server.keepAliveTimeout = 120000; // 120 detik
+    server.headersTimeout = 125000;   // 125 detik (must be > keepAliveTimeout)
+    server.requestTimeout = 300000;   // 300 detik (5 menit)
 
     // Handle graceful shutdown
     const shutdown = () => {

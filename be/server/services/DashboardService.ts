@@ -1,7 +1,7 @@
 
 import { prisma } from '../lib/prisma.js';
 import { getUserProfile } from '../middleware/auth.js';
-import { buildCacheKey, getCache, setCache } from '../lib/dashboardCache.js';
+import { buildCacheKey, getCache, setCache, getCacheAsync, setCacheAsync } from '../lib/dashboardCache.js';
 
 export class DashboardService {
     static async getDashboardStats(params: {
@@ -468,6 +468,10 @@ export class DashboardService {
 
     static async getDosenAnalysis(params: { prodiId?: string, fakultasId?: string }) {
         const { prodiId, fakultasId } = params;
+        const cacheKey = buildCacheKey('global', 'dosen_analysis', { prodiId: prodiId || '', fakultasId: fakultasId || '' });
+        const cached = getCache(cacheKey);
+        if (cached) return cached;
+
         const where: any = { role: { role: { name: 'dosen' } } };
 
         if (prodiId && prodiId !== 'all') {
@@ -643,7 +647,7 @@ export class DashboardService {
 
 
         // Construct Result
-        return dosenList.map((dosen) => {
+        const result = dosenList.map((dosen) => {
             const pengampu = dosen.profile?.mataKuliahPengampu || [];
 
             let totalAvgScore = 0;
@@ -767,10 +771,19 @@ export class DashboardService {
                 progressInput: progressInput // Should be correct now
             };
         });
+
+        setCache(cacheKey, result);
+        return result;
     }
 
     static async getStudentEvaluation(params: { prodiId?: string, angkatan?: string, semester?: string, fakultasId?: string }) {
         const { prodiId, angkatan, semester, fakultasId } = params;
+        const cacheKey = buildCacheKey('global', 'student_eval', { prodiId: prodiId || '', angkatan: angkatan || '', semester: semester || '', fakultasId: fakultasId || '' });
+
+        // 1. Check Redis + In-Memory Shared Cache first
+        const cached = await getCacheAsync(cacheKey);
+        if (cached) return cached;
+
         const where: any = { role: { role: { name: 'mahasiswa' } } };
         const profileWhere: any = {};
 
@@ -786,6 +799,7 @@ export class DashboardService {
 
         where.profile = profileWhere;
 
+        // 2. Efficiently fetch students
         const students = await prisma.user.findMany({
             where,
             select: {
@@ -801,27 +815,34 @@ export class DashboardService {
         });
 
         const studentIds = students.map(s => s.id);
-        if (studentIds.length === 0) return [];
+        if (studentIds.length === 0) {
+            await setCacheAsync(cacheKey, []);
+            return [];
+        }
 
-        const allScores = await prisma.nilaiCpl.groupBy({
-            by: ['mahasiswaId', 'cplId'],
-            where: { mahasiswaId: { in: studentIds } },
-            _avg: { nilai: true }
-        });
+        // 3. Batch fetch scores & CPL code mapping in parallel
+        const [allScores, cplList] = await Promise.all([
+            prisma.nilaiCpl.groupBy({
+                by: ['mahasiswaId', 'cplId'],
+                where: { mahasiswaId: { in: studentIds } },
+                _avg: { nilai: true }
+            }),
+            prisma.cpl.findMany({ select: { id: true, kodeCpl: true } })
+        ]);
 
+        const cplMap = new Map(cplList.map(c => [c.id, c.kodeCpl]));
         const studentScoreMap = new Map<string, Array<{ cplId: string, avg: number }>>();
 
         allScores.forEach(s => {
             if (!s.mahasiswaId) return;
-            const entry = studentScoreMap.get(s.mahasiswaId) || [];
+            let entry = studentScoreMap.get(s.mahasiswaId);
+            if (!entry) {
+                entry = [];
+                studentScoreMap.set(s.mahasiswaId, entry);
+            }
             const val = s._avg.nilai ? Number(s._avg.nilai) : 0;
             entry.push({ cplId: s.cplId, avg: val });
-            studentScoreMap.set(s.mahasiswaId, entry);
         });
-
-        // Pre-fetch CPL codes for mapping - MOVED OUTSIDE MAP
-        const cplList = await prisma.cpl.findMany({ select: { id: true, kodeCpl: true } });
-        const cplMap = new Map(cplList.map(c => [c.id, c.kodeCpl]));
 
         const evaluation = students.map((mhs) => {
             const scores = studentScoreMap.get(mhs.id) || [];
@@ -847,8 +868,7 @@ export class DashboardService {
             };
         });
 
-        // Filter: Only show students with average CPL below 55 (at-risk students). 
-        // We ignore students with avgCpl === 0 because they usually just haven't received any grades yet (e.g. new students).
+        // Filter: Only show students with average CPL below 55 (at-risk students).
         const filteredEvaluation = evaluation.filter(e => e.avgCpl > 0 && e.avgCpl < 55);
 
         // Sort by most issues (lowCplCount desc), then by lowest average (avgCpl asc)
@@ -857,6 +877,8 @@ export class DashboardService {
             return a.avgCpl - b.avgCpl;
         });
 
+        // 4. Store in shared Redis + In-memory cache
+        await setCacheAsync(cacheKey, filteredEvaluation);
         return filteredEvaluation;
     }
 }
