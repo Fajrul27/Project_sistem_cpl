@@ -112,10 +112,9 @@ DOKUMENTASI_OPTIMASI_SKRIPSI.md
 "ANALISIS DAN EVALUASI.md"
 implementation_plan.md
 
-# SQL database dumps (semua file SQL di root diabaikan)
-/*.sql
+# SQL database dumps
 be/master_data.sql
-sistem_cpl*.sql
+!sistem_cpl*.sql
 
 # Security Keys
 *.key
