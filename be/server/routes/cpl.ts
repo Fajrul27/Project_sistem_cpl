@@ -35,9 +35,13 @@ router.post('/', authMiddleware, requireRole('admin', 'kaprodi'), createCpl);
 
 // Update CPL
 router.put('/:id', authMiddleware, requireRole('admin', 'kaprodi'), updateCpl);
+// Cloudflare WAF workaround: accept POST for update too
+router.post('/:id/update', authMiddleware, requireRole('admin', 'kaprodi'), updateCpl);
 
 // Delete CPL
 router.delete('/:id', authMiddleware, requireRole('admin', 'kaprodi'), deleteCpl);
+// Cloudflare WAF workaround: accept POST for delete too
+router.post('/:id/delete', authMiddleware, requireRole('admin', 'kaprodi'), deleteCpl);
 
 // Export CPL as Excel
 router.get('/export/excel', authMiddleware, exportCpl);

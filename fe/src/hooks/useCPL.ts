@@ -280,7 +280,8 @@ export function useCPL() {
 
     const updateCPL = useCallback(async (id: string, payload: any) => {
         try {
-            await api.put(`/cpl/${id}`, payload);
+            // Using POST /update as workaround for Cloudflare WAF blocking PUT method
+            await api.post(`/cpl/${id}/update`, payload);
             toast.success("CPL berhasil diperbarui");
             await fetchCPL();
             return true;
@@ -294,7 +295,8 @@ export function useCPL() {
 
     const deleteCPL = useCallback(async (id: string) => {
         try {
-            await api.delete(`/cpl/${id}`);
+            // Using POST /delete as workaround for Cloudflare WAF blocking DELETE method
+            await api.post(`/cpl/${id}/delete`, {});
             toast.success("CPL berhasil dihapus");
             await fetchCPL();
             return true;
