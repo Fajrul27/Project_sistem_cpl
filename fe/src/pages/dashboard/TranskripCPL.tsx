@@ -167,7 +167,7 @@ const TranskripCPLPage = () => {
 
     const handlePrint = () => {
         const originalTitle = document.title;
-        const type = activeTab === 'cpl' ? 'Transkrip_CPL' : 'Transkrip_Capaian_Makul';
+        const type = activeTab === 'cpl' ? 'Transkrip_CPL' : 'Transkrip_Matakuliah';
         const rawName = selectedStudent?.profile?.namaLengkap || 'Mahasiswa';
         // Keep alphanumeric and underscores, remove others
         const nama = rawName.replace(/[^a-zA-Z0-9]/g, '_');
@@ -274,7 +274,7 @@ const TranskripCPLPage = () => {
                             <p>Transkrip ini menyajikan ringkasan performa akademik yang dipetakan langsung ke standar kompetensi lulusan (OBE).</p>
                             <ul className="list-disc pl-4 space-y-1.5 text-xs text-muted-foreground">
                                 <li><strong>Tab CPL:</strong> Menampilkan rata-rata nilai untuk setiap Capaian Pembelajaran Lulusan beserta grafik radarnya.</li>
-                                <li><strong>Tab CPMK:</strong> Menampilkan detail nilai pendukung dari setiap mata kuliah yang berkontribusi pada CPL.</li>
+                                <li><strong>Tab Transkrip Matakuliah:</strong> Menampilkan detail nilai pendukung dari setiap mata kuliah yang berkontribusi pada CPL.</li>
                                 <li><strong>Cetak:</strong> Gunakan tombol ikon printer untuk mengunduh versi PDF transkrip yang telah diformat secara profesional.</li>
                             </ul>
                         </div>
@@ -436,7 +436,7 @@ const TranskripCPLPage = () => {
                                         value="cpmk"
                                         className="rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-500 font-bold h-9 text-xs sm:text-sm tracking-wide z-10"
                                     >
-                                        Capaian Makul (CPMK)
+                                        Transkrip Matakuliah
                                     </TabsTrigger>
                                 </TabsList>
                             </div>
@@ -1005,7 +1005,7 @@ const TranskripCPLPage = () => {
                                 <Card>
                                     <CardHeader className="flex flex-row items-center justify-between">
                                         <div>
-                                            <CardTitle>Capaian Makul</CardTitle>
+                                            <CardTitle>Transkrip Matakuliah</CardTitle>
                                             <CardDescription>{selectedStudent.profile?.nim} - {selectedStudent.profile?.namaLengkap}</CardDescription>
                                         </div>
                                         <div className="flex gap-2">
@@ -1022,9 +1022,9 @@ const TranskripCPLPage = () => {
                                     </CardHeader>
                                     <CardContent>
                                         {loading ? (
-                                            <LoadingScreen fullScreen={false} message="Memuat data transkrip Capaian Makul..." />
+                                            <LoadingScreen fullScreen={false} message="Memuat data Transkrip Matakuliah..." />
                                         ) : transkripCpmkList.length === 0 ? (
-                                            <div className="text-center py-12 text-muted-foreground"><FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>Belum ada data transkrip Capaian Makul</p></div>
+                                            <div className="text-center py-12 text-muted-foreground"><FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>Belum ada data Transkrip Matakuliah</p></div>
                                         ) : (
                                             <div className="overflow-x-auto">
                                                 <Table>
@@ -1032,7 +1032,7 @@ const TranskripCPLPage = () => {
                                                         <TableRow>
                                                             <TableHead className="w-[50px] text-center">No</TableHead>
                                                             <TableHead className="w-[300px]">Mata Kuliah</TableHead>
-                                                            <TableHead>Capaian Pembelajaran (CPMK)</TableHead>
+                                                            <TableHead>Capaian Pembelajaran Matakuliah (CPMK)</TableHead>
                                                             <TableHead className="w-[80px] text-right">Nilai</TableHead>
                                                             <TableHead className="w-[80px] text-center">Huruf</TableHead>
                                                             <TableHead className="w-[120px] text-center">Status</TableHead>
@@ -1087,7 +1087,7 @@ const TranskripCPLPage = () => {
                     <Card>
                         <CardContent className="pt-6">
                             <FilterRequiredState
-                                message="Silakan pilih mahasiswa pada menu filter di atas untuk melihat transkrip CPL/CPMK."
+                                message="Silakan pilih mahasiswa pada menu filter di atas untuk melihat Transkrip CPL / Transkrip Matakuliah."
                             />
                         </CardContent>
                     </Card>
@@ -1476,7 +1476,7 @@ const TranskripCPLPage = () => {
                                 <div className="border-b border-black mb-3"></div>
 
                                 <h2 className="text-center text-sm font-bold mb-0.5 uppercase">
-                                    {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP CAPAIAN MATA KULIAH'}
+                                    {activeTab === 'cpl' ? 'TRANSKRIP CAPAIAN PEMBELAJARAN LULUSAN' : 'TRANSKRIP MATAKULIAH'}
                                 </h2>
                                 <p className="text-center text-[9px] uppercase font-semibold mb-3">
                                     {(activeTab === 'cpl' || semester === 'all') ? 'PERIODE: SELURUH SEMESTER (AKUMULATIF)' : `PERIODE: SEMESTER ${semester} `}
@@ -1833,7 +1833,7 @@ const TranskripCPLPage = () => {
                                             <tr className="bg-gray-100">
                                                 <th className="border border-black p-1 w-8 text-center">NO</th>
                                                 <th className="border border-black p-1 text-center" style={{ width: activeTab === 'cpl' ? '80px' : '150px' }}>{activeTab === 'cpl' ? 'KODE CPL' : 'MATA KULIAH'}</th>
-                                                <th className="border border-black p-1 text-left">{activeTab === 'cpl' ? 'CAPAIAN PEMBELAJARAN' : 'CPMK'}</th>
+                                                <th className="border border-black p-1 text-left">{activeTab === 'cpl' ? 'CAPAIAN PEMBELAJARAN' : 'TRANSKRIP MATAKULIAH'}</th>
                                                 <th className="border border-black p-1 w-12 text-center">NILAI</th>
                                                 <th className="border border-black p-1 w-10 text-center">HURUF</th>
                                                 <th className="border border-black p-1 w-16 text-center">STATUS</th>
@@ -1904,7 +1904,7 @@ const TranskripCPLPage = () => {
                                         <div className="grid grid-cols-[1fr_auto] gap-2 text-[10px]">
                                             <div>Rata-rata Nilai {activeTab === 'cpl' ? 'CPL' : 'Mata Kuliah'}</div>
                                             <div className="font-bold">: {activeTab === 'cpl' ? avgScore.toFixed(2) : (transkripCpmkList.reduce((a, b) => a + b.nilai, 0) / (transkripCpmkList.length || 1)).toFixed(2)}</div>
-                                            <div>Total {activeTab === 'cpl' ? 'CPL' : 'CPMK'} Tercapai</div>
+                                            <div>Total {activeTab === 'cpl' ? 'CPL' : 'Matakuliah'} Tercapai</div>
                                             <div className="font-bold">: {activeTab === 'cpl' ? completedCPL : transkripCpmkList.filter(i => i.status === 'tercapai').length} / {activeTab === 'cpl' ? (totalCurriculumCpl || validTranskripList.length) : transkripCpmkList.length}</div>
                                         </div>
                                     </div>
