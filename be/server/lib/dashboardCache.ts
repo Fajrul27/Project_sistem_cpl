@@ -123,12 +123,23 @@ export function setCache(key: string, data: any): void {
  * Invalidate ALL dashboard cache entries.
  * Bumps global version and clears stored entries.
  */
+export async function getGlobalVersionAsync(): Promise<number> {
+    if (getIsRedisConnected() && redis) {
+        try {
+            const v = await redis.get('cpl_cache_version');
+            if (v) return parseInt(v, 10);
+        } catch (err) {}
+    }
+    return globalVersion;
+}
+
 export async function invalidateDashboardCacheAsync(): Promise<void> {
     globalVersion++;
     inMemoryStore.clear();
 
     if (getIsRedisConnected() && redis) {
         try {
+            await redis.incr('cpl_cache_version');
             await redis.flushdb();
         } catch (err) {
             const keys = await redis.keys('cpl_cache:*');
@@ -144,6 +155,7 @@ export function invalidateDashboardCache(): void {
     inMemoryStore.clear();
 
     if (getIsRedisConnected() && redis) {
+        redis.incr('cpl_cache_version').catch(() => {});
         redis.flushdb().catch(() => {
             redis.keys('cpl_cache:*').then((keys: string[]) => {
                 if (keys.length > 0) redis.del(...keys);

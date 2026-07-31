@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
 import { DashboardService } from '../services/DashboardService.js';
-import { invalidateDashboardCache, getCacheStats } from '../lib/dashboardCache.js';
+import { invalidateDashboardCache, getCacheStats, getGlobalVersionAsync } from '../lib/dashboardCache.js';
 
 /**
  * GET /dashboard/data-version
  * Lightweight endpoint: returns the current cache version.
  * Frontend polls this to detect server-side data mutations without fetching full stats.
  */
-export const getDataVersion = (_req: Request, res: Response) => {
-    const stats = getCacheStats();
-    res.json({ version: stats.globalVersion });
+export const getDataVersion = async (_req: Request, res: Response) => {
+    const version = await getGlobalVersionAsync();
+    res.json({ version });
 };
 
 // Get dashboard statistics
