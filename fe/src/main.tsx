@@ -7,6 +7,24 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
+// Auto-reload gracefully when a new build deployment updates bundle chunk hashes
+window.addEventListener("vite:preloadError", () => {
+  console.warn("Build baru terdeteksi. Memuat ulang halaman...");
+  window.location.reload();
+});
+
+window.addEventListener("error", (event) => {
+  const msg = event.message || "";
+  if (
+    msg.includes("Failed to fetch dynamically imported module") ||
+    msg.includes("error loading dynamically imported module") ||
+    msg.includes("Importing a module script failed")
+  ) {
+    console.warn("Chunk bundle lama tidak ditemukan (build baru telah di-deploy). Memuat ulang halaman...");
+    window.location.reload();
+  }
+});
+
 // Debug log
 console.log("Environment:", import.meta.env.MODE);
 console.log("Google Client ID:", GOOGLE_CLIENT_ID ? "Loaded ✓" : "NOT LOADED ✗");
