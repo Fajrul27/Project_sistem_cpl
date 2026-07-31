@@ -40,13 +40,15 @@ export function buildCacheKey(userId: string, role: string, filters: Record<stri
  * Get cached data asynchronously (Checks Redis first, falls back to In-Memory).
  */
 export async function getCacheAsync(key: string): Promise<any | null> {
+    const currentVersion = await getGlobalVersionAsync();
+
     // 1. Try Redis if connected
     if (getIsRedisConnected()) {
         try {
             const raw = await redis.get(key);
             if (raw) {
                 const parsed: CacheEntry = JSON.parse(raw);
-                if (parsed.version === globalVersion) {
+                if (parsed.version === currentVersion) {
                     return parsed.data;
                 }
                 // Stale version in Redis
@@ -60,7 +62,7 @@ export async function getCacheAsync(key: string): Promise<any | null> {
     // 2. In-Memory fallback
     const entry = inMemoryStore.get(key);
     if (!entry) return null;
-    if (Date.now() > entry.expiresAt || entry.version !== globalVersion) {
+    if (Date.now() > entry.expiresAt || entry.version !== currentVersion) {
         inMemoryStore.delete(key);
         return null;
     }
@@ -84,10 +86,11 @@ export function getCache(key: string): any | null {
  * Store data in cache (Both Redis and In-Memory).
  */
 export async function setCacheAsync(key: string, data: any): Promise<void> {
+    const currentVersion = await getGlobalVersionAsync();
     const entry: CacheEntry = {
         data,
         expiresAt: Date.now() + CACHE_TTL_MS,
-        version: globalVersion,
+        version: currentVersion,
     };
 
     // 1. Save to In-Memory store

@@ -25,7 +25,7 @@ export class DashboardService {
             prodiId: filterProdiId || '',
             fakultasId: fakultasId || ''
         });
-        const cached = getCache(cacheKey);
+        const cached = await getCacheAsync(cacheKey);
         if (cached) return cached;
 
         // Define filters
@@ -461,7 +461,7 @@ export class DashboardService {
         };
 
         // --- STORE IN CACHE ---
-        setCache(cacheKey, result);
+        await setCacheAsync(cacheKey, result);
 
         return result;
     }
@@ -469,7 +469,7 @@ export class DashboardService {
     static async getDosenAnalysis(params: { prodiId?: string, fakultasId?: string }) {
         const { prodiId, fakultasId } = params;
         const cacheKey = buildCacheKey('global', 'dosen_analysis', { prodiId: prodiId || '', fakultasId: fakultasId || '' });
-        const cached = getCache(cacheKey);
+        const cached = await getCacheAsync(cacheKey);
         if (cached) return cached;
 
         const where: any = { role: { role: { name: 'dosen' } } };
@@ -772,7 +772,7 @@ export class DashboardService {
             };
         });
 
-        setCache(cacheKey, result);
+        await setCacheAsync(cacheKey, result);
         return result;
     }
 

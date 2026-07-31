@@ -27,6 +27,18 @@ export function getUser() {
   return user ? JSON.parse(user) : null;
 }
 
+export function clearDashboardSessionCache(): void {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key?.startsWith('dashboard_cache_')) keys.push(key);
+    }
+    keys.forEach((k) => sessionStorage.removeItem(k));
+    sessionStorage.removeItem('dashboard_server_version');
+  } catch {}
+}
+
 // API request helper
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const isFormData = options.body instanceof FormData;
@@ -54,6 +66,14 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
       const message = data.error || 'Request failed';
       const detail = data.detail ? `\n${data.detail}` : '';
       throw new Error(message + detail);
+    }
+
+    // Auto-clear client-side dashboard cache on any write operation (CREATE/EDIT/DELETE)
+    const method = (options.method || 'GET').toUpperCase();
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      if (!endpoint.includes('/auth/login') && !endpoint.includes('/auth/logout') && !endpoint.includes('/auth/me')) {
+        clearDashboardSessionCache();
+      }
     }
 
     return data;
