@@ -57,13 +57,23 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
       credentials: 'include', // Send cookies
     });
 
-    const data = await response.json();
+    const text = await response.text();
+    let data: any = {};
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        if (!response.ok) {
+          throw new Error(`Server Error (${response.status}): ${response.statusText || 'Terjadi kesalahan pada server'}`);
+        }
+      }
+    }
 
     if (!response.ok) {
       if (response.status === 401) {
         clearToken();
       }
-      const message = data.error || 'Request failed';
+      const message = data.error || data.message || `Gagal memproses request (${response.status})`;
       const detail = data.detail ? `\n${data.detail}` : '';
       throw new Error(message + detail);
     }
