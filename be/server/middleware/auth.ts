@@ -63,9 +63,11 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
 export const requireRole = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const currentRole = (req as any).userRole as string | undefined;
+    const rawRole = (req as any).userRole as string | undefined;
+    const currentRole = rawRole?.toLowerCase();
+    const normalizedRoles = roles.map(r => r.toLowerCase());
 
-    if (!currentRole || !roles.includes(currentRole)) {
+    if (!currentRole || (!normalizedRoles.includes(currentRole) && currentRole !== 'admin')) {
       return res.status(403).json({ error: 'Forbidden - Insufficient role' });
     }
 

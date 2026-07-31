@@ -305,11 +305,12 @@ export class CPLService {
     }
 
     static async createCpl(data: any, userId: string, userRole: string) {
+        const role = (userRole || '').toLowerCase();
         const validated = academicSchemas.cpl.parse(data);
         const { kodeCpl, deskripsi, kategori, kategoriId, prodiId } = validated;
         let finalProdiId = prodiId;
 
-        if (userRole === 'kaprodi') {
+        if (role === 'kaprodi') {
             const profile = await prisma.profile.findUnique({ where: { userId } });
             if (!profile?.prodiId) throw new Error('Profil Kaprodi tidak memiliki Program Studi');
             finalProdiId = profile.prodiId;
@@ -330,13 +331,14 @@ export class CPLService {
     }
 
     static async updateCpl(id: string, data: any, userId: string, userRole: string) {
+        const role = (userRole || '').toLowerCase();
         const validated = academicSchemas.cpl.parse(data);
         const { kodeCpl, deskripsi, kategori, kategoriId, prodiId } = validated;
 
         const existing = await prisma.cpl.findUnique({ where: { id } });
         if (!existing) throw new Error('CPL tidak ditemukan');
 
-        if (userRole === 'kaprodi') {
+        if (role === 'kaprodi') {
             const profile = await prisma.profile.findUnique({ where: { userId } });
             const kaprodiProdiId = profile?.prodiId;
             // Hanya blokir jika CPL sudah memiliki prodi lain yang berbeda dari prodi Kaprodi
@@ -346,9 +348,9 @@ export class CPLService {
         }
 
         const updateData: any = { kodeCpl, deskripsi, kategori, kategoriId, kurikulumId: validated.kurikulumId || null };
-        if (userRole === 'admin') {
+        if (role === 'admin') {
             updateData.prodiId = prodiId;
-        } else if (userRole === 'kaprodi' && !existing.prodiId) {
+        } else if (role === 'kaprodi' && !existing.prodiId) {
             const profile = await prisma.profile.findUnique({ where: { userId } });
             if (profile?.prodiId) updateData.prodiId = profile.prodiId;
         }
@@ -361,10 +363,11 @@ export class CPLService {
     }
 
     static async deleteCpl(id: string, userId: string, userRole: string) {
+        const role = (userRole || '').toLowerCase();
         const existing = await prisma.cpl.findUnique({ where: { id } });
         if (!existing) throw new Error('CPL tidak ditemukan');
 
-        if (userRole === 'kaprodi') {
+        if (role === 'kaprodi') {
             const profile = await prisma.profile.findUnique({ where: { userId } });
             const kaprodiProdiId = profile?.prodiId;
             if (existing.prodiId && kaprodiProdiId && existing.prodiId !== kaprodiProdiId) {
