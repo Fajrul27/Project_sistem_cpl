@@ -37,26 +37,31 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
       return res.status(401).json({ error: 'Unauthorized - No token provided' });
     }
 
-    // Verify token using RS256
-    const decoded = jwt.verify(token, publicKey, { algorithms: ['RS256'] }) as any;
+    // Verify token using RS256 (Asynchronous to prevent Event Loop blocking)
+    jwt.verify(token, publicKey, { algorithms: ['RS256'] }, (err: any, decoded: any) => {
+      if (err) {
+        if (process.env.NODE_ENV !== 'production') console.error('[Auth] Token verification failed:', err);
+        return res.status(401).json({ error: 'Unauthorized - Invalid token' });
+      }
 
-    // Attach user info to request
-    (req as any).userId = decoded.userId;
-    (req as any).userEmail = decoded.email;
-    (req as any).userRole = decoded.role;
+      // Attach user info to request
+      (req as any).userId = decoded.userId;
+      (req as any).userEmail = decoded.email;
+      (req as any).userRole = decoded.role;
 
-    // Attach impersonation info if present
-    if (decoded.originalUserId) {
-      (req as any).originalUserId = decoded.originalUserId;
-      (req as any).isImpersonating = decoded.isImpersonating || false;
-    }
+      // Attach impersonation info if present
+      if (decoded.originalUserId) {
+        (req as any).originalUserId = decoded.originalUserId;
+        (req as any).isImpersonating = decoded.isImpersonating || false;
+      }
 
-    // Run next middleware in the context of the user
-    context.run({ userId: decoded.userId }, () => {
-      next();
+      // Run next middleware in the context of the user
+      context.run({ userId: decoded.userId }, () => {
+        next();
+      });
     });
   } catch (error) {
-    console.error('[Auth] Token verification failed:', error);
+    if (process.env.NODE_ENV !== 'production') console.error('[Auth] Auth error:', error);
     return res.status(401).json({ error: 'Unauthorized - Invalid token' });
   }
 };
