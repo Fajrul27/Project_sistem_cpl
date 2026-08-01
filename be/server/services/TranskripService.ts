@@ -165,18 +165,21 @@ export class TranskripService {
     }
 
     static async getTranskripCpl(mahasiswaId: string, semester?: number, tahunAjaran?: string) {
-        const mahasiswa = await prisma.profile.findUnique({
-            where: { userId: mahasiswaId },
-            include: { prodi: true, angkatanRef: true }
-        });
-        console.log(`[TranskripService] Fetching transkrip for ID: ${mahasiswaId}, found:`, mahasiswa ? `Found (Prodi: ${mahasiswa.prodiId}, Semester: ${mahasiswa.semester})` : 'Not Found');
-        if (!mahasiswa) throw new Error('MAHASISWA_NOT_FOUND');
+        const [mahasiswa, skalaNilaiList] = await Promise.all([
+            prisma.profile.findUnique({
+                where: { userId: mahasiswaId },
+                include: { prodi: true, angkatanRef: true }
+            }),
+            prisma.skalaNilai.findMany({
+                where: { isActive: true },
+                orderBy: { nilaiMin: 'desc' }
+            })
+        ]);
 
-        // Fetch Active Grade Scale
-        const skalaNilaiList = await prisma.skalaNilai.findMany({
-            where: { isActive: true },
-            orderBy: { nilaiMin: 'desc' }
-        });
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[TranskripService] Fetching transkrip for ID: ${mahasiswaId}, found:`, mahasiswa ? `Found (Prodi: ${mahasiswa.prodiId}, Semester: ${mahasiswa.semester})` : 'Not Found');
+        }
+        if (!mahasiswa) throw new Error('MAHASISWA_NOT_FOUND');
 
         const allCpls = await prisma.cpl.findMany({
             where: {
