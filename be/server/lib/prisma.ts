@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { context } from './context.js';
+import { invalidateDashboardCache } from './dashboardCache.js';
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -22,6 +23,11 @@ export const prisma = prismaClient.$extends({
 
         const userId = context.getStore()?.userId;
         const skipAuditLog = context.getStore()?.skipAuditLog;
+
+        // Automatically invalidate dashboard cache on ANY database mutation for 100% future-proof sync
+        if (['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany', 'upsert'].includes(operation)) {
+          invalidateDashboardCache();
+        }
 
         // Only log modification operations if skipAuditLog is not set
         if (!skipAuditLog && ['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany', 'upsert'].includes(operation)) {
