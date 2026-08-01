@@ -325,6 +325,8 @@ model NilaiCpl {
   @@index([semester])
   @@index([semesterId])
   @@index([tahunAjaranId])
+  @@index([cplId, mataKuliahId, semester])
+  @@index([mahasiswaId, cplId])
   @@index([createdBy], map: "nilai_cpl_created_by_fkey")
   @@map("nilai_cpl")
 }
@@ -413,6 +415,8 @@ model NilaiCpmk {
   @@index([semester])
   @@index([semesterId])
   @@index([tahunAjaranId])
+  @@index([cpmkId, mataKuliahId, semester])
+  @@index([mahasiswaId, cpmkId])
   @@map("nilai_cpmk")
 }
 
