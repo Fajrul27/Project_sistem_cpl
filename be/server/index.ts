@@ -114,16 +114,37 @@ const startServer = async () => {
     server.requestTimeout = 300000;   // 300 detik (5 menit)
 
     // Database connection & master table cache warmup in background
+    // Only PM2 worker #0 does the heavy warmup to prevent all 12 workers from
+    // hitting the DB simultaneously on cold start (cache stampede prevention).
+    const instanceId = parseInt(process.env.NODE_APP_INSTANCE || '0', 10);
+    const isFirstWorker = instanceId === 0;
+
     setTimeout(async () => {
       try {
         await prisma.$queryRaw`SELECT 1`;
         await prisma.fakultas.findMany({ take: 5 }).catch(() => {});
         await prisma.prodi.findMany({ take: 5 }).catch(() => {});
         await prisma.kurikulum.findMany({ take: 5 }).catch(() => {});
+
+        // Only worker 0 pre-warms the dashboard cache to avoid stampede
+        if (isFirstWorker) {
+          const { DashboardService } = await import('./services/DashboardService.js');
+          // Pre-warm admin global dashboard (most expensive query).
+          // userId='system-warmup' is fine: admin role skips getUserProfile() lookup.
+          DashboardService.getDashboardStats({
+            userId: 'system-warmup',
+            userRole: 'admin',
+            semester: undefined,
+            angkatan: undefined,
+            prodiId: undefined,
+            fakultasId: undefined
+          }).catch(() => {}); // Non-blocking, ignore errors silently
+          console.log('[Warmup] Worker 0: Dashboard cache pre-warming started.');
+        }
       } catch (err) {
         // Non-blocking warmup
       }
-    }, 100);
+    }, isFirstWorker ? 500 : 2000); // Worker 0 warms up first, others wait for cache to be ready
 
     // Handle graceful shutdown
     const shutdown = () => {

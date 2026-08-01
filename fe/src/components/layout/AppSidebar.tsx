@@ -22,8 +22,6 @@ import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -48,7 +46,7 @@ import { usePermission } from "@/contexts/PermissionContext";
 import { MENU_ITEMS } from "@/constants/menu";
 
 export function AppSidebar() {
-  const { open, isMobile, openMobile, toggleSidebar, setOpen } = useSidebar();
+  const { open, isMobile, openMobile, toggleSidebar } = useSidebar();
   const location = useLocation();
   const { role } = useUserRole();
 
@@ -118,7 +116,7 @@ export function AppSidebar() {
         <div className="flex h-14 items-center border-b border-sidebar-border/40 px-3 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden">
-              <img src="/logo.png" alt="Logo UNUGHA" className="h-7 w-auto object-contain" />
+              <img src="/logo.png" alt="Logo UNUGHA" width="28" height="28" className="h-7 w-auto object-contain" />
             </div>
             <div className="flex flex-col group-data-[collapsible=icon]:hidden">
               <span className="text-sm font-semibold leading-tight tracking-tight text-sidebar-foreground">
@@ -135,7 +133,7 @@ export function AppSidebar() {
         <div className="flex-1 overflow-auto py-2 group-data-[collapsible=icon]:px-0">
           <SidebarMenu>
             {filteredMenu.map((item: any) => (
-              <div key={item.title}>
+              <li key={item.title} className="list-none">
                 {/* Single Item (Dashboard) */}
                 {!item.items && (
                   open ? (
@@ -257,10 +255,11 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                   )
                 )}
-              </div>
+              </li>
             ))}
           </SidebarMenu>
         </div>
+
       </SidebarContent>
     </Sidebar>
   );

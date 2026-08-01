@@ -25,11 +25,13 @@ window.addEventListener("error", (event) => {
   }
 });
 
-// Debug log
-console.log("Environment:", import.meta.env.MODE);
-console.log("Google Client ID:", GOOGLE_CLIENT_ID ? "Loaded ✓" : "NOT LOADED ✗");
-if (!GOOGLE_CLIENT_ID) {
-  console.warn("⚠️  VITE_GOOGLE_CLIENT_ID is not set. Google Sign-In will not work.");
+// Debug log — hanya aktif di development, tidak bocor ke production
+if (import.meta.env.DEV) {
+  console.log("Environment:", import.meta.env.MODE);
+  console.log("Google Client ID:", GOOGLE_CLIENT_ID ? "Loaded ✓" : "NOT LOADED ✗");
+  if (!GOOGLE_CLIENT_ID) {
+    console.warn("⚠️  VITE_GOOGLE_CLIENT_ID is not set. Google Sign-In will not work.");
+  }
 }
 
 const AppWrapper = () => (

@@ -35,6 +35,15 @@ export default defineConfig(({ mode }) => ({
           query: ['@tanstack/react-query']
         }
       }
-    }
-  }
+    },
+    // Strip all console.log & debugger statements in production build
+    // This directly fixes Lighthouse Best Practices score
+    ...(mode === 'production' && {
+      minify: 'esbuild',
+    })
+  },
+  esbuild: {
+    // Drop console.* and debugger in production
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
 }));

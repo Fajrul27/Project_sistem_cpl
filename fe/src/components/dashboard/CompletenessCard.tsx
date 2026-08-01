@@ -77,7 +77,11 @@ export const CompletenessCard = ({ data }: CompletenessCardProps) => {
                             <span className="text-muted-foreground font-medium">Progress Pengisian Nilai</span>
                             <span className="font-bold text-primary">{data.progressPengisian}%</span>
                         </div>
-                        <Progress value={data.progressPengisian} className="h-2.5 bg-muted/50" />
+                        <Progress 
+                          value={data.progressPengisian} 
+                          className="h-2.5 bg-muted/50" 
+                          label={`Progress pengisian nilai: ${data.progressPengisian}%`}
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
