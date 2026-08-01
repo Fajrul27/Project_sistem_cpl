@@ -38,7 +38,7 @@ export class NilaiService {
 
         if (teknikList.length === 0) return [];
 
-        const teknikIds = teknikList.map(t => t.id);
+        const teknikIds = teknikList.map((t: any) => t.id);
         const where: any = {
             mahasiswaId,
             teknikPenilaianId: { in: teknikIds }
@@ -47,9 +47,9 @@ export class NilaiService {
         if (tahunAjaranId) where.tahunAjaranId = tahunAjaranId;
 
         const nilaiList = await prisma.nilaiTeknikPenilaian.findMany({ where });
-        const nilaiMap = new Map(nilaiList.map(n => [n.teknikPenilaianId, n]));
+        const nilaiMap = new Map(nilaiList.map((n: any) => [n.teknikPenilaianId, n]));
 
-        return teknikList.map(teknik => ({
+        return teknikList.map((teknik: any) => ({
             teknikPenilaian: teknik,
             nilai: nilaiMap.get(teknik.id) || null
         }));
@@ -233,7 +233,7 @@ export class NilaiService {
         const BATCH_SIZE = 10;
         for (let i = 0; i < recalculationTasks.length; i += BATCH_SIZE) {
             const batch = recalculationTasks.slice(i, i + BATCH_SIZE);
-            await Promise.all(batch.map((task) =>
+            await Promise.all(batch.map((task: any) =>
                 calculateNilaiCpmk(task.mahasiswaId, task.cpmkId, task.mataKuliahId, task.semester, task.tahunAjaranId)
             ));
         }
@@ -251,7 +251,7 @@ export class NilaiService {
         if (!existing) throw new Error('NOT_FOUND');
 
         if (userRole === 'dosen') {
-            const isPengampu = existing.teknikPenilaian.cpmk.mataKuliah.pengampu.some(p => p.dosenId === userId);
+            const isPengampu = existing.teknikPenilaian.cpmk.mataKuliah.pengampu.some((p: any) => p.dosenId === userId);
             if (!isPengampu) throw new Error('FORBIDDEN_PENGAMPU');
         }
 
@@ -289,7 +289,7 @@ export class NilaiService {
         if (!existing) throw new Error('NOT_FOUND');
 
         if (userRole === 'dosen') {
-            const isPengampu = existing.teknikPenilaian.cpmk.mataKuliah.pengampu.some(p => p.dosenId === userId);
+            const isPengampu = existing.teknikPenilaian.cpmk.mataKuliah.pengampu.some((p: any) => p.dosenId === userId);
             if (!isPengampu) throw new Error('FORBIDDEN_PENGAMPU');
         }
 
@@ -341,7 +341,7 @@ export class NilaiService {
                 where: pengampuWhere,
                 select: { kelasId: true }
             });
-            targetKelasIds = pengampuClasses.map(p => p.kelasId).filter((id): id is string => id !== null);
+            targetKelasIds = pengampuClasses.map((p: any) => p.kelasId).filter((id): id is string => id !== null);
 
             const mahasiswaWhere: any = {
                 role: { role: { name: 'mahasiswa' } },
@@ -368,7 +368,7 @@ export class NilaiService {
                     mataKuliahId,
                     semester,
                     tahunAjaranId,
-                    mahasiswaId: { in: mahasiswaData.map(m => m.id) }
+                    mahasiswaId: { in: mahasiswaData.map((m: any) => m.id) }
                 }
             });
             grades.forEach(g => {
@@ -386,7 +386,7 @@ export class NilaiService {
             });
         });
 
-        const data = mahasiswaData.map((m, index) => {
+        const data = mahasiswaData.map((m: any, index: number) => {
             const row: any = {
                 'No': index + 1,
                 'NIM': m.profile?.nim || '-',
@@ -493,7 +493,7 @@ export class NilaiService {
         const BATCH_SIZE = 10;
         for (let i = 0; i < recalculationTasks.length; i += BATCH_SIZE) {
             const batch = recalculationTasks.slice(i, i + BATCH_SIZE);
-            await Promise.all(batch.map((task) =>
+            await Promise.all(batch.map((task: any) =>
                 calculateNilaiCpmk(task.mahasiswaId, task.cpmkId, task.mataKuliahId, task.semester, task.tahunAjaranId)
             ));
         }

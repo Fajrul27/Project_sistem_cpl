@@ -19,7 +19,7 @@ const allowedOrigins = [
 ].filter(Boolean) as string[];
 
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: (origin: any, callback: any) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
@@ -42,7 +42,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
 // Debug: Log requests (Production: Log errors only for maximum I/O performance)
-app.use((req, res, next) => {
+app.use((req: any, res: any, next: any) => {
   const start = Date.now();
   if (process.env.NODE_ENV !== 'production') {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
@@ -57,7 +57,7 @@ app.use((req, res, next) => {
 });
 
 // Health check
-app.get('/health', async (req, res) => {
+app.get('/health', async (req: any, res: any) => {
   try {
     // Check database connection
     await prisma.$queryRaw`SELECT 1`;
