@@ -36,22 +36,23 @@ export class NilaiService {
             orderBy: { createdAt: 'asc' }
         });
 
-        return Promise.all(
-            teknikList.map(async (teknik) => {
-                const where: any = {
-                    mahasiswaId,
-                    teknikPenilaianId: teknik.id
-                };
-                if (semester) where.semester = semester;
-                if (tahunAjaranId) where.tahunAjaranId = tahunAjaranId;
+        if (teknikList.length === 0) return [];
 
-                const nilai = await prisma.nilaiTeknikPenilaian.findFirst({ where });
-                return {
-                    teknikPenilaian: teknik,
-                    nilai: nilai || null
-                };
-            })
-        );
+        const teknikIds = teknikList.map(t => t.id);
+        const where: any = {
+            mahasiswaId,
+            teknikPenilaianId: { in: teknikIds }
+        };
+        if (semester) where.semester = semester;
+        if (tahunAjaranId) where.tahunAjaranId = tahunAjaranId;
+
+        const nilaiList = await prisma.nilaiTeknikPenilaian.findMany({ where });
+        const nilaiMap = new Map(nilaiList.map(n => [n.teknikPenilaianId, n]));
+
+        return teknikList.map(teknik => ({
+            teknikPenilaian: teknik,
+            nilai: nilaiMap.get(teknik.id) || null
+        }));
     }
 
     static async getNilaiByMataKuliah(mataKuliahId: string, semester?: number, tahunAjaranId?: string) {
