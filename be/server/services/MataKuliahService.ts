@@ -57,16 +57,16 @@ export class MataKuliahService {
                 where.programStudi = profile.programStudi;
             }
         } else if (userRole?.toLowerCase() === 'mahasiswa') {
-            const profile = await prisma.profile.findUnique({
-                where: { userId },
-                include: { angkatanRef: true }
-            });
-
-            // Check for KRS entries first
-            const krsEntries = await prisma.krs.findMany({
-                where: { mahasiswaId: userId },
-                select: { mataKuliahId: true }
-            });
+            const [profile, krsEntries] = await Promise.all([
+                prisma.profile.findUnique({
+                    where: { userId },
+                    include: { angkatanRef: true }
+                }),
+                prisma.krs.findMany({
+                    where: { mahasiswaId: userId },
+                    select: { mataKuliahId: true }
+                })
+            ]);
 
             if (krsEntries.length > 0) {
                 // If they have KRS, only show those specific courses
