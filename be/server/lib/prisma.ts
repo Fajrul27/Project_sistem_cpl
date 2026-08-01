@@ -24,8 +24,18 @@ export const prisma = prismaClient.$extends({
         const userId = context.getStore()?.userId;
         const skipAuditLog = context.getStore()?.skipAuditLog;
 
-        // Automatically invalidate dashboard cache on ANY database mutation for 100% future-proof sync
-        if (['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany', 'upsert'].includes(operation)) {
+        // Only invalidate dashboard cache when a model that actually affects dashboard data is mutated.
+        // Invalidating on AuditLog, Session, PasswordResetToken, etc. was unnecessary and caused
+        // the cache to be thrashed on every login/logout/audit entry.
+        const DASHBOARD_AFFECTED_MODELS = [
+          'NilaiCpl', 'NilaiCpmk', 'NilaiTeknikPenilaian', 'NilaiSubCpmk',
+          'MataKuliah', 'Cpl', 'Cpmk', 'CplMataKuliah', 'CpmkCplMapping',
+          'Profile', 'User', 'Krs', 'TargetCPL', 'ProfilLulusan',
+          'TeknikPenilaian', 'SubCpmk', 'Kurikulum', 'Prodi', 'Angkatan'
+        ];
+
+        if (DASHBOARD_AFFECTED_MODELS.includes(model) &&
+            ['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany', 'upsert'].includes(operation)) {
           setImmediate(() => {
             invalidateDashboardCache();
           });

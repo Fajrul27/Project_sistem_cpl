@@ -236,7 +236,7 @@ export async function calculateNilaiCplFromCpmk(
                 : 0;
 
 
-            const result = await prisma.nilaiCpl.upsert({
+            await prisma.nilaiCpl.upsert({
                 where: {
                     mahasiswaId_cplId_mataKuliahId_semester_tahunAjaranId: {
                         mahasiswaId,
@@ -259,13 +259,8 @@ export async function calculateNilaiCplFromCpmk(
                     tahunAjaranId
                 }
             });
-
-            // Verify data was actually saved
-            const verify = await prisma.nilaiCpl.findUnique({ where: { id: result.id } });
-            if (verify) {
-            } else {
-                console.error(`[CPL Calc] ✗ ERROR: Record NOT FOUND after save! This should never happen!`);
-            }
+            // NOTE: Verification query removed — prisma.upsert() is atomic and reliable.
+            // The old prisma.nilaiCpl.findUnique() after every upsert was doubling DB load.
         }
 
     } catch (error) {

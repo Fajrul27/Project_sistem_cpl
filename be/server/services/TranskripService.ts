@@ -1,6 +1,7 @@
 
 import { prisma } from '../lib/prisma.js';
 import { calculateNilaiCplFromCpmk, calculateNilaiCpmk } from '../lib/calculation.js';
+import { getCacheAsync, setCacheAsync, buildCacheKey } from '../lib/dashboardCache.js';
 
 export class TranskripService {
     // --- CPL Analysis & Transcript ---
@@ -165,6 +166,14 @@ export class TranskripService {
     }
 
     static async getTranskripCpl(mahasiswaId: string, semester?: number, tahunAjaran?: string) {
+        // --- CACHE CHECK ---
+        const cacheKey = buildCacheKey(mahasiswaId, 'transkrip_cpl', {
+            semester: semester?.toString() || '',
+            tahunAjaran: tahunAjaran || ''
+        });
+        const cached = await getCacheAsync(cacheKey);
+        if (cached) return cached;
+
         const [mahasiswa, skalaNilaiList] = await Promise.all([
             prisma.profile.findUnique({
                 where: { userId: mahasiswaId },
@@ -290,12 +299,11 @@ export class TranskripService {
         // Get unique CPL IDs from nilai_cpl records
         const cplIdsWithNilai = Array.from(cplMap.keys());
 
-        // Fetch CPL details for those IDs
-        const cplsWithNilai = await prisma.cpl.findMany({
-            where: { id: { in: cplIdsWithNilai } },
-            include: { kategoriRef: true }
-        });
-
+        // REMOVED: Duplicate prisma.cpl.findMany() — allCpls above already contains all CPL data.
+        // const cplsWithNilai = await prisma.cpl.findMany({
+        //     where: { id: { in: cplIdsWithNilai } },
+        //     include: { kategoriRef: true }
+        // });
 
         // FETCH TARGETS
         const angkatan = mahasiswa.angkatanRef?.tahun?.toString();
@@ -483,7 +491,7 @@ export class TranskripService {
         };
         (stats as any).persentaseTercapai = stats.totalCurriculumCpl > 0 ? Number(((stats.tercapai / stats.totalCurriculumCpl) * 100).toFixed(2)) : 0;
 
-        return {
+        const result = {
             mahasiswa,
             transkrip,
             summary: stats,
@@ -503,6 +511,10 @@ export class TranskripService {
             })),
             profilLulusan: await TranskripService.getTranskripProfil(mahasiswaId, semester, tahunAjaran)
         };
+
+        // --- STORE IN CACHE ---
+        await setCacheAsync(cacheKey, result);
+        return result;
     }
 
     static async calculateTranskrip(mahasiswaId: string) {
@@ -547,6 +559,14 @@ export class TranskripService {
     // --- CPMK Transcript ---
 
     static async getTranskripCpmk(mahasiswaId: string, semester?: number, tahunAjaran?: string) {
+        // --- CACHE CHECK ---
+        const cacheKey = buildCacheKey(mahasiswaId, 'transkrip_cpmk', {
+            semester: semester?.toString() || '',
+            tahunAjaran: tahunAjaran || ''
+        });
+        const cached = await getCacheAsync(cacheKey);
+        if (cached) return cached;
+
         const mahasiswa = await prisma.profile.findUnique({
             where: { userId: mahasiswaId },
             include: { prodi: true, angkatanRef: true }
@@ -595,7 +615,7 @@ export class TranskripService {
             };
         });
 
-        return {
+        const result = {
             mahasiswa: {
                 userId: mahasiswa.userId,
                 namaLengkap: mahasiswa.namaLengkap,
@@ -607,12 +627,24 @@ export class TranskripService {
             },
             transkrip
         };
+
+        // --- STORE IN CACHE ---
+        await setCacheAsync(cacheKey, result);
+        return result;
     }
 
 
     // --- Profil Lulusan Transcript ---
 
     static async getTranskripProfil(mahasiswaId: string, semester?: number, tahunAjaran?: string) {
+        // --- CACHE CHECK ---
+        const cacheKey = buildCacheKey(mahasiswaId, 'transkrip_profil', {
+            semester: semester?.toString() || '',
+            tahunAjaran: tahunAjaran || ''
+        });
+        const cached = await getCacheAsync(cacheKey);
+        if (cached) return cached;
+
         const mahasiswa = await prisma.profile.findUnique({
             where: { userId: mahasiswaId },
             select: { prodiId: true }
@@ -689,7 +721,7 @@ export class TranskripService {
             cplScores.set(cplId, score);
         }
 
-        return profilLulusanList.map(profil => {
+        const result = profilLulusanList.map(profil => {
             const mappings = profil.cplMappings;
 
             if (mappings.length === 0) {
@@ -719,5 +751,9 @@ export class TranskripService {
                 status: avgProfileScore >= (profil.targetKetercapaian || 70) ? 'Tercapai' : 'Belum Tercapai'
             };
         });
+
+        // --- STORE IN CACHE ---
+        await setCacheAsync(cacheKey, result);
+        return result;
     }
 }

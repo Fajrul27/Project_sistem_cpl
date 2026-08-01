@@ -19,6 +19,15 @@ try {
   publicKey = '';
 }
 
+/**
+ * In-process cache for permission lookups.
+ * Key: "userId:action:resource" → { allowed: boolean, expiresAt: number }
+ * TTL: 60 seconds — permissions rarely change mid-session.
+ * This eliminates 2 DB queries (UserRole + RolePermission) on EVERY protected endpoint call.
+ */
+const permissionCache = new Map<string, { allowed: boolean; expiresAt: number }>();
+const PERMISSION_CACHE_TTL_MS = 60_000; // 60 seconds
+
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
     // Get token from cookie or header
@@ -94,10 +103,19 @@ export const requirePermission = (action: string, resource: string) => {
       const userId = (req as any).userId;
       const userRole = (req as any).userRole;
 
-
       if (!userId) return res.status(403).json({ error: 'Forbidden - No user' });
 
-      // Fetch user's roleId from database
+      // --- PERMISSION CACHE CHECK ---
+      // Admin shortcut: role is already in JWT, no DB needed
+      if (userRole === 'admin') return next();
+
+      const permKey = `${userId}:${action}:${resource}`;
+      const cachedPerm = permissionCache.get(permKey);
+      if (cachedPerm && Date.now() < cachedPerm.expiresAt) {
+        return cachedPerm.allowed ? next() : res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
+      }
+
+      // --- DB FALLBACK (cache miss) ---
       const userRoleRecord = await prisma.userRole.findUnique({
         where: { userId },
         include: { role: true }
@@ -110,23 +128,21 @@ export const requirePermission = (action: string, resource: string) => {
       const roleId = userRoleRecord.roleId;
       const roleName = userRoleRecord.role.name;
 
-      // Admin override
+      // Admin override (DB confirmed)
       if (roleName === 'admin') {
+        permissionCache.set(permKey, { allowed: true, expiresAt: Date.now() + PERMISSION_CACHE_TTL_MS });
         return next();
       }
 
       const permission = await prisma.rolePermission.findFirst({
-        where: {
-          roleId: roleId,
-          resource,
-          action
-        }
+        where: { roleId, resource, action }
       });
 
-      if (permission && permission.isEnabled) {
-        return next();
-      }
+      const allowed = !!(permission && permission.isEnabled);
+      // Store result in cache
+      permissionCache.set(permKey, { allowed, expiresAt: Date.now() + PERMISSION_CACHE_TTL_MS });
 
+      if (allowed) return next();
       return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
     } catch (error) {
       console.error('requirePermission middleware error:', error);
