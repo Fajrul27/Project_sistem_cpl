@@ -14,7 +14,11 @@ let redisClient: any = null;
 
 try {
   // Dynamic import pattern or safe require for production resilience
-  const { Redis } = await import('ioredis');
+  const ioredis = await import('ioredis');
+  const Redis = ioredis.default || ioredis.Redis;
+  
+  if (!Redis) throw new Error('Redis constructor not found in ioredis module');
+
   redisClient = new Redis({
     host: REDIS_HOST,
     port: REDIS_PORT,
