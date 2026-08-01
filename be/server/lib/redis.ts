@@ -6,6 +6,9 @@
  * allowing fallback to in-memory caching.
  */
 
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
 const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
 
@@ -13,13 +16,11 @@ let isRedisConnected = false;
 let redisClient: any = null;
 
 try {
-  // Dynamic import pattern or safe require for production resilience
-  const ioredis = await import('ioredis');
-  const RedisConstructor: any = (ioredis as any).default || (ioredis as any).Redis || ioredis;
-  
-  if (!RedisConstructor) throw new Error('Redis constructor not found in ioredis module');
+  // Use createRequire to flawlessly import CommonJS modules in ESM
+  const Redis = require('ioredis');
+  if (!Redis) throw new Error('Redis constructor not found');
 
-  redisClient = new RedisConstructor({
+  redisClient = new Redis({
     host: REDIS_HOST,
     port: REDIS_PORT,
     lazyConnect: true,
