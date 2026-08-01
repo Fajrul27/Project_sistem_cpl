@@ -3,10 +3,11 @@ module.exports = {
     {
       name: 'cpl-backend-cluster',
       script: 'dist/server/index.js',
-      instances: 'max', // Uses all available CPU cores (24 Cores on Xeon Campus Server)
+      instances: 12, // Optimal for 12 physical cores on Xeon E5-2650 v4 (prevents RAM thrashing)
       exec_mode: 'cluster',
       watch: false,
-      max_memory_restart: '1G',
+      max_memory_restart: '450M',
+      node_args: '--max-old-space-size=400',
       env: {
         NODE_ENV: 'production',
         PORT: process.env.PORT || 5000,
