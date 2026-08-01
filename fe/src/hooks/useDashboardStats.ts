@@ -366,6 +366,39 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
         }
     }, [role, activeFilters, fetchAdminDashboardData]);
 
+    // Background Server Data Version Sync (Polling every 15s & on Window Focus)
+    // Synchronizes Dashboard instantly when CRUD happens on another device/browser
+    useEffect(() => {
+        const normalizedRole = role?.toLowerCase();
+        if (!normalizedRole || normalizedRole === "mahasiswa") return;
+
+        let active = true;
+        const checkVersionSync = async () => {
+            const serverVersion = await fetchServerVersion();
+            if (!active || serverVersion === null) return;
+
+            const known = getKnownServerVersion();
+            if (known !== null && serverVersion !== known) {
+                // Version changed on server by another device! Re-fetch fresh dashboard stats
+                setKnownServerVersion(serverVersion);
+                fetchAdminDashboardData(true);
+            }
+        };
+
+        const interval = setInterval(checkVersionSync, 15000);
+
+        const handleFocus = () => {
+            checkVersionSync();
+        };
+        window.addEventListener("focus", handleFocus);
+
+        return () => {
+            active = false;
+            clearInterval(interval);
+            window.removeEventListener("focus", handleFocus);
+        };
+    }, [role, fetchAdminDashboardData]);
+
     return {
         loading,
         cplStats,
