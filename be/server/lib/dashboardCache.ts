@@ -142,13 +142,13 @@ export async function invalidateDashboardCacheAsync(): Promise<void> {
 
     if (getIsRedisConnected() && redis) {
         try {
-            await redis.incr('cpl_cache_version');
-            await redis.flushdb();
-        } catch (err) {
             const keys = await redis.keys('cpl_cache:*');
             if (keys.length > 0) {
                 await redis.del(...keys);
             }
+            await redis.incr('cpl_cache_version');
+        } catch (err) {
+            console.error('[Cache] Error invalidating Redis cache:', err);
         }
     }
 }
@@ -158,11 +158,13 @@ export function invalidateDashboardCache(): void {
     inMemoryStore.clear();
 
     if (getIsRedisConnected() && redis) {
-        redis.incr('cpl_cache_version').catch(() => {});
-        redis.flushdb().catch(() => {
-            redis.keys('cpl_cache:*').then((keys: string[]) => {
-                if (keys.length > 0) redis.del(...keys);
-            }).catch(() => {});
+        redis.keys('cpl_cache:*').then(async (keys: string[]) => {
+            if (keys.length > 0) {
+                await redis.del(...keys);
+            }
+            await redis.incr('cpl_cache_version');
+        }).catch(() => {
+            redis.incr('cpl_cache_version').catch(() => {});
         });
     }
 }

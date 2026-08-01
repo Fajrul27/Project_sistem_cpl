@@ -366,7 +366,7 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
         }
     }, [role, activeFilters, fetchAdminDashboardData]);
 
-    // Background Server Data Version Sync (Polling every 15s & on Window Focus)
+    // Background Server Data Version Sync (Polling every 5s & on Window Focus)
     // Synchronizes Dashboard instantly when CRUD happens on another device/browser
     useEffect(() => {
         const normalizedRole = role?.toLowerCase();
@@ -378,14 +378,14 @@ export function useDashboardStats(role: string | null, user: any, activeFilters:
             if (!active || serverVersion === null) return;
 
             const known = getKnownServerVersion();
-            if (known !== null && serverVersion !== known) {
+            if (known === null || serverVersion !== known) {
                 // Version changed on server by another device! Re-fetch fresh dashboard stats
                 setKnownServerVersion(serverVersion);
                 fetchAdminDashboardData(true);
             }
         };
 
-        const interval = setInterval(checkVersionSync, 15000);
+        const interval = setInterval(checkVersionSync, 5000); // 5 detik polling versi
 
         const handleFocus = () => {
             checkVersionSync();
