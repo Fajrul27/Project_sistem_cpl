@@ -26,71 +26,40 @@ export const prisma = prismaClient.$extends({
 
         // Automatically invalidate dashboard cache on ANY database mutation for 100% future-proof sync
         if (['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany', 'upsert'].includes(operation)) {
-          invalidateDashboardCache();
+          setImmediate(() => {
+            invalidateDashboardCache();
+          });
         }
 
-        // Only log modification operations if skipAuditLog is not set
+        // Execute the main database query first for minimum latency
+        const result = await query(args);
+
+        // Asynchronously log audit trail in the background without blocking the HTTP response
         if (!skipAuditLog && ['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany', 'upsert'].includes(operation)) {
-          try {
-            let oldData = null;
-            let recordId = null;
-
-            // For update/delete, try to fetch old data
-            if (['update', 'delete'].includes(operation)) {
-              // Check if we can find the record (needs 'where' clause)
-              if ((args as any).where) {
-                try {
-                  // Use 'any' to bypass strict typing for dynamic model access
-                  oldData = await (prismaClient as any)[model].findUnique({
-                    where: (args as any).where
-                  });
-                  if (oldData) recordId = (oldData as any).id;
-                } catch (e) {
-                  // Ignore if findUnique fails (e.g. non-unique where or complex query)
-                }
+          setImmediate(async () => {
+            try {
+              const recordId = (result && (result as any).id) ? (result as any).id : null;
+              if (userId) {
+                await prismaClient.auditLog.create({
+                  data: {
+                    userId,
+                    action: operation.toUpperCase(),
+                    tableName: model,
+                    recordId: typeof recordId === 'string' ? recordId : (recordId ? String(recordId) : null),
+                    oldData: null,
+                    newData: ['create', 'update', 'upsert'].includes(operation) && result ? JSON.stringify(result) : null,
+                    ipAddress: 'unknown',
+                    userAgent: 'unknown'
+                  }
+                });
               }
+            } catch (error) {
+              // Ignore background audit log errors
             }
-
-            // Execute the operation
-            const result = await query(args);
-
-            // For create, result is the new data
-            let newData = null;
-            if (['create', 'update', 'upsert'].includes(operation)) {
-              newData = result;
-              if (!recordId && result && (result as any).id) recordId = (result as any).id;
-            }
-
-            // Log asynchronously to not block the main request significantly
-            // Use prismaClient (base) to write to AuditLog to avoid infinite loops
-            const ipAddress = 'unknown'; // Middleware could provide this via context if needed
-            const userAgent = 'unknown';
-
-            if (userId) {
-              await prismaClient.auditLog.create({
-                data: {
-                  userId,
-                  action: operation.toUpperCase(),
-                  tableName: model,
-                  recordId: typeof recordId === 'string' ? recordId : (recordId ? String(recordId) : null),
-                  oldData: oldData ? JSON.stringify(oldData) : null,
-                  newData: newData ? JSON.stringify(newData) : null,
-                  ipAddress,
-                  userAgent
-                }
-              }).catch(console.error);
-            }
-
-            return result;
-
-          } catch (error) {
-            // If logging fails, strictly strictly shouldn't fail the operation?
-            // But if the operation fails, we should throw
-            throw error;
-          }
+          });
         }
 
-        return query(args);
+        return result;
       }
     }
   }
