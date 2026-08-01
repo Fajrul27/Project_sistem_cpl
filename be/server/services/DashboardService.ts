@@ -310,13 +310,29 @@ export class DashboardService {
         const relevantCplIds = [...new Set(rawGrades.map(r => r.cplId))];
         const relevantMkIds = [...new Set(rawGrades.map(r => r.mataKuliah.id))];
 
-        const weights = await prisma.cplMataKuliah.findMany({
-            where: {
-                cplId: { in: relevantCplIds },
-                mataKuliahId: { in: relevantMkIds }
-            },
-            select: { cplId: true, mataKuliahId: true, bobotKontribusi: true }
-        });
+        // OPTIMIZED: Parallel execution for secondary aggregation metadata & distribution queries
+        const [weights, cpls, semesterAggregations, distExcellent, distGood, distFair, distPoor] = await Promise.all([
+            prisma.cplMataKuliah.findMany({
+                where: {
+                    cplId: { in: relevantCplIds },
+                    mataKuliahId: { in: relevantMkIds }
+                },
+                select: { cplId: true, mataKuliahId: true, bobotKontribusi: true }
+            }),
+            prisma.cpl.findMany({
+                where: { id: { in: relevantCplIds } },
+                select: { id: true, kodeCpl: true }
+            }),
+            prisma.nilaiCpl.groupBy({
+                by: ['semester'],
+                where: nilaiFilter,
+                _avg: { nilai: true }
+            }),
+            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 85 } } }),
+            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 70, lt: 85 } } }),
+            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 60, lt: 70 } } }),
+            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { lt: 60 } } })
+        ]);
 
         // Create Weight Map: "cplId-mkId" -> bobot
         const weightMap = new Map<string, number>();
@@ -341,10 +357,6 @@ export class DashboardService {
             }
         }
 
-        const cpls = await prisma.cpl.findMany({
-            where: { id: { in: relevantCplIds } },
-            select: { id: true, kodeCpl: true }
-        });
         const cplMap = new Map(cpls.map(c => [c.id, c.kodeCpl]));
 
         const chartData = Array.from(cplStats.entries()).map(([cplId, stats]) => {
@@ -363,11 +375,6 @@ export class DashboardService {
         }
 
         // 2. Trend
-        const semesterAggregations = await prisma.nilaiCpl.groupBy({
-            by: ['semester'],
-            where: nilaiFilter,
-            _avg: { nilai: true }
-        });
         const trendData = semesterAggregations
             .map(item => ({
                 semester: `Sem ${item.semester}`,
@@ -377,13 +384,6 @@ export class DashboardService {
             .sort((a, b) => a.rawSemester - b.rawSemester);
 
         // 3. Distribution
-        // OPTIMIZED: Use parallel Promise.all for counting segments
-        const [distExcellent, distGood, distFair, distPoor] = await Promise.all([
-            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 85 } } }),
-            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 70, lt: 85 } } }),
-            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { gte: 60, lt: 70 } } }),
-            prisma.nilaiCpl.count({ where: { ...nilaiFilter, nilai: { lt: 60 } } })
-        ]);
         const distTotal = distExcellent + distGood + distFair + distPoor;
 
         const distributionData = [
