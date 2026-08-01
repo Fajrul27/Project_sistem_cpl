@@ -48,15 +48,19 @@ export async function calculateNilaiCpmk(
                 const asesmenMappings = sub.asesmenMappings;
 
                 if (asesmenMappings.length > 0) {
+                    const teknikIds = asesmenMappings.map(m => m.teknikPenilaianId);
+                    const semuaNilai = await prisma.nilaiTeknikPenilaian.findMany({
+                        where: {
+                            mahasiswaId,
+                            teknikPenilaianId: { in: teknikIds },
+                            semester,
+                            tahunAjaranId
+                        }
+                    });
+                    const nilaiMap = new Map(semuaNilai.map(n => [n.teknikPenilaianId, n]));
+
                     for (const mapping of asesmenMappings) {
-                        const nilaiTeknik = await prisma.nilaiTeknikPenilaian.findFirst({
-                            where: {
-                                mahasiswaId,
-                                teknikPenilaianId: mapping.teknikPenilaianId,
-                                semester,
-                                tahunAjaranId
-                            }
-                        });
+                        const nilaiTeknik = nilaiMap.get(mapping.teknikPenilaianId);
 
                         if (nilaiTeknik) {
                             const bobot = Number(mapping.bobot); // Weight of this assessment in this Sub-CPMK
@@ -112,15 +116,20 @@ export async function calculateNilaiCpmk(
                 let totalScore = 0;
                 let totalWeight = 0;
 
+                // Eliminate N+1 loop with a single findMany
+                const teknikIds = allTeknik.map(t => t.id);
+                const semuaNilai = await prisma.nilaiTeknikPenilaian.findMany({
+                    where: {
+                        mahasiswaId,
+                        teknikPenilaianId: { in: teknikIds },
+                        semester,
+                        tahunAjaranId
+                    }
+                });
+                const nilaiMap = new Map(semuaNilai.map(n => [n.teknikPenilaianId, n]));
+
                 for (const teknik of allTeknik) {
-                    const nilai = await prisma.nilaiTeknikPenilaian.findFirst({
-                        where: {
-                            mahasiswaId,
-                            teknikPenilaianId: teknik.id,
-                            semester,
-                            tahunAjaranId
-                        }
-                    });
+                    const nilai = nilaiMap.get(teknik.id);
 
                     if (nilai) {
                         totalScore += Number(nilai.nilai) * Number(teknik.bobotPersentase);
