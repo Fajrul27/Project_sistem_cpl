@@ -146,6 +146,14 @@ export class NilaiService {
         const errors = [];
         const cpmkToRecalculate = new Map<string, any>();
 
+        // PRE-FETCH to prevent N+1 Queries
+        const teknikIds = [...new Set(entries.map((e: any) => e.teknikPenilaianId).filter(Boolean))];
+        const teknikMapRaw = await prisma.teknikPenilaian.findMany({
+            where: { id: { in: teknikIds as string[] } },
+            include: { cpmk: true }
+        });
+        const teknikMap = new Map(teknikMapRaw.map(t => [t.id, t]));
+
         for (const entry of entries) {
             try {
                 const { mahasiswaId, teknikPenilaianId, mataKuliahId, nilai, semester, tahunAjaranId } = entry;
@@ -160,10 +168,7 @@ export class NilaiService {
                     continue;
                 }
 
-                const teknikPenilaian = await prisma.teknikPenilaian.findUnique({
-                    where: { id: teknikPenilaianId },
-                    include: { cpmk: true }
-                });
+                const teknikPenilaian = teknikMap.get(teknikPenilaianId);
 
                 if (!teknikPenilaian) {
                     errors.push({ entry, error: 'Teknik penilaian tidak ditemukan' });
@@ -427,6 +432,14 @@ export class NilaiService {
         const ws = wb.Sheets[wb.SheetNames[0]];
         const data: any[] = XLSX.utils.sheet_to_json(ws);
 
+        // PRE-FETCH to prevent N+1 Queries
+        const nimList = [...new Set(data.map(row => String(row['NIM'])).filter(Boolean))];
+        const profilesRaw = await prisma.profile.findMany({
+            where: { nim: { in: nimList } },
+            select: { nim: true, userId: true }
+        });
+        const profileMap = new Map(profilesRaw.map(p => [p.nim, p.userId]));
+
         let successCount = 0;
         const errors: string[] = [];
         const processedStudentIds = new Set<string>();
@@ -435,8 +448,8 @@ export class NilaiService {
             const nim = row['NIM'];
             if (!nim) continue;
 
-            const mahasiswa = await prisma.profile.findUnique({ where: { nim: String(nim) }, select: { userId: true } });
-            if (!mahasiswa) {
+            const mahasiswaId = profileMap.get(String(nim));
+            if (!mahasiswaId) {
                 errors.push(`NIM ${nim} tidak ditemukan`);
                 continue;
             }
@@ -451,7 +464,7 @@ export class NilaiService {
                         await prisma.nilaiTeknikPenilaian.upsert({
                             where: {
                                 mahasiswaId_teknikPenilaianId_semester_tahunAjaranId: {
-                                    mahasiswaId: mahasiswa.userId,
+                                    mahasiswaId: mahasiswaId,
                                     teknikPenilaianId: teknikId,
                                     semester,
                                     tahunAjaranId
@@ -459,7 +472,7 @@ export class NilaiService {
                             },
                             update: { nilai, updatedAt: new Date() },
                             create: {
-                                mahasiswaId: mahasiswa.userId,
+                                mahasiswaId: mahasiswaId,
                                 teknikPenilaianId: teknikId,
                                 mataKuliahId,
                                 nilai,
@@ -473,7 +486,7 @@ export class NilaiService {
                     }
                 }
             }
-            if (hasUpdates) processedStudentIds.add(mahasiswa.userId);
+            if (hasUpdates) processedStudentIds.add(mahasiswaId);
         }
 
         // Trigger updates in batches to prevent slow down
