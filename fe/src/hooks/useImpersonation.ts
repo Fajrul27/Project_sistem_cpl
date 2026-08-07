@@ -31,11 +31,16 @@ export const useImpersonation = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                // Check if token has impersonation flag (we'd need to add this to /me endpoint)
-                // For now, we'll rely on localStorage for tracking
                 const impersonationData = localStorage.getItem('impersonation');
                 if (impersonationData) {
-                    setImpersonationState(JSON.parse(impersonationData));
+                    const parsed = JSON.parse(impersonationData);
+                    // If user logged in is already admin or matches originalAdmin, clear stale state
+                    if (data.user?.id === parsed.originalAdmin?.id || (data.user?.role?.role?.toLowerCase() === 'admin' && data.user?.email === parsed.originalAdmin?.email)) {
+                        localStorage.removeItem('impersonation');
+                        setImpersonationState({ isImpersonating: false, originalAdmin: null });
+                    } else {
+                        setImpersonationState(parsed);
+                    }
                 }
             }
         } catch (error) {
@@ -91,26 +96,33 @@ export const useImpersonation = () => {
 
             const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Gagal kembali ke akun admin');
-            }
-
-            // Clear impersonation state
+            // Always clear local storage state
             localStorage.removeItem('impersonation');
             setImpersonationState({
                 isImpersonating: false,
                 originalAdmin: null
             });
 
+            if (!response.ok) {
+                if (response.status === 400) {
+                    toast.info('Sesi sudah berada di akun admin');
+                    window.location.href = '/dashboard';
+                    return true;
+                }
+                throw new Error(data.error || 'Gagal kembali ke akun admin');
+            }
+
             toast.success(data.message || 'Berhasil kembali ke akun admin');
-
-            // Reload page to refresh all data
             window.location.href = '/dashboard';
-
             return true;
         } catch (error: any) {
             console.error('Return to admin error:', error);
-            toast.error(error.message || 'Gagal kembali ke akun admin');
+            localStorage.removeItem('impersonation');
+            setImpersonationState({
+                isImpersonating: false,
+                originalAdmin: null
+            });
+            window.location.href = '/dashboard';
             return false;
         } finally {
             setLoading(false);
