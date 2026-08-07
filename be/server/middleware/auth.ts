@@ -107,7 +107,7 @@ export const requirePermission = (action: string, resource: string) => {
 
       // --- PERMISSION CACHE CHECK ---
       // Admin shortcut: role is already in JWT, no DB needed
-      if (userRole === 'admin') return next();
+      if (userRole?.toLowerCase() === 'admin') return next();
 
       const permKey = `${userId}:${action}:${resource}`;
       const cachedPerm = permissionCache.get(permKey);
@@ -129,7 +129,7 @@ export const requirePermission = (action: string, resource: string) => {
       const roleName = userRoleRecord.role.name;
 
       // Admin override (DB confirmed)
-      if (roleName === 'admin') {
+      if (roleName?.toLowerCase() === 'admin') {
         permissionCache.set(permKey, { allowed: true, expiresAt: Date.now() + PERMISSION_CACHE_TTL_MS });
         return next();
       }
