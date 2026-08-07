@@ -61,8 +61,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # Otomatis Generate Prisma & Jalankan PM2 Cluster Mode tanpa ketik manual!
-    command: sh -c "npx prisma generate && pm2-runtime start ecosystem.config.cjs"
+    # Otomatis Sync Database Schema & Generate Prisma & Jalankan PM2 Cluster Mode!
+    command: sh -c "npx prisma generate && npx prisma db push && pm2-runtime start ecosystem.config.cjs"
 
   # 4. Frontend Web App Service
   fe:
