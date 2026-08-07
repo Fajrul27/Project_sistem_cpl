@@ -3,6 +3,10 @@ import { prisma } from '../lib/prisma.js';
 import { calculateNilaiCplFromCpmk, calculateNilaiCpmk } from '../lib/calculation.js';
 import { getCacheAsync, setCacheAsync, buildCacheKey } from '../lib/dashboardCache.js';
 
+const pendingTranskripCpl = new Map<string, Promise<any>>();
+const pendingTranskripCpmk = new Map<string, Promise<any>>();
+const pendingTranskripProfil = new Map<string, Promise<any>>();
+
 export class TranskripService {
     // --- CPL Analysis & Transcript ---
 
@@ -174,7 +178,10 @@ export class TranskripService {
         const cached = await getCacheAsync(cacheKey);
         if (cached) return cached;
 
-        const [mahasiswa, skalaNilaiList] = await Promise.all([
+        if (pendingTranskripCpl.has(cacheKey)) return pendingTranskripCpl.get(cacheKey);
+        const fetchPromise = (async () => {
+            try {
+                const [mahasiswa, skalaNilaiList] = await Promise.all([
             prisma.profile.findUnique({
                 where: { userId: mahasiswaId },
                 include: { prodi: true, angkatanRef: true }
@@ -515,6 +522,12 @@ export class TranskripService {
         // --- STORE IN CACHE ---
         await setCacheAsync(cacheKey, result);
         return result;
+            } finally {
+                pendingTranskripCpl.delete(cacheKey);
+            }
+        })();
+        pendingTranskripCpl.set(cacheKey, fetchPromise);
+        return fetchPromise;
     }
 
     static async calculateTranskrip(mahasiswaId: string) {
@@ -567,7 +580,10 @@ export class TranskripService {
         const cached = await getCacheAsync(cacheKey);
         if (cached) return cached;
 
-        const mahasiswa = await prisma.profile.findUnique({
+        if (pendingTranskripCpmk.has(cacheKey)) return pendingTranskripCpmk.get(cacheKey);
+        const fetchPromise = (async () => {
+            try {
+                const mahasiswa = await prisma.profile.findUnique({
             where: { userId: mahasiswaId },
             include: { prodi: true, angkatanRef: true }
         });
@@ -631,6 +647,12 @@ export class TranskripService {
         // --- STORE IN CACHE ---
         await setCacheAsync(cacheKey, result);
         return result;
+            } finally {
+                pendingTranskripCpmk.delete(cacheKey);
+            }
+        })();
+        pendingTranskripCpmk.set(cacheKey, fetchPromise);
+        return fetchPromise;
     }
 
 
@@ -645,7 +667,10 @@ export class TranskripService {
         const cached = await getCacheAsync(cacheKey);
         if (cached) return cached;
 
-        const mahasiswa = await prisma.profile.findUnique({
+        if (pendingTranskripProfil.has(cacheKey)) return pendingTranskripProfil.get(cacheKey);
+        const fetchPromise = (async () => {
+            try {
+                const mahasiswa = await prisma.profile.findUnique({
             where: { userId: mahasiswaId },
             select: { prodiId: true }
         });
@@ -755,5 +780,11 @@ export class TranskripService {
         // --- STORE IN CACHE ---
         await setCacheAsync(cacheKey, result);
         return result;
+            } finally {
+                pendingTranskripProfil.delete(cacheKey);
+            }
+        })();
+        pendingTranskripProfil.set(cacheKey, fetchPromise);
+        return fetchPromise;
     }
 }
