@@ -105,17 +105,12 @@ export const requirePermission = (action: string, resource: string) => {
 
       if (!userId) return res.status(403).json({ error: 'Forbidden - No user' });
 
-      // --- PERMISSION CACHE CHECK ---
-      // Admin shortcut: role is already in JWT, no DB needed
-      if (userRole?.toLowerCase() === 'admin') return next();
-
-      const permKey = `${userId}:${action}:${resource}`;
-      const cachedPerm = permissionCache.get(permKey);
-      if (cachedPerm && Date.now() < cachedPerm.expiresAt) {
-        return cachedPerm.allowed ? next() : res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
+      // 1. Admin shortcut: role in JWT is admin
+      if (typeof userRole === 'string' && userRole.toLowerCase() === 'admin') {
+        return next();
       }
 
-      // --- DB FALLBACK (cache miss) ---
+      // 2. Fetch DB role to confirm
       const userRoleRecord = await prisma.userRole.findUnique({
         where: { userId },
         include: { role: true }
@@ -128,10 +123,17 @@ export const requirePermission = (action: string, resource: string) => {
       const roleId = userRoleRecord.roleId;
       const roleName = userRoleRecord.role.name;
 
-      // Admin override (DB confirmed)
-      if (roleName?.toLowerCase() === 'admin') {
-        permissionCache.set(permKey, { allowed: true, expiresAt: Date.now() + PERMISSION_CACHE_TTL_MS });
+      // 3. Admin override (DB confirmed) - ALWAYS ALLOW for Admin
+      if (roleName && roleName.toLowerCase() === 'admin') {
         return next();
+      }
+
+      // 4. Permission cache check for non-admin roles
+      const permKey = `${userId}:${action}:${resource}`;
+      const cachedPerm = permissionCache.get(permKey);
+      if (cachedPerm && Date.now() < cachedPerm.expiresAt) {
+        if (cachedPerm.allowed) return next();
+        return res.status(403).json({ error: 'Forbidden - Insufficient permissions' });
       }
 
       const permission = await prisma.rolePermission.findFirst({
@@ -139,7 +141,7 @@ export const requirePermission = (action: string, resource: string) => {
       });
 
       const allowed = !!(permission && permission.isEnabled);
-      // Store result in cache
+      // Store result in cache for non-admin
       permissionCache.set(permKey, { allowed, expiresAt: Date.now() + PERMISSION_CACHE_TTL_MS });
 
       if (allowed) return next();
