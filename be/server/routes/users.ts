@@ -38,12 +38,15 @@ router.get('/:id', authMiddleware, requirePermission('view', 'users'), getUserBy
 
 // Update user role (admin only -> dynamic)
 router.put('/:id/role', authMiddleware, requirePermission('edit', 'users'), updateUserRole);
+router.post('/:id/role', authMiddleware, requirePermission('edit', 'users'), updateUserRole);
 
 // Update user basic info (admin only -> dynamic)
 router.put('/:id', authMiddleware, requirePermission('edit', 'users'), updateUser);
+router.post('/:id', authMiddleware, requirePermission('edit', 'users'), updateUser);
 
 // Delete user (admin only -> dynamic)
 router.delete('/:id', authMiddleware, requirePermission('delete', 'users'), deleteUser);
+router.post('/:id/delete', authMiddleware, requirePermission('delete', 'users'), deleteUser);
 
 // Export Mahasiswa as Excel
 router.get('/export/mahasiswa', authMiddleware, requirePermission('view', 'mahasiswa'), exportMahasiswa);

@@ -175,14 +175,13 @@ export async function fetchAllUsers(params?: {
 
 // Helper: update user role (admin only)
 export async function updateUserRole(userId: string, role: string) {
-  // Backend endpoint: PUT /api/users/:id/role
+  // Backend endpoint: POST /api/users/:id/role
   return apiRequest(`/users/${userId}/role`, {
-    method: 'PUT',
+    method: 'POST',
     body: JSON.stringify({ role })
   });
 }
 
-// Helper: update profile data (admin / user)
 // Helper: update profile data (admin / user)
 export async function updateProfile(
   profileId: string,
@@ -199,7 +198,7 @@ export async function updateProfile(
   }
 ) {
   return apiRequest(`/profiles/${profileId}`, {
-    method: 'PUT',
+    method: 'POST',
     body: JSON.stringify(payload),
   });
 }
@@ -271,15 +270,15 @@ export async function updateUser(userId: string, payload: {
   }
 }) {
   return apiRequest(`/users/${userId}`, {
-    method: 'PUT',
+    method: 'POST',
     body: JSON.stringify(payload),
   });
 }
 
 // Helper: delete user (admin only)
 export async function deleteUser(userId: string) {
-  return apiRequest(`/users/${userId}`, {
-    method: 'DELETE',
+  return apiRequest(`/users/${userId}/delete`, {
+    method: 'POST',
   });
 }
 

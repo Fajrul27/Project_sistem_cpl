@@ -7,6 +7,7 @@ const router = Router();
 
 // Update profile
 router.put('/:id', authMiddleware, updateProfile);
+router.post('/:id', authMiddleware, updateProfile);
 
 // Get profile by ID
 router.get('/:id', authMiddleware, getProfileById);
