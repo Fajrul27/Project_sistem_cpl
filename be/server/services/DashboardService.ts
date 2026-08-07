@@ -3,6 +3,11 @@ import { prisma } from '../lib/prisma.js';
 import { getUserProfile } from '../middleware/auth.js';
 import { buildCacheKey, getCache, setCache, getCacheAsync, setCacheAsync } from '../lib/dashboardCache.js';
 
+// Maps to store pending promises for Promise Coalescing (Cache Stampede Prevention)
+const pendingStats = new Map<string, Promise<any>>();
+const pendingDosen = new Map<string, Promise<any>>();
+const pendingStudent = new Map<string, Promise<any>>();
+
 export class DashboardService {
     static async getDashboardStats(params: {
         userId: string,
@@ -27,6 +32,14 @@ export class DashboardService {
         });
         const cached = await getCacheAsync(cacheKey);
         if (cached) return cached;
+
+        // --- PROMISE COALESCING (THUNDERING HERD PREVENTION) ---
+        if (pendingStats.has(cacheKey)) {
+            return pendingStats.get(cacheKey); // Wait for the in-progress query instead of blasting the DB
+        }
+
+        const fetchPromise = (async () => {
+            try {
 
         // Define filters
         let userFilter: any = {};
@@ -464,6 +477,13 @@ export class DashboardService {
         await setCacheAsync(cacheKey, result);
 
         return result;
+            } finally {
+                pendingStats.delete(cacheKey);
+            }
+        })();
+
+        pendingStats.set(cacheKey, fetchPromise);
+        return fetchPromise;
     }
 
     static async getDosenAnalysis(params: { prodiId?: string, fakultasId?: string }) {
@@ -472,7 +492,13 @@ export class DashboardService {
         const cached = await getCacheAsync(cacheKey);
         if (cached) return cached;
 
-        const where: any = { role: { role: { name: 'dosen' } } };
+        if (pendingDosen.has(cacheKey)) {
+            return pendingDosen.get(cacheKey);
+        }
+
+        const fetchPromise = (async () => {
+            try {
+                const where: any = { role: { role: { name: 'dosen' } } };
 
         if (prodiId && prodiId !== 'all') {
             where.profile = { prodiId: prodiId };
@@ -774,6 +800,13 @@ export class DashboardService {
 
         await setCacheAsync(cacheKey, result);
         return result;
+            } finally {
+                pendingDosen.delete(cacheKey);
+            }
+        })();
+
+        pendingDosen.set(cacheKey, fetchPromise);
+        return fetchPromise;
     }
 
     static async getStudentEvaluation(params: { prodiId?: string, angkatan?: string, semester?: string, fakultasId?: string }) {
@@ -784,7 +817,13 @@ export class DashboardService {
         const cached = await getCacheAsync(cacheKey);
         if (cached) return cached;
 
-        const where: any = { role: { role: { name: 'mahasiswa' } } };
+        if (pendingStudent.has(cacheKey)) {
+            return pendingStudent.get(cacheKey);
+        }
+
+        const fetchPromise = (async () => {
+            try {
+                const where: any = { role: { role: { name: 'mahasiswa' } } };
         const profileWhere: any = {};
 
         if (prodiId && prodiId !== 'all') profileWhere.prodiId = prodiId;
@@ -880,5 +919,12 @@ export class DashboardService {
         // 4. Store in shared Redis + In-memory cache
         await setCacheAsync(cacheKey, filteredEvaluation);
         return filteredEvaluation;
+            } finally {
+                pendingStudent.delete(cacheKey);
+            }
+        })();
+
+        pendingStudent.set(cacheKey, fetchPromise);
+        return fetchPromise;
     }
 }
