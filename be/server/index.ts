@@ -100,7 +100,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Start server
 const startServer = async () => {
   try {
-    const server = app.listen(Number(PORT), '0.0.0.0', () => {
+    const server = app.listen(Number(PORT), '0.0.0.0', 4096, () => {
       const instanceId = process.env.NODE_APP_INSTANCE ?? 'Single-Threaded';
       console.log(`🚀 Server running on http://localhost:${PORT} (PID: ${process.pid}, PM2 Worker: ${instanceId})`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
