@@ -22,9 +22,12 @@ router.post('/', requireAuth, requireRole('admin', 'kaprodi'), createProfilLulus
 
 // PUT /api/profil-lulusan/:id
 router.put('/:id', requireAuth, requireRole('admin', 'kaprodi'), updateProfilLulusan);
+router.post('/:id', requireAuth, requireRole('admin', 'kaprodi'), updateProfilLulusan);
+router.post('/:id/update', requireAuth, requireRole('admin', 'kaprodi'), updateProfilLulusan);
 
 // DELETE /api/profil-lulusan/:id
 router.delete('/:id', requireAuth, requireRole('admin', 'kaprodi'), deleteProfilLulusan);
+router.post('/:id/delete', requireAuth, requireRole('admin', 'kaprodi'), deleteProfilLulusan);
 
 // Export & Import
 router.get('/export/excel', requireAuth, exportProfilLulusan);

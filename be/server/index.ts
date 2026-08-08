@@ -41,6 +41,15 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
+// Handle WAF blocking PUT and DELETE methods by allowing POST with X-HTTP-Method-Override
+app.use((req: any, res: any, next: any) => {
+  const override = req.headers['x-http-method-override'] || req.query?._method;
+  if (req.method === 'POST' && override) {
+    req.method = String(override).toUpperCase();
+  }
+  next();
+});
+
 // Debug: Log requests (Production: Log errors only for maximum I/O performance)
 app.use((req: any, res: any, next: any) => {
   const start = Date.now();

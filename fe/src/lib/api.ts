@@ -116,11 +116,22 @@ export const api = {
     const isFormData = body instanceof FormData;
     return apiRequest(endpoint, {
       ...options,
-      method: 'PUT',
+      method: 'POST',
+      headers: {
+        'X-HTTP-Method-Override': 'PUT',
+        ...(options.headers || {}),
+      },
       body: isFormData ? body : JSON.stringify(body)
     });
   },
-  delete: (endpoint: string, options: RequestInit = {}) => apiRequest(endpoint, { ...options, method: 'DELETE' }),
+  delete: (endpoint: string, options: RequestInit = {}) => apiRequest(endpoint, {
+    ...options,
+    method: 'POST',
+    headers: {
+      'X-HTTP-Method-Override': 'DELETE',
+      ...(options.headers || {}),
+    },
+  }),
 };
 
 // Helper: fetch mahasiswa list with optional mataKuliahId filter for dosen

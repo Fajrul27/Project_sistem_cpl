@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3.8'  # Dihapus karena obsolete di Docker Compose v2+
 
 services:
   # 1. MariaDB Database Service
@@ -20,9 +20,10 @@ services:
         hard: 65535
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
 
   # 2. Redis Shared Cache Service
   redis:
@@ -30,8 +31,8 @@ services:
     container_name: sistem_cpl_redis
     restart: always
     command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
-    ports:
-      - "6379:6379"
+    # Port mapping dihapus untuk menghindari konflik dengan container Redis lain di host
+    # Backend menggunakan hostname internal Docker 'redis', port eksternal tidak diperlukan
     ulimits:
       nofile:
         soft: 65535
