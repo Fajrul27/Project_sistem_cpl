@@ -8,7 +8,7 @@ export const otherSchemas = {
         kode: z.string().min(1),
         nama: z.string().min(1),
         deskripsi: z.string().optional(),
-        targetKetercapaian: z.coerce.number().min(0).max(100).optional(),
+        targetKetercapaian: z.preprocess((val) => (val === null || val === '') ? null : Number(val), z.number().min(0).max(100).nullable().optional()),
         prodiId: commonSchema.uuid,
         kurikulumId: commonSchema.uuid.optional(),
         isActive: z.boolean().optional(),

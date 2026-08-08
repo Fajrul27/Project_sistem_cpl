@@ -256,7 +256,7 @@ export default function ProfilLulusanPage() {
             kode: formData.kode,
             nama: formData.nama,
             deskripsi: formData.deskripsi,
-            targetKetercapaian: formData.targetKetercapaian ? parseFloat(formData.targetKetercapaian) : undefined,
+            targetKetercapaian: formData.targetKetercapaian !== "" ? parseFloat(formData.targetKetercapaian) : null,
             prodiId: role === "kaprodi" ? profile?.prodiId : (formData.prodiId || selectedProdi),
             kurikulumId: formData.kurikulumId || null,
             // cplIds: selectedCpls // Removed
@@ -314,7 +314,7 @@ export default function ProfilLulusanPage() {
             fakultasId: item.prodi?.fakultasId || "",
             prodiId: item.prodiId,
             kurikulumId: item.kurikulumId || "",
-            targetKetercapaian: item.targetKetercapaian ? item.targetKetercapaian.toString() : ""
+            targetKetercapaian: item.targetKetercapaian !== null && item.targetKetercapaian !== undefined ? item.targetKetercapaian.toString() : ""
         });
         // If we want to pre-fill fakultas, we'd need to fetch the prodi details first or have it in the item.
         // For now, leaving it empty or maybe try to find it in the global prodiList if loaded?

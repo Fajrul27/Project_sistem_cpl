@@ -167,8 +167,15 @@ const CPMKPage = () => {
         const cpmkIdParam = searchParams.get("cpmkId");
         if (cpmkIdParam) {
             setCpmkIdFromUrl(cpmkIdParam);
+        } else {
+            setCpmkIdFromUrl(null);
         }
-    }, [searchParams]);
+        
+        const mkIdParam = searchParams.get("mkId");
+        if (mkIdParam && mkIdParam !== filters.mataKuliahFilter) {
+            setMataKuliahFilter(mkIdParam);
+        }
+    }, [searchParams.get("cpmkId"), searchParams.get("mkId")]);
 
     const [formData, setFormData] = useState({
         kodeCpmk: "",
@@ -948,7 +955,9 @@ const CPMKPage = () => {
                             if (cpmkIdFromUrl) {
                                 navigate(-1);
                             } else {
-                                setViewMode("list");
+                                const params = new URLSearchParams(searchParams);
+                                params.delete('view');
+                                setSearchParams(params, { replace: true });
                                 setCpmkIdFromUrl(null);
                             }
                         }}
