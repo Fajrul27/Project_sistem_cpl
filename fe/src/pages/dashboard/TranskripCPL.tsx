@@ -40,6 +40,7 @@ const TranskripCPLPage = () => {
     const {
         transkripList,
         transkripCpmkList,
+        skalaNilaiList,
         profilLulusanList,
         mahasiswaList,
         loading,
@@ -113,6 +114,12 @@ const TranskripCPLPage = () => {
 
     // Calculate RowSpans for CPMK Table
     const processedCpmkList = useMemo(() => {
+        // Helper inside memo to capture skalaNilaiList
+        const getHuruf = (score: number): string => {
+            if (!skalaNilaiList || skalaNilaiList.length === 0) return '-';
+            const found = skalaNilaiList.find(s => score >= s.nilaiMin);
+            return found ? found.huruf : (skalaNilaiList[skalaNilaiList.length - 1]?.huruf || '-');
+        };
         // 1. Sort by Kode MK then Kode CPMK
         const sorted = [...transkripCpmkList].sort((a, b) =>
             a.mataKuliah.kodeMk.localeCompare(b.mataKuliah.kodeMk) ||
@@ -155,7 +162,8 @@ const TranskripCPLPage = () => {
                     rowSpan: isFirst ? count : 0,
                     courseNumber: isFirst ? courseCounter : undefined, // Only set for first item
                     isLastInGroup: isLast,
-                    courseScore: avgScore
+                    courseScore: avgScore,
+                    courseHuruf: isFirst ? getHuruf(avgScore) : undefined
                 });
             }
 
@@ -163,7 +171,7 @@ const TranskripCPLPage = () => {
             i += count;
         }
         return result;
-    }, [transkripCpmkList]);
+    }, [transkripCpmkList, skalaNilaiList]);
 
     const handlePrint = () => {
         const originalTitle = document.title;
@@ -1062,7 +1070,7 @@ const TranskripCPLPage = () => {
                                                                             {item.courseScore?.toFixed(2)}
                                                                         </TableCell>
                                                                         <TableCell rowSpan={item.rowSpan} className="align-top border-r text-center font-bold pt-4">
-                                                                            {item.huruf || '-'}
+                                                                            {(item as any).courseHuruf || '-'}
                                                                         </TableCell>
                                                                         <TableCell rowSpan={item.rowSpan} className="align-top text-center pt-4">
                                                                             {item.status === 'tercapai'

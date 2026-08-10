@@ -100,6 +100,7 @@ export function useTranskripCPL() {
     const [transkripCpmkList, setTranskripCpmkList] = useState<TranskripCpmkItem[]>([]);
     const [profilLulusanList, setProfilLulusanList] = useState<ProfilLulusanItem[]>([]);
     const [mahasiswaList, setMahasiswaList] = useState<Mahasiswa[]>([]);
+    const [skalaNilaiList, setSkalaNilaiList] = useState<{ huruf: string; nilaiMin: number; nilaiMax: number; isLulus: boolean }[]>([]);
     
     const navType = useNavigationType();
     const isPop = navType === "POP";
@@ -194,8 +195,18 @@ export function useTranskripCPL() {
 
     const fetchFilters = async () => {
         try {
-            const fakRef = await fetchFakultasList();
+            const [fakRef, skalaNilaiRes] = await Promise.all([
+                fetchFakultasList(),
+                api.get('/skala-nilai').catch(() => ({ data: [] }))
+            ]);
             setFakultasList(fakRef.data || []);
+
+            // Fetch dan simpan skalaNilai (sorted desc nilaiMin)
+            const rawSkala = skalaNilaiRes.data || [];
+            const sortedSkala = [...rawSkala]
+                .filter((s: any) => s.isActive !== false)
+                .sort((a: any, b: any) => b.nilaiMin - a.nilaiMin);
+            setSkalaNilaiList(sortedSkala);
 
             // Role-based Fakultas initialization
             if (!roleLoading && role !== "admin" && profile) {
@@ -458,6 +469,7 @@ export function useTranskripCPL() {
         transkripCpmkList,
         profilLulusanList,
         mahasiswaList,
+        skalaNilaiList,
         loading,
         searchLoading,
         kaprodiData,
