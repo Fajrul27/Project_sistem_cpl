@@ -136,18 +136,45 @@ export class TranskripService {
         }).sort((a, b) => a.name.localeCompare(b.name));
 
         // Distribution of Student CPL Achievements (Not raw course grades)
-        const distributionRanges = [
-            { name: "0-59", min: 0, max: 59 },
-            { name: "60-69", min: 60, max: 69 },
-            { name: "70-79", min: 70, max: 79 },
-            { name: "80-89", min: 80, max: 89 },
-            { name: "90-100", min: 90, max: 100 },
-        ];
-
-        const distributionData = distributionRanges.map(r => {
-            const count = allFinalScores.filter(s => s >= r.min && s <= r.max).length;
-            return { ...r, count };
+        // Dynamically use skalaNilai from the database instead of hardcoded ranges
+        const skalaNilaiList = await prisma.skalaNilai.findMany({
+            where: { isActive: true },
+            orderBy: { nilaiMin: 'desc' }
         });
+
+        let distributionData: { name: string; huruf: string; min: number; max: number; count: number }[];
+
+        if (skalaNilaiList.length > 0) {
+            // Build distribution ranges from skalaNilai (sorted descending by nilaiMin)
+            const maxSkala = skalaNilaiList[0]; // highest grade (first after desc sort)
+            distributionData = skalaNilaiList.map((skala, idx) => {
+                const min = Number(skala.nilaiMin);
+                const max = Number(skala.nilaiMax);
+                // For the highest grade, use <= to include scores exactly at nilaiMax (e.g., 100)
+                const isHighest = skala.id === maxSkala.id;
+                const count = allFinalScores.filter(s => isHighest ? (s >= min && s <= max) : (s >= min && s < max)).length;
+                return {
+                    name: `${skala.huruf} (${min}-${max})`,
+                    huruf: skala.huruf,
+                    min,
+                    max,
+                    count
+                };
+            });
+        } else {
+            // Fallback to static ranges if no skalaNilai configured
+            const staticRanges = [
+                { name: "0-59", huruf: "E", min: 0, max: 60 },
+                { name: "60-69", huruf: "D", min: 60, max: 70 },
+                { name: "70-79", huruf: "C", min: 70, max: 80 },
+                { name: "80-89", huruf: "B", min: 80, max: 90 },
+                { name: "90-100", huruf: "A", min: 90, max: 101 },
+            ];
+            distributionData = staticRanges.map(r => {
+                const count = allFinalScores.filter(s => s >= r.min && s < r.max).length;
+                return { ...r, count };
+            });
+        }
 
         // 3. Radar Data (Top 8)
         const radarData = [...cplData]
@@ -159,7 +186,17 @@ export class TranskripService {
                 fullMark: 100
             }));
 
-        return { cplData, distributionData, radarData };
+        return {
+            cplData,
+            distributionData,
+            radarData,
+            skalaNilai: skalaNilaiList.map(s => ({
+                huruf: s.huruf,
+                nilaiMin: s.nilaiMin,
+                nilaiMax: s.nilaiMax,
+                isLulus: s.isLulus
+            }))
+        };
     }
 
     // --- Helper: Get Grade from Scale ---

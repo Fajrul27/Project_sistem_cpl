@@ -18,6 +18,7 @@ export function useAnalisis() {
     const [cplData, setCplData] = useState<any[]>([]);
     const [radarData, setRadarData] = useState<any[]>([]);
     const [distributionData, setDistributionData] = useState<any[]>([]);
+    const [skalaNilai, setSkalaNilai] = useState<any[]>([]);
 
     // Filter State
     const [semester, setSemester] = useState("");
@@ -95,6 +96,7 @@ export function useAnalisis() {
             setCplData([]);
             setRadarData([]);
             setDistributionData([]);
+            setSkalaNilai([]);
             setLoading(false);
             return;
         }
@@ -107,6 +109,7 @@ export function useAnalisis() {
                 setCplData(response.cplData || []);
                 setRadarData(response.radarData || []);
                 setDistributionData(response.distributionData || []);
+                setSkalaNilai(response.skalaNilai || []);
             }
         } catch (error: any) {
             toast.error("Gagal memuat data analisis");
@@ -143,6 +146,7 @@ export function useAnalisis() {
         cplData,
         radarData,
         distributionData,
+        skalaNilai,
         semester,
         setSemester,
         fakultasFilter,

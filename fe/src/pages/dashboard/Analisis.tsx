@@ -45,19 +45,20 @@ const AnalisisiPage = () => {
 
   const isFilterComplete = semester && fakultasFilter && jenjangFilter && prodiFilter && fakultasFilter !== 'all' && jenjangFilter !== 'all' && prodiFilter !== 'all';
 
-  // Standard colors for distribution chart: Reversed to match Top (Green) -> Bottom (Red)
-  const chartColors = ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#22c55e'];
+  // Standard colors palette for distribution chart
+  // Backend sorts skalaNilai descending (highest grade first)
+  // Colors: index 0 = highest grade (green), last index = lowest grade (red)
+  const BASE_CHART_COLORS_ASC = ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#22c55e', '#a855f7', '#06b6d4', '#84cc16'];
+  // Reverse so index 0 maps to highest grade (green end)
+  const BASE_CHART_COLORS_DESC = [...BASE_CHART_COLORS_ASC].reverse();
+  const chartColors = BASE_CHART_COLORS_DESC.slice(0, distributionData.length);
 
   const totalData = distributionData.reduce((acc, curr) => acc + curr.count, 0);
 
-  const getLabel = (rangeName: string) => {
-    switch (rangeName) {
-      case '90-100': return 'Sangat Baik (A) (90-100)';
-      case '80-89': return 'Baik (B) (80-89)';
-      case '70-79': return 'Cukup (C) (70-79)';
-      case '60-69': return 'Kurang (D) (60-69)';
-      default: return 'Sangat Kurang (E) (<60)';
-    }
+  // Dynamic label generator using skalaNilai from backend
+  const getLabel = (entryName: string, huruf?: string) => {
+    if (huruf) return entryName; // name already includes huruf + range from backend
+    return entryName;
   };
 
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
@@ -343,7 +344,7 @@ const AnalisisiPage = () => {
                                 className="w-4 h-4 rounded-full"
                                 style={{ backgroundColor: chartColors[index % chartColors.length] }}
                               />
-                              <span className="text-sm font-medium">{getLabel(entry.name)}</span>
+                              <span className="text-sm font-medium">{getLabel(entry.name, entry.huruf)}</span>
                             </div>
                             <span className="font-bold text-lg">{entry.count}</span>
                           </div>
