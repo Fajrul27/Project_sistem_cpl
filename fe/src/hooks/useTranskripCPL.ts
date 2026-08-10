@@ -202,7 +202,7 @@ export function useTranskripCPL() {
             setFakultasList(fakRef.data || []);
 
             // Fetch dan simpan skalaNilai (sorted desc nilaiMin)
-            const rawSkala = skalaNilaiRes.data || [];
+            const rawSkala = Array.isArray(skalaNilaiRes) ? skalaNilaiRes : (skalaNilaiRes?.data || []);
             const sortedSkala = [...rawSkala]
                 .filter((s: any) => s.isActive !== false)
                 .sort((a: any, b: any) => b.nilaiMin - a.nilaiMin);
