@@ -297,8 +297,8 @@ const AnalisisiPage = () => {
                   </div>
 
                   {hiddenCplCount > 0 && (
-                      <div className="mt-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/30 rounded-md text-xs text-blue-800 dark:text-blue-300 flex items-start gap-2">
-                          <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                      <div className="mt-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/30 rounded-md text-xs text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                          <Info className="w-4 h-4 text-blue-500 shrink-0" />
                           <p>
                               Terdapat <strong>{hiddenCplCount} CPL</strong> yang disembunyikan dari grafik karena belum memiliki data nilai pada kriteria filter yang Anda pilih.
                           </p>
