@@ -122,16 +122,61 @@ export class TranskripService {
             select: { id: true, kodeCpl: true, deskripsi: true }
         });
 
+        // Step 5: Fetch Targets
+        const cplTargetsMap = new Map<string, number>();
+        const targetWhere: any = {};
+        if (prodiId) targetWhere.prodiId = prodiId;
+        if (angkatan) targetWhere.angkatan = angkatan;
+        if (semester) {
+            targetWhere.OR = [
+                { semester: semester },
+                { semester: null }
+            ];
+        }
+
+        const targets = await prisma.targetCPL.findMany({
+            where: targetWhere
+        });
+
+        // First, group by angkatan + cplId to pick the best target per angkatan (prioritizing specific semester)
+        const targetByAngkatanCpl = new Map<string, any>();
+        targets.forEach(t => {
+            const key = `${t.angkatan}_${t.cplId}`;
+            const existing = targetByAngkatanCpl.get(key);
+            
+            // If we don't have one yet, or if the new one is more specific (semester !== null)
+            if (!existing) {
+                targetByAngkatanCpl.set(key, t);
+            } else if (existing.semester === null && t.semester !== null) {
+                targetByAngkatanCpl.set(key, t);
+            }
+        });
+
+        // Now average across all angkatans for each CPL
+        const targetGroups = new Map<string, number[]>();
+        targetByAngkatanCpl.forEach((t) => {
+            if (!targetGroups.has(t.cplId)) targetGroups.set(t.cplId, []);
+            targetGroups.get(t.cplId)!.push(t.target);
+        });
+
+        targetGroups.forEach((arr, cplId) => {
+            const avgTarget = arr.reduce((a, b) => a + b, 0) / arr.length;
+            cplTargetsMap.set(cplId, avgTarget);
+        });
+
         const cplData = cpls.map(cpl => {
             const scores = cplScoresList.get(cpl.id);
             const avg = scores && scores.length > 0
                 ? scores.reduce((a, b) => a + b, 0) / scores.length
                 : 0;
 
+            const targetScore = cplTargetsMap.has(cpl.id) ? cplTargetsMap.get(cpl.id)! : 75;
+
             return {
                 name: cpl.kodeCpl,
                 description: cpl.deskripsi,
-                nilai: Number(avg.toFixed(2))
+                nilai: Number(avg.toFixed(2)),
+                target: Number(targetScore.toFixed(2))
             };
         }).sort((a, b) => a.name.localeCompare(b.name));
 

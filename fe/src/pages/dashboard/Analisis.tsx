@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { FilterRequiredState } from "@/components/common/FilterRequiredState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ReferenceLine } from "recharts";
+import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
 import { DashboardPage } from "@/components/layout/DashboardLayout";
 import { useAnalisis } from "@/hooks/useAnalisis";
 import { SlidersHorizontal, RotateCcw, Info } from "lucide-react";
@@ -203,7 +203,7 @@ const AnalisisiPage = () => {
                     return (
                       <>
                         <ResponsiveContainer width="100%" height={300}>
-                          <BarChart data={activeCplData}>
+                          <ComposedChart data={activeCplData}>
                       <defs>
                         <linearGradient id="colorCplAnalisis" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
@@ -243,7 +243,7 @@ const AnalisisiPage = () => {
                           whiteSpace: 'normal',
                           lineHeight: '1.4'
                         }}
-                        formatter={(value: number) => [value, 'Rata-rata Nilai']}
+                        formatter={(value: number, name: string) => [value, name]}
                         labelFormatter={(label, payload) => {
                           if (payload && payload.length > 0) {
                             const desc = payload[0].payload.description;
@@ -253,7 +253,6 @@ const AnalisisiPage = () => {
                         }}
                       />
                       <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                      <ReferenceLine y={75} stroke="#ef4444" strokeDasharray="3 3" />
                       <Bar
                         dataKey="nilai"
                         name="Rata-rata Nilai"
@@ -265,17 +264,27 @@ const AnalisisiPage = () => {
                         {activeCplData.map((entry, index) => (
                             <Cell 
                                 key={`cell-${index}`} 
-                                fill={(Number(entry.nilai) || 0) >= 75 ? "url(#colorCplAnalisis)" : "#ef4444"} 
+                                fill={(Number(entry.nilai) || 0) >= (entry.target || 75) ? "url(#colorCplAnalisis)" : "#ef4444"} 
                             />
                         ))}
                       </Bar>
-                    </BarChart>
+                      <Line 
+                        type="monotone" 
+                        dataKey="target" 
+                        name="Target Ketercapaian" 
+                        stroke="#ef4444" 
+                        strokeDasharray="3 3" 
+                        strokeWidth={2}
+                        dot={{ r: 4, fill: "#ef4444" }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </ComposedChart>
                   </ResponsiveContainer>
                   
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-2">
                           <div className="w-5 border-t-2 border-dashed" style={{ borderColor: '#ef4444' }}></div>
-                          <span>Target Ketercapaian (75)</span>
+                          <span>Target Ketercapaian (Berdasarkan CPL)</span>
                       </div>
                       <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-sm" style={{ background: "hsl(var(--primary))" }}></div>
